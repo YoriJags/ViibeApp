@@ -19,7 +19,7 @@ import * as WebBrowser from 'expo-web-browser';
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function ProfileScreen() {
-  const { user, fetchUser, fetchAuthUser, createUser, logout, loading, processGoogleAuth, fastPasses, fetchUserFastPasses } = useVibeStore();
+  const { user, fetchUser, fetchAuthUser, createUser, logout, loading, processGoogleAuth } = useVibeStore();
   const [showSignup, setShowSignup] = useState(false);
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
