@@ -16,10 +16,11 @@ import { useVibeStore } from '../../src/store/vibeStore';
 export default function VenueDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { fetchVenue, getUserRatingStatus, user } = useVibeStore();
+  const { fetchVenue, getUserRatingStatus, user, purchaseFastPass } = useVibeStore();
   const [venue, setVenue] = useState<any>(null);
   const [ratingStatus, setRatingStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
     loadVenueData();
