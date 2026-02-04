@@ -356,6 +356,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: typography.fontSize.md,
+    color: colors.text.secondary,
+  },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
