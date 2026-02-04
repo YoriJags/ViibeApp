@@ -97,7 +97,15 @@ export default function MapScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>VIBE</Text>
-          <Text style={styles.headerSubtitle}>Lagos Nightlife Pulse</Text>
+          <TouchableOpacity 
+            style={styles.citySelector}
+            onPress={() => setShowCityPicker(true)}
+          >
+            <Text style={styles.headerSubtitle}>
+              {CITIES.find(c => c.code === selectedCity)?.emoji} {CITIES.find(c => c.code === selectedCity)?.name} Nightlife
+            </Text>
+            <Ionicons name="chevron-down" size={14} color="#FF3366" />
+          </TouchableOpacity>
         </View>
         <TouchableOpacity
           style={styles.viewToggle}
@@ -110,6 +118,49 @@ export default function MapScreen() {
           />
         </TouchableOpacity>
       </View>
+
+      {/* City Picker Modal */}
+      <Modal
+        visible={showCityPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCityPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select City</Text>
+              <TouchableOpacity onPress={() => setShowCityPicker(false)}>
+                <Ionicons name="close" size={24} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+            {CITIES.map((city) => (
+              <TouchableOpacity
+                key={city.code}
+                style={[
+                  styles.cityOption,
+                  selectedCity === city.code && styles.cityOptionActive
+                ]}
+                onPress={() => {
+                  setSelectedCity(city.code);
+                  setShowCityPicker(false);
+                }}
+              >
+                <Text style={styles.cityEmoji}>{city.emoji}</Text>
+                <Text style={[
+                  styles.cityName,
+                  selectedCity === city.code && styles.cityNameActive
+                ]}>
+                  {city.name}
+                </Text>
+                {selectedCity === city.code && (
+                  <Ionicons name="checkmark-circle" size={20} color="#FF3366" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
 
       {/* Legend */}
       <View style={styles.legend}>
