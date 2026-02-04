@@ -30,11 +30,12 @@ const CITIES = [
 
 export default function MapScreen() {
   const router = useRouter();
-  const { venues, fetchVenues, loading, error, connectSocket } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
   const [showList, setShowList] = useState(false);
+  const [showCityPicker, setShowCityPicker] = useState(false);
 
   useEffect(() => {
     initializeApp();
