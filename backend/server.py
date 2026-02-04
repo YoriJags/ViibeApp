@@ -453,7 +453,15 @@ async def update_user_clout(user_id: str, venue_id: str, rating_score: float):
     )
 
 async def get_current_user(request: Request) -> Optional[dict]:
-    """Get current user from session token"""
+    """Get current user from session token or X-User-Id header"""
+    # First try X-User-Id header (for mobile app AsyncStorage-based auth)
+    user_id = request.headers.get("X-User-Id")
+    if user_id:
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        if user:
+            return user
+    
+    # Fall back to session token (cookie or Bearer token)
     session_token = request.cookies.get("session_token")
     if not session_token:
         auth_header = request.headers.get("Authorization")
