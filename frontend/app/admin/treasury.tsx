@@ -129,23 +129,14 @@ export default function AdminTreasury() {
     }
   };
 
-  if (loading) {
+  if (loading || initializing) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading treasury data...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (!user?.id && !error) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Authenticating...</Text>
+          <Text style={styles.loadingText}>
+            {initializing ? 'Initializing...' : 'Loading treasury data...'}
+          </Text>
         </View>
       </SafeAreaView>
     );
