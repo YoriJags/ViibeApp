@@ -304,49 +304,11 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Accuracy</Text>
           </View>
           <View style={styles.statCard}>
-            <Ionicons name="ticket" size={28} color="#9C27B0" />
-            <Text style={styles.statValue}>{user?.fast_lane_passes || 0}</Text>
-            <Text style={styles.statLabel}>Fast Lane</Text>
+            <Ionicons name="ribbon" size={28} color="#9C27B0" />
+            <Text style={styles.statValue}>{user?.scout_status || 'newbie'}</Text>
+            <Text style={styles.statLabel}>Status</Text>
           </View>
         </View>
-
-        {/* Fast Passes */}
-        {fastPasses.length > 0 && (
-          <View style={styles.fastPassSection}>
-            <Text style={styles.sectionTitle}>Your Fast Passes</Text>
-            {fastPasses.map((pass) => (
-              <View key={pass.id} style={styles.fastPassCard}>
-                <View style={styles.fastPassHeader}>
-                  <Ionicons name="flash" size={20} color="#FFD700" />
-                  <Text style={styles.fastPassVenue}>{pass.venue_name}</Text>
-                </View>
-                <View style={styles.qrContainer}>
-                  <Ionicons name="qr-code" size={80} color="#333" />
-                  <Text style={styles.qrCode}>{pass.qr_code}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Fast Lane QR */}
-        {(user?.fast_lane_passes || 0) > 0 && (
-          <View style={styles.fastLaneCard}>
-            <View style={styles.fastLaneHeader}>
-              <Ionicons name="flash" size={24} color="#FFD700" />
-              <Text style={styles.fastLaneTitle}>Scout Fast Lane Pass</Text>
-            </View>
-            <Text style={styles.fastLaneDesc}>
-              Show this at venue entry for priority access
-            </Text>
-            <View style={styles.qrPlaceholder}>
-              <Ionicons name="qr-code" size={120} color="#333" />
-              <Text style={styles.qrText}>
-                {user?.fast_lane_passes} passes available
-              </Text>
-            </View>
-          </View>
-        )}
 
         {/* Scout Progress */}
         <View style={styles.progressCard}>
