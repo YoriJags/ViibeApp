@@ -123,11 +123,14 @@ backend:
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Cities endpoint returns Lagos, Abuja, Port Harcourt, Ibadan"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED: /api/cities returns all 4 cities with correct structure. /api/cities/lagos returns proper city details with coordinates. Venue filtering by city works correctly - all Lagos venues properly isolated."
 
   - task: "Venue Management & Leaderboard"
     implemented: true
