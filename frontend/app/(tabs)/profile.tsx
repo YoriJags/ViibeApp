@@ -312,6 +312,41 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Dashboard Access Section */}
+        <View style={styles.dashboardSection}>
+          <Text style={styles.sectionTitle}>Dashboards</Text>
+          
+          {/* Merchant Dashboard */}
+          <TouchableOpacity
+            style={styles.dashboardCard}
+            onPress={() => router.push('/merchant/demo-venue')}
+          >
+            <View style={[styles.dashboardIcon, { backgroundColor: '#FF336620' }]}>
+              <Ionicons name="business" size={24} color="#FF3366" />
+            </View>
+            <View style={styles.dashboardContent}>
+              <Text style={styles.dashboardTitle}>Merchant Dashboard</Text>
+              <Text style={styles.dashboardDesc}>View venue analytics, ROI metrics, and trigger Pulse Drops</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#666" />
+          </TouchableOpacity>
+
+          {/* Super Admin Treasury */}
+          <TouchableOpacity
+            style={styles.dashboardCard}
+            onPress={() => router.push('/admin/treasury')}
+          >
+            <View style={[styles.dashboardIcon, { backgroundColor: '#FFD70020' }]}>
+              <Ionicons name="shield-checkmark" size={24} color="#FFD700" />
+            </View>
+            <View style={styles.dashboardContent}>
+              <Text style={styles.dashboardTitle}>Super Admin Treasury</Text>
+              <Text style={styles.dashboardDesc}>Global revenue, network health, and venue management</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#666" />
+          </TouchableOpacity>
+        </View>
+
         {/* Scout Progress */}
         <View style={styles.progressCard}>
           <Text style={styles.progressTitle}>Scout Progress</Text>
