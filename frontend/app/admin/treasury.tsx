@@ -81,7 +81,6 @@ export default function AdminTreasury() {
       
       const response = await fetch(`${API_URL}/api/admin/treasury`, {
         headers,
-        credentials: 'include',
       });
       
       if (response.status === 403) {
