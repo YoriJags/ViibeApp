@@ -44,20 +44,24 @@ export default function AdminTreasury() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchTreasury();
-  }, []);
+    if (user?.id) {
+      fetchTreasury();
+    }
+  }, [user?.id]);
 
   const fetchTreasury = async () => {
+    if (!user?.id) {
+      setError('Please login first');
+      setLoading(false);
+      return;
+    }
+    
     try {
       setError(null);
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
+        'X-User-Id': user.id,
       };
-      
-      // Add user ID header for authentication
-      if (user?.id) {
-        headers['X-User-Id'] = user.id;
-      }
       
       const response = await fetch(`${API_URL}/api/admin/treasury`, {
         headers,
@@ -73,8 +77,11 @@ export default function AdminTreasury() {
       if (response.ok) {
         const result = await response.json();
         setData(result);
+      } else {
+        setError('Failed to load treasury data');
       }
     } catch (err) {
+      console.error('Treasury fetch error:', err);
       setError('Failed to load treasury data');
     } finally {
       setLoading(false);
