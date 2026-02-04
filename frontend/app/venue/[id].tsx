@@ -205,6 +205,49 @@ export default function VenueDetailScreen() {
           </View>
         </View>
 
+        {/* Fast Pass Section */}
+        {venue.fast_pass_enabled && (
+          <View style={styles.fastPassSection}>
+            <View style={styles.fastPassHeader}>
+              <Ionicons name="flash" size={24} color="#FFD700" />
+              <Text style={styles.fastPassTitle}>Fast Pass Available</Text>
+            </View>
+            <Text style={styles.fastPassDesc}>
+              Skip the line with priority entry
+            </Text>
+            <View style={styles.fastPassPriceRow}>
+              <Text style={styles.fastPassPrice}>
+                ₦{venue.fast_pass_price?.toLocaleString()}
+              </Text>
+              <Text style={styles.fastPassFee}>10% platform fee applies</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.buyFastPassButton}
+              onPress={handlePurchaseFastPass}
+              disabled={purchasing}
+            >
+              {purchasing ? (
+                <ActivityIndicator color="#000" />
+              ) : (
+                <>
+                  <Ionicons name="ticket" size={20} color="#000" />
+                  <Text style={styles.buyFastPassText}>Buy Fast Pass</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Active Pulse Drop Badge */}
+        {venue.active_pulse_tier && (
+          <View style={styles.pulseDropBadge}>
+            <Ionicons name="flame" size={20} color="#FF3366" />
+            <Text style={styles.pulseDropText}>
+              {venue.active_pulse_tier.toUpperCase()} Boost Active
+            </Text>
+          </View>
+        )}
+
         {/* Rating Status */}
         {user && ratingStatus && (
           <View style={styles.ratingStatusCard}>
