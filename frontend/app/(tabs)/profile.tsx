@@ -8,23 +8,73 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Linking,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useVibeStore } from '../../src/store/vibeStore';
+import * as WebBrowser from 'expo-web-browser';
+
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function ProfileScreen() {
-  const { user, fetchUser, createUser, loading } = useVibeStore();
+  const { user, fetchUser, fetchAuthUser, createUser, logout, loading, processGoogleAuth, fastPasses, fetchUserFastPasses } = useVibeStore();
   const [showSignup, setShowSignup] = useState(false);
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
-    // Try to load existing user
-    fetchUser();
+    // Check for existing session
+    fetchAuthUser().then((authUser) => {
+      if (!authUser) {
+        fetchUser();
+      }
+    });
   }, []);
 
-  const handleSignup = async () => {
+  useEffect(() => {
+    if (user) {
+      fetchUserFastPasses();
+    }
+  }, [user]);
+
+  // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+  const handleGoogleSignIn = async () => {
+    setAuthLoading(true);
+    try {
+      // Build redirect URL dynamically from current location
+      const redirectUrl = `${API_URL}/profile`;
+      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+      
+      // Open browser for auth
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
+      
+      if (result.type === 'success' && result.url) {
+        // Extract session_id from URL fragment
+        const urlParts = result.url.split('#');
+        if (urlParts.length > 1) {
+          const params = new URLSearchParams(urlParts[1]);
+          const sessionId = params.get('session_id');
+          
+          if (sessionId) {
+            const success = await processGoogleAuth(sessionId);
+            if (!success) {
+              Alert.alert('Error', 'Failed to complete sign in');
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      Alert.alert('Error', 'Failed to sign in with Google');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLocalSignup = async () => {
     if (!username.trim() || !phone.trim()) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
@@ -38,42 +88,47 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', style: 'destructive', onPress: () => logout() }
+      ]
+    );
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'elite':
-        return '#FFD700';
-      case 'scout':
-        return '#E91E63';
-      case 'regular':
-        return '#2196F3';
-      default:
-        return '#666';
+      case 'elite': return '#FFD700';
+      case 'scout': return '#E91E63';
+      case 'regular': return '#2196F3';
+      default: return '#666';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'elite':
-        return 'shield-checkmark';
-      case 'scout':
-        return 'eye';
-      case 'regular':
-        return 'person';
-      default:
-        return 'person-outline';
+      case 'elite': return 'shield-checkmark';
+      case 'scout': return 'eye';
+      case 'regular': return 'person';
+      default: return 'person-outline';
     }
   };
 
-  if (loading && !user) {
+  if ((loading || authLoading) && !user) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FF3366" />
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  // Welcome / Sign-in Screen
   if (!user && !showSignup) {
     return (
       <SafeAreaView style={styles.container}>
@@ -83,20 +138,44 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.welcomeTitle}>Welcome to Vibe</Text>
           <Text style={styles.welcomeSubtitle}>
-            Your real-time Lagos nightlife guide
+            Nigeria's real-time nightlife pulse
           </Text>
+
+          {/* Google Sign In Button */}
           <TouchableOpacity
-            style={styles.getStartedButton}
+            style={styles.googleButton}
+            onPress={handleGoogleSignIn}
+            disabled={authLoading}
+          >
+            <Ionicons name="logo-google" size={20} color="#FFF" />
+            <Text style={styles.googleButtonText}>Continue with Google</Text>
+          </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Local Signup */}
+          <TouchableOpacity
+            style={styles.localButton}
             onPress={() => setShowSignup(true)}
           >
-            <Text style={styles.getStartedText}>Get Started</Text>
-            <Ionicons name="arrow-forward" size={20} color="#FFF" />
+            <Ionicons name="phone-portrait" size={20} color="#FF3366" />
+            <Text style={styles.localButtonText}>Sign up with Phone</Text>
           </TouchableOpacity>
+
+          <Text style={styles.termsText}>
+            By signing in, you agree to our Terms & Privacy Policy
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  // Local Signup Form
   if (showSignup && !user) {
     return (
       <SafeAreaView style={styles.container}>
@@ -110,7 +189,7 @@ export default function ProfileScreen() {
 
           <Text style={styles.signupTitle}>Create Profile</Text>
           <Text style={styles.signupSubtitle}>
-            Join the Lagos nightlife community
+            Join Nigeria's nightlife community
           </Text>
 
           <View style={styles.inputContainer}>
@@ -139,7 +218,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={styles.signupButton}
-            onPress={handleSignup}
+            onPress={handleLocalSignup}
             disabled={loading}
           >
             {loading ? (
@@ -153,20 +232,32 @@ export default function ProfileScreen() {
     );
   }
 
+  // User Profile Screen
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile</Text>
+          <TouchableOpacity onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={24} color="#FF3366" />
+          </TouchableOpacity>
         </View>
 
         {/* User Card */}
         <View style={styles.userCard}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
-              {user?.username?.charAt(0).toUpperCase()}
-            </Text>
+            {user?.picture ? (
+              <View style={styles.avatarImage}>
+                <Text style={styles.avatarText}>
+                  {user?.name?.charAt(0).toUpperCase() || user?.username?.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.avatarText}>
+                {user?.username?.charAt(0).toUpperCase()}
+              </Text>
+            )}
             <View
               style={[
                 styles.statusBadge,
@@ -180,7 +271,20 @@ export default function ProfileScreen() {
               />
             </View>
           </View>
-          <Text style={styles.userName}>{user?.username}</Text>
+          <Text style={styles.userName}>{user?.name || user?.username}</Text>
+          {user?.email && (
+            <Text style={styles.userEmail}>{user.email}</Text>
+          )}
+          <View style={styles.authBadge}>
+            <Ionicons 
+              name={user?.auth_provider === 'google' ? 'logo-google' : 'phone-portrait'} 
+              size={12} 
+              color="#888" 
+            />
+            <Text style={styles.authText}>
+              {user?.auth_provider === 'google' ? 'Google' : 'Phone'} Account
+            </Text>
+          </View>
           <Text style={styles.userStatus}>
             {user?.scout_status?.toUpperCase()} SCOUT
           </Text>
@@ -212,12 +316,31 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Fast Passes */}
+        {fastPasses.length > 0 && (
+          <View style={styles.fastPassSection}>
+            <Text style={styles.sectionTitle}>Your Fast Passes</Text>
+            {fastPasses.map((pass) => (
+              <View key={pass.id} style={styles.fastPassCard}>
+                <View style={styles.fastPassHeader}>
+                  <Ionicons name="flash" size={20} color="#FFD700" />
+                  <Text style={styles.fastPassVenue}>{pass.venue_name}</Text>
+                </View>
+                <View style={styles.qrContainer}>
+                  <Ionicons name="qr-code" size={80} color="#333" />
+                  <Text style={styles.qrCode}>{pass.qr_code}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         {/* Fast Lane QR */}
         {(user?.fast_lane_passes || 0) > 0 && (
           <View style={styles.fastLaneCard}>
             <View style={styles.fastLaneHeader}>
               <Ionicons name="flash" size={24} color="#FFD700" />
-              <Text style={styles.fastLaneTitle}>Fast Lane Pass</Text>
+              <Text style={styles.fastLaneTitle}>Scout Fast Lane Pass</Text>
             </View>
             <Text style={styles.fastLaneDesc}>
               Show this at venue entry for priority access
@@ -317,6 +440,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingText: {
+    color: '#888',
+    marginTop: 12,
+  },
   welcomeContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -341,22 +468,64 @@ const styles = StyleSheet.create({
   welcomeSubtitle: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 32,
+    marginBottom: 40,
     textAlign: 'center',
   },
-  getStartedButton: {
+  googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FF3366',
+    backgroundColor: '#4285F4',
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 30,
-    gap: 8,
+    gap: 12,
+    width: '100%',
+    justifyContent: 'center',
   },
-  getStartedText: {
-    fontSize: 18,
-    fontWeight: '700',
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
     color: '#FFF',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+    width: '100%',
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#333',
+  },
+  dividerText: {
+    color: '#666',
+    marginHorizontal: 16,
+    fontSize: 14,
+  },
+  localButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 30,
+    gap: 12,
+    width: '100%',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FF3366',
+  },
+  localButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FF3366',
+  },
+  termsText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 24,
+    textAlign: 'center',
   },
   signupContainer: {
     padding: 24,
@@ -409,6 +578,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
@@ -434,6 +606,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FF3366',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   avatarText: {
     fontSize: 32,
     fontWeight: '800',
@@ -456,11 +636,30 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFF',
   },
+  userEmail: {
+    fontSize: 14,
+    color: '#888',
+    marginTop: 4,
+  },
+  authBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#252530',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  authText: {
+    fontSize: 12,
+    color: '#888',
+  },
   userStatus: {
     fontSize: 12,
     fontWeight: '700',
     color: '#FF3366',
-    marginTop: 4,
+    marginTop: 8,
     letterSpacing: 2,
   },
   statsGrid: {
@@ -472,11 +671,6 @@ const styles = StyleSheet.create({
   statCard: {
     width: '50%',
     padding: 8,
-  },
-  statCardInner: {
-    backgroundColor: '#151520',
-    borderRadius: 16,
-    padding: 16,
     alignItems: 'center',
   },
   statValue: {
@@ -489,6 +683,48 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginTop: 4,
+  },
+  fastPassSection: {
+    marginHorizontal: 16,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFF',
+    marginBottom: 12,
+  },
+  fastPassCard: {
+    backgroundColor: '#151520',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#FFD70040',
+  },
+  fastPassHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  fastPassVenue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  qrContainer: {
+    alignItems: 'center',
+    backgroundColor: '#0A0A0F',
+    borderRadius: 12,
+    padding: 16,
+  },
+  qrCode: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FF3366',
+    marginTop: 8,
+    letterSpacing: 2,
   },
   fastLaneCard: {
     backgroundColor: '#151520',
