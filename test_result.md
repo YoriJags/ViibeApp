@@ -213,11 +213,14 @@ backend:
     file: "server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Global treasury, revenue by city, venue verification, vibe override"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED: Super admin treasury endpoints implemented correctly. Global revenue stats, revenue breakdown by city and transaction type, venue management functions, admin overrides for venue verification and score manipulation all working as expected."
 
 frontend:
   - task: "Map Screen with City Selector"
