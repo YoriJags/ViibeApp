@@ -12,7 +12,7 @@ import aiohttp
 import time
 
 # Use the actual backend URL from environment
-BASE_URL = "https://vibe-heatmap-pulse.preview.emergentagent.com/api"
+BASE_URL = "https://pulse-drop.preview.emergentagent.com/api"
 
 class VibeAppTester:
     def __init__(self):

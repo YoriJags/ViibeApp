@@ -8,7 +8,7 @@ import asyncio
 import json
 import aiohttp
 
-BASE_URL = "https://vibe-heatmap-pulse.preview.emergentagent.com/api"
+BASE_URL = "https://pulse-drop.preview.emergentagent.com/api"
 
 async def test_specific_scenarios():
     """Test the specific scenarios mentioned in review request"""
