@@ -34,12 +34,6 @@ export default function ProfileScreen() {
     });
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      fetchUserFastPasses();
-    }
-  }, [user]);
-
   // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
   const handleGoogleSignIn = async () => {
     setAuthLoading(true);
