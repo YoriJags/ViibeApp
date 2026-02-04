@@ -183,11 +183,14 @@ backend:
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "3 tiers (Spark, Flare, Supernova) with pricing and effects"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED: All 3 pulse drop tiers (Spark/Flare/Supernova) working perfectly. Tier pricing correct (₦5K/₦15K/₦50K). Glow boost effects applied correctly (+20/+40/+100). Chart placement working (Flare #3, Supernova #1). Pulse drops properly prioritized in leaderboard. Nearby pulse drops API working."
 
   - task: "Merchant Dashboard Stats"
     implemented: true
