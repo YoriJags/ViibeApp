@@ -626,11 +626,28 @@ async def logout(request: Request, response: Response):
 
 # ===== User Routes =====
 
+class UserLogin(BaseModel):
+    phone: str
+
+@api_router.post("/users/login")
+async def login_user(login_data: UserLogin):
+    """Login by phone number - returns existing user"""
+    user = await db.users.find_one({"phone": login_data.phone}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found. Please sign up first.")
+    return user
+
 @api_router.post("/users")
 async def create_user(user_data: UserCreate):
-    existing = await db.users.find_one({"username": user_data.username})
-    if existing:
+    # Check if username exists
+    existing_username = await db.users.find_one({"username": user_data.username})
+    if existing_username:
         raise HTTPException(status_code=400, detail="Username already exists")
+    
+    # Check if phone already exists - return that user instead (login flow)
+    existing_phone = await db.users.find_one({"phone": user_data.phone}, {"_id": 0})
+    if existing_phone:
+        return existing_phone
     
     user = User(**user_data.dict())
     await db.users.insert_one(user.dict())
