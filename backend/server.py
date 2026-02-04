@@ -13,6 +13,8 @@ from datetime import datetime, timedelta, timezone
 import socketio
 import math
 import httpx
+import hmac
+import hashlib
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -21,6 +23,10 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ.get('DB_NAME', 'vibe_app')]
+
+# Paystack Configuration
+PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY', '')
+PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', '')
 
 # Create Socket.IO server
 sio = socketio.AsyncServer(
@@ -31,7 +37,7 @@ sio = socketio.AsyncServer(
 )
 
 # Create the main FastAPI app
-app = FastAPI(title="Vibe App API", version="2.0.0")
+app = FastAPI(title="Vibe App API", version="3.0.0")
 
 # Create Socket.IO ASGI app
 socket_app = socketio.ASGIApp(sio, app)
@@ -47,9 +53,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ===== Constants =====
-PLATFORM_FEE_PERCENT = 10
-VENUE_SHARE_PERCENT = 90
-
 PULSE_DROP_TIERS = {
     "spark": {
         "name": "Spark",
@@ -57,7 +60,8 @@ PULSE_DROP_TIERS = {
         "radius_km": 2,
         "glow_boost": 20,
         "chart_placement": None,
-        "duration_hours": 2
+        "duration_hours": 2,
+        "description": "2km radius push + 20% glow increase"
     },
     "flare": {
         "name": "Flare",
@@ -65,7 +69,8 @@ PULSE_DROP_TIERS = {
         "radius_km": 5,
         "glow_boost": 40,
         "chart_placement": 3,  # Top 3
-        "duration_hours": 4
+        "duration_hours": 4,
+        "description": "5km radius push + Top 3 chart placement"
     },
     "supernova": {
         "name": "Supernova",
@@ -74,7 +79,8 @@ PULSE_DROP_TIERS = {
         "glow_boost": 100,
         "chart_placement": 1,  # #1 Trending
         "duration_hours": 8,
-        "custom_icon": True
+        "custom_icon": True,
+        "description": "City-wide push + #1 Trending + Custom Map Icon"
     }
 }
 
@@ -131,23 +137,12 @@ class User(BaseModel):
     scout_status: Literal["newbie", "regular", "scout", "elite"] = "newbie"
     rating_accuracy_score: float = 0.0
     total_ratings: int = 0
-    fast_lane_passes: int = 0
-    fast_passes_purchased: List[str] = []  # venue_ids
     home_city: str = "lagos"
     is_admin: bool = False
     is_super_admin: bool = False
+    is_merchant: bool = False
+    merchant_venue_id: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class VenueCreate(BaseModel):
-    name: str
-    address: str
-    area: str
-    city: str = "lagos"
-    venue_type: Literal["club", "lounge", "restaurant", "bar"] = "club"
-    coordinates: Coordinates
-    owner_id: Optional[str] = None
-    fast_pass_enabled: bool = False
-    fast_pass_price: float = 0
 
 class Venue(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -167,28 +162,18 @@ class Venue(BaseModel):
     is_featured: bool = False
     is_verified: bool = False
     photo_base64: Optional[str] = None
-    # Fast Pass
-    fast_pass_enabled: bool = False
-    fast_pass_price: float = 5000  # NGN
-    fast_passes_sold_today: int = 0
     # Pulse Drop
     active_pulse_tier: Optional[Literal["spark", "flare", "supernova"]] = None
     pulse_expires_at: Optional[datetime] = None
     custom_icon: Optional[str] = None
     glow_boost: float = 0
+    # Analytics
+    profile_views: int = 0
+    direction_clicks: int = 0
     # Override
     admin_override_score: Optional[float] = None
     is_suppressed: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class RatingCreate(BaseModel):
-    user_id: str
-    venue_id: str
-    energy: Literal["chill", "popping", "electric"]
-    capacity: Literal["sparse", "vibrant", "full"]
-    gate: Literal["clear", "slow", "blocked"]
-    photo_base64: Optional[str] = None
-    coordinates: Coordinates
 
 class Rating(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -201,24 +186,40 @@ class Rating(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_correction: bool = False
     vibe_score: float = 0.0
+    synced: bool = True  # For offline-first
 
-class CheckIn(BaseModel):
+class RatingCreate(BaseModel):
+    user_id: str
+    venue_id: str
+    energy: Literal["chill", "popping", "electric"]
+    capacity: Literal["sparse", "vibrant", "full"]
+    gate: Literal["clear", "slow", "blocked"]
+    photo_base64: Optional[str] = None
+    coordinates: Coordinates
+    offline_id: Optional[str] = None  # For offline sync
+
+# Merchant Wallet System
+class MerchantWallet(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_id: str
+    merchant_id: str
     venue_id: str
+    balance: float = 0.0
+    total_deposited: float = 0.0
+    total_spent: float = 0.0
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class WalletTransaction(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    wallet_id: str
+    type: Literal["deposit", "pulse_drop_spend", "refund"]
+    amount: float
+    balance_before: float
+    balance_after: float
+    reference: Optional[str] = None
+    pulse_drop_id: Optional[str] = None
+    paystack_reference: Optional[str] = None
+    description: str
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    coordinates: Coordinates
-    verified: bool = False
-
-class CheckInCreate(BaseModel):
-    user_id: str
-    venue_id: str
-    coordinates: Coordinates
-
-class PulseDropCreate(BaseModel):
-    venue_id: str
-    tier: Literal["spark", "flare", "supernova"]
-    message: str
 
 class PulseDrop(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -230,37 +231,29 @@ class PulseDrop(BaseModel):
     glow_boost: float
     chart_placement: Optional[int] = None
     price_paid: float
-    platform_fee: float
-    venue_share: float
     city: str
     expires_at: datetime
+    # ROI Metrics
+    profile_views_before: int = 0
+    profile_views_after: int = 0
+    direction_clicks_before: int = 0
+    direction_clicks_after: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class FastPassPurchase(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_id: str
+class PulseDropCreate(BaseModel):
     venue_id: str
-    venue_name: str
-    price: float
-    platform_fee: float
-    venue_share: float
-    city: str
-    valid_date: datetime
-    qr_code: str
-    is_used: bool = False
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    tier: Literal["spark", "flare", "supernova"]
+    message: str
 
-class Transaction(BaseModel):
+# Platform Treasury
+class PlatformRevenue(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    type: Literal["fast_pass", "pulse_drop"]
+    type: Literal["pulse_drop"]
     venue_id: str
     venue_name: str
-    user_id: Optional[str] = None
     amount: float
-    platform_fee: float
-    venue_share: float
+    tier: Optional[str] = None
     city: str
-    tier: Optional[str] = None  # For pulse drops
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class AdminOverride(BaseModel):
@@ -271,13 +264,6 @@ class AdminOverride(BaseModel):
     override_value: Optional[float] = None
     reason: str
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-# ===== Auth Models =====
-class UserSession(BaseModel):
-    user_id: str
-    session_token: str
-    expires_at: datetime
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # ===== Helper Functions =====
 
@@ -305,6 +291,18 @@ def is_within_geofence(user_coords: Coordinates, venue_coords: Coordinates, radi
     )
     return distance <= radius_m
 
+def verify_paystack_signature(payload: str, signature: str) -> bool:
+    """Verify Paystack webhook signature"""
+    if not PAYSTACK_SECRET_KEY:
+        return True  # Skip verification if no key configured
+    hash_object = hmac.new(
+        PAYSTACK_SECRET_KEY.encode(),
+        payload.encode(),
+        hashlib.sha512
+    )
+    computed_signature = hash_object.hexdigest()
+    return hmac.compare_digest(computed_signature, signature)
+
 async def calculate_venue_aggregate(venue_id: str) -> dict:
     now = datetime.now(timezone.utc)
     hour_ago = now - timedelta(hours=1)
@@ -313,7 +311,6 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
     if not venue:
         return {}
     
-    # Check if suppressed
     if venue.get("is_suppressed"):
         return {
             "current_vibe_score": 0,
@@ -388,19 +385,13 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
     gate_level = max(gate_counts, key=gate_counts.get)
     
     # Calculate velocity
-    recent_ratings = [r for r in ratings if (now - r.get("timestamp", now).replace(tzinfo=timezone.utc) if r.get("timestamp", now).tzinfo is None else (now - r.get("timestamp", now))).total_seconds() / 60 <= 15]
-    older_ratings = [r for r in ratings if (now - r.get("timestamp", now).replace(tzinfo=timezone.utc) if r.get("timestamp", now).tzinfo is None else (now - r.get("timestamp", now))).total_seconds() / 60 > 15]
+    recent_count = sum(1 for r in ratings if (now - r.get("timestamp", now).replace(tzinfo=timezone.utc) if r.get("timestamp", now).tzinfo is None else (now - r.get("timestamp", now))).total_seconds() / 60 <= 15)
+    older_count = len(ratings) - recent_count
     
-    if recent_ratings and older_ratings:
-        recent_avg = sum(r.get("vibe_score", 50) for r in recent_ratings) / len(recent_ratings)
-        older_avg = sum(r.get("vibe_score", 50) for r in older_ratings) / len(older_ratings)
-        
-        if recent_avg > older_avg + 10:
-            velocity = "heating_up"
-        elif recent_avg < older_avg - 10:
-            velocity = "cooling_down"
-        else:
-            velocity = "stable"
+    if recent_count > older_count * 1.5:
+        velocity = "heating_up"
+    elif recent_count < older_count * 0.5:
+        velocity = "cooling_down"
     else:
         velocity = "stable"
     
@@ -444,16 +435,12 @@ async def update_user_clout(user_id: str, venue_id: str, rating_score: float):
     
     if new_accuracy >= 80 and new_total >= 50:
         status = "elite"
-        passes = 3
     elif new_accuracy >= 70 and new_total >= 20:
         status = "scout"
-        passes = 1
     elif new_total >= 10:
         status = "regular"
-        passes = 0
     else:
         status = "newbie"
-        passes = 0
     
     await db.users.update_one(
         {"id": user_id},
@@ -461,8 +448,7 @@ async def update_user_clout(user_id: str, venue_id: str, rating_score: float):
             "rating_accuracy_score": round(new_accuracy, 1),
             "total_ratings": new_total,
             "clout_points": new_clout,
-            "scout_status": status,
-            "fast_lane_passes": user.get("fast_lane_passes", 0) + passes
+            "scout_status": status
         }}
     )
 
@@ -495,39 +481,34 @@ async def get_current_user(request: Request) -> Optional[dict]:
 
 # ===== Socket.IO Events =====
 
+connected_clients = set()
+
 @sio.event
 async def connect(sid, environ):
-    logger.info(f"Client connected: {sid}")
-    await sio.emit('connection_status', {'status': 'connected'}, to=sid)
+    connected_clients.add(sid)
+    logger.info(f"Client connected: {sid}, Total: {len(connected_clients)}")
+    await sio.emit('connection_status', {'status': 'connected', 'total_connections': len(connected_clients)}, to=sid)
 
 @sio.event
 async def disconnect(sid):
-    logger.info(f"Client disconnected: {sid}")
+    connected_clients.discard(sid)
+    logger.info(f"Client disconnected: {sid}, Total: {len(connected_clients)}")
 
 @sio.event
 async def join_venue(sid, data):
     venue_id = data.get('venue_id')
     if venue_id:
         await sio.enter_room(sid, f"venue_{venue_id}")
-        logger.info(f"Client {sid} joined venue room: {venue_id}")
-
-@sio.event
-async def leave_venue(sid, data):
-    venue_id = data.get('venue_id')
-    if venue_id:
-        await sio.leave_room(sid, f"venue_{venue_id}")
 
 @sio.event
 async def join_city(sid, data):
     city = data.get('city', 'lagos')
     await sio.enter_room(sid, f"city_{city}")
-    logger.info(f"Client {sid} joined city room: {city}")
 
 @sio.event
 async def subscribe_leaderboard(sid, data=None):
     city = data.get('city', 'all') if data else 'all'
     await sio.enter_room(sid, f"leaderboard_{city}")
-    logger.info(f"Client {sid} subscribed to leaderboard: {city}")
 
 async def broadcast_venue_update(venue_id: str):
     venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
@@ -553,7 +534,7 @@ async def broadcast_leaderboard(city: str = "all"):
 
 @api_router.get("/")
 async def root():
-    return {"message": "Vibe App API", "version": "2.0.0"}
+    return {"message": "Vibe App API", "version": "3.0.0"}
 
 @api_router.get("/health")
 async def health():
@@ -570,7 +551,6 @@ async def create_session(request: Request, response: Response):
     if not session_id:
         raise HTTPException(status_code=400, detail="session_id required")
     
-    # Call Emergent auth to get user data
     async with httpx.AsyncClient() as client:
         auth_response = await client.get(
             "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
@@ -586,18 +566,15 @@ async def create_session(request: Request, response: Response):
     picture = auth_data.get("picture")
     session_token = auth_data.get("session_token")
     
-    # Check if user exists
     existing_user = await db.users.find_one({"email": email}, {"_id": 0})
     
     if existing_user:
         user_id = existing_user["id"]
-        # Update user info
         await db.users.update_one(
             {"id": user_id},
             {"$set": {"name": name, "picture": picture}}
         )
     else:
-        # Create new user
         user_id = str(uuid.uuid4())
         new_user = User(
             id=user_id,
@@ -610,16 +587,15 @@ async def create_session(request: Request, response: Response):
         )
         await db.users.insert_one(new_user.dict())
     
-    # Create session
     expires_at = datetime.now(timezone.utc) + timedelta(days=7)
-    session = UserSession(
-        user_id=user_id,
-        session_token=session_token,
-        expires_at=expires_at
-    )
-    await db.user_sessions.insert_one(session.dict())
+    session = {
+        "user_id": user_id,
+        "session_token": session_token,
+        "expires_at": expires_at,
+        "created_at": datetime.now(timezone.utc)
+    }
+    await db.user_sessions.insert_one(session)
     
-    # Set cookie
     response.set_cookie(
         key="session_token",
         value=session_token,
@@ -635,7 +611,6 @@ async def create_session(request: Request, response: Response):
 
 @api_router.get("/auth/me")
 async def get_me(request: Request):
-    """Get current authenticated user"""
     user = await get_current_user(request)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -643,17 +618,15 @@ async def get_me(request: Request):
 
 @api_router.post("/auth/logout")
 async def logout(request: Request, response: Response):
-    """Logout user"""
     session_token = request.cookies.get("session_token")
     if session_token:
         await db.user_sessions.delete_one({"session_token": session_token})
-    
     response.delete_cookie(key="session_token", path="/")
     return {"message": "Logged out"}
 
 # ===== User Routes =====
 
-@api_router.post("/users", response_model=User)
+@api_router.post("/users")
 async def create_user(user_data: UserCreate):
     existing = await db.users.find_one({"username": user_data.username})
     if existing:
@@ -661,7 +634,7 @@ async def create_user(user_data: UserCreate):
     
     user = User(**user_data.dict())
     await db.users.insert_one(user.dict())
-    return user
+    return user.dict()
 
 @api_router.get("/users/{user_id}")
 async def get_user(user_id: str):
@@ -670,45 +643,17 @@ async def get_user(user_id: str):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@api_router.get("/users/phone/{phone}")
-async def get_user_by_phone(phone: str):
-    user = await db.users.find_one({"phone": phone}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
-
 # ===== City Routes =====
 
 @api_router.get("/cities")
 async def get_cities():
-    """Get all available cities"""
     return list(CITIES.values())
-
-@api_router.get("/cities/{city_code}")
-async def get_city(city_code: str):
-    """Get city details"""
-    if city_code not in CITIES:
-        raise HTTPException(status_code=404, detail="City not found")
-    return CITIES[city_code]
 
 # ===== Venue Routes =====
 
-@api_router.post("/venues")
-async def create_venue(venue_data: VenueCreate):
-    venue = Venue(**venue_data.dict())
-    await db.venues.insert_one(venue.dict())
-    return venue
-
 @api_router.get("/venues")
-async def get_venues(city: Optional[str] = None, area: Optional[str] = None, venue_type: Optional[str] = None):
-    query = {}
-    if city:
-        query["city"] = city
-    if area:
-        query["area"] = area
-    if venue_type:
-        query["venue_type"] = venue_type
-    
+async def get_venues(city: Optional[str] = None):
+    query = {"city": city} if city else {}
     venues = await db.venues.find(query, {"_id": 0}).to_list(100)
     return venues
 
@@ -717,23 +662,17 @@ async def get_venue(venue_id: str):
     venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
+    
+    # Increment profile views
+    await db.venues.update_one({"id": venue_id}, {"$inc": {"profile_views": 1}})
+    
     return venue
 
-@api_router.get("/venues/nearby/{lat}/{lng}")
-async def get_nearby_venues(lat: float, lng: float, radius_km: float = 5.0, city: Optional[str] = None):
-    query = {"city": city} if city else {}
-    venues = await db.venues.find(query, {"_id": 0}).to_list(100)
-    nearby = []
-    
-    for v in venues:
-        coords = v.get("coordinates", {})
-        distance = calculate_distance(lat, lng, coords.get("lat", 0), coords.get("lng", 0))
-        if distance <= radius_km * 1000:
-            v["distance_m"] = round(distance)
-            nearby.append(v)
-    
-    nearby.sort(key=lambda x: x.get("distance_m", 0))
-    return nearby
+@api_router.post("/venues/{venue_id}/direction-click")
+async def record_direction_click(venue_id: str):
+    """Record when user clicks direction/location icon"""
+    await db.venues.update_one({"id": venue_id}, {"$inc": {"direction_clicks": 1}})
+    return {"message": "Direction click recorded"}
 
 # ===== Rating Routes =====
 
@@ -773,7 +712,7 @@ async def create_rating(rating_data: RatingCreate):
     
     is_correction = len(existing_ratings) == 1
     rating = Rating(
-        **rating_data.dict(exclude={"coordinates"}),
+        **rating_data.dict(exclude={"coordinates", "offline_id"}),
         vibe_score=vibe_score,
         is_correction=is_correction
     )
@@ -805,15 +744,21 @@ async def create_rating(rating_data: RatingCreate):
         "venue_vibe_score": aggregate.get("current_vibe_score", 0)
     }
 
-@api_router.get("/ratings/venue/{venue_id}")
-async def get_venue_ratings(venue_id: str, hours: int = 24):
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
-    ratings = await db.ratings.find({
-        "venue_id": venue_id,
-        "timestamp": {"$gte": cutoff},
-        "superseded": {"$ne": True}
-    }, {"_id": 0}).sort("timestamp", -1).to_list(100)
-    return ratings
+@api_router.post("/ratings/sync")
+async def sync_offline_ratings(request: Request):
+    """Sync ratings that were created offline"""
+    body = await request.json()
+    ratings = body.get("ratings", [])
+    synced = []
+    
+    for rating_data in ratings:
+        try:
+            result = await create_rating(RatingCreate(**rating_data))
+            synced.append({"offline_id": rating_data.get("offline_id"), "success": True})
+        except Exception as e:
+            synced.append({"offline_id": rating_data.get("offline_id"), "success": False, "error": str(e)})
+    
+    return {"synced": synced}
 
 @api_router.get("/ratings/user/{user_id}/venue/{venue_id}")
 async def get_user_venue_ratings(user_id: str, venue_id: str):
@@ -833,46 +778,18 @@ async def get_user_venue_ratings(user_id: str, venue_id: str):
         "ratings": ratings
     }
 
-# ===== Check-in Routes =====
-
-@api_router.post("/checkins")
-async def create_checkin(checkin_data: CheckInCreate):
-    venue = await db.venues.find_one({"id": checkin_data.venue_id})
-    if not venue:
-        raise HTTPException(status_code=404, detail="Venue not found")
-    
-    venue_coords = Coordinates(**venue["coordinates"])
-    verified = is_within_geofence(checkin_data.coordinates, venue_coords)
-    
-    checkin = CheckIn(
-        **checkin_data.dict(),
-        verified=verified
-    )
-    await db.checkins.insert_one(checkin.dict())
-    
-    return {
-        "checkin": checkin.dict(),
-        "verified": verified,
-        "can_rate": verified,
-        "message": "Check-in verified! You can now rate this venue." if verified else "You're not close enough to check in."
-    }
-
 # ===== Leaderboard Routes =====
 
 @api_router.get("/leaderboard")
 async def get_leaderboard(city: Optional[str] = None, limit: int = 20):
-    """Get live venue leaderboard sorted by vibe score"""
     query = {"is_suppressed": {"$ne": True}}
     if city:
         query["city"] = city
     
-    # Get venues with active pulse drop boosts first
     now = datetime.now(timezone.utc)
     venues = await db.venues.find(query, {"_id": 0}).to_list(100)
     
-    # Sort by chart placement (if active) then by score
     def sort_key(v):
-        # Check if pulse drop is active and has chart placement
         if v.get("pulse_expires_at"):
             expires = v.get("pulse_expires_at")
             if isinstance(expires, str):
@@ -905,7 +822,6 @@ async def get_leaderboard(city: Optional[str] = None, limit: int = 20):
 
 @api_router.get("/leaderboard/national")
 async def get_national_leaderboard(limit: int = 20):
-    """Get national trending chart across all cities"""
     venues = await db.venues.find({"is_suppressed": {"$ne": True}}, {"_id": 0}).sort("current_vibe_score", -1).limit(limit).to_list(limit)
     
     leaderboard = []
@@ -919,93 +835,164 @@ async def get_national_leaderboard(limit: int = 20):
     
     return leaderboard
 
-# ===== Fast Pass Routes =====
+# ===== Merchant Wallet Routes =====
 
-@api_router.get("/fast-pass/venues")
-async def get_fast_pass_venues(city: Optional[str] = None):
-    """Get venues with fast pass enabled"""
-    query = {"fast_pass_enabled": True}
-    if city:
-        query["city"] = city
+@api_router.get("/merchant/wallet/{venue_id}")
+async def get_merchant_wallet(venue_id: str):
+    """Get merchant wallet for a venue"""
+    wallet = await db.merchant_wallets.find_one({"venue_id": venue_id}, {"_id": 0})
+    if not wallet:
+        # Create new wallet
+        wallet = MerchantWallet(
+            merchant_id=venue_id,  # Using venue_id as merchant_id for simplicity
+            venue_id=venue_id
+        ).dict()
+        await db.merchant_wallets.insert_one(wallet)
     
-    venues = await db.venues.find(query, {"_id": 0}).to_list(100)
-    return venues
+    # Get recent transactions
+    transactions = await db.wallet_transactions.find(
+        {"wallet_id": wallet["id"]}
+    ).sort("timestamp", -1).limit(20).to_list(20)
+    
+    return {
+        "wallet": wallet,
+        "transactions": transactions
+    }
 
-@api_router.post("/fast-pass/purchase")
-async def purchase_fast_pass(request: Request):
-    """Purchase a fast pass for a venue"""
+@api_router.post("/merchant/wallet/{venue_id}/topup/initialize")
+async def initialize_wallet_topup(venue_id: str, request: Request):
+    """Initialize Paystack payment for wallet top-up"""
     body = await request.json()
-    user_id = body.get("user_id")
-    venue_id = body.get("venue_id")
+    amount = body.get("amount", 0)
+    email = body.get("email", "")
     
-    venue = await db.venues.find_one({"id": venue_id})
-    if not venue:
-        raise HTTPException(status_code=404, detail="Venue not found")
+    if amount < 1000:
+        raise HTTPException(status_code=400, detail="Minimum top-up is ₦1,000")
     
-    if not venue.get("fast_pass_enabled"):
-        raise HTTPException(status_code=400, detail="Fast pass not available for this venue")
+    reference = f"VIBE-TOPUP-{venue_id[:8]}-{uuid.uuid4().hex[:8]}"
     
-    price = venue.get("fast_pass_price", 5000)
-    platform_fee = price * (PLATFORM_FEE_PERCENT / 100)
-    venue_share = price * (VENUE_SHARE_PERCENT / 100)
+    # Store pending transaction
+    await db.pending_topups.insert_one({
+        "reference": reference,
+        "venue_id": venue_id,
+        "amount": amount,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc)
+    })
     
-    # Create purchase record
-    purchase = FastPassPurchase(
-        user_id=user_id,
-        venue_id=venue_id,
-        venue_name=venue["name"],
-        price=price,
-        platform_fee=platform_fee,
-        venue_share=venue_share,
-        city=venue.get("city", "lagos"),
-        valid_date=datetime.now(timezone.utc),
-        qr_code=f"FP-{uuid.uuid4().hex[:8].upper()}"
-    )
-    await db.fast_passes.insert_one(purchase.dict())
+    # If Paystack is configured, initialize with their API
+    if PAYSTACK_SECRET_KEY:
+        async with httpx.AsyncClient() as client:
+            paystack_response = await client.post(
+                "https://api.paystack.co/transaction/initialize",
+                headers={
+                    "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "email": email,
+                    "amount": int(amount * 100),  # Convert to Kobo
+                    "reference": reference,
+                    "metadata": {
+                        "venue_id": venue_id,
+                        "type": "wallet_topup"
+                    }
+                }
+            )
+            
+            if paystack_response.status_code == 200:
+                data = paystack_response.json()
+                return {
+                    "authorization_url": data["data"]["authorization_url"],
+                    "reference": reference
+                }
     
-    # Create transaction record
-    transaction = Transaction(
-        type="fast_pass",
-        venue_id=venue_id,
-        venue_name=venue["name"],
-        user_id=user_id,
-        amount=price,
-        platform_fee=platform_fee,
-        venue_share=venue_share,
-        city=venue.get("city", "lagos")
-    )
-    await db.transactions.insert_one(transaction.dict())
-    
-    # Update venue fast pass count
-    await db.venues.update_one(
-        {"id": venue_id},
-        {"$inc": {"fast_passes_sold_today": 1}}
-    )
-    
-    # Update user's purchased passes
-    await db.users.update_one(
-        {"id": user_id},
-        {"$push": {"fast_passes_purchased": venue_id}}
-    )
-    
-    return purchase.dict()
+    # Mock response for testing without Paystack
+    return {
+        "authorization_url": f"https://checkout.paystack.com/mock/{reference}",
+        "reference": reference,
+        "mock": True
+    }
 
-@api_router.get("/fast-pass/user/{user_id}")
-async def get_user_fast_passes(user_id: str):
-    """Get user's fast passes"""
-    passes = await db.fast_passes.find({"user_id": user_id, "is_used": False}, {"_id": 0}).to_list(100)
-    return passes
+@api_router.post("/merchant/wallet/verify/{reference}")
+async def verify_wallet_topup(reference: str):
+    """Verify Paystack payment and credit wallet"""
+    pending = await db.pending_topups.find_one({"reference": reference})
+    if not pending:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    if pending.get("status") == "completed":
+        return {"message": "Already processed", "success": True}
+    
+    # Verify with Paystack if configured
+    verified = False
+    if PAYSTACK_SECRET_KEY:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"https://api.paystack.co/transaction/verify/{reference}",
+                headers={"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"}
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("data", {}).get("status") == "success":
+                    verified = True
+    else:
+        # Auto-verify for testing
+        verified = True
+    
+    if verified:
+        # Credit wallet
+        wallet = await db.merchant_wallets.find_one({"venue_id": pending["venue_id"]})
+        if not wallet:
+            wallet = MerchantWallet(
+                merchant_id=pending["venue_id"],
+                venue_id=pending["venue_id"]
+            ).dict()
+            await db.merchant_wallets.insert_one(wallet)
+            wallet = await db.merchant_wallets.find_one({"venue_id": pending["venue_id"]})
+        
+        balance_before = wallet.get("balance", 0)
+        new_balance = balance_before + pending["amount"]
+        
+        await db.merchant_wallets.update_one(
+            {"id": wallet["id"]},
+            {"$set": {
+                "balance": new_balance,
+                "total_deposited": wallet.get("total_deposited", 0) + pending["amount"]
+            }}
+        )
+        
+        # Record transaction
+        tx = WalletTransaction(
+            wallet_id=wallet["id"],
+            type="deposit",
+            amount=pending["amount"],
+            balance_before=balance_before,
+            balance_after=new_balance,
+            paystack_reference=reference,
+            description=f"Wallet top-up via Paystack"
+        )
+        await db.wallet_transactions.insert_one(tx.dict())
+        
+        # Mark as completed
+        await db.pending_topups.update_one(
+            {"reference": reference},
+            {"$set": {"status": "completed"}}
+        )
+        
+        return {"success": True, "new_balance": new_balance}
+    
+    raise HTTPException(status_code=400, detail="Payment verification failed")
 
 # ===== Pulse Drop Routes =====
 
 @api_router.get("/pulse-drops/tiers")
 async def get_pulse_drop_tiers():
-    """Get available pulse drop tiers and pricing"""
     return PULSE_DROP_TIERS
 
 @api_router.post("/pulse-drops/purchase")
-async def purchase_pulse_drop(drop_data: PulseDropCreate, request: Request):
-    """Purchase and activate a pulse drop"""
+async def purchase_pulse_drop(drop_data: PulseDropCreate):
+    """Purchase pulse drop using wallet balance (instant credit to treasury)"""
     venue = await db.venues.find_one({"id": drop_data.venue_id})
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
@@ -1015,12 +1002,52 @@ async def purchase_pulse_drop(drop_data: PulseDropCreate, request: Request):
         raise HTTPException(status_code=400, detail="Invalid tier")
     
     price = tier_config["price"]
-    platform_fee = price * (PLATFORM_FEE_PERCENT / 100)
-    venue_share = price * (VENUE_SHARE_PERCENT / 100)
     
-    expires_at = datetime.now(timezone.utc) + timedelta(hours=tier_config["duration_hours"])
+    # Check wallet balance
+    wallet = await db.merchant_wallets.find_one({"venue_id": drop_data.venue_id})
+    if not wallet or wallet.get("balance", 0) < price:
+        raise HTTPException(
+            status_code=402, 
+            detail=f"Insufficient balance. Required: ₦{price:,}, Available: ₦{wallet.get('balance', 0) if wallet else 0:,}"
+        )
+    
+    # Deduct from wallet
+    balance_before = wallet["balance"]
+    new_balance = balance_before - price
+    
+    await db.merchant_wallets.update_one(
+        {"id": wallet["id"]},
+        {"$set": {
+            "balance": new_balance,
+            "total_spent": wallet.get("total_spent", 0) + price
+        }}
+    )
+    
+    # Record wallet transaction
+    wallet_tx = WalletTransaction(
+        wallet_id=wallet["id"],
+        type="pulse_drop_spend",
+        amount=price,
+        balance_before=balance_before,
+        balance_after=new_balance,
+        description=f"Pulse Drop - {tier_config['name']}"
+    )
+    await db.wallet_transactions.insert_one(wallet_tx.dict())
+    
+    # Credit platform treasury immediately
+    revenue = PlatformRevenue(
+        type="pulse_drop",
+        venue_id=drop_data.venue_id,
+        venue_name=venue["name"],
+        amount=price,
+        tier=drop_data.tier,
+        city=venue.get("city", "lagos")
+    )
+    await db.platform_revenue.insert_one(revenue.dict())
     
     # Create pulse drop
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=tier_config["duration_hours"])
+    
     pulse_drop = PulseDrop(
         venue_id=drop_data.venue_id,
         venue_name=venue["name"],
@@ -1030,10 +1057,10 @@ async def purchase_pulse_drop(drop_data: PulseDropCreate, request: Request):
         glow_boost=tier_config["glow_boost"],
         chart_placement=tier_config.get("chart_placement"),
         price_paid=price,
-        platform_fee=platform_fee,
-        venue_share=venue_share,
         city=venue.get("city", "lagos"),
-        expires_at=expires_at
+        expires_at=expires_at,
+        profile_views_before=venue.get("profile_views", 0),
+        direction_clicks_before=venue.get("direction_clicks", 0)
     )
     await db.pulse_drops.insert_one(pulse_drop.dict())
     
@@ -1052,19 +1079,6 @@ async def purchase_pulse_drop(drop_data: PulseDropCreate, request: Request):
     aggregate = await calculate_venue_aggregate(drop_data.venue_id)
     await db.venues.update_one({"id": drop_data.venue_id}, {"$set": aggregate})
     
-    # Create transaction
-    transaction = Transaction(
-        type="pulse_drop",
-        venue_id=drop_data.venue_id,
-        venue_name=venue["name"],
-        amount=price,
-        platform_fee=platform_fee,
-        venue_share=venue_share,
-        city=venue.get("city", "lagos"),
-        tier=drop_data.tier
-    )
-    await db.transactions.insert_one(transaction.dict())
-    
     # Broadcast updates
     await broadcast_venue_update(drop_data.venue_id)
     await broadcast_leaderboard(venue.get("city", "lagos"))
@@ -1077,7 +1091,10 @@ async def purchase_pulse_drop(drop_data: PulseDropCreate, request: Request):
         "tier": tier_config
     }, room=f"city_{venue.get('city', 'lagos')}")
     
-    return pulse_drop.dict()
+    return {
+        "pulse_drop": pulse_drop.dict(),
+        "new_wallet_balance": new_balance
+    }
 
 @api_router.get("/pulse-drops/nearby/{lat}/{lng}")
 async def get_nearby_pulse_drops(lat: float, lng: float, radius_km: float = 10.0):
@@ -1101,7 +1118,7 @@ async def get_nearby_pulse_drops(lat: float, lng: float, radius_km: float = 10.0
 
 @api_router.get("/merchant/venue/{venue_id}/stats")
 async def get_merchant_venue_stats(venue_id: str):
-    """Get detailed stats for venue owner"""
+    """Get detailed stats for venue owner with ROI metrics"""
     venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
@@ -1110,26 +1127,43 @@ async def get_merchant_venue_stats(venue_id: str):
     hour_ago = now - timedelta(hours=1)
     day_ago = now - timedelta(hours=24)
     week_ago = now - timedelta(days=7)
-    month_ago = now - timedelta(days=30)
     
     # Rating stats
     ratings_1h = await db.ratings.count_documents({"venue_id": venue_id, "timestamp": {"$gte": hour_ago}})
     ratings_24h = await db.ratings.count_documents({"venue_id": venue_id, "timestamp": {"$gte": day_ago}})
     ratings_7d = await db.ratings.count_documents({"venue_id": venue_id, "timestamp": {"$gte": week_ago}})
     
-    # Check-in stats
-    checkins_24h = await db.checkins.count_documents({"venue_id": venue_id, "timestamp": {"$gte": day_ago}, "verified": True})
+    # Engagement stats
+    profile_views = venue.get("profile_views", 0)
+    direction_clicks = venue.get("direction_clicks", 0)
     
-    # Revenue stats
-    fast_pass_revenue = await db.transactions.aggregate([
-        {"$match": {"venue_id": venue_id, "type": "fast_pass", "timestamp": {"$gte": month_ago}}},
-        {"$group": {"_id": None, "total": {"$sum": "$venue_share"}}}
-    ]).to_list(1)
+    # Calculate district average for Heatmap Delta
+    district_venues = await db.venues.find({
+        "city": venue.get("city"),
+        "area": venue.get("area")
+    }, {"_id": 0}).to_list(50)
     
-    pulse_drop_revenue = await db.transactions.aggregate([
-        {"$match": {"venue_id": venue_id, "type": "pulse_drop", "timestamp": {"$gte": month_ago}}},
-        {"$group": {"_id": None, "total": {"$sum": "$venue_share"}}}
-    ]).to_list(1)
+    district_avg = sum(v.get("current_vibe_score", 0) for v in district_venues) / len(district_venues) if district_venues else 0
+    heatmap_delta = venue.get("current_vibe_score", 0) - district_avg
+    
+    # Pulse Drop ROI
+    recent_drops = await db.pulse_drops.find({
+        "venue_id": venue_id,
+        "created_at": {"$gte": week_ago}
+    }, {"_id": 0}).to_list(20)
+    
+    pulse_drop_roi = []
+    for drop in recent_drops:
+        views_gained = venue.get("profile_views", 0) - drop.get("profile_views_before", 0)
+        directions_gained = venue.get("direction_clicks", 0) - drop.get("direction_clicks_before", 0)
+        pulse_drop_roi.append({
+            "id": drop["id"],
+            "tier": drop["tier"],
+            "price": drop["price_paid"],
+            "profile_views_gained": views_gained,
+            "direction_clicks_gained": directions_gained,
+            "created_at": drop["created_at"]
+        })
     
     # Hourly trend
     hourly_scores = []
@@ -1144,15 +1178,18 @@ async def get_merchant_venue_stats(venue_id: str):
         avg_score = sum(r.get("vibe_score", 0) for r in ratings) / len(ratings) if ratings else 0
         hourly_scores.append({"hour": h, "score": round(avg_score, 1), "count": len(ratings)})
     
-    # Competition - top 5 venues in same city
+    # Competition - top 5 venues in same area
     competitors = await db.venues.find(
-        {"city": venue.get("city"), "id": {"$ne": venue_id}},
+        {"city": venue.get("city"), "area": venue.get("area"), "id": {"$ne": venue_id}},
         {"_id": 0}
     ).sort("current_vibe_score", -1).limit(5).to_list(5)
     
     # Get venue rank
-    all_city_venues = await db.venues.find({"city": venue.get("city")}, {"_id": 0}).sort("current_vibe_score", -1).to_list(100)
-    rank = next((i+1 for i, v in enumerate(all_city_venues) if v["id"] == venue_id), 0)
+    all_area_venues = await db.venues.find({"city": venue.get("city"), "area": venue.get("area")}, {"_id": 0}).sort("current_vibe_score", -1).to_list(100)
+    rank = next((i+1 for i, v in enumerate(all_area_venues) if v["id"] == venue_id), 0)
+    
+    # Wallet balance
+    wallet = await db.merchant_wallets.find_one({"venue_id": venue_id}, {"_id": 0})
     
     return {
         "venue": venue,
@@ -1160,42 +1197,28 @@ async def get_merchant_venue_stats(venue_id: str):
             "ratings_1h": ratings_1h,
             "ratings_24h": ratings_24h,
             "ratings_7d": ratings_7d,
-            "checkins_24h": checkins_24h,
+            "profile_views": profile_views,
+            "direction_clicks": direction_clicks,
             "current_rank": rank,
-            "total_city_venues": len(all_city_venues)
+            "total_area_venues": len(all_area_venues)
         },
-        "revenue": {
-            "fast_pass_30d": fast_pass_revenue[0]["total"] if fast_pass_revenue else 0,
-            "pulse_drop_30d": pulse_drop_revenue[0]["total"] if pulse_drop_revenue else 0,
-            "fast_passes_sold_today": venue.get("fast_passes_sold_today", 0)
+        "heatmap_delta": {
+            "venue_score": venue.get("current_vibe_score", 0),
+            "district_average": round(district_avg, 1),
+            "delta": round(heatmap_delta, 1)
         },
+        "pulse_drop_roi": pulse_drop_roi,
         "hourly_trend": hourly_scores,
         "competitors": competitors,
+        "wallet_balance": wallet.get("balance", 0) if wallet else 0,
         "pulse_drop_tiers": PULSE_DROP_TIERS
     }
-
-@api_router.put("/merchant/venue/{venue_id}/fast-pass")
-async def update_fast_pass_settings(venue_id: str, request: Request):
-    """Update fast pass settings for a venue"""
-    body = await request.json()
-    venue = await db.venues.find_one({"id": venue_id})
-    if not venue:
-        raise HTTPException(status_code=404, detail="Venue not found")
-    
-    update_data = {}
-    if "enabled" in body:
-        update_data["fast_pass_enabled"] = body["enabled"]
-    if "price" in body:
-        update_data["fast_pass_price"] = body["price"]
-    
-    await db.venues.update_one({"id": venue_id}, {"$set": update_data})
-    return {"message": "Fast pass settings updated"}
 
 # ===== Super Admin Routes =====
 
 @api_router.get("/admin/treasury")
-async def get_global_treasury(request: Request):
-    """Get global treasury stats (super admin only)"""
+async def get_global_treasury(request: Request, city: Optional[str] = None):
+    """Get global treasury stats with Revenue Heatmap"""
     user = await get_current_user(request)
     if not user or not user.get("is_super_admin"):
         raise HTTPException(status_code=403, detail="Super admin access required")
@@ -1206,57 +1229,62 @@ async def get_global_treasury(request: Request):
     month_ago = now - timedelta(days=30)
     
     # Global stats
-    total_revenue = await db.transactions.aggregate([
-        {"$group": {"_id": None, "total": {"$sum": "$amount"}, "platform": {"$sum": "$platform_fee"}}}
+    total_revenue = await db.platform_revenue.aggregate([
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
     ]).to_list(1)
     
-    today_revenue = await db.transactions.aggregate([
+    today_revenue = await db.platform_revenue.aggregate([
         {"$match": {"timestamp": {"$gte": day_ago}}},
-        {"$group": {"_id": None, "total": {"$sum": "$amount"}, "platform": {"$sum": "$platform_fee"}}}
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
     ]).to_list(1)
     
-    # Revenue by city
-    city_revenue = await db.transactions.aggregate([
+    # Revenue by city (Revenue Heatmap)
+    city_revenue = await db.platform_revenue.aggregate([
         {"$match": {"timestamp": {"$gte": month_ago}}},
-        {"$group": {"_id": "$city", "total": {"$sum": "$amount"}, "platform": {"$sum": "$platform_fee"}, "count": {"$sum": 1}}}
+        {"$group": {
+            "_id": "$city",
+            "total": {"$sum": "$amount"},
+            "count": {"$sum": 1}
+        }}
     ]).to_list(10)
     
-    # Revenue by type
-    type_revenue = await db.transactions.aggregate([
+    # Revenue by tier
+    tier_revenue = await db.platform_revenue.aggregate([
         {"$match": {"timestamp": {"$gte": month_ago}}},
-        {"$group": {"_id": "$type", "total": {"$sum": "$amount"}, "platform": {"$sum": "$platform_fee"}, "count": {"$sum": 1}}}
+        {"$group": {
+            "_id": "$tier",
+            "total": {"$sum": "$amount"},
+            "count": {"$sum": 1}
+        }}
     ]).to_list(10)
     
-    # Venue stats
-    total_venues = await db.venues.count_documents({})
-    verified_venues = await db.venues.count_documents({"is_verified": True})
+    # Network Health
+    network_health = {
+        "active_connections": len(connected_clients),
+        "total_venues": await db.venues.count_documents({}),
+        "verified_venues": await db.venues.count_documents({"is_verified": True}),
+        "total_users": await db.users.count_documents({}),
+        "active_users_24h": len(await db.ratings.distinct("user_id", {"timestamp": {"$gte": day_ago}}))
+    }
     
-    # User stats
-    total_users = await db.users.count_documents({})
-    active_users_24h = await db.ratings.distinct("user_id", {"timestamp": {"$gte": day_ago}})
+    # Data Freshness
+    recent_ratings = await db.ratings.count_documents({"timestamp": {"$gte": now - timedelta(minutes=15)}})
+    total_hour_ratings = await db.ratings.count_documents({"timestamp": {"$gte": hour_ago}}) if 'hour_ago' in dir() else await db.ratings.count_documents({"timestamp": {"$gte": now - timedelta(hours=1)}})
+    data_freshness = (recent_ratings / total_hour_ratings * 100) if total_hour_ratings > 0 else 100
     
     return {
         "global": {
             "total_revenue": total_revenue[0]["total"] if total_revenue else 0,
-            "platform_revenue": total_revenue[0]["platform"] if total_revenue else 0,
-            "today_revenue": today_revenue[0]["total"] if today_revenue else 0,
-            "today_platform": today_revenue[0]["platform"] if today_revenue else 0
+            "today_revenue": today_revenue[0]["total"] if today_revenue else 0
         },
-        "by_city": {item["_id"]: {"total": item["total"], "platform": item["platform"], "transactions": item["count"]} for item in city_revenue},
-        "by_type": {item["_id"]: {"total": item["total"], "platform": item["platform"], "transactions": item["count"]} for item in type_revenue},
-        "venues": {
-            "total": total_venues,
-            "verified": verified_venues
-        },
-        "users": {
-            "total": total_users,
-            "active_24h": len(active_users_24h)
-        }
+        "revenue_by_city": {item["_id"]: {"total": item["total"], "transactions": item["count"]} for item in city_revenue if item["_id"]},
+        "revenue_by_tier": {item["_id"]: {"total": item["total"], "transactions": item["count"]} for item in tier_revenue if item["_id"]},
+        "network_health": network_health,
+        "data_freshness_percent": round(data_freshness, 1)
     }
 
 @api_router.get("/admin/venues")
 async def get_admin_venues(request: Request, city: Optional[str] = None, verified: Optional[bool] = None):
-    """Get all venues for admin management"""
     user = await get_current_user(request)
     if not user or not user.get("is_super_admin"):
         raise HTTPException(status_code=403, detail="Super admin access required")
@@ -1272,7 +1300,6 @@ async def get_admin_venues(request: Request, city: Optional[str] = None, verifie
 
 @api_router.post("/admin/venue/{venue_id}/verify")
 async def verify_venue(venue_id: str, request: Request):
-    """Verify a venue (super admin only)"""
     user = await get_current_user(request)
     if not user or not user.get("is_super_admin"):
         raise HTTPException(status_code=403, detail="Super admin access required")
@@ -1283,7 +1310,6 @@ async def verify_venue(venue_id: str, request: Request):
     
     await db.venues.update_one({"id": venue_id}, {"$set": {"is_verified": verified}})
     
-    # Log override
     override = AdminOverride(
         venue_id=venue_id,
         admin_id=user["id"],
@@ -1296,13 +1322,12 @@ async def verify_venue(venue_id: str, request: Request):
 
 @api_router.post("/admin/venue/{venue_id}/override")
 async def admin_override_venue(venue_id: str, request: Request):
-    """Apply admin override to venue (anti-spam, score adjustment)"""
     user = await get_current_user(request)
     if not user or not user.get("is_super_admin"):
         raise HTTPException(status_code=403, detail="Super admin access required")
     
     body = await request.json()
-    override_type = body.get("type")  # boost, suppress, score_override
+    override_type = body.get("type")
     value = body.get("value")
     reason = body.get("reason", "")
     
@@ -1319,11 +1344,9 @@ async def admin_override_venue(venue_id: str, request: Request):
     
     await db.venues.update_one({"id": venue_id}, {"$set": update_data})
     
-    # Recalculate venue
     aggregate = await calculate_venue_aggregate(venue_id)
     await db.venues.update_one({"id": venue_id}, {"$set": aggregate})
     
-    # Log override
     override = AdminOverride(
         venue_id=venue_id,
         admin_id=user["id"],
@@ -1337,15 +1360,58 @@ async def admin_override_venue(venue_id: str, request: Request):
     
     return {"message": f"Override applied: {override_type}"}
 
-@api_router.get("/admin/overrides")
-async def get_admin_overrides(request: Request, limit: int = 50):
-    """Get recent admin overrides"""
+@api_router.put("/admin/pulse-drop-pricing")
+async def update_pulse_drop_pricing(request: Request):
+    """Dynamically update Pulse Drop tier pricing"""
     user = await get_current_user(request)
     if not user or not user.get("is_super_admin"):
         raise HTTPException(status_code=403, detail="Super admin access required")
     
-    overrides = await db.admin_overrides.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
-    return overrides
+    body = await request.json()
+    tier = body.get("tier")
+    new_price = body.get("price")
+    
+    if tier not in PULSE_DROP_TIERS:
+        raise HTTPException(status_code=400, detail="Invalid tier")
+    
+    if new_price < 1000:
+        raise HTTPException(status_code=400, detail="Minimum price is ₦1,000")
+    
+    # Store in DB for persistence
+    await db.config.update_one(
+        {"key": f"pulse_drop_price_{tier}"},
+        {"$set": {"value": new_price}},
+        upsert=True
+    )
+    
+    # Update in-memory config
+    PULSE_DROP_TIERS[tier]["price"] = new_price
+    
+    return {"message": f"{tier} price updated to ₦{new_price:,}"}
+
+# ===== Paystack Webhook =====
+
+@api_router.post("/webhook/paystack")
+async def paystack_webhook(request: Request):
+    """Handle Paystack webhook for payment verification"""
+    signature = request.headers.get("x-paystack-signature", "")
+    body = await request.body()
+    
+    if not verify_paystack_signature(body.decode(), signature):
+        logger.warning("Invalid Paystack webhook signature")
+        return JSONResponse(status_code=401, content={"status": "unauthorized"})
+    
+    payload = await request.json()
+    
+    if payload.get("event") == "charge.success":
+        data = payload.get("data", {})
+        reference = data.get("reference", "")
+        
+        if reference.startswith("VIBE-TOPUP-"):
+            # Process wallet top-up
+            await verify_wallet_topup(reference)
+    
+    return JSONResponse(status_code=200, content={"status": "ok"})
 
 # ===== Seed Data Route =====
 
@@ -1355,14 +1421,13 @@ async def seed_data():
     await db.venues.delete_many({})
     await db.ratings.delete_many({})
     await db.users.delete_many({})
-    await db.checkins.delete_many({})
     await db.pulse_drops.delete_many({})
-    await db.transactions.delete_many({})
-    await db.fast_passes.delete_many({})
+    await db.platform_revenue.delete_many({})
+    await db.merchant_wallets.delete_many({})
+    await db.wallet_transactions.delete_many({})
     await db.admin_overrides.delete_many({})
     await db.user_sessions.delete_many({})
     
-    # Lagos venues (Victoria Island & Ikoyi)
     venues_data = [
         {
             "name": "Club Quilox",
@@ -1378,8 +1443,8 @@ async def seed_data():
             "vibe_velocity": "heating_up",
             "is_featured": True,
             "is_verified": True,
-            "fast_pass_enabled": True,
-            "fast_pass_price": 10000
+            "profile_views": 1250,
+            "direction_clicks": 340
         },
         {
             "name": "Hard Rock Cafe Lagos",
@@ -1394,8 +1459,8 @@ async def seed_data():
             "gate_level": "clear",
             "vibe_velocity": "stable",
             "is_verified": True,
-            "fast_pass_enabled": True,
-            "fast_pass_price": 5000
+            "profile_views": 890,
+            "direction_clicks": 210
         },
         {
             "name": "Shiro Lagos",
@@ -1409,7 +1474,9 @@ async def seed_data():
             "capacity_level": "sparse",
             "gate_level": "clear",
             "vibe_velocity": "cooling_down",
-            "is_verified": True
+            "is_verified": True,
+            "profile_views": 650,
+            "direction_clicks": 180
         },
         {
             "name": "Backyard BBQ",
@@ -1422,7 +1489,9 @@ async def seed_data():
             "energy_level": "chill",
             "capacity_level": "sparse",
             "gate_level": "clear",
-            "vibe_velocity": "stable"
+            "vibe_velocity": "stable",
+            "profile_views": 320,
+            "direction_clicks": 95
         },
         {
             "name": "The Blowfish Hotel",
@@ -1438,8 +1507,8 @@ async def seed_data():
             "vibe_velocity": "heating_up",
             "is_featured": True,
             "is_verified": True,
-            "fast_pass_enabled": True,
-            "fast_pass_price": 7500
+            "profile_views": 980,
+            "direction_clicks": 275
         },
         {
             "name": "Sky Restaurant & Lounge",
@@ -1453,7 +1522,9 @@ async def seed_data():
             "capacity_level": "vibrant",
             "gate_level": "clear",
             "vibe_velocity": "stable",
-            "is_verified": True
+            "is_verified": True,
+            "profile_views": 540,
+            "direction_clicks": 145
         },
         {
             "name": "DNA Nightclub",
@@ -1469,8 +1540,8 @@ async def seed_data():
             "vibe_velocity": "heating_up",
             "is_featured": True,
             "is_verified": True,
-            "fast_pass_enabled": True,
-            "fast_pass_price": 15000
+            "profile_views": 2100,
+            "direction_clicks": 580
         },
         {
             "name": "The Place Restaurant",
@@ -1483,7 +1554,9 @@ async def seed_data():
             "energy_level": "chill",
             "capacity_level": "sparse",
             "gate_level": "clear",
-            "vibe_velocity": "cooling_down"
+            "vibe_velocity": "cooling_down",
+            "profile_views": 280,
+            "direction_clicks": 70
         },
         {
             "name": "Sailors Lounge",
@@ -1498,8 +1571,8 @@ async def seed_data():
             "gate_level": "slow",
             "vibe_velocity": "stable",
             "is_verified": True,
-            "fast_pass_enabled": True,
-            "fast_pass_price": 8000
+            "profile_views": 1150,
+            "direction_clicks": 310
         },
         {
             "name": "Cubana Lagos",
@@ -1513,13 +1586,23 @@ async def seed_data():
             "capacity_level": "vibrant",
             "gate_level": "slow",
             "vibe_velocity": "heating_up",
-            "is_verified": True
+            "is_verified": True,
+            "profile_views": 870,
+            "direction_clicks": 230
         }
     ]
     
     for venue_data in venues_data:
         venue = Venue(**venue_data)
         await db.venues.insert_one(venue.dict())
+        
+        # Create merchant wallet for each venue
+        wallet = MerchantWallet(
+            merchant_id=venue.id,
+            venue_id=venue.id,
+            balance=25000  # Starting balance for testing
+        )
+        await db.merchant_wallets.insert_one(wallet.dict())
     
     # Create test user
     test_user = User(
