@@ -9,6 +9,7 @@ import {
   Dimensions,
   ActivityIndicator,
   Platform,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +20,13 @@ import { MockMap } from '../../src/components/MockMap';
 import { VenueCard } from '../../src/components/VenueCard';
 
 const { width } = Dimensions.get('window');
+
+const CITIES = [
+  { code: 'lagos', name: 'Lagos', emoji: '🏙️' },
+  { code: 'abuja', name: 'Abuja', emoji: '🌆' },
+  { code: 'port_harcourt', name: 'Port Harcourt', emoji: '🌴' },
+  { code: 'ibadan', name: 'Ibadan', emoji: '🏛️' },
+];
 
 export default function MapScreen() {
   const router = useRouter();
