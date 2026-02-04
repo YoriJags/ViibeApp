@@ -834,4 +834,37 @@ const styles = StyleSheet.create({
     color: '#888',
     lineHeight: 20,
   },
+  dashboardSection: {
+    marginHorizontal: 16,
+    marginBottom: 20,
+  },
+  dashboardCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#151520',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+  },
+  dashboardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  dashboardContent: {
+    flex: 1,
+  },
+  dashboardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFF',
+    marginBottom: 4,
+  },
+  dashboardDesc: {
+    fontSize: 13,
+    color: '#888',
+  },
 });
