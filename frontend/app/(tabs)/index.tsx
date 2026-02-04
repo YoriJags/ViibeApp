@@ -265,9 +265,14 @@ const styles = StyleSheet.create({
     color: '#FF3366',
     letterSpacing: 4,
   },
+  citySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   headerSubtitle: {
     fontSize: 12,
-    color: '#666',
+    color: '#888',
     marginTop: 2,
   },
   viewToggle: {
@@ -277,6 +282,55 @@ const styles = StyleSheet.create({
     backgroundColor: '#151520',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#151520',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  cityOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: '#0A0A0F',
+  },
+  cityOptionActive: {
+    backgroundColor: '#FF336620',
+    borderWidth: 1,
+    borderColor: '#FF3366',
+  },
+  cityEmoji: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  cityName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#888',
+    flex: 1,
+  },
+  cityNameActive: {
+    color: '#FFF',
   },
   legend: {
     flexDirection: 'row',
