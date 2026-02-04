@@ -13,12 +13,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
 import * as WebBrowser from 'expo-web-browser';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { user, fetchUser, fetchAuthUser, createUser, logout, loading, processGoogleAuth } = useVibeStore();
   const [showSignup, setShowSignup] = useState(false);
   const [username, setUsername] = useState('');
