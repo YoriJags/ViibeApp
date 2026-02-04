@@ -138,11 +138,14 @@ backend:
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Venues API with city filter, leaderboard with time-decay algorithm"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED: /api/venues returns all venues correctly. City filtering works perfectly. Individual venue endpoint returns proper structure with coordinates and vibe scores. /api/leaderboard and /api/leaderboard/national both work correctly with proper sorting by vibe score and pulse drop priority."
 
   - task: "Rating System with Geofencing"
     implemented: true
