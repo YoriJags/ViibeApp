@@ -55,6 +55,8 @@ interface User {
   is_admin: boolean;
   is_super_admin: boolean;
   is_merchant: boolean;
+  merchant_venue_id?: string;
+  wallet_balance?: number;
 }
 
 interface PendingRating {
