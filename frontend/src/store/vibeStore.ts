@@ -32,8 +32,8 @@ interface Venue {
   total_ratings_24h: number;
   is_featured: boolean;
   is_verified: boolean;
-  fast_pass_enabled: boolean;
-  fast_pass_price: number;
+  profile_views: number;
+  direction_clicks: number;
   active_pulse_tier?: string;
   glow_boost: number;
   custom_icon?: string;
@@ -51,21 +51,21 @@ interface User {
   scout_status: 'newbie' | 'regular' | 'scout' | 'elite';
   rating_accuracy_score: number;
   total_ratings: number;
-  fast_lane_passes: number;
-  fast_passes_purchased: string[];
   home_city: string;
   is_admin: boolean;
   is_super_admin: boolean;
+  is_merchant: boolean;
 }
 
-interface FastPass {
+interface PendingRating {
   id: string;
   venue_id: string;
-  venue_name: string;
-  price: number;
-  qr_code: string;
-  valid_date: string;
-  is_used: boolean;
+  energy: string;
+  capacity: string;
+  gate: string;
+  coordinates: Coordinates;
+  photo_base64?: string;
+  timestamp: number;
 }
 
 interface PulseDrop {
@@ -87,9 +87,11 @@ interface VibeStore {
   loading: boolean;
   error: string | null;
   socket: Socket | null;
-  fastPasses: FastPass[];
   pulseDrops: PulseDrop[];
   isAuthenticated: boolean;
+  pendingRatings: PendingRating[];
+  isOnline: boolean;
+  gpsLocked: boolean;
 
   // Actions
   setUser: (user: User | null) => void;
@@ -99,6 +101,8 @@ interface VibeStore {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setIsAuthenticated: (auth: boolean) => void;
+  setIsOnline: (online: boolean) => void;
+  setGpsLocked: (locked: boolean) => void;
 
   // API Actions
   fetchUser: () => Promise<void>;
@@ -117,10 +121,12 @@ interface VibeStore {
     coordinates: Coordinates,
     photoBase64?: string
   ) => Promise<any>;
-  checkIn: (venueId: string, coordinates: Coordinates) => Promise<any>;
   getUserRatingStatus: (venueId: string) => Promise<any>;
-  purchaseFastPass: (venueId: string) => Promise<any>;
-  fetchUserFastPasses: () => Promise<void>;
+  recordDirectionClick: (venueId: string) => Promise<void>;
+  
+  // Offline-first
+  addPendingRating: (rating: PendingRating) => void;
+  syncPendingRatings: () => Promise<void>;
 
   // Socket Actions
   connectSocket: () => void;
@@ -136,9 +142,11 @@ export const useVibeStore = create<VibeStore>((set, get) => ({
   loading: false,
   error: null,
   socket: null,
-  fastPasses: [],
   pulseDrops: [],
   isAuthenticated: false,
+  pendingRatings: [],
+  isOnline: true,
+  gpsLocked: false,
 
   // Setters
   setUser: (user) => set({ user, isAuthenticated: !!user }),
@@ -152,7 +160,6 @@ export const useVibeStore = create<VibeStore>((set, get) => ({
   setSelectedCity: (city) => {
     set({ selectedCity: city });
     get().fetchVenues(city);
-    // Reconnect socket to new city room
     const { socket } = get();
     if (socket) {
       socket.emit('join_city', { city });
@@ -162,8 +169,15 @@ export const useVibeStore = create<VibeStore>((set, get) => ({
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   setIsAuthenticated: (auth) => set({ isAuthenticated: auth }),
+  setIsOnline: (online) => {
+    set({ isOnline: online });
+    if (online) {
+      get().syncPendingRatings();
+    }
+  },
+  setGpsLocked: (locked) => set({ gpsLocked: locked }),
 
-  // Fetch user from storage or API
+  // Fetch user from storage
   fetchUser: async () => {
     try {
       const storedUserId = await AsyncStorage.getItem('vibe_user_id');
@@ -260,7 +274,7 @@ export const useVibeStore = create<VibeStore>((set, get) => ({
       console.error('Error logging out:', error);
     }
     await AsyncStorage.removeItem('vibe_user_id');
-    set({ user: null, isAuthenticated: false, fastPasses: [] });
+    set({ user: null, isAuthenticated: false });
   },
 
   // Fetch cities
@@ -311,24 +325,42 @@ export const useVibeStore = create<VibeStore>((set, get) => ({
 
   // Submit a rating
   submitRating: async (venueId, energy, capacity, gate, coordinates, photoBase64) => {
-    const { user } = get();
+    const { user, isOnline } = get();
     if (!user) {
       throw new Error('User not logged in');
+    }
+
+    const ratingData = {
+      user_id: user.id,
+      venue_id: venueId,
+      energy,
+      capacity,
+      gate,
+      coordinates,
+      photo_base64: photoBase64,
+    };
+
+    // If offline, store locally
+    if (!isOnline) {
+      const pendingRating: PendingRating = {
+        id: `pending_${Date.now()}`,
+        venue_id: venueId,
+        energy,
+        capacity,
+        gate,
+        coordinates,
+        photo_base64: photoBase64,
+        timestamp: Date.now(),
+      };
+      get().addPendingRating(pendingRating);
+      return { offline: true, message: 'Rating saved. Will sync when online.' };
     }
 
     try {
       const response = await fetch(`${API_URL}/api/ratings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: user.id,
-          venue_id: venueId,
-          energy,
-          capacity,
-          gate,
-          coordinates,
-          photo_base64: photoBase64,
-        }),
+        body: JSON.stringify(ratingData),
       });
 
       const data = await response.json();
@@ -337,38 +369,12 @@ export const useVibeStore = create<VibeStore>((set, get) => ({
         throw new Error(data.detail || 'Failed to submit rating');
       }
 
-      // Refresh user data after rating
       get().fetchUser();
       get().fetchVenues();
 
       return data;
     } catch (error) {
       console.error('Error submitting rating:', error);
-      throw error;
-    }
-  },
-
-  // Check in at venue
-  checkIn: async (venueId, coordinates) => {
-    const { user } = get();
-    if (!user) {
-      throw new Error('User not logged in');
-    }
-
-    try {
-      const response = await fetch(`${API_URL}/api/checkins`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: user.id,
-          venue_id: venueId,
-          coordinates,
-        }),
-      });
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error checking in:', error);
       throw error;
     }
   },
@@ -391,50 +397,54 @@ export const useVibeStore = create<VibeStore>((set, get) => ({
     }
   },
 
-  // Purchase fast pass
-  purchaseFastPass: async (venueId) => {
-    const { user } = get();
-    if (!user) {
-      throw new Error('User not logged in');
-    }
-
+  // Record direction click for ROI tracking
+  recordDirectionClick: async (venueId) => {
     try {
-      const response = await fetch(`${API_URL}/api/fast-pass/purchase`, {
+      await fetch(`${API_URL}/api/venues/${venueId}/direction-click`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: user.id,
-          venue_id: venueId,
-        }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || 'Failed to purchase fast pass');
-      }
-
-      // Refresh fast passes
-      get().fetchUserFastPasses();
-      return data;
     } catch (error) {
-      console.error('Error purchasing fast pass:', error);
-      throw error;
+      console.error('Error recording direction click:', error);
     }
   },
 
-  // Fetch user's fast passes
-  fetchUserFastPasses: async () => {
-    const { user } = get();
-    if (!user) return;
+  // Offline-first: Add pending rating
+  addPendingRating: (rating) => {
+    set((state) => ({
+      pendingRatings: [...state.pendingRatings, rating],
+    }));
+    // Persist to AsyncStorage
+    AsyncStorage.setItem(
+      'vibe_pending_ratings',
+      JSON.stringify([...get().pendingRatings, rating])
+    );
+  },
+
+  // Sync pending ratings when back online
+  syncPendingRatings: async () => {
+    const { pendingRatings, user } = get();
+    if (!user || pendingRatings.length === 0) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/fast-pass/user/${user.id}`);
+      const response = await fetch(`${API_URL}/api/ratings/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ratings: pendingRatings.map((r) => ({
+            ...r,
+            user_id: user.id,
+            offline_id: r.id,
+          })),
+        }),
+      });
+
       if (response.ok) {
-        const passes = await response.json();
-        set({ fastPasses: passes });
+        set({ pendingRatings: [] });
+        await AsyncStorage.removeItem('vibe_pending_ratings');
+        get().fetchVenues();
       }
     } catch (error) {
-      console.error('Error fetching fast passes:', error);
+      console.error('Error syncing ratings:', error);
     }
   },
 
@@ -465,7 +475,7 @@ export const useVibeStore = create<VibeStore>((set, get) => ({
 
     newSocket.on('pulse_drop', (data: any) => {
       console.log('Pulse drop received:', data);
-      // Could trigger a notification here
+      // Could trigger a notification or alert here
     });
 
     newSocket.on('disconnect', () => {
