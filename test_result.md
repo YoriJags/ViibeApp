@@ -198,11 +198,14 @@ backend:
     file: "server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Venue stats, competition tracking, revenue tracking"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED: Merchant dashboard stats API working correctly. Returns comprehensive venue stats (ratings 1h/24h/7d, checkins, rank), revenue tracking (fast pass/pulse drop 30d), hourly trend data, competitor analysis, and pulse drop tier information."
 
   - task: "Super Admin Treasury"
     implemented: true
