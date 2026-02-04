@@ -39,13 +39,22 @@ export default function AdminTreasury() {
   const router = useRouter();
   const { user } = useVibeStore();
   const [data, setData] = useState<TreasuryData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.id) {
+      setLoading(true);
       fetchTreasury();
+    } else {
+      // Wait a bit for user to load
+      const timeout = setTimeout(() => {
+        if (!user?.id) {
+          setError('Please login first');
+        }
+      }, 2000);
+      return () => clearTimeout(timeout);
     }
   }, [user?.id]);
 
