@@ -87,6 +87,40 @@ export default function VenueDetailScreen() {
   const vibeColor = getVibeColor(venue.current_vibe_score);
   const velocityIcon = getVelocityIcon(venue.vibe_velocity);
 
+  const handlePurchaseFastPass = async () => {
+    if (!user) {
+      Alert.alert('Sign In Required', 'Please sign in to purchase a Fast Pass');
+      router.push('/profile');
+      return;
+    }
+    
+    Alert.alert(
+      'Purchase Fast Pass',
+      `Get priority entry to ${venue.name} for ₦${venue.fast_pass_price?.toLocaleString()}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Purchase',
+          onPress: async () => {
+            setPurchasing(true);
+            try {
+              const result = await purchaseFastPass(venue.id);
+              Alert.alert(
+                'Success!',
+                `Fast Pass purchased! Your QR code: ${result.qr_code}`,
+                [{ text: 'View in Profile', onPress: () => router.push('/profile') }]
+              );
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Failed to purchase Fast Pass');
+            } finally {
+              setPurchasing(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
