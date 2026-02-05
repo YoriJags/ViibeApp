@@ -315,39 +315,37 @@ export default function ProfileScreen() {
         {/* Dashboard Access Section - Only show if user has permissions */}
         {(user?.is_merchant || user?.is_super_admin) && (
           <View style={styles.dashboardSection}>
-            <Text style={styles.sectionTitle}>
-              {user?.is_super_admin ? 'Admin Controls' : 'Merchant Tools'}
-            </Text>
+            <Text style={styles.sectionTitle}>Switch Floor</Text>
             
-            {/* Merchant Dashboard - Only for merchants */}
-            {user?.is_merchant && user?.merchant_venue_id && (
+            {/* Merchant Floor - Only for merchants */}
+            {user?.is_merchant && (
               <TouchableOpacity
                 style={styles.dashboardCard}
-                onPress={() => router.push(`/merchant/${user.merchant_venue_id}`)}
+                onPress={() => router.replace('/(merchant)')}
               >
-                <View style={[styles.dashboardIcon, { backgroundColor: '#FF336620' }]}>
-                  <Ionicons name="storefront" size={24} color="#FF3366" />
+                <View style={[styles.dashboardIcon, { backgroundColor: '#D4AF3720' }]}>
+                  <Ionicons name="storefront" size={24} color="#D4AF37" />
                 </View>
                 <View style={styles.dashboardContent}>
-                  <Text style={styles.dashboardTitle}>Switch to Merchant View</Text>
-                  <Text style={styles.dashboardDesc}>View venue analytics, ROI metrics, and trigger Pulse Drops</Text>
+                  <Text style={styles.dashboardTitle}>Merchant Floor</Text>
+                  <Text style={styles.dashboardDesc}>Business dashboard, wallet, and Pulse Drop controls</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#666" />
               </TouchableOpacity>
             )}
 
-            {/* Super Admin Treasury - Only for super admins */}
+            {/* Admin Floor - Only for super admins */}
             {user?.is_super_admin && (
               <TouchableOpacity
                 style={styles.dashboardCard}
-                onPress={() => router.push('/admin/treasury')}
+                onPress={() => router.replace('/(admin)')}
               >
-                <View style={[styles.dashboardIcon, { backgroundColor: '#FFD70020' }]}>
-                  <Ionicons name="shield-checkmark" size={24} color="#FFD700" />
+                <View style={[styles.dashboardIcon, { backgroundColor: '#4169E120' }]}>
+                  <Ionicons name="shield-checkmark" size={24} color="#4169E1" />
                 </View>
                 <View style={styles.dashboardContent}>
-                  <Text style={styles.dashboardTitle}>Admin Control Center</Text>
-                  <Text style={styles.dashboardDesc}>Global revenue, network health, and venue management</Text>
+                  <Text style={styles.dashboardTitle}>Admin Floor</Text>
+                  <Text style={styles.dashboardDesc}>Global treasury, venue management, system logs</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#666" />
               </TouchableOpacity>
