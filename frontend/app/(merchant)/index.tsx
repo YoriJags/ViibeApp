@@ -195,7 +195,7 @@ export default function MerchantOverview() {
             </View>
             <View style={styles.metricCard}>
               <Ionicons name="trending-up" size={28} color={colors.status.profit} />
-              <Text style={styles.metricValue}>{(stats?.roi_metrics.conversion_rate || 0).toFixed(1)}%</Text>
+              <Text style={styles.metricValue}>{(stats?.roi_metrics?.conversion_rate || 0).toFixed(1)}%</Text>
               <Text style={styles.metricLabel}>Conversion</Text>
             </View>
           </View>
