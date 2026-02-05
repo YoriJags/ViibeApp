@@ -179,8 +179,94 @@ export default function WalletTopUp() {
     );
   }
 
-  // Show WebView for payment
+  // Show WebView for payment (native) or redirect for web
   if (showWebView && paymentUrl) {
+    // For web platform, open in new window/tab
+    if (Platform.OS === 'web') {
+      return (
+        <SafeAreaView style={styles.container}>
+          <View style={styles.webPaymentContainer}>
+            <View style={[styles.statusIcon, { backgroundColor: colors.status.info + '20' }]}>
+              <Ionicons name="card" size={60} color={colors.status.info} />
+            </View>
+            <Text style={styles.statusTitle}>Complete Payment</Text>
+            <Text style={styles.statusMessage}>
+              Click below to open the secure Paystack payment page.{'\n'}
+              After completing payment, return here and click "I've Paid".
+            </Text>
+            
+            <TouchableOpacity 
+              style={[styles.successButton, { backgroundColor: colors.primary }]} 
+              onPress={() => {
+                if (typeof window !== 'undefined') {
+                  window.open(paymentUrl, '_blank');
+                } else {
+                  Linking.openURL(paymentUrl);
+                }
+              }}
+            >
+              <Ionicons name="open-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
+              <Text style={styles.successButtonText}>Open Payment Page</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.successButton, { backgroundColor: colors.status.success, marginTop: 12 }]} 
+              onPress={async () => {
+                setLoading(true);
+                try {
+                  const verifyResponse = await fetch(`${API_URL}/api/merchant/wallet/verify/${reference}`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-User-Id': user?.id || '',
+                    },
+                  });
+
+                  if (verifyResponse.ok) {
+                    const result = await verifyResponse.json();
+                    setPaymentStatus('success');
+                    setShowWebView(false);
+                    Alert.alert(
+                      'Payment Successful! 🎉',
+                      `₦${parseInt(amount).toLocaleString()} has been added to your wallet.\n\nNew Balance: ₦${result.new_balance.toLocaleString()}`,
+                      [{ text: 'OK', onPress: () => router.back() }]
+                    );
+                  } else {
+                    Alert.alert('Payment Pending', 'Payment not yet confirmed. Please complete payment first or try again.');
+                  }
+                } catch (error) {
+                  Alert.alert('Error', 'Could not verify payment. Please try again.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                  <Text style={styles.successButtonText}>I've Paid - Verify</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.cancelButton} 
+              onPress={() => {
+                setShowWebView(false);
+                setPaymentStatus(null);
+              }}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      );
+    }
+    
+    // Native platforms use WebView
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.webViewHeader}>
@@ -202,18 +288,20 @@ export default function WalletTopUp() {
             <Text style={styles.secureText}>Secured by Paystack</Text>
           </View>
         </View>
-        <WebView
-          source={{ uri: paymentUrl }}
-          onNavigationStateChange={handleWebViewNavigation}
-          startInLoadingState
-          renderLoading={() => (
-            <View style={styles.webViewLoading}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.loadingText}>Loading payment page...</Text>
-            </View>
-          )}
-          style={styles.webView}
-        />
+        {WebView && (
+          <WebView
+            source={{ uri: paymentUrl }}
+            onNavigationStateChange={handleWebViewNavigation}
+            startInLoadingState
+            renderLoading={() => (
+              <View style={styles.webViewLoading}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={styles.loadingText}>Loading payment page...</Text>
+              </View>
+            )}
+            style={styles.webView}
+          />
+        )}
       </SafeAreaView>
     );
   }
