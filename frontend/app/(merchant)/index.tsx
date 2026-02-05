@@ -180,17 +180,17 @@ export default function MerchantOverview() {
           <View style={styles.metricsGrid}>
             <View style={styles.metricCard}>
               <Ionicons name="eye" size={28} color={colors.primary} />
-              <Text style={styles.metricValue}>{stats?.roi_metrics.profile_views || 0}</Text>
+              <Text style={styles.metricValue}>{stats?.roi_metrics?.profile_views || 0}</Text>
               <Text style={styles.metricLabel}>Profile Views</Text>
             </View>
             <View style={styles.metricCard}>
               <Ionicons name="navigate" size={28} color={colors.status.info} />
-              <Text style={styles.metricValue}>{stats?.roi_metrics.direction_clicks || 0}</Text>
+              <Text style={styles.metricValue}>{stats?.roi_metrics?.direction_clicks || 0}</Text>
               <Text style={styles.metricLabel}>Directions</Text>
             </View>
             <View style={styles.metricCard}>
               <Ionicons name="star" size={28} color={colors.gold} />
-              <Text style={styles.metricValue}>{stats?.roi_metrics.total_ratings || 0}</Text>
+              <Text style={styles.metricValue}>{stats?.roi_metrics?.total_ratings || 0}</Text>
               <Text style={styles.metricLabel}>Ratings</Text>
             </View>
             <View style={styles.metricCard}>
