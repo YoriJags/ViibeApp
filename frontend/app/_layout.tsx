@@ -16,9 +16,18 @@ export default function RootLayout() {
             animation: 'slide_from_right',
           }}
         >
+          {/* 3-Storey Architecture */}
+          <Stack.Screen name="(public)" options={{ headerShown: false }} />
+          <Stack.Screen name="(merchant)" options={{ headerShown: false }} />
+          <Stack.Screen name="(admin)" options={{ headerShown: false }} />
+          
+          {/* Legacy routes - keeping for backward compatibility */}
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="venue/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="rate/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="merchant/[venue_id]" options={{ headerShown: false }} />
+          <Stack.Screen name="merchant/topup/[venue_id]" options={{ headerShown: false }} />
+          <Stack.Screen name="admin/treasury" options={{ headerShown: false }} />
         </Stack>
       </View>
     </SafeAreaProvider>
