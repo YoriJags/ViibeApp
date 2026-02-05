@@ -188,6 +188,45 @@ export const typography = {
 
 ## Paystack Integration
 
+### Test Environment Setup
+
+The app uses **Paystack Test Mode** for development. Test transactions don't charge real cards.
+
+#### Environment Variables
+
+```env
+# Paystack Test Keys (in /backend/.env)
+PAYSTACK_SECRET_KEY=sk_test_xxxxxxxxxxxxx
+PAYSTACK_PUBLIC_KEY=pk_test_xxxxxxxxxxxxx
+```
+
+#### Test Card Numbers (Cheat Sheet)
+
+| Scenario | Card Number | CVV | Expiry |
+|----------|-------------|-----|--------|
+| ✅ **Success** | `4084 0840 8408 4081` | Any 3 digits | Any future date |
+| ❌ **Declined** | `4084 0840 8408 4085` | Any 3 digits | Any future date |
+| ⏳ **Timeout** | `5060 6666 6666 6666 666` | Any 3 digits | Any future date |
+
+#### Testing the Payment Flow
+
+1. **Login as Merchant**: Use phone `+2348000000001` (owner account)
+2. **Go to Merchant Dashboard**: Click "Switch to Merchant View"
+3. **Click "Top Up Wallet"**: Enter amount (minimum ₦1,000)
+4. **Complete Payment**: Use test card `4084 0840 8408 4081`
+5. **Verify Balance Update**: Wallet balance should increase
+
+#### Webhook Configuration
+
+For production, configure webhook URL in Paystack dashboard:
+```
+POST https://your-domain.com/api/webhook/paystack
+```
+
+The webhook handler verifies signatures and auto-credits wallets.
+
+---
+
 ### Wallet Top-Up Flow
 
 ```
