@@ -39,6 +39,7 @@ interface MockMapProps {
   userLocation: Coordinates | null;
   onVenuePress: (venue: Venue) => void;
   highlightedVenueId?: string | null;
+  ratedGlowVenueId?: string | null;
 }
 
 const { width, height } = Dimensions.get('window');
@@ -57,10 +58,13 @@ export const MockMap: React.FC<MockMapProps> = ({
   userLocation,
   onVenuePress,
   highlightedVenueId,
+  ratedGlowVenueId,
 }) => {
   // Pulse animation for highlighted venue
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
+  const ratedPulseAnim = useRef(new Animated.Value(1)).current;
+  const ratedGlowOpacity = useRef(new Animated.Value(0)).current;
   
   // Hover tooltip state (for web)
   const [hoveredVenue, setHoveredVenue] = useState<Venue | null>(null);
