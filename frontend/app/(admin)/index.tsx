@@ -137,34 +137,35 @@ export default function AdminTreasury() {
               <Text style={styles.cityRevenue}>₦{stats.total.toLocaleString()}</Text>
             </View>
           ))}
-        </View>
+          </View>
 
-        {/* Revenue by Tier */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            <Ionicons name="flash" size={20} color={colors.data.activity} /> Revenue by Tier
-          </Text>
-          <View style={styles.tiersRow}>
-            {['supernova', 'flare', 'spark'].map((tier) => {
-              const tierData = data?.by_tier?.[tier] || { total: 0, count: 0 };
-              const tierColors = {
-                supernova: '#FF3366',
-                flare: '#FF6300',
-                spark: '#FFD700',
-              };
-              return (
-                <View key={tier} style={styles.tierCard}>
-                  <Ionicons
-                    name={tier === 'supernova' ? 'rocket' : tier === 'flare' ? 'flame' : 'flash'}
-                    size={28}
-                    color={tierColors[tier as keyof typeof tierColors]}
-                  />
-                  <Text style={styles.tierName}>{tier.charAt(0).toUpperCase() + tier.slice(1)}</Text>
-                  <Text style={styles.tierAmount}>₦{tierData.total.toLocaleString()}</Text>
-                  <Text style={styles.tierCount}>{tierData.count} drops</Text>
-                </View>
-              );
-            })}
+          {/* Revenue by Tier */}
+          <View style={[styles.section, isDesktop && styles.sectionHalf]}>
+            <Text style={styles.sectionTitle}>
+              <Ionicons name="flash" size={20} color={colors.data.activity} /> Revenue by Tier
+            </Text>
+            <View style={[styles.tiersRow, isDesktop && styles.tiersRowDesktop]}>
+              {['supernova', 'flare', 'spark'].map((tier) => {
+                const tierData = data?.by_tier?.[tier] || { total: 0, count: 0 };
+                const tierColors = {
+                  supernova: '#FF3366',
+                  flare: '#FF6300',
+                  spark: '#FFD700',
+                };
+                return (
+                  <View key={tier} style={styles.tierCard}>
+                    <Ionicons
+                      name={tier === 'supernova' ? 'rocket' : tier === 'flare' ? 'flame' : 'flash'}
+                      size={28}
+                      color={tierColors[tier as keyof typeof tierColors]}
+                    />
+                    <Text style={styles.tierName}>{tier.charAt(0).toUpperCase() + tier.slice(1)}</Text>
+                    <Text style={styles.tierAmount}>₦{tierData.total.toLocaleString()}</Text>
+                    <Text style={styles.tierCount}>{tierData.count} drops</Text>
+                  </View>
+                );
+              })}
+            </View>
           </View>
         </View>
 
@@ -173,10 +174,10 @@ export default function AdminTreasury() {
           <Text style={styles.sectionTitle}>
             <Ionicons name="pulse" size={20} color={colors.status.online} /> Network Health
           </Text>
-          <View style={styles.healthGrid}>
-            <View style={styles.healthCard}>
+          <View style={[styles.healthGrid, isDesktop && styles.healthGridDesktop]}>
+            <View style={[styles.healthCard, isDesktop && styles.healthCardDesktop]}>
               <Ionicons name="wifi" size={24} color={colors.status.online} />
-              <Text style={styles.healthValue}>{data?.network_health.socket_connections || 0}</Text>
+              <Text style={styles.healthValue}>{data?.network_health?.socket_connections || 0}</Text>
               <Text style={styles.healthLabel}>Connections</Text>
             </View>
             <View style={styles.healthCard}>
