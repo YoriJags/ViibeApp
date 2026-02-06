@@ -362,10 +362,90 @@ export default function AdminAnalytics() {
   useEffect(() => {
     if (hasHydrated && user?.is_super_admin) {
       fetchAllData();
+      checkWalkthroughStatus();
     } else if (hasHydrated && !user?.is_super_admin) {
       setLoading(false);
     }
   }, [hasHydrated, user?.id]);
+
+  // Check if walkthrough should be shown
+  const checkWalkthroughStatus = async () => {
+    try {
+      const completed = await AsyncStorage.getItem(WALKTHROUGH_STORAGE_KEY);
+      if (!completed) {
+        // First visit - show walkthrough
+        setTimeout(() => setShowWalkthrough(true), 1500);
+      }
+      setWalkthroughChecked(true);
+    } catch (error) {
+      console.error('Error checking walkthrough status:', error);
+      setWalkthroughChecked(true);
+    }
+  };
+
+  // Pulse animation for walkthrough
+  useEffect(() => {
+    if (showWalkthrough) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.1, duration: 800, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }
+  }, [showWalkthrough]);
+
+  // Walkthrough navigation
+  const handleNextStep = () => {
+    const currentStep = WALKTHROUGH_STEPS[walkthroughStep];
+    const nextStep = WALKTHROUGH_STEPS[walkthroughStep + 1];
+    
+    // Switch tab if next step requires it
+    if (nextStep?.targetTab && nextStep.targetTab !== activeTab) {
+      setActiveTab(nextStep.targetTab);
+    }
+    
+    if (walkthroughStep < WALKTHROUGH_STEPS.length - 1) {
+      setWalkthroughStep(walkthroughStep + 1);
+    } else {
+      completeWalkthrough();
+    }
+  };
+
+  const handlePrevStep = () => {
+    const prevStep = WALKTHROUGH_STEPS[walkthroughStep - 1];
+    
+    // Switch tab if previous step requires it
+    if (prevStep?.targetTab && prevStep.targetTab !== activeTab) {
+      setActiveTab(prevStep.targetTab);
+    }
+    
+    if (walkthroughStep > 0) {
+      setWalkthroughStep(walkthroughStep - 1);
+    }
+  };
+
+  const completeWalkthrough = async () => {
+    try {
+      await AsyncStorage.setItem(WALKTHROUGH_STORAGE_KEY, 'true');
+    } catch (error) {
+      console.error('Error saving walkthrough status:', error);
+    }
+    setShowWalkthrough(false);
+    setWalkthroughStep(0);
+  };
+
+  const skipWalkthrough = () => {
+    completeWalkthrough();
+  };
+
+  const restartWalkthrough = () => {
+    setWalkthroughStep(0);
+    setActiveTab('treasury');
+    setShowWalkthrough(true);
+  };
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
