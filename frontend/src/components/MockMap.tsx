@@ -277,7 +277,7 @@ export const MockMap: React.FC<MockMapProps> = ({
                       {
                         width: size * 2,
                         height: size * 2,
-                        borderRadius: size,
+                        borderRadius: markerSize,
                         transform: [{ scale: pulseAnim }],
                         borderColor: glowInterpolate,
                       },
@@ -287,9 +287,9 @@ export const MockMap: React.FC<MockMapProps> = ({
                     style={[
                       styles.highlightGlow,
                       {
-                        width: size * 1.8,
-                        height: size * 1.8,
-                        borderRadius: size * 0.9,
+                        width: markerSize * 1.8,
+                        height: markerSize * 1.8,
+                        borderRadius: markerSize * 0.9,
                         backgroundColor: glowInterpolate,
                         opacity: 0.3,
                       },
@@ -298,34 +298,36 @@ export const MockMap: React.FC<MockMapProps> = ({
                 </>
               )}
               
-              {/* Glow effect */}
-              <View
-                style={[
-                  styles.markerGlow,
-                  {
-                    backgroundColor: isHighlighted || isHovered ? color + '60' : color + '30',
-                    width: isHovered ? size * 1.3 : size,
-                    height: isHovered ? size * 1.3 : size,
-                    borderRadius: size / 2,
-                    transform: [{ scale: isHovered ? 1.2 : 1 }],
-                  },
-                ]}
-              />
-              {/* Inner dot */}
-              <View
-                style={[
-                  styles.markerDot,
-                  {
-                    backgroundColor: color,
-                    width: size * 0.5,
-                    height: size * 0.5,
-                    borderRadius: size * 0.25,
-                    borderWidth: isHighlighted ? 3 : isHovered ? 2 : 0,
-                    borderColor: isHighlighted ? '#FFD700' : '#FFF',
-                    transform: [{ scale: isHovered ? 1.2 : 1 }],
-                  },
-                ]}
-              />
+              {/* Custom Marker with Energy Score */}
+              <View style={[
+                styles.customMarker,
+                {
+                  backgroundColor: hasPulseDrop ? '#1A1A25' : '#0D1117',
+                  borderColor: hasPulseDrop ? '#FFD700' : color,
+                  borderWidth: hasPulseDrop ? 2 : 1,
+                  width: markerSize - 4,
+                  height: markerSize - 4,
+                  borderRadius: (markerSize - 4) / 2,
+                }
+              ]}>
+                {/* Energy Score Display */}
+                <Text style={[
+                  styles.markerScore,
+                  { 
+                    color: hasPulseDrop ? '#FFD700' : color,
+                    fontSize: hasPulseDrop ? 14 : 12,
+                  }
+                ]}>
+                  {Math.round(venue.current_vibe_score)}%
+                </Text>
+                
+                {/* Featured Star for Pulse Drop */}
+                {hasPulseDrop && (
+                  <View style={styles.markerPulseIcon}>
+                    <Ionicons name="flame" size={10} color="#FFD700" />
+                  </View>
+                )}
+              </View>
               
               {/* Highlighted venue label */}
               {isHighlighted && (
