@@ -1564,6 +1564,263 @@ async def get_merchant_venue_stats(venue_id: str):
         "pulse_drop_tiers": PULSE_DROP_TIERS
     }
 
+# ===== Merchant Content Management =====
+
+class VenueUpdateRequest(BaseModel):
+    entry_fee: Optional[str] = None
+    music_genre: Optional[str] = None
+    tables_available: Optional[bool] = None
+
+@api_router.put("/merchant/venue/{venue_id}/update")
+async def update_venue_content(venue_id: str, update: VenueUpdateRequest, request: Request):
+    """
+    Merchant can update their venue's public info (entry fee, music, tables).
+    Changes reflect INSTANTLY on the public floor.
+    Privacy: Only the venue owner can update.
+    """
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    # Privacy Guard: Check merchant owns this venue
+    if user.get("merchant_venue_id") != venue_id:
+        raise HTTPException(status_code=403, detail="You can only update your own venue")
+    
+    venue = await db.venues.find_one({"id": venue_id})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    
+    # Build update dict with only provided fields
+    update_data = {}
+    if update.entry_fee is not None:
+        update_data["entry_fee"] = update.entry_fee
+    if update.music_genre is not None:
+        update_data["music_genre"] = update.music_genre
+    if update.tables_available is not None:
+        update_data["tables_available"] = update.tables_available
+    
+    if update_data:
+        await db.venues.update_one({"id": venue_id}, {"$set": update_data})
+    
+    # Return updated venue
+    updated_venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
+    return {
+        "success": True,
+        "message": "Venue updated successfully - changes are now live!",
+        "venue": updated_venue
+    }
+
+@api_router.get("/merchant/venue/{venue_id}/sentiment")
+async def get_venue_sentiment(venue_id: str, request: Request):
+    """
+    Get vibe sentiment breakdown (gate/queue, capacity ratings).
+    Privacy: Only the venue owner can access.
+    """
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    # Privacy Guard
+    if user.get("merchant_venue_id") != venue_id:
+        raise HTTPException(status_code=403, detail="You can only view your own venue data")
+    
+    now = datetime.now(timezone.utc)
+    hour_ago = now - timedelta(hours=1)
+    day_ago = now - timedelta(hours=24)
+    
+    # Get recent ratings
+    recent_ratings = await db.ratings.find({
+        "venue_id": venue_id,
+        "timestamp": {"$gte": day_ago}
+    }, {"_id": 0}).sort("timestamp", -1).to_list(50)
+    
+    # Aggregate sentiment
+    gate_counts = {"clear": 0, "slow": 0, "blocked": 0}
+    capacity_counts = {"sparse": 0, "vibrant": 0, "full": 0}
+    energy_counts = {"chill": 0, "popping": 0, "electric": 0}
+    
+    for rating in recent_ratings:
+        gate = rating.get("gate", "clear")
+        capacity = rating.get("capacity", "sparse")
+        energy = rating.get("energy", "chill")
+        
+        gate_counts[gate] = gate_counts.get(gate, 0) + 1
+        capacity_counts[capacity] = capacity_counts.get(capacity, 0) + 1
+        energy_counts[energy] = energy_counts.get(energy, 0) + 1
+    
+    total = len(recent_ratings) or 1
+    
+    # Calculate dominant sentiment
+    dominant_gate = max(gate_counts, key=gate_counts.get)
+    dominant_capacity = max(capacity_counts, key=capacity_counts.get)
+    dominant_energy = max(energy_counts, key=energy_counts.get)
+    
+    # Estimate wait time based on gate sentiment
+    wait_estimates = {"clear": "No wait", "slow": "~15 min wait", "blocked": "Long queue (30min+)"}
+    
+    return {
+        "venue_id": venue_id,
+        "total_checks_24h": len(recent_ratings),
+        "sentiment": {
+            "gate": {
+                "dominant": dominant_gate,
+                "wait_estimate": wait_estimates[dominant_gate],
+                "breakdown": gate_counts,
+                "percentage": round(gate_counts[dominant_gate] / total * 100)
+            },
+            "capacity": {
+                "dominant": dominant_capacity,
+                "breakdown": capacity_counts,
+                "percentage": round(capacity_counts[dominant_capacity] / total * 100)
+            },
+            "energy": {
+                "dominant": dominant_energy,
+                "breakdown": energy_counts,
+                "percentage": round(energy_counts[dominant_energy] / total * 100)
+            }
+        },
+        "recent_checks": recent_ratings[:5]  # Last 5 for preview
+    }
+
+@api_router.post("/merchant/venue/{venue_id}/pulse-drop")
+async def trigger_pulse_drop(venue_id: str, tier: str, request: Request):
+    """
+    Merchant triggers a Pulse Drop to "Attract More Scouts".
+    Creates visibility boost with countdown timer.
+    """
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    # Privacy Guard
+    if user.get("merchant_venue_id") != venue_id:
+        raise HTTPException(status_code=403, detail="You can only boost your own venue")
+    
+    if tier not in PULSE_DROP_TIERS:
+        raise HTTPException(status_code=400, detail=f"Invalid tier. Choose from: {list(PULSE_DROP_TIERS.keys())}")
+    
+    tier_config = PULSE_DROP_TIERS[tier]
+    price = tier_config["price"]
+    
+    # Check wallet balance
+    wallet = await db.merchant_wallets.find_one({"venue_id": venue_id})
+    if not wallet or wallet.get("balance", 0) < price:
+        raise HTTPException(status_code=400, detail="Insufficient wallet balance")
+    
+    venue = await db.venues.find_one({"id": venue_id})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(hours=tier_config["duration_hours"])
+    
+    # Deduct from wallet
+    await db.merchant_wallets.update_one(
+        {"venue_id": venue_id},
+        {"$inc": {"balance": -price}}
+    )
+    
+    # Record Pulse Drop
+    drop_id = str(uuid.uuid4())
+    await db.pulse_drops.insert_one({
+        "id": drop_id,
+        "venue_id": venue_id,
+        "tier": tier,
+        "price_paid": price,
+        "profile_views_before": venue.get("profile_views", 0),
+        "direction_clicks_before": venue.get("direction_clicks", 0),
+        "created_at": now,
+        "expires_at": expires_at
+    })
+    
+    # Update venue with Pulse Drop status (does NOT modify energy_score)
+    await db.venues.update_one(
+        {"id": venue_id},
+        {"$set": {
+            "active_pulse_tier": tier,
+            "pulse_expires_at": expires_at,
+            "glow_boost": tier_config["glow_boost"]
+        }}
+    )
+    
+    # Record platform revenue (10% fee)
+    platform_fee = int(price * 0.10)
+    await db.platform_revenue.insert_one({
+        "id": str(uuid.uuid4()),
+        "type": "pulse_drop",
+        "amount": platform_fee,
+        "venue_id": venue_id,
+        "city": venue.get("city"),
+        "tier": tier,
+        "timestamp": now
+    })
+    
+    return {
+        "success": True,
+        "message": f"🚀 Pulse Drop activated! Attracting more scouts for {tier_config['duration_hours']} hours.",
+        "drop": {
+            "id": drop_id,
+            "tier": tier,
+            "duration_hours": tier_config["duration_hours"],
+            "expires_at": expires_at.isoformat(),
+            "glow_boost": tier_config["glow_boost"],
+            "clout_multiplier": "2x"
+        },
+        "wallet_balance": wallet.get("balance", 0) - price
+    }
+
+@api_router.get("/merchant/venue/{venue_id}/pulse-status")
+async def get_pulse_status(venue_id: str, request: Request):
+    """Get current Pulse Drop status with countdown timer."""
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    # Privacy Guard
+    if user.get("merchant_venue_id") != venue_id:
+        raise HTTPException(status_code=403, detail="You can only view your own venue")
+    
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    
+    now = datetime.now(timezone.utc)
+    
+    pulse_active = False
+    time_remaining = None
+    
+    if venue.get("active_pulse_tier") and venue.get("pulse_expires_at"):
+        pulse_expires_raw = venue.get("pulse_expires_at")
+        if isinstance(pulse_expires_raw, datetime):
+            pulse_expires = pulse_expires_raw.replace(tzinfo=timezone.utc) if pulse_expires_raw.tzinfo is None else pulse_expires_raw
+        else:
+            pulse_expires = datetime.fromisoformat(str(pulse_expires_raw).replace('Z', '+00:00'))
+        
+        if pulse_expires > now:
+            pulse_active = True
+            remaining = pulse_expires - now
+            time_remaining = {
+                "hours": remaining.seconds // 3600,
+                "minutes": (remaining.seconds % 3600) // 60,
+                "seconds": remaining.seconds % 60,
+                "total_seconds": int(remaining.total_seconds())
+            }
+    
+    # Get recent Pulse Drop history
+    recent_drops = await db.pulse_drops.find({
+        "venue_id": venue_id
+    }, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
+    
+    return {
+        "is_active": pulse_active,
+        "current_tier": venue.get("active_pulse_tier") if pulse_active else None,
+        "expires_at": venue.get("pulse_expires_at").isoformat() if pulse_active and venue.get("pulse_expires_at") else None,
+        "time_remaining": time_remaining,
+        "glow_boost": venue.get("glow_boost", 0) if pulse_active else 0,
+        "recent_drops": recent_drops,
+        "available_tiers": PULSE_DROP_TIERS
+    }
+
 # ===== Super Admin Routes =====
 
 @api_router.get("/admin/treasury")
