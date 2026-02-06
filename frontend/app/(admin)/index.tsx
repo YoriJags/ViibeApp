@@ -349,8 +349,9 @@ export default function AdminAnalytics() {
   };
 
   const selectAllTopScouts = () => {
-    if (cloutEconomy?.top_scouts) {
-      const allIds = cloutEconomy.top_scouts.map(s => s.id);
+    const scouts = isDemoMode ? DEMO_CLOUT_ECONOMY.top_scouts : cloutEconomy?.top_scouts;
+    if (scouts) {
+      const allIds = scouts.map(s => s.id);
       setSelectedScouts(allIds);
     }
   };
