@@ -1838,7 +1838,11 @@ async def seed_data():
             "entry_fee": "₦15,000",
             "music_genre": "House/Deep House",
             "tables_available": True,
-            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(minutes=12)
+            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(minutes=12),
+            # PULSE DROP with low energy - demonstrates transparency
+            "active_pulse_tier": "flare",
+            "pulse_expires_at": datetime.now(timezone.utc) + timedelta(hours=3),
+            "glow_boost": 15
         },
         {
             "name": "Backyard BBQ",
