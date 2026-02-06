@@ -651,10 +651,10 @@ export default function AdminAnalytics() {
                 {/* Organic */}
                 <View style={styles.comparisonBox}>
                   <Text style={styles.comparisonLabel}>ORGANIC</Text>
-                  <Text style={styles.comparisonCount}>{integrity?.organic?.count || 0} venues</Text>
+                  <Text style={styles.comparisonCount}>{displayIntegrity?.organic?.count || 0} venues</Text>
                   <View style={[styles.scoreCircle, { borderColor: adminColors.success }]}>
                     <Text style={[styles.scoreValue, { color: adminColors.success }]}>
-                      {integrity?.organic?.average_energy || 0}%
+                      {displayIntegrity?.organic?.average_energy || 0}%
                     </Text>
                   </View>
                   <Text style={styles.scoreLabel}>Avg Energy</Text>
@@ -663,10 +663,10 @@ export default function AdminAnalytics() {
             </View>
 
             {/* Integrity Warnings */}
-            {integrity?.integrity_warnings && integrity.integrity_warnings.length > 0 && (
+            {displayIntegrity?.integrity_warnings && displayIntegrity.integrity_warnings.length > 0 && (
               <View style={styles.warningsCard}>
                 <Text style={styles.warningsTitle}>Integrity Warnings</Text>
-                {integrity.integrity_warnings.map((warning, idx) => (
+                {displayIntegrity.integrity_warnings.map((warning, idx) => (
                   <View key={idx} style={styles.warningItem}>
                     <Ionicons name="warning" size={16} color={adminColors.warning} />
                     <View style={styles.warningContent}>
@@ -688,22 +688,22 @@ export default function AdminAnalytics() {
             <View style={styles.userStatsGrid}>
               <View style={styles.userStatCard}>
                 <Ionicons name="people" size={24} color={adminColors.users} />
-                <Text style={styles.userStatValue}>{userAnalytics?.total_users || 0}</Text>
+                <Text style={styles.userStatValue}>{displayUserAnalytics?.total_users || 0}</Text>
                 <Text style={styles.userStatLabel}>Total Users</Text>
               </View>
               <View style={styles.userStatCard}>
                 <Ionicons name="flash" size={24} color={adminColors.success} />
-                <Text style={styles.userStatValue}>{userAnalytics?.active_users_24h || 0}</Text>
+                <Text style={styles.userStatValue}>{displayUserAnalytics?.active_users_24h || 0}</Text>
                 <Text style={styles.userStatLabel}>Active (24h)</Text>
               </View>
               <View style={styles.userStatCard}>
                 <Ionicons name="skull" size={24} color={adminColors.textMuted} />
-                <Text style={styles.userStatValue}>{userAnalytics?.ghost_users || 0}</Text>
+                <Text style={styles.userStatValue}>{displayUserAnalytics?.ghost_users || 0}</Text>
                 <Text style={styles.userStatLabel}>Ghost Users</Text>
               </View>
               <View style={styles.userStatCard}>
                 <Ionicons name="person-add" size={24} color={adminColors.accent} />
-                <Text style={styles.userStatValue}>{userAnalytics?.new_users_today || 0}</Text>
+                <Text style={styles.userStatValue}>{displayUserAnalytics?.new_users_today || 0}</Text>
                 <Text style={styles.userStatLabel}>New Today</Text>
               </View>
             </View>
@@ -713,17 +713,17 @@ export default function AdminAnalytics() {
               <Text style={styles.cardTitle}>Active vs Ghost Users</Text>
               <View style={styles.activeGhostChart}>
                 <View style={styles.activeGhostBar}>
-                  <View style={[styles.activeSection, { width: `${100 - (userAnalytics?.ghost_percentage || 30)}%` }]} />
-                  <View style={[styles.ghostSection, { width: `${userAnalytics?.ghost_percentage || 30}%` }]} />
+                  <View style={[styles.activeSection, { width: `${100 - (displayUserAnalytics?.ghost_percentage || 30)}%` }]} />
+                  <View style={[styles.ghostSection, { width: `${displayUserAnalytics?.ghost_percentage || 30}%` }]} />
                 </View>
                 <View style={styles.activeGhostLegend}>
                   <View style={styles.legendItem}>
                     <View style={[styles.legendDot, { backgroundColor: adminColors.success }]} />
-                    <Text style={styles.legendText}>Active ({100 - (userAnalytics?.ghost_percentage || 30)}%)</Text>
+                    <Text style={styles.legendText}>Active ({100 - (displayUserAnalytics?.ghost_percentage || 30)}%)</Text>
                   </View>
                   <View style={styles.legendItem}>
                     <View style={[styles.legendDot, { backgroundColor: adminColors.textMuted }]} />
-                    <Text style={styles.legendText}>Ghost ({userAnalytics?.ghost_percentage || 30}%)</Text>
+                    <Text style={styles.legendText}>Ghost ({displayUserAnalytics?.ghost_percentage || 30}%)</Text>
                   </View>
                 </View>
                 <Text style={styles.ghostNote}>
@@ -737,17 +737,18 @@ export default function AdminAnalytics() {
               <View style={styles.cloutHeader}>
                 <Text style={styles.cardTitle}>Global Clout Economy</Text>
                 <TouchableOpacity 
-                  style={styles.airdropButton}
-                  onPress={() => setShowAirdropModal(true)}
+                  style={[styles.airdropButton, isDemoMode && styles.airdropButtonDisabled]}
+                  onPress={() => !isDemoMode && setShowAirdropModal(true)}
+                  disabled={isDemoMode}
                 >
                   <Ionicons name="gift" size={14} color="#FFF" />
-                  <Text style={styles.airdropButtonText}>Airdrop</Text>
+                  <Text style={styles.airdropButtonText}>{isDemoMode ? 'Demo' : 'Airdrop'}</Text>
                 </TouchableOpacity>
               </View>
               
               <View style={styles.cloutStats}>
                 <View style={styles.cloutStatItem}>
-                  <Text style={styles.cloutStatValue}>{cloutEconomy?.total_clout_circulation?.toLocaleString() || 0}</Text>
+                  <Text style={styles.cloutStatValue}>{displayCloutEconomy?.total_clout_circulation?.toLocaleString() || 0}</Text>
                   <Text style={styles.cloutStatLabel}>Total Circulation</Text>
                 </View>
                 <View style={styles.cloutStatItem}>
