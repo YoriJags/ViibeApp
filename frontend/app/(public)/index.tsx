@@ -215,6 +215,27 @@ export default function MapScreen() {
         </View>
       </View>
 
+      {/* Daily Pulse Card - Vibe Master Commentary */}
+      {venues.length > 0 && (
+        <DailyPulseCard 
+          stats={cityStats}
+          onPress={() => {
+            if (cityStats.topVenue) {
+              const topVenueObj = venues.find(v => v.name === cityStats.topVenue?.name);
+              if (topVenueObj) {
+                router.push(`/venue/${topVenueObj.id}`);
+              }
+            }
+          }}
+        />
+      )}
+
+      {/* Clout Reward Animation */}
+      <CloutReward 
+        visible={showCloutReward} 
+        onAnimationComplete={() => setShowCloutReward(false)} 
+      />
+
       {showList ? (
         <ScrollView
           style={styles.listContainer}
