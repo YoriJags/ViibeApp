@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,9 @@ import * as Location from 'expo-location';
 import { useVibeStore } from '../../src/store/vibeStore';
 import { MockMap } from '../../src/components/MockMap';
 import { VenueCard } from '../../src/components/VenueCard';
+import DailyPulseCard from '../../src/components/DailyPulseCard';
+import CloutReward from '../../src/components/CloutReward';
+import { CityStats } from '../../src/utils/vibeMaster';
 
 const { width } = Dimensions.get('window');
 
