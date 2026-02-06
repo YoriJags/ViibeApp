@@ -297,6 +297,54 @@ backend:
         agent: "testing"
         comment: "✅ PASSED: Offline rating sync working perfectly. Successfully synced 1/1 test ratings. Handles offline_id tracking and applies same validation as online ratings."
 
+  - task: "Trending Leaderboard API"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "GET /api/trending/{city} - Dynamic scoring with (avg_energy * 0.5) + (check_in_velocity * 0.3) + (scout_count * 0.2)"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED: Trending venues API working perfectly. Verified formula calculation (energy:100 * 0.5 + velocity:20 * 0.3 + scouts:5 * 0.2 = 57). Returns venues sorted by trending_score with proper ranking, energy_percent, check_in_velocity, scout_count, and trend direction. Works for multiple cities."
+
+  - task: "Top Scouts API"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "GET /api/top-scouts/{city} - Ranks scouts by 24h vibe check count with tier system"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED: Top scouts API working correctly. Returns scouts ranked by 24h check count with proper tier colors (newbie:#666666, regular:#00D4FF, scout:#FFD700, elite:#FF3366), venues visited, avg vibe contribution, clout points, and accuracy scores."
+
+  - task: "Scout Profile API"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "GET /api/scout/{user_id}/profile - Mini-profile with activity heatmap and stats"
+      - working: false
+        agent: "testing"
+        comment: "❌ FAILED: HTTP 520 error due to timezone-aware/naive datetime subtraction bug in activity heatmap calculation"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED: Fixed timezone bug in activity heatmap calculation. Scout profile API now returns complete user info (tier, clout_points, total_ratings), activity_heatmap with recent venue visits, and stats (checks_24h, checks_7d, unique_venues_7d). Correctly handles timezone-aware datetime operations."
+
 frontend:
   - task: "Map Screen with City Selector"
     implemented: true
