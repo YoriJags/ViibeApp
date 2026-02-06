@@ -5,3 +5,4 @@ export { GPSLockIndicator } from './GPSLockIndicator';
 export { VenueCard } from './VenueCard';
 export { MockMap } from './MockMap';
 export { default as VibeToggle } from './VibeToggle';
+export { default as RateVibeModal } from './RateVibeModal';
