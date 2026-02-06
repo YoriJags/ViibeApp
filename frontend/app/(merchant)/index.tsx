@@ -1,6 +1,7 @@
 /**
  * MERCHANT FLOOR - Overview (Index)
  * Business Dashboard with ROI Metrics
+ * Responsive for desktop web deployment
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import {
@@ -11,12 +12,14 @@ import {
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { merchantTheme, spacing, borderRadius, typography } from '../../src/theme/floors';
 import { useVibeStore } from '../../src/store/vibeStore';
+import { useResponsive } from '../../src/utils/responsive';
 
 const { colors } = merchantTheme;
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
