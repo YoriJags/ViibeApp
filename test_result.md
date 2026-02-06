@@ -345,6 +345,54 @@ backend:
         agent: "testing"
         comment: "✅ PASSED: Fixed timezone bug in activity heatmap calculation. Scout profile API now returns complete user info (tier, clout_points, total_ratings), activity_heatmap with recent venue visits, and stats (checks_24h, checks_7d, unique_venues_7d). Correctly handles timezone-aware datetime operations."
 
+  - task: "B2C Venue Fields Enhancement"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED: GET /api/venues?city=lagos returns venues with all new B2C fields: entry_fee (₦20,000), music_genre (Afrobeats/Amapiano), tables_available (boolean), last_snapshot_time for 'Verified X ago' feature. All venues properly include B2C intelligence fields."
+
+  - task: "Individual Venue B2C Data"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED: GET /api/venues/{venue_id} returns complete venue data with all new B2C fields. Individual venue detail endpoint working perfectly with entry_fee, music_genre, tables_available, last_snapshot_time fields present."
+
+  - task: "B2C Trending Intelligence Verification"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED: GET /api/trending/lagos returns venues ranked by Vibe Density (energy + scout activity). Trending intelligence working with rank, trending_score, energy_percent fields. Venues properly sorted by trending formula."
+
+  - task: "B2C Direction Click ROI Tracking"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED: POST /api/venues/{venue_id}/direction-click increments direction_clicks counter for ROI tracking. Direction click recording working correctly for B2C analytics."
+
 frontend:
   - task: "Map Screen with City Selector"
     implemented: true
