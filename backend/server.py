@@ -2008,6 +2008,264 @@ async def update_pulse_drop_pricing(request: Request):
     
     return {"message": f"{tier} price updated to ₦{new_price:,}"}
 
+# ===== Macro-Vibe Admin Analytics =====
+
+@api_router.get("/admin/pulse-ledger")
+async def get_pulse_ledger(request: Request, limit: int = 50):
+    """
+    Treasury Ledger: List all Pulse Drop transactions with resulting scout activity.
+    Shows: Venue Name | Amount (₦) | Time | Resulting Scout Activity (+XX Checks)
+    """
+    user = await get_current_user(request)
+    if not user or not user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="Super admin access required")
+    
+    # Get all pulse drops with venue info
+    pulse_drops = await db.pulse_drops.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    ledger = []
+    for drop in pulse_drops:
+        venue = await db.venues.find_one({"id": drop["venue_id"]}, {"_id": 0, "name": 1, "area": 1, "current_vibe_score": 1})
+        
+        # Calculate resulting scout activity (ratings after pulse drop)
+        drop_created = drop["created_at"]
+        if isinstance(drop_created, str):
+            drop_created = datetime.fromisoformat(drop_created.replace('Z', '+00:00'))
+        
+        drop_expires = drop.get("expires_at")
+        if isinstance(drop_expires, str):
+            drop_expires = datetime.fromisoformat(drop_expires.replace('Z', '+00:00'))
+        elif drop_expires is None:
+            drop_expires = drop_created + timedelta(hours=2)
+        
+        # Count ratings during the pulse drop period
+        ratings_during = await db.ratings.count_documents({
+            "venue_id": drop["venue_id"],
+            "timestamp": {"$gte": drop_created, "$lte": drop_expires}
+        })
+        
+        # Calculate ROI metrics
+        profile_views_before = drop.get("profile_views_before", 0)
+        direction_clicks_before = drop.get("direction_clicks_before", 0)
+        
+        current_views = venue.get("profile_views", 0) if venue else 0
+        current_clicks = venue.get("direction_clicks", 0) if venue else 0
+        
+        ledger.append({
+            "drop_id": drop["id"],
+            "venue_name": venue.get("name", "Unknown") if venue else "Unknown",
+            "venue_area": venue.get("area", "") if venue else "",
+            "current_vibe_score": venue.get("current_vibe_score", 0) if venue else 0,
+            "tier": drop["tier"],
+            "amount": drop["price_paid"],
+            "created_at": drop["created_at"].isoformat() if isinstance(drop["created_at"], datetime) else drop["created_at"],
+            "expires_at": drop.get("expires_at").isoformat() if isinstance(drop.get("expires_at"), datetime) else drop.get("expires_at"),
+            "scout_activity": f"+{ratings_during} Checks",
+            "ratings_count": ratings_during,
+            "profile_views_gained": max(0, current_views - profile_views_before),
+            "direction_clicks_gained": max(0, current_clicks - direction_clicks_before)
+        })
+    
+    return {
+        "ledger": ledger,
+        "total_drops": await db.pulse_drops.count_documents({}),
+        "total_revenue": sum(item["amount"] for item in ledger)
+    }
+
+@api_router.get("/admin/integrity-monitor")
+async def get_integrity_monitor(request: Request):
+    """
+    Integrity Monitor: Compare average energy scores of Sponsored vs Organic venues.
+    Helps ensure sponsored venues aren't consistently 'Quiet.'
+    """
+    user = await get_current_user(request)
+    if not user or not user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="Super admin access required")
+    
+    now = datetime.now(timezone.utc)
+    
+    # Get all venues
+    all_venues = await db.venues.find({}, {"_id": 0}).to_list(500)
+    
+    sponsored_venues = []
+    organic_venues = []
+    
+    for venue in all_venues:
+        is_sponsored = False
+        if venue.get("active_pulse_tier") and venue.get("pulse_expires_at"):
+            pulse_expires_raw = venue.get("pulse_expires_at")
+            if isinstance(pulse_expires_raw, datetime):
+                pulse_expires = pulse_expires_raw.replace(tzinfo=timezone.utc) if pulse_expires_raw.tzinfo is None else pulse_expires_raw
+            else:
+                pulse_expires = datetime.fromisoformat(str(pulse_expires_raw).replace('Z', '+00:00'))
+            is_sponsored = pulse_expires > now
+        
+        venue_data = {
+            "id": venue["id"],
+            "name": venue["name"],
+            "energy_score": venue.get("current_vibe_score", 0),
+            "energy_level": venue.get("energy_level", "chill")
+        }
+        
+        if is_sponsored:
+            sponsored_venues.append(venue_data)
+        else:
+            organic_venues.append(venue_data)
+    
+    # Calculate averages
+    sponsored_avg = sum(v["energy_score"] for v in sponsored_venues) / len(sponsored_venues) if sponsored_venues else 0
+    organic_avg = sum(v["energy_score"] for v in organic_venues) / len(organic_venues) if organic_venues else 0
+    
+    # Identify potential integrity issues (sponsored venues with very low scores)
+    integrity_warnings = [
+        {
+            "venue_id": v["id"],
+            "venue_name": v["name"],
+            "energy_score": v["energy_score"],
+            "issue": "Sponsored venue with low energy - may hurt app reputation"
+        }
+        for v in sponsored_venues if v["energy_score"] < 40
+    ]
+    
+    # Energy distribution for both groups
+    def get_distribution(venues):
+        electric = sum(1 for v in venues if v["energy_score"] >= 80)
+        popping = sum(1 for v in venues if 60 <= v["energy_score"] < 80)
+        moderate = sum(1 for v in venues if 40 <= v["energy_score"] < 60)
+        quiet = sum(1 for v in venues if v["energy_score"] < 40)
+        return {"electric": electric, "popping": popping, "moderate": moderate, "quiet": quiet}
+    
+    return {
+        "sponsored": {
+            "count": len(sponsored_venues),
+            "average_energy": round(sponsored_avg, 1),
+            "venues": sponsored_venues,
+            "distribution": get_distribution(sponsored_venues)
+        },
+        "organic": {
+            "count": len(organic_venues),
+            "average_energy": round(organic_avg, 1),
+            "distribution": get_distribution(organic_venues)
+        },
+        "delta": round(sponsored_avg - organic_avg, 1),
+        "integrity_warnings": integrity_warnings,
+        "health_status": "healthy" if sponsored_avg >= organic_avg * 0.7 else "warning" if sponsored_avg >= organic_avg * 0.5 else "critical"
+    }
+
+@api_router.get("/admin/clout-economy")
+async def get_clout_economy(request: Request, city: str = "lagos"):
+    """
+    Global Clout Economy: Total clout in circulation and Top 10 Scouts.
+    """
+    user = await get_current_user(request)
+    if not user or not user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="Super admin access required")
+    
+    # Total clout in circulation
+    clout_pipeline = [
+        {"$group": {"_id": None, "total_clout": {"$sum": "$clout_points"}, "total_users": {"$sum": 1}}}
+    ]
+    clout_stats = await db.users.aggregate(clout_pipeline).to_list(1)
+    total_clout = clout_stats[0]["total_clout"] if clout_stats else 0
+    total_users = clout_stats[0]["total_users"] if clout_stats else 0
+    
+    # Average clout per user
+    avg_clout = total_clout / total_users if total_users > 0 else 0
+    
+    # Top 10 Scouts by clout
+    top_scouts = await db.users.find(
+        {"clout_points": {"$gt": 0}},
+        {"_id": 0, "id": 1, "username": 1, "clout_points": 1, "scout_status": 1, "total_ratings": 1}
+    ).sort("clout_points", -1).limit(10).to_list(10)
+    
+    # Add rank to scouts
+    for i, scout in enumerate(top_scouts):
+        scout["rank"] = i + 1
+        
+        # Determine tier color
+        if scout.get("scout_status") == "elite":
+            scout["tier_color"] = "#FF3366"
+        elif scout.get("scout_status") == "scout":
+            scout["tier_color"] = "#FFD700"
+        elif scout.get("scout_status") == "regular":
+            scout["tier_color"] = "#00D4FF"
+        else:
+            scout["tier_color"] = "#666666"
+    
+    # Clout distribution by tier
+    tier_distribution = await db.users.aggregate([
+        {"$group": {
+            "_id": "$scout_status",
+            "count": {"$sum": 1},
+            "total_clout": {"$sum": "$clout_points"}
+        }}
+    ]).to_list(10)
+    
+    return {
+        "total_clout_circulation": total_clout,
+        "total_users": total_users,
+        "average_clout": round(avg_clout, 1),
+        "top_scouts": top_scouts,
+        "tier_distribution": {item["_id"]: {"count": item["count"], "clout": item["total_clout"]} for item in tier_distribution if item["_id"]}
+    }
+
+class AirdropRequest(BaseModel):
+    user_ids: List[str]
+    amount: int
+    reason: str
+
+@api_router.post("/admin/clout-airdrop")
+async def airdrop_clout(airdrop: AirdropRequest, request: Request):
+    """
+    Airdrop bonus Clout to top scouts during special events (e.g., Detty December).
+    """
+    user = await get_current_user(request)
+    if not user or not user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="Super admin access required")
+    
+    if airdrop.amount <= 0:
+        raise HTTPException(status_code=400, detail="Airdrop amount must be positive")
+    
+    if len(airdrop.user_ids) == 0:
+        raise HTTPException(status_code=400, detail="No users selected for airdrop")
+    
+    now = datetime.now(timezone.utc)
+    
+    # Update all selected users
+    result = await db.users.update_many(
+        {"id": {"$in": airdrop.user_ids}},
+        {"$inc": {"clout_points": airdrop.amount}}
+    )
+    
+    # Record the airdrop event
+    await db.clout_airdrops.insert_one({
+        "id": str(uuid.uuid4()),
+        "admin_id": user["id"],
+        "user_ids": airdrop.user_ids,
+        "amount_per_user": airdrop.amount,
+        "total_amount": airdrop.amount * len(airdrop.user_ids),
+        "reason": airdrop.reason,
+        "timestamp": now,
+        "users_updated": result.modified_count
+    })
+    
+    return {
+        "success": True,
+        "message": f"🎉 Airdrop complete! {result.modified_count} scouts received +{airdrop.amount} Clout",
+        "users_updated": result.modified_count,
+        "total_clout_distributed": airdrop.amount * result.modified_count
+    }
+
+@api_router.get("/admin/airdrop-history")
+async def get_airdrop_history(request: Request, limit: int = 20):
+    """Get history of clout airdrops."""
+    user = await get_current_user(request)
+    if not user or not user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="Super admin access required")
+    
+    history = await db.clout_airdrops.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
+    return {"history": history}
+
 # ===== Paystack Webhook =====
 
 @api_router.post("/webhook/paystack")
