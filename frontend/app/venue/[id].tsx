@@ -352,7 +352,12 @@ export default function VenueDetailScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+      >
         {/* ====== LIVE LOOK THUMBNAIL ====== */}
         <Animated.View style={[styles.liveLookContainer, { transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.liveLookWrapper}>
