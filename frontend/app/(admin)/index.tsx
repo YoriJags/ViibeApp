@@ -1,6 +1,7 @@
 /**
  * ADMIN FLOOR - Treasury (Index)
  * Global revenue and financial overview
+ * Responsive for desktop web deployment
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import {
@@ -11,12 +12,14 @@ import {
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { adminTheme, spacing, borderRadius, typography } from '../../src/theme/floors';
 import { useVibeStore } from '../../src/store/vibeStore';
+import { useResponsive } from '../../src/utils/responsive';
 
 const { colors } = adminTheme;
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -38,6 +41,7 @@ interface TreasuryData {
 
 export default function AdminTreasury() {
   const router = useRouter();
+  const { isDesktop, isTablet, breakpoint } = useResponsive();
   const { user } = useVibeStore();
   const [data, setData] = useState<TreasuryData | null>(null);
   const [loading, setLoading] = useState(true);
