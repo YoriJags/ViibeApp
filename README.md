@@ -397,6 +397,78 @@ vibe-app/
 
 ---
 
+## Vercel Deployment (Web Version)
+
+The app supports Expo Web export for Vercel hosting. This provides a web-accessible version of the Merchant and Admin dashboards.
+
+### Prerequisites
+
+1. [Vercel Account](https://vercel.com/signup)
+2. [Vercel CLI](https://vercel.com/docs/cli) (optional)
+
+### Quick Deploy
+
+```bash
+# Navigate to frontend
+cd frontend
+
+# Build web version
+yarn build
+
+# Deploy to Vercel
+vercel --prod
+```
+
+### Manual Configuration
+
+The `vercel.json` in `/frontend` is pre-configured:
+
+```json
+{
+  "cleanUrls": true,
+  "framework": null,
+  "installCommand": "yarn install",
+  "buildCommand": "yarn build",
+  "outputDirectory": "dist"
+}
+```
+
+### Backend Deployment
+
+The FastAPI backend should be deployed separately:
+
+**Option A: Vercel Serverless Functions**
+- Move `/backend/server.py` to `/api/index.py`
+- Vercel auto-detects Python functions
+
+**Option B: Dedicated Server**
+- Deploy to Railway, Render, or Fly.io
+- Update `EXPO_PUBLIC_BACKEND_URL` in Vercel environment
+
+### Environment Variables on Vercel
+
+Set these in your Vercel project settings:
+
+| Variable | Description |
+|----------|-------------|
+| `EXPO_PUBLIC_BACKEND_URL` | Your deployed backend URL |
+| `NODE_ENV` | `production` |
+
+### 3-Storey Architecture on Web
+
+| Floor | URL Route | Access |
+|-------|-----------|--------|
+| Public | `/` | All visitors |
+| Merchant | `/(merchant)` | Login + is_merchant |
+| Admin | `/(admin)` | Login + is_super_admin |
+
+The responsive layouts automatically adjust for desktop browsers:
+- **Mobile** (< 768px): Single-column layout
+- **Tablet** (768px - 992px): Two-column layout  
+- **Desktop** (> 992px): Full dashboard with sidebar
+
+---
+
 ## Contributing
 
 1. Fork the repository
