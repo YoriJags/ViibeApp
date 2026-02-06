@@ -46,6 +46,7 @@ interface VenueStats {
 export default function MerchantOverview() {
   const router = useRouter();
   const { user } = useVibeStore();
+  const { isDesktop, isTablet } = useResponsive();
   const [stats, setStats] = useState<VenueStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -72,6 +73,14 @@ export default function MerchantOverview() {
   useEffect(() => {
     fetchStats();
   }, [user?.merchant_venue_id]);
+
+  // Responsive container style
+  const containerStyle = isDesktop ? {
+    maxWidth: 1000,
+    alignSelf: 'center' as const,
+    width: '100%' as const,
+    paddingHorizontal: spacing.xxl,
+  } : {};
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
