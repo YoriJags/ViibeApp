@@ -303,6 +303,7 @@ export default function MapScreen() {
             userLocation={userLocation}
             onVenuePress={(venue) => router.push(`/venue/${venue.id}`)}
             highlightedVenueId={highlightedVenueId}
+            ratedGlowVenueId={ratedGlowVenueId}
           />
         </View>
       )}
