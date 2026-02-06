@@ -805,6 +805,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background.dark,
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: spacing.xxxl,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
