@@ -668,6 +668,11 @@ class VibeAppTester:
         await self.test_fast_pass_system()
         await self.test_pulse_drop_system()
         await self.test_merchant_dashboard()
+        
+        # NEW: Test trending and scout features
+        await self.test_trending_leaderboard()
+        await self.test_top_scouts()
+        await self.test_scout_profile()
 
         # Results summary
         print("\n" + "=" * 60)
