@@ -6,8 +6,9 @@
  * - User Analytics (Active vs Ghost users)
  * - Integrity Monitor (Merchant claims vs Scout ratings)
  * - Clout Economy with Airdrop functionality
+ * - Demo Walkthrough with spotlight tooltips
  */
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -20,14 +21,17 @@ import {
   Alert,
   Modal,
   Dimensions,
+  Animated,
+  LayoutRectangle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useVibeStore } from '../../src/store/vibeStore';
 import { useRouter } from 'expo-router';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 // Royal Blue & Slate Admin Theme
