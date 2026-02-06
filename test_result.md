@@ -413,10 +413,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Trending Leaderboard API"
-    - "Top Scouts API"
-    - "Scout Profile API"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -430,3 +427,7 @@ agent_communication:
     message: "Updated to Vibe App v3: REMOVED Fast Pass system, enhanced wallet-based Pulse Drop purchases, added ROI metrics (heatmap delta, profile views, direction clicks), implemented offline rating sync. Ready for v3 testing focused on merchant wallet system and new analytics."
   - agent: "testing"
     message: "🚀 VIBE APP v3 TESTING COMPLETE! ✅ All key v3 features verified: Merchant Wallet System (₦25K starting balance, top-up flow working), Pulse Drop wallet purchases (Spark ₦5K deduction working perfectly), ROI Metrics (Profile Views: 1,250, Direction Clicks: 340, Heatmap Delta: -44.0), Offline Rating Sync (1/1 success), Treasury auth protection working. Minor: ObjectId serialization issue in wallet response but core functionality intact. Fast Pass confirmed REMOVED as specified. v3 backend is production-ready!"
+  - agent: "main"
+    message: "Implemented NEW trending and scout features: Trending Leaderboard API (GET /api/trending/{city}), Top Scouts API (GET /api/top-scouts/{city}), Scout Profile API (GET /api/scout/{user_id}/profile). Ready for testing these new endpoints."
+  - agent: "testing"
+    message: "🏆 NEW TRENDING & SCOUT FEATURES TESTED! ✅ Trending Leaderboard API: Dynamic scoring formula working perfectly (energy*0.5 + velocity*0.3 + scouts*0.2), venues properly ranked with trend indicators. ✅ Top Scouts API: 24h leaderboard with tier system (newbie/regular/scout/elite) and ring colors working. ✅ Scout Profile API: Complete user profiles with activity heatmap, stats, tier info working (Fixed timezone bug during testing). All 3 new APIs production-ready!"
