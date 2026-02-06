@@ -907,7 +907,12 @@ async def get_scout_profile(user_id: str):
     for rating in recent_ratings:
         venue = await db.venues.find_one({"id": rating["venue_id"]}, {"_id": 0})
         if venue:
-            time_diff = now - rating["timestamp"]
+            # Ensure rating timestamp has timezone info
+            rating_timestamp = rating["timestamp"]
+            if rating_timestamp.tzinfo is None:
+                rating_timestamp = rating_timestamp.replace(tzinfo=timezone.utc)
+            
+            time_diff = now - rating_timestamp
             mins_ago = int(time_diff.total_seconds() / 60)
             
             if mins_ago < 60:
