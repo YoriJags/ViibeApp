@@ -785,19 +785,34 @@ async def get_trending_venues(city: str, limit: int = 10):
             "check_in_velocity": len(recent_ratings),
             "scout_count": unique_scouts,
             "trend": trend,
-            "last_rating": day_ratings[-1]["timestamp"].isoformat() if day_ratings else None
+            "last_rating": day_ratings[-1]["timestamp"].isoformat() if day_ratings else None,
+            "is_sponsored": is_pulse_boosted,
+            "is_pulse_boosted": is_pulse_boosted,
+            "clout_multiplier": 2 if is_pulse_boosted else 1
         })
     
-    # Sort by trending score
-    trending_data.sort(key=lambda x: x["trending_score"], reverse=True)
+    # SEPARATE sponsored (Pulse Drop) from organic rankings
+    sponsored_venues = [v for v in trending_data if v.get("is_sponsored")]
+    organic_venues = [v for v in trending_data if not v.get("is_sponsored")]
     
-    # Add ranks
-    for i, item in enumerate(trending_data[:limit]):
+    # Sort organic venues by trending score (real metrics only)
+    organic_venues.sort(key=lambda x: x["trending_score"], reverse=True)
+    
+    # Sort sponsored venues by trending score (they get visibility, but shown separately)
+    sponsored_venues.sort(key=lambda x: x["trending_score"], reverse=True)
+    
+    # Add ranks to organic venues
+    for i, item in enumerate(organic_venues[:limit]):
+        item["rank"] = i + 1
+    
+    # Add ranks to sponsored venues (separate numbering)
+    for i, item in enumerate(sponsored_venues):
         item["rank"] = i + 1
     
     return {
         "city": city,
-        "venues": trending_data[:limit],
+        "venues": organic_venues[:limit],  # Main list is purely organic
+        "sponsored": sponsored_venues,  # Separate section for sponsored
         "last_updated": now.isoformat(),
         "total_venues": len(venues)
     }
