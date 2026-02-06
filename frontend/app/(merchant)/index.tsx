@@ -440,4 +440,23 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
     marginTop: spacing.xs,
   },
+  // === DESKTOP RESPONSIVE STYLES ===
+  headerDesktop: {
+    paddingHorizontal: spacing.xxl,
+  },
+  headerTitleDesktop: {
+    fontSize: typography.fontSize.xxl,
+  },
+  heroCardDesktop: {
+    padding: spacing.xxl,
+  },
+  metricsGridDesktop: {
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    gap: spacing.lg,
+  },
+  metricCardDesktop: {
+    minWidth: 'auto',
+    flex: 1,
+  },
 });
