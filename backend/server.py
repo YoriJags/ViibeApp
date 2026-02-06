@@ -780,7 +780,7 @@ async def get_trending_venues(city: str, limit: int = 10):
         old_ratings = await db.ratings.find({
             "venue_id": venue_id,
             "timestamp": {"$gte": six_hours_ago, "$lt": hour_ago}
-        }).to_list(100)
+        }, {"_id": 0, "timestamp": 1}).to_list(100)
         
         old_velocity = len(old_ratings)
         new_velocity = len(recent_ratings)
