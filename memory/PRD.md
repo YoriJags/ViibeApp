@@ -22,6 +22,7 @@ A nightlife intelligence platform connecting nightlife enthusiasts ("Scouts") wi
 - **Integrity Monitor**: Sponsored vs organic venue comparison, health status alerts
 - **Clout Economy**: Total circulation, top scouts leaderboard, airdrop functionality
 - **Demo Mode Toggle**: Pre-populated mock data for showcasing platform to merchants
+- **Demo Walkthrough**: Auto-highlighting tour with tooltips for first-time visitors
 - **Theme**: Royal Blue and Slate (Professional/Power aesthetic)
 
 ## Tech Stack
