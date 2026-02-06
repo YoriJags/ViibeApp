@@ -456,8 +456,8 @@ frontend:
 
 metadata:
   created_by: "main_agent"
-  version: "3.1"
-  test_sequence: 3
+  version: "3.2"
+  test_sequence: 4
   run_ui: false
 
 test_plan:
@@ -479,3 +479,5 @@ agent_communication:
     message: "Implemented NEW trending and scout features: Trending Leaderboard API (GET /api/trending/{city}), Top Scouts API (GET /api/top-scouts/{city}), Scout Profile API (GET /api/scout/{user_id}/profile). Ready for testing these new endpoints."
   - agent: "testing"
     message: "🏆 NEW TRENDING & SCOUT FEATURES TESTED! ✅ Trending Leaderboard API: Dynamic scoring formula working perfectly (energy*0.5 + velocity*0.3 + scouts*0.2), venues properly ranked with trend indicators. ✅ Top Scouts API: 24h leaderboard with tier system (newbie/regular/scout/elite) and ring colors working. ✅ Scout Profile API: Complete user profiles with activity heatmap, stats, tier info working (Fixed timezone bug during testing). All 3 new APIs production-ready!"
+  - agent: "testing"
+    message: "🎯 B2C NIGHTLIFE INTELLIGENCE TESTING COMPLETE! ✅ All 4 B2C features verified with 100% success rate (9/9 tests passed): ✅ Venues API enhanced with entry_fee (₦20,000), music_genre (Afrobeats/Amapiano), tables_available (boolean), last_snapshot_time ✅ Individual venue detail endpoint returns complete B2C data ✅ Trending Intelligence API working with Vibe Density ranking (energy + scout activity) ✅ Direction click tracking increments ROI counters correctly. All B2C intelligence fields properly formatted and functional as specified in review requirements!"
