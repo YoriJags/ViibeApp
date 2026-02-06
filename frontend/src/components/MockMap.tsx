@@ -271,9 +271,10 @@ export const MockMap: React.FC<MockMapProps> = ({
           );
           const isHighlighted = venue.id === highlightedVenueId;
           const isHovered = hoveredVenue?.id === venue.id;
+          const isRatedGlow = venue.id === ratedGlowVenueId;
           const color = getVibeColor(venue.current_vibe_score);
           const hasPulseDrop = venue.active_pulse_tier !== null && venue.active_pulse_tier !== undefined;
-          const markerSize = hasPulseDrop ? 56 : isHighlighted ? 52 : 44;
+          const markerSize = isRatedGlow ? 60 : hasPulseDrop ? 56 : isHighlighted ? 52 : 44;
 
           return (
             <TouchableOpacity
@@ -285,7 +286,7 @@ export const MockMap: React.FC<MockMapProps> = ({
                   top: position.y - markerSize / 2,
                   width: markerSize,
                   height: markerSize,
-                  zIndex: isHighlighted || isHovered || hasPulseDrop ? 100 : 1,
+                  zIndex: isRatedGlow ? 150 : isHighlighted || isHovered || hasPulseDrop ? 100 : 1,
                 },
               ]}
               onPress={() => onVenuePress(venue)}
@@ -293,6 +294,44 @@ export const MockMap: React.FC<MockMapProps> = ({
               // @ts-ignore - Web-only events
               onMouseEnter={() => handleMouseEnter(venue, position)}
               onMouseLeave={handleMouseLeave}
+            >
+              {/* Rated Glow Effect - Green pulsing ring */}
+              {isRatedGlow && (
+                <>
+                  <Animated.View
+                    style={[
+                      styles.ratedGlowRing,
+                      {
+                        width: markerSize + 30,
+                        height: markerSize + 30,
+                        borderRadius: (markerSize + 30) / 2,
+                        transform: [{ scale: ratedPulseAnim }],
+                        opacity: ratedGlowOpacity,
+                      },
+                    ]}
+                  />
+                  <Animated.View
+                    style={[
+                      styles.ratedGlowInner,
+                      {
+                        width: markerSize + 16,
+                        height: markerSize + 16,
+                        borderRadius: (markerSize + 16) / 2,
+                        opacity: ratedGlowOpacity,
+                      },
+                    ]}
+                  />
+                  <Animated.View
+                    style={[
+                      styles.ratedLabel,
+                      { opacity: ratedGlowOpacity },
+                    ]}
+                  >
+                    <Ionicons name="checkmark-circle" size={12} color="#4CAF50" />
+                    <Text style={styles.ratedLabelText}>Updated!</Text>
+                  </Animated.View>
+                </>
+              )}
             >
               {/* Gold Glow for Pulse Drop venues */}
               {hasPulseDrop && (
