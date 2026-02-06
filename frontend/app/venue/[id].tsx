@@ -11,7 +11,6 @@ import {
   Platform,
   Image,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +20,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVibeStore } from '../../src/store/vibeStore';
 import RateVibeModal from '../../src/components/RateVibeModal';
+import VibeSuccessAnimation from '../../src/components/VibeSuccessAnimation';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -36,7 +36,16 @@ const CLUB_PLACEHOLDERS = [
 export default function VenueDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { fetchVenue, getUserRatingStatus, user, recordDirectionClick, gpsLocked, setGpsLocked } = useVibeStore();
+  const { 
+    fetchVenue, 
+    getUserRatingStatus, 
+    user, 
+    recordDirectionClick, 
+    gpsLocked, 
+    setGpsLocked,
+    setLastRatedVenueId,
+    updateUserClout,
+  } = useVibeStore();
   const [venue, setVenue] = useState<any>(null);
   const [ratingStatus, setRatingStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +54,9 @@ export default function VenueDetailScreen() {
   const [checkingLocation, setCheckingLocation] = useState(false);
   const [showGeofenceTooltip, setShowGeofenceTooltip] = useState(false);
   const [showRateModal, setShowRateModal] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [lastCloutEarned, setLastCloutEarned] = useState(10);
+  const [lastHadPhoto, setLastHadPhoto] = useState(false);
   
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
