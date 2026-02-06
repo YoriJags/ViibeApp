@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timezone
 
 # Use the correct backend URL from frontend environment
-BASE_URL = "https://trending-night.preview.emergentagent.com/api"
+BASE_URL = "https://vibe-scout.preview.emergentagent.com/api"
 
 class B2CNightlifeIntelligenceTests:
     def __init__(self):

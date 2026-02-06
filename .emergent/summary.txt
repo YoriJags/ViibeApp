@@ -1,92 +1,122 @@
 <analysis>
 
-**original_problem_statement**: The user wants to build a comprehensive nightlife application with a three-tiered architecture:
-1.  **Public Interface**: A social, public-facing app for users to discover venues, check vibe scores, and see trending spots. This includes a map view, a dynamic trending leaderboard, and a Top Scouts social feature.
-2.  **Merchant Dashboard**: A business-oriented dashboard for club/venue owners to track their venue's performance, ROI metrics, manage their wallet, and boost their visibility using Pulse Drops.
-3.  **Super Admin Dashboard**: A God View command center for the platform owner to monitor global revenue, network health, and overall system statistics.
+original_problem_statement:
+The user wants to build and refine a nightlife intelligence app. The core features requested across several Action prompts include:
 
-PRODUCT REQUIREMENTS:
-- Implement a 3-storey architecture using route groups: , , .
-- Implement role-based navigation guards, ensuring users can only access floors they have permissions for.
-- Integrate Paystack for test payments, allowing merchants to top-up their wallets.
-- Create a Vibe Master personality engine to generate dynamic, Lagos-style commentary on the city's nightlife, displayed on the public map view.
-- Build a dynamic Trending leaderboard based on a custom  formula.
-- Build a Top Scouts social leaderboard to showcase the most active users.
-- Prepare the Expo (React Native) web app for Vercel deployment.
-- Prepare for Google Maps API integration by setting up placeholders.
+**B2C Features (Public Floor):**
+*   **Trending & Top Scouts:** Create a trending page with a Top 3 Podium design and a list of top scouts. Implement a mini-profile modal for scouts.
+*   **Live Map & Venue Cards:**
+    *   Use a 'Midnight Premium' theme for the map.
+    *   Show custom map markers with energy scores.
+    *   Implement a Pull Up button on the trending list to navigate to the map and highlight the venue.
+    *   On venue tap, show a glass-morphism slide-up card with utility stats (Entry Fee, Music Genre, Table Availability) and a 'Live Look' thumbnail.
+    *   Implement a GET DIRECTIONS button using the native maps deep link.
+*   **Rating System & Clout:**
+    *   Create a Rate the Vibe modal.
+    *   Enforce a 50m geofence for rating.
+    *   Implement a polished success experience with confetti animation, clout reward notification, and a map glow effect on the rated venue.
+    *   Animate the 'Zap' icon in the VibeToggle for the 'ELECTRIC' energy level.
+*   **Scout Trust System:** Implement a 'Verified Scout' badge and ensure clout is only earned for geofenced checks.
+
+**B2B/Admin Features:**
+*   **B2C Integrity vs. Merchant Pulse Drops:**
+    *   Visually distinguish 'Featured' (sponsored) venues.
+    *   Do not let sponsored status directly alter the organic energy score.
+    *   Grant 2x Clout for check-ins at sponsored venues.
+    *   Display sponsored venues in a separate section on the trending list, showing their organic score honestly.
+*   **Merchant Dashboard (Level 1):**
+    *   A private dashboard for venue owners to see their own metrics (Live Energy Score, Vibe Sentiment).
+    *   Allow merchants to manage their content (Entry Fee, Music, Tables) and trigger 'Pulse Drops'.
+    *   Ensure merchants can only see their own venue's data.
+*   **Admin 'Macro-Vibe' Analytics:**
+    *   A treasury ledger to track all Pulse Drop transactions.
+    *   An 'Integrity Monitor' chart comparing sponsored vs. organic venue scores.
+    *   A 'Global Clout Economy' view to see total clout and top scouts, with an option to 'Airdrop' bonus clout.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is built on a FastAPI backend and a React Native (Expo) frontend. The core 3-storey architecture is fully implemented using Expo's directory-based route groups: , , and .
+The application is a React Native (Expo) frontend with a FastAPI (Python) backend and a PostgreSQL database.
 
--   **Public Floor**: The default view, featuring a mock map, a Daily Pulse card powered by the Vibe Master engine, and a tab-based navigation for Map, Trending, and Profile.
--   **Merchant Floor**: A responsive, fintech-styled dashboard for venue owners, accessible after login for users with  privileges. It shows ROI metrics and wallet balance.
--   **Admin Floor**: A responsive, command-center-styled dashboard for the super admin, accessible for users with  privileges. It shows global revenue (from seeded data) and network health.
--   **Authentication & State**: Login is handled via phone number. User state, including permissions, is managed by Zustand and persists in AsyncStorage.
--   **Payments**: Paystack integration is complete for the test environment. The merchant wallet top-up flow is functional, including a web-specific fallback that opens Paystack in a new tab.
--   **Deployment**: The project is configured for Vercel deployment with a  file and appropriate build scripts in .
+Key existing features:
+- A live map with custom markers showing venue energy scores.
+- A trending page that separates organically trending venues from Sponsored venues with active Pulse Drops.
+- A detailed venue page with a glass-morphism UI, showing stats like entry fee, music, and table availability. It also features a Live Look thumbnail and a GET DIRECTIONS button.
+- A Rate the Vibe modal, which is displayed if the user is signed in and within the 50m geofence.
+- A post-rating success animation (confetti) and a temporary glow effect on the map for the just-rated venue.
+- Backend logic for calculating clout, including a 2x multiplier for sponsored venues.
+- Backend endpoints for a Merchant Dashboard and Admin Analytics have been created.
 
 **Last working item**:
-- Last item agent was working: Implementing the Dynamic Trending Leaderboard and Top Scout features. This involved creating two new backend endpoints ( and ) and building a new frontend screen  to display this data. The agent had just finished creating the backend logic and the frontend UI file.
-- Status: IN PROGRESS
-- Agent Testing Done: N
-- Which testing method agent to use? both
-- User Testing Done: N
+    - Last item agent was working: The agent was starting the implementation of the 'Macro-Vibe' Admin Analytics dashboard. It successfully created the necessary backend endpoints (, , , ) but only created an empty placeholder file for the frontend UI.
+    - Status: IN PROGRESS
+    - Agent Testing Done: N
+    - Which testing method agent to use? Frontend testing agent
+    - User Testing Done: N
 
 **All Pending/In progress Issue list**:
+  Issue 1: Scrolling is not working correctly on some pages. (P1)
+  Issue 2: User authentication state does not persist properly in the web development session, which blocks testing of user-only features. (P1)
 
-  Issue 1:  Complete and Test the Dynamic Trending Leaderboard & Top Scouts Section (P0)
-  
   Issues Detail:
   - Issue 1: 
-     - Attempted fixes: The agent has created the necessary backend endpoints in  and the frontend UI screen in . The work is mid-flight and has not been tested yet.
-     - Next debug checklist: 
-        1. Restart the backend and frontend servers.
-        2. Navigate to the Trending tab on the Public floor.
-        3. Verify the  and  endpoints are called and return data successfully.
-        4. Check that the UI on the  screen renders correctly with the data, including the Top 3 podium, the list of venues, and the Top Scouts Tonight section.
-        5. Test the 'Pull up' button to ensure it navigates to the map and highlights the correct venue.
-     - Why fix this issue and what will be achieved with the fix? This is a core feature for the Public floor, designed to increase user engagement and social interaction by creating a competitive and dynamic view of the city's nightlife.
-     - Status:  IN PROGRESS
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? both
+     - Attempted fixes: The agent acknowledged the issue on the Trending page (msg 49) and the Venue Detail page (msg 162) but did not attempt a fix, prioritizing feature implementation. The layout likely uses a  incorrectly or has conflicting flexbox properties.
+     - Next debug checklist:
+        - Review  and .
+        - Check the parent  styles and ensure  or  is correctly implemented to encompass all content.
+        - Verify that no fixed-height containers are clipping the scrollable area.
+     - Why fix this issue and what will be achieved with the fix? Users cannot access all content on these key pages, such as the lower part of the trending list or the rate button on the venue detail page. Fixing it is critical for usability.
+     - Status:  NOT STARTED
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Frontend
+     - Blocked on other issue: None
+  - Issue 2: 
+     - Attempted fixes: The agent encountered this when trying to test the 'Rate the Vibe' modal (msg 92-104). The agent noted that user creation/login state was not persisting, making it impossible to reach authenticated screens. The agent worked around it by verifying the component code was in place but could not perform a true end-to-end test.
+     - Next debug checklist:
+        - Examine the Zustand store persistence logic (). Is  being used correctly for persistence?
+        - Check the navigation logic in  to see how auth state redirects are handled.
+        - Verify the login/signup API calls and how the resulting token/user data is stored in the state.
+     - Why fix this issue and what will be achieved with the fix? This is a major blocker for testing any feature that requires a user to be logged in, such as rating a venue, seeing clout updates, and using the . Fixing it will unblock full end-to-end testing.
+     - Status:  NOT STARTED
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Frontend
      - Blocked on other issue: None
 
 **In progress Task List**:
-  Task 1:  Finalize Trending Leaderboard Implementation (P0)
+  Task 1:  Implement the frontend for the 'Macro-Vibe' Admin Analytics dashboard (P0)
 
  Task Detail:
   - Task 1: 
-     - Where to resume: The necessary files ( and ) have been created. The next step is to restart both the backend and frontend services and perform a full test of the new Trending screen.
-     - What will be achieved with this? A fully functional trending leaderboard and top scouts section, completing a key user request.
+     - Where to resume: The file  has been created but is empty. The next step is to build the UI components within this file to fetch and display data from the newly created admin endpoints (, , ).
+     - What will be achieved with this? This will complete the admin analytics feature, providing the admin user with a Treasury Ledger, an Integrity Monitor chart, and a Global Clout Economy view.
      - Status:  IN PROGRESS
-     - Should Test frontend/backend/both after fix? both
+     - Should Test frontend/backend/both after fix? Frontend
      - Blocked on something: None
 
 **Upcoming and Future Tasks**
-    Upcoming Tasks:
-    - **Google Maps API Integration (P0)**: This is the most significant upcoming task. The app is prepared with API key placeholders in  and . The mock map in  needs to be replaced with a real   component.
-        - Implement custom Night Mode map styling using a JSON file.
-        - Replace static markers with dynamic  components that pulse/glow based on the live .
-        - Implement  for geofenced Vibe Check verification.
-
-    Future Tasks:
-    - **Mini-Profile View (P1)**: Implement the navigation from a Top Scout card on the trending page to a mini-profile view showing that user's vibe check history for the night.
-    - **Native-Only Features (P2)**: Use the  module to gate native-specific features like background geofencing so they do not run on the web version.
+  - None. The agent is working on the most recent user request. All previous requests have been addressed, at least at a code-implementation level.
 
 **Completed work in this session**
-- **3-Storey Architecture**: Restructured the entire frontend into , , and  route groups with distinct layouts, themes, and navigation bars in .
-- **Role-Based Routing**: Implemented floor-switching logic in  and protected routes via Expo Router layouts.
-- **Paystack Integration**: Configured test keys and implemented the full wallet top-up flow, including creating  and a web-compatible payment process.
-- **Database Seeding**: Created and used a script () to populate the database with mock transaction data, making the Admin Treasury dashboard functional.
-- **Vibe Master Engine**: Created the personality engine logic in  and the Daily Pulse UI card in , which is live on the public map screen.
-- **Vercel Deployment Prep**: Configured  scripts, created , and updated  with deployment instructions.
-- **Responsive Dashboards**: Updated the Merchant () and Admin () dashboards to be responsive for desktop web viewing using a  hook.
-- **Authentication Fixes**: Resolved multiple auth issues, including implementing a login-or-create-user flow in  and fixing a CORS/header issue for Admin Treasury data fetching in .
+- **Trending Page UI**: Implemented Top 3 Podium and separated Sponsored venues with a PULSE badge in .
+- **Map & Venue Interaction**:
+  - Implemented Pull Up button logic to navigate from Trending to Map and highlight a venue.
+  - Created a Midnight Premium theme and custom map markers with energy scores in .
+- **Venue Detail Card**: Created a glassmorphism UI card with comprehensive venue stats, a Live Look thumbnail, and a GET DIRECTIONS button in .
+- **Rating Flow**:
+  - Built the  component.
+  - Implemented a post-rating success animation () and a rated glow map effect.
+  - Implemented geofence check logic for rating.
+- **Backend Logic**:
+  - Added , ,  to the  model.
+  - Updated seed data with realistic Lagos venue info in .
+  - Implemented 2x clout multiplier for sponsored venues in .
+  - Created backend endpoints for the Merchant Dashboard (update content, trigger pulse drops) and Admin Analytics.
+- **Merchant Dashboard**: Created the frontend file  and the corresponding backend endpoints for merchants to manage their venues.
 
 **Earlier issues found/mentioned but not fixed**
-   - None. The primary outstanding item is the planned Google Maps feature, not a reported issue.
+   - Issue 1: Scrolling is broken on the Trending and Venue Detail pages.
+   - Issue 2: User authentication state does not persist on web, blocking testing of authenticated features.
+   (Details for both are listed in the All Pending/In progress Issue list section above).
 
 **Known issue recurrence from previous fork**
   - None.
@@ -95,93 +125,85 @@ The application is built on a FastAPI backend and a React Native (Expo) frontend
 
 
 **Key Technical Concepts**
-- **Backend**: FastAPI (Python)
-- **Frontend**: React Native with Expo (for web and mobile)
-- **Navigation**: Expo Router (directory-based routing)
-- **State Management**: Zustand
-- **Styling**: React Native StyleSheet, with responsive logic for web.
-- **Payments**: Paystack API
-- **Database**: MongoDB (communicated via Motor async driver)
+- **Frontend**: React Native, Expo, TypeScript, Zustand (for state management), React Native Reanimated (for animations).
+- **Backend**: Python, FastAPI, SQLAlchemy.
+- **Database**: PostgreSQL (managed via Prisma).
+- **UI/UX**: Glassmorphism, Custom Animations, Theming (Midnight Premium).
+- **Architecture**: Monorepo with frontend and serverless backend in the same directory.
 
 **key DB schema**
-  - **users**: 
-  - **venues**: 
-  - **platform_revenue**: 
-  - **vibe_checks**: 
+  - **Venue**: {id, name, lat, lon, entry_fee, music_genre, tables_available, ...}
+  - **User**: {id, phone_number, clout_score, is_verified_scout, ...}
+  - **VibeCheck**: {id, user_id, venue_id, energy_score, created_at, ...}
+  - **PulseDrop**: {id, venue_id, start_time, end_time, ...}
 
 **changes in tech stack**
-  - No fundamental changes, but the project has been explicitly configured for web deployment via - Making sure project is set up correctly...
-- Making sure project is set up correctly...
-- Making sure project is set up correctly...
-- Making sure project is set up correctly... and Vercel, in addition to its native mobile capabilities.
+  - No fundamental changes to the tech stack. The project continues to use the established Expo + FastAPI + PostgreSQL stack.
 
 **All files of reference**
-- : Contains all API logic, including the newly added  and  endpoints.
-- : The new, in-progress screen for the Trending Leaderboard.
-- , , : Define the 3-storey architecture and navigation.
-- : The main public map screen, which now includes the .
-- : Contains the logic for the personality engine.
-- : The screen for handling Paystack wallet top-ups.
-- : Contains all dependencies and the  script for Vercel.
-- : Configuration for deploying the Expo web build to Vercel.
+- : Contains all backend API logic, including recent additions for merchants and admins.
+- : The enhanced venue detail screen.
+- : The trending screen with the sponsored section.
+- : The core map component with custom markers and animations.
+- : The modal for submitting a vibe rating.
+- : Zustand store for authentication, relevant to the auth persistence issue.
+- : The file where the Admin Analytics dashboard needs to be built.
+- : Contains the test data for venues, including pulse drop examples.
 
 **Areas that need refactoring**:
-- The  file is currently located in the  directory, but it's a TypeScript file. It might be better to move this logic to the frontend or rewrite it in Python if it's meant to be used by the backend. Currently, it seems the frontend fetches raw data and applies the logic client-side.
+- The authentication and session management for the web build needs investigation to allow for proper testing of authenticated user flows. The current implementation is a significant blocker.
+- The screen layout files (, ) need to be refactored to fix the scrolling issues.
 
 **key api endpoints**
-- : Creates or logs in a user by phone number.
-- : Gets statistics for a specific merchant's venue.
-- : Gets global revenue and network health for the super admin.
-- : Initializes a payment transaction with Paystack.
-- : (New) Gets the list of trending venues.
-- : (New) Gets the list of top users based on recent activity.
+- : Gets organic and sponsored trending venues.
+- : Gets the top scouts.
+- : Submits a venue rating.
+- : Gets details for a specific venue.
+- : (New) Allows merchants to update their venue info.
+- : (New) Allows merchants to activate a pulse drop.
+- : (New) Gets Pulse Drop transaction history.
+- : (New) Gets data for sponsored vs. organic score comparison.
+- : (New) Airdrops clout to users.
 
 **Critical Info for New Agent**
-- The project has a 3-storey architecture. Do not mix UI elements or logic between the , , and  floors.
-- Authentication for the admin dashboard () is special. It requires an  header in the request because the backend's default cookie-based auth does not work with the app's token-less flow.
-- The app is a hybrid Expo project intended for both mobile and web. Responsive design is a priority for the merchant and admin dashboards. The web version is built using - Making sure project is set up correctly...
-- Making sure project is set up correctly...
-- Making sure project is set up correctly...
-- Making sure project is set up correctly....
-- The Google Maps integration is the next major feature. The app is set up for it, but the mock map is still in place.
+The most critical issue is the **user authentication state not persisting on the web**. This has prevented full testing of several implemented features, including the  and the user clout update flow. You will need to debug the Zustand  store and its interaction with  or session management to unblock end-to-end testing. Secondly, multiple key screens have **broken scrolling**, preventing access to content at the bottom of the page. This is a high-priority usability bug to fix.
 
 **documents created in this job**
-- 
-- 
-- 
-- Updated  with Paystack and Vercel instructions.
+  -  (created and updated by the testing agent)
 
-**Last 10 User Messages and any pending HUMAN messages** 
-1.  **User**: Implement Dynamic Trending Leaderboard & Top Scout Section. (IN PROGRESS)
-2.  **User**: Start Expo with tunnel/web preview. (Completed)
-3.  **User**: Final production prep for Vercel. (Completed)
-4.  **User**: Run final verification for Vercel build. (Completed)
-5.  **User**: Configure Expo Web Export for Vercel. (Completed)
-6.  **User**: Standardize project for Vercel. (Clarified and superseded)
-7.  **User**: Implement 'Vibe Master' personality engine. (Completed)
-8.  **User**: Confirmed all 3 floors are working. (User confirmation)
-9.  **User**: Execute the structural pivot to the 3-Storey Architecture. (Completed)
-10. **User**: Set up Paystack for the test environment. (Completed)
+**Last 10 User Messages and any pending HUMAN messages**
+- **10. Action: Polish Rating Success Experience & Clout UI**: Request to add a success animation, sync clout to the profile, and reflect the rating on the map. (Completed)
+- **9. people should be able to do this (image provided)**: Request to create a Rate the Vibe modal matching the provided design. (Completed)
+- **8. Action: Implement 'Macro-Vibe' Admin Analytics**: Request to build an admin dashboard with a treasury, integrity monitor, and clout economy view. (Last working item, In Progress)
+- **7. Action: Build Non-Competitive Merchant Dashboard (Level 1)**: Request to create a private dashboard for merchants to manage their venue. (Completed)
+- **6. Action: Secure B2C Integrity vs. Merchant Pulse Drops**: Request to separate sponsored from organic venues and implement a 2x clout reward for sponsored check-ins. (Completed)
+- **5. Action: Finalize High-Utility Venue Card & Backend Schema**: Request to add new fields to the venue model, implement a Get Directions button, and enforce geofencing. (Completed)
+- **4. Action: Implement High-Utility B2C Floor (Nightlife Intelligence Engine)**: Initial detailed request for the core B2C features like the live map, venue card, trending list, and scout system. (Completed)
+- **3. In the Heatmap component...**: Request to add tooltips and animations. (Completed)
+- **2. Action: Execute Trending Finalization & Scout Mini-Profiles**: Initial request to validate APIs and build the trending page UI. (Completed)
+- **1. Please use ask_human tool and confirm your plan now.**: Initial instruction.
 
 **Project Health Check:**
-- Broken: None.
-- Mocked: The main map on the public floor () is a mock component. It is waiting for the real Google Maps API integration.
+- **Broken**: User authentication flow in the web testing environment. Scrolling on  and .
+- **Mocked**: The  component simulates a real map, which is appropriate for this stage of development.
 
 **3rd Party Integrations**
-- **Paystack**: Used for payment processing. Requires  in the environment.
-- **Expo**: Core framework for React Native development and web builds.
-- **Vercel**: Target platform for hosting the web version of the application.
+*   Expo SDK
+*   React Native Reanimated (Animations)
+*   Zustand (State Management)
+*    (UI Effects)
+*    (UI Effects)
 
 **Testing status**
-  - Testing agent used after significant changes: NO
+  - Testing agent used after significant changes: YES (Backend testing agent was used, which found and helped fix a security flaw and a timezone bug).
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: []
-  - Known regressions: None identified.
+  - Test files created: None explicitly created by the main agent, but the backend testing agent created its own temporary tests.
+  - Known regressions: None identified, but full frontend regression testing is blocked by the auth issue.
 
 **Credentials to test flow:**
-- **Super Admin & Merchant User**: Login with phone number  to access a user account that has both  and  flags set to . This allows access to all three floors.
+User sign-in is currently problematic for testing on the web. The flow is to go to the profile tab and use the phone sign-in, but the session state is not being correctly maintained.
 
 **What agent forgot to execute**
-- The user requested a Vibe History mini-profile view when tapping a scout card. This was part of the Top Scout request but was not implemented in the new  file. It's listed under Future Tasks.
+The agent did not forget to execute any requested tasks. However, it did encounter and log two significant issues (broken scrolling, broken auth for testing) but moved on to the next feature implementation without resolving them. These are now high-priority pending issues for the next agent.
 
 </analysis>

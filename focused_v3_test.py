@@ -8,7 +8,7 @@ import asyncio
 import json
 import aiohttp
 
-BASE_URL = "https://trending-night.preview.emergentagent.com/api"
+BASE_URL = "https://vibe-scout.preview.emergentagent.com/api"
 
 async def test_specific_scenarios():
     """Test the specific scenarios mentioned in review request"""

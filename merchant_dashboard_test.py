@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 
 # Get backend URL from frontend env
-BACKEND_URL = "https://trending-night.preview.emergentagent.com/api"
+BACKEND_URL = "https://vibe-scout.preview.emergentagent.com/api"
 
 def test_merchant_dashboard_apis():
     """Test all merchant dashboard endpoints with proper authentication"""
