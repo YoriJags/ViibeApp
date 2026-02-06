@@ -735,6 +735,10 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
 
   // ====== LIVE LOOK STYLES ======
   liveLookContainer: {
