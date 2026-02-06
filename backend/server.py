@@ -1467,8 +1467,19 @@ async def get_nearby_pulse_drops(lat: float, lng: float, radius_km: float = 10.0
 # ===== Merchant Dashboard Routes =====
 
 @api_router.get("/merchant/venue/{venue_id}/stats")
-async def get_merchant_venue_stats(venue_id: str):
-    """Get detailed stats for venue owner with ROI metrics"""
+async def get_merchant_venue_stats(venue_id: str, request: Request):
+    """
+    Get detailed stats for venue owner with ROI metrics.
+    Privacy: Only the venue owner can access their stats.
+    """
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    # Privacy Guard: Check merchant owns this venue
+    if user.get("merchant_venue_id") != venue_id:
+        raise HTTPException(status_code=403, detail="You can only view your own venue stats")
+    
     venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
