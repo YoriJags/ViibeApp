@@ -94,6 +94,7 @@ interface VibeStore {
   pendingRatings: PendingRating[];
   isOnline: boolean;
   gpsLocked: boolean;
+  lastRatedVenueId: string | null;
 
   // Actions
   setUser: (user: User | null) => void;
@@ -105,6 +106,8 @@ interface VibeStore {
   setIsAuthenticated: (auth: boolean) => void;
   setIsOnline: (online: boolean) => void;
   setGpsLocked: (locked: boolean) => void;
+  setLastRatedVenueId: (venueId: string | null) => void;
+  updateUserClout: (cloutEarned: number) => void;
 
   // API Actions
   fetchUser: () => Promise<void>;
