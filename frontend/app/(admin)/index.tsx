@@ -752,14 +752,14 @@ export default function AdminAnalytics() {
                   <Text style={styles.cloutStatLabel}>Total Circulation</Text>
                 </View>
                 <View style={styles.cloutStatItem}>
-                  <Text style={styles.cloutStatValue}>{cloutEconomy?.average_clout || 0}</Text>
+                  <Text style={styles.cloutStatValue}>{displayCloutEconomy?.average_clout || 0}</Text>
                   <Text style={styles.cloutStatLabel}>Avg per User</Text>
                 </View>
               </View>
 
               {/* Top Scouts */}
               <Text style={styles.subTitle}>Top 10 Scouts</Text>
-              {cloutEconomy?.top_scouts?.slice(0, 5).map((scout) => (
+              {displayCloutEconomy?.top_scouts?.slice(0, 5).map((scout) => (
                 <View key={scout.id} style={styles.scoutRow}>
                   <Text style={[styles.scoutRank, scout.rank <= 3 && { color: adminColors.gold }]}>
                     #{scout.rank}
@@ -789,7 +789,7 @@ export default function AdminAnalytics() {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Activity Logs</Text>
               <View style={styles.logsList}>
-                {ledger.slice(0, 15).map((item, index) => (
+                {displayLedger.slice(0, 15).map((item, index) => (
                   <View key={index} style={styles.logItem}>
                     <View style={styles.logIcon}>
                       <Ionicons name="flash" size={14} color={getTierColor(item.tier)} />
@@ -807,7 +807,7 @@ export default function AdminAnalytics() {
                   </View>
                 ))}
                 
-                {ledger.length === 0 && (
+                {displayLedger.length === 0 && (
                   <View style={styles.emptyState}>
                     <Ionicons name="document-text-outline" size={40} color={adminColors.textMuted} />
                     <Text style={styles.emptyText}>No activity logs</Text>
@@ -823,7 +823,7 @@ export default function AdminAnalytics() {
                 <View style={styles.networkItem}>
                   <Ionicons name="wifi" size={20} color={adminColors.success} />
                   <Text style={styles.networkLabel}>Active Connections</Text>
-                  <Text style={styles.networkValue}>{treasury?.network_health?.active_connections || 0}</Text>
+                  <Text style={styles.networkValue}>{displayTreasury?.network_health?.active_connections || 0}</Text>
                 </View>
                 <View style={styles.networkItem}>
                   <Ionicons name="business" size={20} color={adminColors.venues} />
