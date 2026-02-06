@@ -152,6 +152,7 @@ export const useVibeStore = create<VibeStore>((set, get) => ({
   pendingRatings: [],
   isOnline: true,
   gpsLocked: false,
+  lastRatedVenueId: null,
 
   // Setters
   setUser: (user) => set({ user, isAuthenticated: !!user }),
