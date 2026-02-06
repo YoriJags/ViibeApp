@@ -1755,7 +1755,11 @@ async def seed_data():
             "is_featured": True,
             "is_verified": True,
             "profile_views": 1250,
-            "direction_clicks": 340
+            "direction_clicks": 340,
+            "entry_fee": "₦20,000",
+            "music_genre": "Afrobeats/Amapiano",
+            "tables_available": True,
+            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(minutes=18)
         },
         {
             "name": "Hard Rock Cafe Lagos",
@@ -1771,7 +1775,11 @@ async def seed_data():
             "vibe_velocity": "stable",
             "is_verified": True,
             "profile_views": 890,
-            "direction_clicks": 210
+            "direction_clicks": 210,
+            "entry_fee": "Free Entry",
+            "music_genre": "Rock/Pop",
+            "tables_available": True,
+            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(minutes=35)
         },
         {
             "name": "Shiro Lagos",
@@ -1787,7 +1795,11 @@ async def seed_data():
             "vibe_velocity": "cooling_down",
             "is_verified": True,
             "profile_views": 650,
-            "direction_clicks": 180
+            "direction_clicks": 180,
+            "entry_fee": "₦15,000",
+            "music_genre": "House/Deep House",
+            "tables_available": True,
+            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(minutes=12)
         },
         {
             "name": "Backyard BBQ",
@@ -1802,7 +1814,11 @@ async def seed_data():
             "gate_level": "clear",
             "vibe_velocity": "stable",
             "profile_views": 320,
-            "direction_clicks": 95
+            "direction_clicks": 95,
+            "entry_fee": "Free Entry",
+            "music_genre": "R&B/Soul",
+            "tables_available": True,
+            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(hours=1)
         },
         {
             "name": "The Blowfish Hotel",
@@ -1819,7 +1835,11 @@ async def seed_data():
             "is_featured": True,
             "is_verified": True,
             "profile_views": 980,
-            "direction_clicks": 275
+            "direction_clicks": 275,
+            "entry_fee": "₦10,000 (Ladies Free)",
+            "music_genre": "Amapiano/House",
+            "tables_available": False,
+            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(minutes=8)
         },
         {
             "name": "Sky Restaurant & Lounge",
@@ -1835,7 +1855,11 @@ async def seed_data():
             "vibe_velocity": "stable",
             "is_verified": True,
             "profile_views": 540,
-            "direction_clicks": 145
+            "direction_clicks": 145,
+            "entry_fee": "₦5,000",
+            "music_genre": "Jazz/Lounge",
+            "tables_available": True,
+            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(minutes=45)
         },
         {
             "name": "DNA Nightclub",
@@ -1852,7 +1876,11 @@ async def seed_data():
             "is_featured": True,
             "is_verified": True,
             "profile_views": 2100,
-            "direction_clicks": 580
+            "direction_clicks": 580,
+            "entry_fee": "₦30,000",
+            "music_genre": "Amapiano/Afrobeats",
+            "tables_available": False,
+            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(minutes=5)
         },
         {
             "name": "The Place Restaurant",
@@ -1867,7 +1895,11 @@ async def seed_data():
             "gate_level": "clear",
             "vibe_velocity": "cooling_down",
             "profile_views": 280,
-            "direction_clicks": 70
+            "direction_clicks": 70,
+            "entry_fee": "Free Entry",
+            "music_genre": "Highlife/Juju",
+            "tables_available": True,
+            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(hours=2)
         },
         {
             "name": "Sailors Lounge",
@@ -1883,7 +1915,11 @@ async def seed_data():
             "vibe_velocity": "stable",
             "is_verified": True,
             "profile_views": 1150,
-            "direction_clicks": 310
+            "direction_clicks": 310,
+            "entry_fee": "₦15,000",
+            "music_genre": "Hip-Hop/R&B",
+            "tables_available": True,
+            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(minutes=22)
         },
         {
             "name": "Cubana Lagos",
@@ -1899,7 +1935,11 @@ async def seed_data():
             "vibe_velocity": "heating_up",
             "is_verified": True,
             "profile_views": 870,
-            "direction_clicks": 230
+            "direction_clicks": 230,
+            "entry_fee": "₦10,000",
+            "music_genre": "Afrobeats/Dancehall",
+            "tables_available": True,
+            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(minutes=15)
         }
     ]
     
