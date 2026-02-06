@@ -1534,7 +1534,7 @@ async def get_merchant_venue_stats(venue_id: str, request: Request):
         ratings = await db.ratings.find({
             "venue_id": venue_id,
             "timestamp": {"$gte": start, "$lt": end}
-        }, {"_id": 0}).to_list(100)
+        }, {"_id": 0, "vibe_score": 1}).to_list(100)
         
         avg_score = sum(r.get("vibe_score", 0) for r in ratings) / len(ratings) if ratings else 0
         hourly_scores.append({"hour": h, "score": round(avg_score, 1), "count": len(ratings)})
@@ -1542,11 +1542,14 @@ async def get_merchant_venue_stats(venue_id: str, request: Request):
     # Competition - top 5 venues in same area
     competitors = await db.venues.find(
         {"city": venue.get("city"), "area": venue.get("area"), "id": {"$ne": venue_id}},
-        {"_id": 0}
+        {"_id": 0, "id": 1, "name": 1, "current_vibe_score": 1, "area": 1}
     ).sort("current_vibe_score", -1).limit(5).to_list(5)
     
     # Get venue rank
-    all_area_venues = await db.venues.find({"city": venue.get("city"), "area": venue.get("area")}, {"_id": 0}).sort("current_vibe_score", -1).to_list(100)
+    all_area_venues = await db.venues.find(
+        {"city": venue.get("city"), "area": venue.get("area")}, 
+        {"_id": 0, "id": 1, "current_vibe_score": 1}
+    ).sort("current_vibe_score", -1).to_list(100)
     rank = next((i+1 for i, v in enumerate(all_area_venues) if v["id"] == venue_id), 0)
     
     # Wallet balance
