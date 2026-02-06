@@ -484,6 +484,167 @@ class VibeAppTester:
         except Exception as e:
             self.log_test("Merchant Dashboard Stats", False, str(e), critical=True)
 
+    async def test_trending_leaderboard(self):
+        """Test new trending venues endpoint with dynamic scoring"""
+        print("\n🔥 Testing Trending Leaderboard")
+        
+        # Test trending venues for Lagos
+        try:
+            async with self.session.get(f"{self.base_url}/trending/lagos") as resp:
+                if resp.status == 200:
+                    trending = await resp.json()
+                    
+                    # Verify response structure
+                    has_structure = all(key in trending for key in ["city", "venues", "last_updated", "total_venues"])
+                    venues = trending.get("venues", [])
+                    
+                    if venues:
+                        # Check first venue has all required fields
+                        first_venue = venues[0]
+                        required_fields = ["venue", "trending_score", "energy_percent", "check_in_velocity", "scout_count", "trend", "rank"]
+                        has_all_fields = all(field in first_venue for field in required_fields)
+                        
+                        # Verify venues are sorted by trending_score (descending)
+                        is_sorted = all(
+                            venues[i]["trending_score"] >= venues[i+1]["trending_score"]
+                            for i in range(len(venues)-1)
+                        ) if len(venues) > 1 else True
+                        
+                        # Check if ranking is correct (1, 2, 3, ...)
+                        correct_ranks = all(
+                            venues[i]["rank"] == i + 1 
+                            for i in range(len(venues))
+                        )
+                        
+                        self.log_test("Trending Venues API", has_structure and has_all_fields and is_sorted and correct_ranks,
+                                    f"Found {len(venues)} venues, top score: {venues[0]['trending_score'] if venues else 'N/A'}, correctly sorted: {is_sorted}")
+                    else:
+                        self.log_test("Trending Venues API", has_structure,
+                                    "API structure correct but no venues returned")
+                else:
+                    self.log_test("Trending Venues API", False, f"HTTP {resp.status}", critical=True)
+        except Exception as e:
+            self.log_test("Trending Venues API", False, str(e), critical=True)
+
+        # Test with different city
+        try:
+            async with self.session.get(f"{self.base_url}/trending/abuja") as resp:
+                if resp.status == 200:
+                    abuja_trending = await resp.json()
+                    self.log_test("Trending Venues (Abuja)", True,
+                                f"Abuja trending venues: {len(abuja_trending.get('venues', []))}")
+                else:
+                    self.log_test("Trending Venues (Abuja)", False, f"HTTP {resp.status}")
+        except Exception as e:
+            self.log_test("Trending Venues (Abuja)", False, str(e))
+
+    async def test_top_scouts(self):
+        """Test top scouts leaderboard endpoint"""
+        print("\n🕵️ Testing Top Scouts API")
+        
+        # Test top scouts for Lagos
+        try:
+            async with self.session.get(f"{self.base_url}/top-scouts/lagos") as resp:
+                if resp.status == 200:
+                    scouts = await resp.json()
+                    
+                    # Verify response structure
+                    has_structure = all(key in scouts for key in ["city", "scouts", "last_updated", "time_window"])
+                    scout_list = scouts.get("scouts", [])
+                    
+                    if scout_list:
+                        # Check first scout has all required fields  
+                        first_scout = scout_list[0]
+                        required_fields = ["rank", "user_id", "username", "check_count", "venues_visited", "tier", "ring_color", "clout_points"]
+                        has_all_fields = all(field in first_scout for field in required_fields)
+                        
+                        # Verify scouts are sorted by check_count (descending)
+                        is_sorted = all(
+                            scout_list[i]["check_count"] >= scout_list[i+1]["check_count"]
+                            for i in range(len(scout_list)-1)
+                        ) if len(scout_list) > 1 else True
+                        
+                        # Check if ranking is correct (1, 2, 3, ...)
+                        correct_ranks = all(
+                            scout_list[i]["rank"] == i + 1 
+                            for i in range(len(scout_list))
+                        )
+                        
+                        # Verify tier colors exist
+                        has_tier_colors = all(scout.get("ring_color") for scout in scout_list)
+                        
+                        self.log_test("Top Scouts API", has_structure and has_all_fields and is_sorted and correct_ranks and has_tier_colors,
+                                    f"Found {len(scout_list)} scouts, top checks: {scout_list[0]['check_count'] if scout_list else 'N/A'}, correctly sorted: {is_sorted}")
+                    else:
+                        self.log_test("Top Scouts API", has_structure,
+                                    "API structure correct but no scouts returned")
+                else:
+                    self.log_test("Top Scouts API", False, f"HTTP {resp.status}", critical=True)
+        except Exception as e:
+            self.log_test("Top Scouts API", False, str(e), critical=True)
+
+    async def test_scout_profile(self):
+        """Test scout profile endpoint with activity heatmap"""
+        print("\n👤 Testing Scout Profile API")
+        
+        # First create a test user to get a valid user ID
+        if not self.test_user_id:
+            try:
+                user_data = {
+                    "username": "TestScout_" + str(int(time.time())),
+                    "phone": "+2341234567890"
+                }
+                async with self.session.post(f"{self.base_url}/users", json=user_data) as resp:
+                    if resp.status == 200:
+                        user_result = await resp.json()
+                        self.test_user_id = user_result.get("user_id")
+                        print(f"   Created test user: {self.test_user_id}")
+                    else:
+                        self.log_test("Scout Profile Setup", False, f"Failed to create user: HTTP {resp.status}", critical=True)
+                        return
+            except Exception as e:
+                self.log_test("Scout Profile Setup", False, str(e), critical=True)
+                return
+        
+        # Test scout profile endpoint
+        try:
+            async with self.session.get(f"{self.base_url}/scout/{self.test_user_id}/profile") as resp:
+                if resp.status == 200:
+                    profile = await resp.json()
+                    
+                    # Verify response structure
+                    required_sections = ["user", "activity_heatmap", "stats"]
+                    has_structure = all(section in profile for section in required_sections)
+                    
+                    user_info = profile.get("user", {})
+                    user_required = ["id", "username", "clout_points", "scout_status", "total_ratings", "tier", "tier_color"]
+                    has_user_info = all(field in user_info for field in user_required)
+                    
+                    stats = profile.get("stats", {})
+                    stats_required = ["checks_24h", "checks_7d", "unique_venues_7d"]
+                    has_stats = all(field in stats for field in stats_required)
+                    
+                    # Activity heatmap should be a list (empty or with data)
+                    activity_heatmap = profile.get("activity_heatmap", [])
+                    is_valid_heatmap = isinstance(activity_heatmap, list)
+                    
+                    self.log_test("Scout Profile API", has_structure and has_user_info and has_stats and is_valid_heatmap,
+                                f"User: {user_info.get('username', 'N/A')}, Tier: {user_info.get('tier', 'N/A')}, 24h checks: {stats.get('checks_24h', 0)}, Heatmap entries: {len(activity_heatmap)}")
+                else:
+                    self.log_test("Scout Profile API", False, f"HTTP {resp.status}", critical=True)
+        except Exception as e:
+            self.log_test("Scout Profile API", False, str(e), critical=True)
+
+        # Test with invalid user ID (should return 404)
+        try:
+            async with self.session.get(f"{self.base_url}/scout/invalid_user_id/profile") as resp:
+                if resp.status == 404:
+                    self.log_test("Scout Profile (Invalid User)", True, "Correctly returned 404 for invalid user")
+                else:
+                    self.log_test("Scout Profile (Invalid User)", False, f"Expected 404, got {resp.status}")
+        except Exception as e:
+            self.log_test("Scout Profile (Invalid User)", False, str(e))
+
     async def run_all_tests(self):
         """Execute all test suites"""
         print("🚀 Starting Vibe App Backend API Testing")
