@@ -463,20 +463,30 @@ export default function AdminAnalytics() {
         <View style={styles.quickStats}>
           <View style={[styles.quickStatCard, { borderColor: adminColors.revenue }]}>
             <Ionicons name="cash" size={20} color={adminColors.revenue} />
-            <Text style={styles.quickStatValue}>₦{(treasury?.global?.total_revenue || 0).toLocaleString()}</Text>
+            <Text style={styles.quickStatValue}>₦{(displayTreasury?.global?.total_revenue || 0).toLocaleString()}</Text>
             <Text style={styles.quickStatLabel}>Total Revenue</Text>
           </View>
           <View style={[styles.quickStatCard, { borderColor: adminColors.users }]}>
             <Ionicons name="people" size={20} color={adminColors.users} />
-            <Text style={styles.quickStatValue}>{treasury?.network_health?.total_users || 0}</Text>
+            <Text style={styles.quickStatValue}>{displayTreasury?.network_health?.total_users || 0}</Text>
             <Text style={styles.quickStatLabel}>Total Users</Text>
           </View>
           <View style={[styles.quickStatCard, { borderColor: adminColors.gold }]}>
             <Ionicons name="flash" size={20} color={adminColors.gold} />
-            <Text style={styles.quickStatValue}>{cloutEconomy?.total_clout_circulation?.toLocaleString() || 0}</Text>
+            <Text style={styles.quickStatValue}>{displayCloutEconomy?.total_clout_circulation?.toLocaleString() || 0}</Text>
             <Text style={styles.quickStatLabel}>Clout</Text>
           </View>
         </View>
+
+        {/* Demo Mode Banner */}
+        {isDemoMode && (
+          <View style={styles.demoBanner}>
+            <Ionicons name="information-circle" size={16} color="#9333EA" />
+            <Text style={styles.demoBannerText}>
+              Showing sample data for demonstration. Toggle off to see real metrics.
+            </Text>
+          </View>
+        )}
 
         {/* Tab Navigation - Royal Blue Style */}
         <View style={styles.tabNav}>
@@ -509,10 +519,10 @@ export default function AdminAnalytics() {
             <View style={styles.revenueSummary}>
               <View style={styles.revenueMain}>
                 <Text style={styles.revenueLabel}>Total Platform Revenue</Text>
-                <Text style={styles.revenueValue}>₦{(treasury?.global?.total_revenue || 0).toLocaleString()}</Text>
+                <Text style={styles.revenueValue}>₦{(displayTreasury?.global?.total_revenue || 0).toLocaleString()}</Text>
                 <View style={styles.revenueGrowth}>
                   <Ionicons name="trending-up" size={14} color={adminColors.success} />
-                  <Text style={styles.revenueGrowthText}>+₦{(treasury?.global?.today_revenue || 0).toLocaleString()} today</Text>
+                  <Text style={styles.revenueGrowthText}>+₦{(displayTreasury?.global?.today_revenue || 0).toLocaleString()} today</Text>
                 </View>
               </View>
             </View>
@@ -521,10 +531,10 @@ export default function AdminAnalytics() {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Most Purchased Tiers</Text>
               <View style={styles.tiersChart}>
-                {treasury?.revenue_by_tier && Object.entries(treasury.revenue_by_tier)
+                {displayTreasury?.revenue_by_tier && Object.entries(displayTreasury.revenue_by_tier)
                   .sort((a, b) => b[1].total - a[1].total)
                   .map(([tier, stats]) => {
-                    const maxTotal = Math.max(...Object.values(treasury.revenue_by_tier).map(s => s.total)) || 1;
+                    const maxTotal = Math.max(...Object.values(displayTreasury.revenue_by_tier).map(s => s.total)) || 1;
                     const percentage = (stats.total / maxTotal) * 100;
                     
                     return (
