@@ -611,6 +611,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     cursor: 'pointer',
   },
+  ratedGlowRing: {
+    position: 'absolute',
+    borderWidth: 3,
+    borderColor: '#4CAF50',
+    backgroundColor: 'transparent',
+  },
+  ratedGlowInner: {
+    position: 'absolute',
+    backgroundColor: '#4CAF5030',
+  },
+  ratedLabel: {
+    position: 'absolute',
+    top: -32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  ratedLabelText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFF',
+  },
   pulseDropGlow: {
     position: 'absolute',
     backgroundColor: '#FFD70030',
