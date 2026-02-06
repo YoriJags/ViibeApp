@@ -743,9 +743,14 @@ async def get_trending_venues(city: str, limit: int = 10):
         is_pulse_boosted = False
         if venue.get("active_pulse_tier") and venue.get("pulse_expires_at"):
             try:
-                pulse_expires = datetime.fromisoformat(str(venue.get("pulse_expires_at")).replace('Z', '+00:00'))
+                pulse_expires_raw = venue.get("pulse_expires_at")
+                if isinstance(pulse_expires_raw, datetime):
+                    pulse_expires = pulse_expires_raw.replace(tzinfo=timezone.utc) if pulse_expires_raw.tzinfo is None else pulse_expires_raw
+                else:
+                    pulse_expires = datetime.fromisoformat(str(pulse_expires_raw).replace('Z', '+00:00'))
                 is_pulse_boosted = pulse_expires > now
-            except:
+            except Exception as e:
+                print(f"Pulse check error: {e}")
                 pass
         
         # Get ratings from last hour for velocity calculation
