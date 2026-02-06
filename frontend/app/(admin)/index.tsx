@@ -216,12 +216,78 @@ const DEMO_USER_ANALYTICS: UserAnalytics = {
   },
 };
 
+// ===== WALKTHROUGH CONFIGURATION =====
+interface WalkthroughStep {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  targetTab?: TabType;
+  position: 'top' | 'center' | 'bottom';
+}
+
+const WALKTHROUGH_STEPS: WalkthroughStep[] = [
+  {
+    id: 'welcome',
+    title: 'Welcome to Admin Analytics',
+    description: 'Your command center for monitoring platform performance, user engagement, and revenue metrics in real-time.',
+    icon: 'analytics',
+    position: 'center',
+  },
+  {
+    id: 'quick-stats',
+    title: 'Quick Stats Overview',
+    description: 'See your key metrics at a glance: Total Revenue, Active Users, and Clout Circulation across the platform.',
+    icon: 'stats-chart',
+    position: 'top',
+  },
+  {
+    id: 'treasury',
+    title: 'Treasury & Revenue',
+    description: 'Track Pulse Drop purchases, see which tiers are most popular, and monitor daily revenue growth.',
+    icon: 'wallet',
+    targetTab: 'treasury',
+    position: 'center',
+  },
+  {
+    id: 'venues',
+    title: 'Venue Integrity Monitor',
+    description: 'Compare sponsored venue performance against organic venues. Ensure platform credibility stays protected.',
+    icon: 'business',
+    targetTab: 'venues',
+    position: 'center',
+  },
+  {
+    id: 'users',
+    title: 'User Analytics & Clout',
+    description: 'Monitor active vs ghost users, view top scouts, and reward your community with Clout Airdrops.',
+    icon: 'people',
+    targetTab: 'users',
+    position: 'center',
+  },
+  {
+    id: 'demo-mode',
+    title: 'Demo Mode',
+    description: 'Toggle Demo Mode to showcase the platform with sample data when pitching to merchants.',
+    icon: 'sparkles',
+    position: 'top',
+  },
+];
+
+const WALKTHROUGH_STORAGE_KEY = 'admin_walkthrough_completed';
+
 export default function AdminAnalytics() {
   const router = useRouter();
   const { user, hasHydrated } = useVibeStore();
   
   // Demo Mode State
   const [isDemoMode, setIsDemoMode] = useState(false);
+  
+  // Walkthrough State
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+  const [walkthroughStep, setWalkthroughStep] = useState(0);
+  const [walkthroughChecked, setWalkthroughChecked] = useState(false);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
   
   const [treasury, setTreasury] = useState<TreasuryData | null>(null);
   const [ledger, setLedger] = useState<LedgerItem[]>([]);
