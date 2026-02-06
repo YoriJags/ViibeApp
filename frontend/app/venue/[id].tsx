@@ -11,6 +11,7 @@ import {
   Platform,
   Image,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,8 +20,10 @@ import * as Location from 'expo-location';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVibeStore } from '../../src/store/vibeStore';
+import RateVibeModal from '../../src/components/RateVibeModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 // Placeholder club interior images (high-quality Lagos club vibes)
 const CLUB_PLACEHOLDERS = [
@@ -41,6 +44,7 @@ export default function VenueDetailScreen() {
   const [isWithinGeofence, setIsWithinGeofence] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(false);
   const [showGeofenceTooltip, setShowGeofenceTooltip] = useState(false);
+  const [showRateModal, setShowRateModal] = useState(false);
   
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
