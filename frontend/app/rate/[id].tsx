@@ -276,35 +276,11 @@ export default function RateScreen() {
             <Ionicons name="flash" size={20} color="#FFD700" />
             <Text style={styles.sectionTitle}>Energy</Text>
           </View>
-          <View style={styles.optionsRow}>
-            {ENERGY_OPTIONS.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.optionCard,
-                  energy === option.value && {
-                    borderColor: option.color,
-                    backgroundColor: option.color + '20',
-                  },
-                ]}
-                onPress={() => setEnergy(option.value)}
-              >
-                <Ionicons
-                  name={option.icon as any}
-                  size={32}
-                  color={energy === option.value ? option.color : '#666'}
-                />
-                <Text
-                  style={[
-                    styles.optionLabel,
-                    energy === option.value && { color: option.color },
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <VibeToggle
+            options={ENERGY_OPTIONS}
+            selected={energy}
+            onSelect={setEnergy}
+          />
         </View>
 
         {/* Capacity Selection */}
