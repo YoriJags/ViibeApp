@@ -115,11 +115,12 @@ export default function MerchantOverview() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
+        contentContainerStyle={containerStyle}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, isDesktop && styles.headerDesktop]}>
           <View>
-            <Text style={styles.headerTitle}>Merchant Dashboard</Text>
+            <Text style={[styles.headerTitle, isDesktop && styles.headerTitleDesktop]}>Merchant Dashboard</Text>
             <Text style={styles.venueName}>{stats?.venue.name || 'Your Venue'}</Text>
           </View>
           <TouchableOpacity 
