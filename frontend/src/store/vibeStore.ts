@@ -182,6 +182,19 @@ export const useVibeStore = create<VibeStore>((set, get) => ({
     }
   },
   setGpsLocked: (locked) => set({ gpsLocked: locked }),
+  setLastRatedVenueId: (venueId) => set({ lastRatedVenueId: venueId }),
+  updateUserClout: (cloutEarned) => {
+    const { user } = get();
+    if (user) {
+      set({
+        user: {
+          ...user,
+          clout_points: (user.clout_points || 0) + cloutEarned,
+          total_ratings: (user.total_ratings || 0) + 1,
+        },
+      });
+    }
+  },
 
   // Fetch user from storage
   fetchUser: async () => {
