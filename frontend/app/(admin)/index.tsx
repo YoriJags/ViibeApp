@@ -1102,6 +1102,102 @@ export default function AdminAnalytics() {
           </View>
         </View>
       </Modal>
+
+      {/* ====== WALKTHROUGH MODAL ====== */}
+      <Modal
+        visible={showWalkthrough}
+        transparent
+        animationType="fade"
+        onRequestClose={skipWalkthrough}
+      >
+        <View style={styles.walkthroughOverlay}>
+          {/* Spotlight Effect */}
+          <Animated.View 
+            style={[
+              styles.spotlightContainer,
+              { transform: [{ scale: pulseAnim }] }
+            ]}
+          >
+            <View style={styles.spotlightRing} />
+          </Animated.View>
+
+          {/* Tooltip Card */}
+          <View style={[
+            styles.walkthroughCard,
+            WALKTHROUGH_STEPS[walkthroughStep]?.position === 'top' && styles.walkthroughCardTop,
+            WALKTHROUGH_STEPS[walkthroughStep]?.position === 'bottom' && styles.walkthroughCardBottom,
+          ]}>
+            {/* Progress Dots */}
+            <View style={styles.progressDots}>
+              {WALKTHROUGH_STEPS.map((_, idx) => (
+                <View 
+                  key={idx} 
+                  style={[
+                    styles.progressDot,
+                    idx === walkthroughStep && styles.progressDotActive,
+                    idx < walkthroughStep && styles.progressDotCompleted,
+                  ]} 
+                />
+              ))}
+            </View>
+
+            {/* Icon */}
+            <View style={styles.walkthroughIconContainer}>
+              <LinearGradient
+                colors={[adminColors.primary, adminColors.secondary]}
+                style={styles.walkthroughIconGradient}
+              >
+                <Ionicons 
+                  name={WALKTHROUGH_STEPS[walkthroughStep]?.icon as any} 
+                  size={32} 
+                  color="#FFF" 
+                />
+              </LinearGradient>
+            </View>
+
+            {/* Content */}
+            <Text style={styles.walkthroughTitle}>
+              {WALKTHROUGH_STEPS[walkthroughStep]?.title}
+            </Text>
+            <Text style={styles.walkthroughDescription}>
+              {WALKTHROUGH_STEPS[walkthroughStep]?.description}
+            </Text>
+
+            {/* Step Counter */}
+            <Text style={styles.stepCounter}>
+              Step {walkthroughStep + 1} of {WALKTHROUGH_STEPS.length}
+            </Text>
+
+            {/* Navigation Buttons */}
+            <View style={styles.walkthroughNav}>
+              {walkthroughStep > 0 ? (
+                <TouchableOpacity style={styles.walkthroughNavButton} onPress={handlePrevStep}>
+                  <Ionicons name="chevron-back" size={18} color={adminColors.textSecondary} />
+                  <Text style={styles.walkthroughNavButtonText}>Back</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={styles.walkthroughSkipButton} onPress={skipWalkthrough}>
+                  <Text style={styles.walkthroughSkipText}>Skip Tour</Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity 
+                style={styles.walkthroughNextButton} 
+                onPress={handleNextStep}
+              >
+                <Text style={styles.walkthroughNextText}>
+                  {walkthroughStep === WALKTHROUGH_STEPS.length - 1 ? 'Get Started' : 'Next'}
+                </Text>
+                <Ionicons 
+                  name={walkthroughStep === WALKTHROUGH_STEPS.length - 1 ? 'checkmark' : 'chevron-forward'} 
+                  size={18} 
+                  color="#000" 
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
