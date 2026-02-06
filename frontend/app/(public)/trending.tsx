@@ -1540,4 +1540,89 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
     textAlign: 'center',
   },
+
+  // ====== SPONSORED SECTION STYLES ======
+  sponsoredSection: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  sponsoredHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  sponsoredTitle: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: '#FFD700',
+  },
+  sponsoredSubtitle: {
+    fontSize: typography.fontSize.xs,
+    color: '#4CAF50',
+    fontWeight: typography.fontWeight.semibold,
+  },
+  sponsoredItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1A1815',
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: 2,
+    borderColor: '#FFD70050',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  sponsoredGoldBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: '#FFD700',
+  },
+  sponsoredPulseBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFD70020',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: '#FFD70040',
+    marginRight: spacing.md,
+    gap: 4,
+  },
+  sponsoredPulseText: {
+    fontSize: 9,
+    fontWeight: typography.fontWeight.black,
+    color: '#FFD700',
+    letterSpacing: 1,
+  },
+  sponsoredVenueInfo: {
+    flex: 1,
+  },
+  sponsoredVenueName: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  sponsoredVenueArea: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.muted,
+    marginTop: 2,
+  },
+  sponsoredScoreContainer: {
+    alignItems: 'flex-end',
+    marginRight: spacing.md,
+  },
+  sponsoredEnergyLabel: {
+    fontSize: 10,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  sponsoredScore: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.black,
+  },
 });
