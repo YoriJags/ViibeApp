@@ -232,7 +232,8 @@ export const MockMap: React.FC<MockMapProps> = ({
           const isHighlighted = venue.id === highlightedVenueId;
           const isHovered = hoveredVenue?.id === venue.id;
           const color = getVibeColor(venue.current_vibe_score);
-          const size = getGlowSize(venue.current_vibe_score, isHighlighted);
+          const hasPulseDrop = venue.active_pulse_tier !== null && venue.active_pulse_tier !== undefined;
+          const markerSize = hasPulseDrop ? 56 : isHighlighted ? 52 : 44;
 
           return (
             <TouchableOpacity
@@ -240,11 +241,11 @@ export const MockMap: React.FC<MockMapProps> = ({
               style={[
                 styles.venueMarker,
                 {
-                  left: position.x - size / 2,
-                  top: position.y - size / 2,
-                  width: size,
-                  height: size,
-                  zIndex: isHighlighted || isHovered ? 100 : 1,
+                  left: position.x - markerSize / 2,
+                  top: position.y - markerSize / 2,
+                  width: markerSize,
+                  height: markerSize,
+                  zIndex: isHighlighted || isHovered || hasPulseDrop ? 100 : 1,
                 },
               ]}
               onPress={() => onVenuePress(venue)}
@@ -253,6 +254,20 @@ export const MockMap: React.FC<MockMapProps> = ({
               onMouseEnter={() => handleMouseEnter(venue, position)}
               onMouseLeave={handleMouseLeave}
             >
+              {/* Gold Glow for Pulse Drop venues */}
+              {hasPulseDrop && (
+                <Animated.View
+                  style={[
+                    styles.pulseDropGlow,
+                    {
+                      width: markerSize + 16,
+                      height: markerSize + 16,
+                      borderRadius: (markerSize + 16) / 2,
+                    },
+                  ]}
+                />
+              )}
+              
               {/* Highlight pulse ring */}
               {isHighlighted && (
                 <>
