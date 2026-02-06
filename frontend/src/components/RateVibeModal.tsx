@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
-  Animated,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -81,7 +80,7 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
     }
   };
 
-  const renderOptionButton = (
+  const renderOption = (
     value: string,
     label: string,
     isSelected: boolean,
@@ -97,8 +96,8 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
       activeOpacity={0.7}
     >
       <Text style={[
-        styles.optionButtonText,
-        isSelected && styles.optionButtonTextSelected,
+        styles.optionText,
+        isSelected && styles.optionTextSelected,
       ]}>
         {label}
       </Text>
@@ -113,88 +112,87 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
+        <View style={styles.modal}>
           {/* Close Button */}
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
             <Ionicons name="close" size={24} color="#666" />
           </TouchableOpacity>
 
           {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Rate the Vibe</Text>
-            <View style={styles.venueInfo}>
-              <Text style={styles.venueName}>{venueName}</Text>
-              <Text style={styles.dot}> • </Text>
-              <Text style={[
-                styles.verifiedText,
-                { color: isGpsVerified ? '#4CAF50' : '#FF5252' }
-              ]}>
-                {isGpsVerified ? '50m Radius Verified' : 'Location Required'}
-              </Text>
-            </View>
+          <Text style={styles.title}>Rate the Vibe</Text>
+          <View style={styles.subtitle}>
+            <Text style={styles.venueName}>{venueName}</Text>
+            <Text style={styles.separator}> • </Text>
+            <Text style={[
+              styles.verifiedText,
+              { color: isGpsVerified ? '#4CAF50' : '#FF5252' }
+            ]}>
+              {isGpsVerified ? '50m Radius Verified' : 'Location Required'}
+            </Text>
           </View>
 
-          {/* Energy Section */}
+          {/* ENERGY Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="flash" size={16} color="#888" />
-              <Text style={styles.sectionTitle}>ENERGY</Text>
+              <Text style={styles.sectionLabel}>ENERGY</Text>
             </View>
             <View style={styles.optionsRow}>
-              {renderOptionButton('chill', 'CHILL', energy === 'chill', () => setEnergy('chill'), '#E74C3C')}
-              {renderOptionButton('popping', 'POPPING', energy === 'popping', () => setEnergy('popping'), '#E74C3C')}
-              {renderOptionButton('electric', 'ELECTRIC', energy === 'electric', () => setEnergy('electric'), '#E74C3C')}
+              {renderOption('chill', 'CHILL', energy === 'chill', () => setEnergy('chill'), '#E74C3C')}
+              {renderOption('popping', 'POPPING', energy === 'popping', () => setEnergy('popping'), '#E74C3C')}
+              {renderOption('electric', 'ELECTRIC', energy === 'electric', () => setEnergy('electric'), '#E74C3C')}
             </View>
           </View>
 
-          {/* Capacity Section */}
+          {/* CAPACITY Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="people" size={16} color="#888" />
-              <Text style={styles.sectionTitle}>CAPACITY</Text>
+              <Ionicons name="person" size={16} color="#888" />
+              <Text style={styles.sectionLabel}>CAPACITY</Text>
             </View>
             <View style={styles.optionsRow}>
-              {renderOptionButton('sparse', 'SPARSE', capacity === 'sparse', () => setCapacity('sparse'), '#3498DB')}
-              {renderOptionButton('vibrant', 'VIBRANT', capacity === 'vibrant', () => setCapacity('vibrant'), '#3498DB')}
-              {renderOptionButton('full', 'FULL', capacity === 'full', () => setCapacity('full'), '#3498DB')}
+              {renderOption('sparse', 'SPARSE', capacity === 'sparse', () => setCapacity('sparse'), '#3498DB')}
+              {renderOption('vibrant', 'VIBRANT', capacity === 'vibrant', () => setCapacity('vibrant'), '#3498DB')}
+              {renderOption('full', 'FULL', capacity === 'full', () => setCapacity('full'), '#3498DB')}
             </View>
           </View>
 
-          {/* Gate / Queue Section */}
+          {/* GATE / QUEUE Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="shield-outline" size={16} color="#888" />
-              <Text style={styles.sectionTitle}>GATE / QUEUE</Text>
+              <Ionicons name="ellipse-outline" size={16} color="#888" />
+              <Text style={styles.sectionLabel}>GATE / QUEUE</Text>
             </View>
             <View style={styles.optionsRow}>
-              {renderOptionButton('clear', 'CLEAR', gate === 'clear', () => setGate('clear'), '#E67E22')}
-              {renderOptionButton('slow', 'SLOW', gate === 'slow', () => setGate('slow'), '#E67E22')}
-              {renderOptionButton('blocked', 'BLOCKED', gate === 'blocked', () => setGate('blocked'), '#E67E22')}
+              {renderOption('clear', 'CLEAR', gate === 'clear', () => setGate('clear'), '#E67E22')}
+              {renderOption('slow', 'SLOW', gate === 'slow', () => setGate('slow'), '#E67E22')}
+              {renderOption('blocked', 'BLOCKED', gate === 'blocked', () => setGate('blocked'), '#E67E22')}
             </View>
           </View>
 
           {/* Action Buttons */}
-          <View style={styles.actionsRow}>
+          <View style={styles.actionRow}>
             {/* Add Photo Button */}
             <TouchableOpacity 
-              style={[styles.photoButton, photo && styles.photoButtonActive]}
+              style={[styles.photoBtn, photo && styles.photoBtnActive]}
               onPress={handlePickPhoto}
             >
               <Ionicons 
-                name={photo ? "checkmark-circle" : "camera-outline"} 
-                size={20} 
+                name={photo ? "checkmark" : "camera"} 
+                size={18} 
                 color={photo ? "#4CAF50" : "#FFF"} 
               />
-              <Text style={styles.photoButtonText}>
-                {photo ? 'Photo Added' : 'Add Photo (+5 Clout)'}
+              <Text style={styles.photoBtnText}>
+                {photo ? 'Photo Added' : 'Add Photo'}
               </Text>
+              {!photo && <Text style={styles.cloutText}>(+5 Clout)</Text>}
             </TouchableOpacity>
 
             {/* Update Vibe Button */}
             <TouchableOpacity
               style={[
-                styles.submitButton,
-                !canSubmit && styles.submitButtonDisabled,
+                styles.submitBtn,
+                !canSubmit && styles.submitBtnDisabled,
               ]}
               onPress={handleSubmit}
               disabled={!canSubmit || submitting}
@@ -203,8 +201,8 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
                 <ActivityIndicator size="small" color="#000" />
               ) : (
                 <>
-                  <Ionicons name="checkmark-circle-outline" size={20} color="#000" />
-                  <Text style={styles.submitButtonText}>Update Vibe</Text>
+                  <Ionicons name="checkmark" size={20} color="#000" />
+                  <Text style={styles.submitBtnText}>Update Vibe</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -218,60 +216,56 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-  },
-  modalContainer: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: '#0A0A0F',
-    borderRadius: 20,
     padding: 24,
-    borderWidth: 1,
-    borderColor: '#2A2A35',
   },
-  closeButton: {
+  modal: {
+    width: '100%',
+    maxWidth: 380,
+    backgroundColor: '#000',
+    borderRadius: 24,
+    padding: 24,
+    paddingTop: 32,
+  },
+  closeBtn: {
     position: 'absolute',
     top: 16,
     right: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#1A1A25',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1A1A1A',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-    marginTop: 8,
-  },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
     color: '#FFF',
+    textAlign: 'center',
     marginBottom: 8,
   },
-  venueInfo: {
+  subtitle: {
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 28,
   },
   venueName: {
     fontSize: 14,
     color: '#888',
   },
-  dot: {
+  separator: {
     color: '#555',
   },
   verifiedText: {
     fontSize: 14,
-    fontWeight: '500',
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -279,7 +273,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 8,
   },
-  sectionTitle: {
+  sectionLabel: {
     fontSize: 12,
     fontWeight: '600',
     color: '#888',
@@ -287,65 +281,67 @@ const styles = StyleSheet.create({
   },
   optionsRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   optionButton: {
     flex: 1,
-    backgroundColor: '#1A1A25',
-    paddingVertical: 14,
+    backgroundColor: '#1A1A1A',
+    paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
   },
-  optionButtonText: {
-    fontSize: 13,
+  optionText: {
+    fontSize: 12,
     fontWeight: '700',
-    color: '#888',
+    color: '#FFF',
     letterSpacing: 0.5,
   },
-  optionButtonTextSelected: {
+  optionTextSelected: {
     color: '#FFF',
   },
-  actionsRow: {
+  actionRow: {
     flexDirection: 'row',
     gap: 12,
     marginTop: 8,
   },
-  photoButton: {
+  photoBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1A1A25',
-    paddingVertical: 14,
+    backgroundColor: '#1A1A1A',
+    paddingVertical: 16,
     borderRadius: 12,
-    gap: 8,
+    gap: 6,
+  },
+  photoBtnActive: {
     borderWidth: 1,
-    borderColor: '#2A2A35',
-  },
-  photoButtonActive: {
     borderColor: '#4CAF50',
-    backgroundColor: '#4CAF5015',
   },
-  photoButtonText: {
+  photoBtnText: {
     fontSize: 13,
     fontWeight: '600',
     color: '#FFF',
   },
-  submitButton: {
+  cloutText: {
+    fontSize: 11,
+    color: '#888',
+  },
+  submitBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFF',
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderRadius: 12,
-    gap: 8,
+    gap: 6,
   },
-  submitButtonDisabled: {
+  submitBtnDisabled: {
     backgroundColor: '#333',
-    opacity: 0.6,
+    opacity: 0.5,
   },
-  submitButtonText: {
+  submitBtnText: {
     fontSize: 14,
     fontWeight: '700',
     color: '#000',
