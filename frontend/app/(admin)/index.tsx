@@ -128,9 +128,96 @@ interface UserAnalytics {
 
 type TabType = 'treasury' | 'venues' | 'users' | 'logs';
 
+// ===== DEMO MODE DATA =====
+// Realistic mock data showcasing platform potential for merchant demos
+const DEMO_TREASURY: TreasuryData = {
+  global: { total_revenue: 2847500, today_revenue: 185000 },
+  revenue_by_tier: {
+    supernova: { total: 1250000, transactions: 25 },
+    flare: { total: 987500, transactions: 79 },
+    spark: { total: 610000, transactions: 244 },
+  },
+  network_health: {
+    active_connections: 1247,
+    total_venues: 156,
+    total_users: 8432,
+    active_users_24h: 2156,
+    verified_venues: 89,
+  },
+  data_freshness_percent: 94,
+};
+
+const DEMO_LEDGER: LedgerItem[] = [
+  { drop_id: 'd1', venue_name: 'Quilox Nightclub', venue_area: 'Victoria Island', current_vibe_score: 92, tier: 'supernova', amount: 50000, created_at: new Date(Date.now() - 15 * 60000).toISOString(), scout_activity: 'HIGH', ratings_count: 47, profile_views_gained: 890, direction_clicks_gained: 234 },
+  { drop_id: 'd2', venue_name: 'Club 57', venue_area: 'Lekki Phase 1', current_vibe_score: 85, tier: 'flare', amount: 12500, created_at: new Date(Date.now() - 45 * 60000).toISOString(), scout_activity: 'MODERATE', ratings_count: 28, profile_views_gained: 456, direction_clicks_gained: 112 },
+  { drop_id: 'd3', venue_name: 'Hardrock Cafe', venue_area: 'Victoria Island', current_vibe_score: 78, tier: 'spark', amount: 2500, created_at: new Date(Date.now() - 90 * 60000).toISOString(), scout_activity: 'MODERATE', ratings_count: 15, profile_views_gained: 234, direction_clicks_gained: 67 },
+  { drop_id: 'd4', venue_name: 'DNA Lounge', venue_area: 'Ikeja GRA', current_vibe_score: 88, tier: 'flare', amount: 12500, created_at: new Date(Date.now() - 120 * 60000).toISOString(), scout_activity: 'HIGH', ratings_count: 34, profile_views_gained: 567, direction_clicks_gained: 145 },
+  { drop_id: 'd5', venue_name: 'Skybar Lagos', venue_area: 'Eko Atlantic', current_vibe_score: 95, tier: 'supernova', amount: 50000, created_at: new Date(Date.now() - 180 * 60000).toISOString(), scout_activity: 'VERY HIGH', ratings_count: 62, profile_views_gained: 1230, direction_clicks_gained: 345 },
+  { drop_id: 'd6', venue_name: 'The Place', venue_area: 'Lekki Phase 1', current_vibe_score: 72, tier: 'spark', amount: 2500, created_at: new Date(Date.now() - 240 * 60000).toISOString(), scout_activity: 'LOW', ratings_count: 8, profile_views_gained: 156, direction_clicks_gained: 34 },
+  { drop_id: 'd7', venue_name: 'Velvet Lounge', venue_area: 'Victoria Island', current_vibe_score: 81, tier: 'flare', amount: 12500, created_at: new Date(Date.now() - 300 * 60000).toISOString(), scout_activity: 'MODERATE', ratings_count: 22, profile_views_gained: 378, direction_clicks_gained: 89 },
+  { drop_id: 'd8', venue_name: 'Buzz Bar', venue_area: 'Ikoyi', current_vibe_score: 76, tier: 'spark', amount: 2500, created_at: new Date(Date.now() - 360 * 60000).toISOString(), scout_activity: 'MODERATE', ratings_count: 12, profile_views_gained: 198, direction_clicks_gained: 45 },
+];
+
+const DEMO_INTEGRITY: IntegrityData = {
+  sponsored: {
+    count: 23,
+    average_energy: 82,
+    venues: [
+      { id: 'v1', name: 'Quilox Nightclub', energy_score: 92 },
+      { id: 'v2', name: 'Skybar Lagos', energy_score: 95 },
+      { id: 'v3', name: 'DNA Lounge', energy_score: 88 },
+    ],
+    distribution: { electric: 8, popping: 10, moderate: 4, quiet: 1 },
+  },
+  organic: {
+    count: 133,
+    average_energy: 68,
+    distribution: { electric: 15, popping: 45, moderate: 52, quiet: 21 },
+  },
+  delta: 14,
+  integrity_warnings: [],
+  health_status: 'healthy',
+};
+
+const DEMO_CLOUT_ECONOMY: CloutEconomy = {
+  total_clout_circulation: 847250,
+  total_users: 8432,
+  average_clout: 100,
+  top_scouts: [
+    { rank: 1, id: 's1', username: 'NightOwlKing', clout_points: 12450, scout_status: 'elite', total_ratings: 234, tier_color: '#FFD700' },
+    { rank: 2, id: 's2', username: 'LagosVibeCheck', clout_points: 9870, scout_status: 'elite', total_ratings: 189, tier_color: '#FFD700' },
+    { rank: 3, id: 's3', username: 'ClubHopper_NG', clout_points: 8340, scout_status: 'elite', total_ratings: 156, tier_color: '#FFD700' },
+    { rank: 4, id: 's4', username: 'VIQueen', clout_points: 6720, scout_status: 'scout', total_ratings: 128, tier_color: '#C0C0C0' },
+    { rank: 5, id: 's5', username: 'PartyPilot', clout_points: 5890, scout_status: 'scout', total_ratings: 112, tier_color: '#C0C0C0' },
+    { rank: 6, id: 's6', username: 'LekkiLegend', clout_points: 4560, scout_status: 'scout', total_ratings: 98, tier_color: '#C0C0C0' },
+    { rank: 7, id: 's7', username: 'NightCrawler', clout_points: 3890, scout_status: 'scout', total_ratings: 87, tier_color: '#C0C0C0' },
+    { rank: 8, id: 's8', username: 'VibeDetector', clout_points: 3450, scout_status: 'regular', total_ratings: 76, tier_color: '#CD7F32' },
+    { rank: 9, id: 's9', username: 'ClubScout234', clout_points: 2980, scout_status: 'regular', total_ratings: 65, tier_color: '#CD7F32' },
+    { rank: 10, id: 's10', username: 'PartyRadar', clout_points: 2670, scout_status: 'regular', total_ratings: 58, tier_color: '#CD7F32' },
+  ],
+};
+
+const DEMO_USER_ANALYTICS: UserAnalytics = {
+  total_users: 8432,
+  active_users_24h: 2156,
+  active_users_7d: 4850,
+  ghost_users: 1264,
+  ghost_percentage: 15,
+  new_users_today: 127,
+  tier_distribution: {
+    elite: 45,
+    scout: 312,
+    regular: 2890,
+    newbie: 5185,
+  },
+};
+
 export default function AdminAnalytics() {
   const router = useRouter();
   const { user, hasHydrated } = useVibeStore();
+  
+  // Demo Mode State
+  const [isDemoMode, setIsDemoMode] = useState(false);
   
   const [treasury, setTreasury] = useState<TreasuryData | null>(null);
   const [ledger, setLedger] = useState<LedgerItem[]>([]);
@@ -149,6 +236,13 @@ export default function AdminAnalytics() {
   const [isAirdropping, setIsAirdropping] = useState(false);
 
   const headers = { 'X-User-Id': user?.id || '' };
+  
+  // Get data based on demo mode
+  const displayTreasury = isDemoMode ? DEMO_TREASURY : treasury;
+  const displayLedger = isDemoMode ? DEMO_LEDGER : ledger;
+  const displayIntegrity = isDemoMode ? DEMO_INTEGRITY : integrity;
+  const displayCloutEconomy = isDemoMode ? DEMO_CLOUT_ECONOMY : cloutEconomy;
+  const displayUserAnalytics = isDemoMode ? DEMO_USER_ANALYTICS : userAnalytics;
 
   const fetchAllData = async () => {
     try {
