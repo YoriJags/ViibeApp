@@ -757,13 +757,13 @@ async def get_trending_venues(city: str, limit: int = 10):
         recent_ratings = await db.ratings.find({
             "venue_id": venue_id,
             "timestamp": {"$gte": hour_ago}
-        }).to_list(100)
+        }, {"_id": 0, "user_id": 1, "timestamp": 1}).to_list(100)
         
         # Get unique scouts (users) who rated in last 24h
         day_ratings = await db.ratings.find({
             "venue_id": venue_id,
             "timestamp": {"$gte": day_ago}
-        }).to_list(500)
+        }, {"_id": 0, "user_id": 1, "timestamp": 1}).to_list(500)
         
         unique_scouts = len(set(r.get("user_id") for r in day_ratings if r.get("user_id")))
         
