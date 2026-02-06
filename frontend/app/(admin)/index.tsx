@@ -1515,6 +1515,10 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     gap: 6,
   },
+  airdropButtonDisabled: {
+    backgroundColor: adminColors.textMuted,
+    opacity: 0.6,
+  },
   airdropButtonText: {
     fontSize: 12,
     fontWeight: '600',
