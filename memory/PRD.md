@@ -21,6 +21,7 @@ A nightlife intelligence platform connecting nightlife enthusiasts ("Scouts") wi
 - **User Analytics**: Active vs Ghost users, tier distribution
 - **Integrity Monitor**: Sponsored vs organic venue comparison, health status alerts
 - **Clout Economy**: Total circulation, top scouts leaderboard, airdrop functionality
+- **Demo Mode Toggle**: Pre-populated mock data for showcasing platform to merchants
 - **Theme**: Royal Blue and Slate (Professional/Power aesthetic)
 
 ## Tech Stack
@@ -40,9 +41,18 @@ A nightlife intelligence platform connecting nightlife enthusiasts ("Scouts") wi
 - [x] Post-rating success animation and map glow effect
 - [x] Merchant Dashboard (frontend + backend)
 - [x] Admin Analytics Dashboard with Treasury/Venues/Users/Logs tabs
+- [x] **Demo Mode Toggle** for admin dashboard with realistic mock data
 - [x] Backend endpoints for all admin features
 - [x] Auth persistence using Zustand persist middleware
 - [x] Scrolling fixes for Trending and Venue Detail pages
+
+### Demo Mode Data
+Demo mode showcases the platform potential with sample data:
+- **Revenue**: ₦2.8M total, ₦185K today
+- **Users**: 8,432 total, 2,156 active (24h), 15% ghost users
+- **Venues**: 156 total, 89 verified, 23 sponsored
+- **Top Scouts**: NightOwlKing (12,450 clout), LagosVibeCheck (9,870 clout), etc.
+- **Pulse Drops**: Recent transactions from Quilox, Club 57, Skybar Lagos
 
 ### Backend API Endpoints
 - `GET /api/admin/treasury` - Treasury analytics
@@ -65,7 +75,7 @@ A nightlife intelligence platform connecting nightlife enthusiasts ("Scouts") wi
 ├── frontend/
 │   ├── app/
 │   │   ├── (admin)/
-│   │   │   └── index.tsx  # Admin Analytics Dashboard
+│   │   │   └── index.tsx  # Admin Analytics Dashboard with Demo Mode
 │   │   ├── (merchant)/
 │   │   │   └── dashboard.tsx
 │   │   ├── (public)/
