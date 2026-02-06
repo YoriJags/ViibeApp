@@ -93,6 +93,7 @@ interface ScoutProfile {
 interface TrendingData {
   city: string;
   venues: TrendingVenue[];
+  sponsored?: TrendingVenue[];  // Separate sponsored section
   last_updated: string;
 }
 
