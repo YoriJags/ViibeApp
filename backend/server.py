@@ -739,6 +739,15 @@ async def get_trending_venues(city: str, limit: int = 10):
     for venue in venues:
         venue_id = venue["id"]
         
+        # Check if venue has active Pulse Drop (for sponsored separation)
+        is_pulse_boosted = False
+        if venue.get("active_pulse_tier") and venue.get("pulse_expires_at"):
+            try:
+                pulse_expires = datetime.fromisoformat(str(venue.get("pulse_expires_at")).replace('Z', '+00:00'))
+                is_pulse_boosted = pulse_expires > now
+            except:
+                pass
+        
         # Get ratings from last hour for velocity calculation
         recent_ratings = await db.ratings.find({
             "venue_id": venue_id,
@@ -753,7 +762,7 @@ async def get_trending_venues(city: str, limit: int = 10):
         
         unique_scouts = len(set(r.get("user_id") for r in day_ratings if r.get("user_id")))
         
-        # Calculate metrics
+        # Calculate metrics - ENERGY SCORE IS NEVER MODIFIED BY PULSE DROP
         avg_energy = venue.get("current_vibe_score", 0)
         check_in_velocity = len(recent_ratings) * 10  # Scale up for scoring
         scout_count = unique_scouts * 5  # Scale up for scoring
