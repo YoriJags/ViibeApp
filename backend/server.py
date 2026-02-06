@@ -162,6 +162,12 @@ class Venue(BaseModel):
     is_featured: bool = False
     is_verified: bool = False
     photo_base64: Optional[str] = None
+    # New B2C Intelligence Fields
+    entry_fee: Optional[str] = None  # e.g., "₦10,000", "Free", "₦5,000 (Ladies Free)"
+    music_genre: Optional[str] = None  # e.g., "Amapiano", "Afrobeats/House", "R&B"
+    tables_available: bool = True
+    last_snapshot_url: Optional[str] = None  # Live Look thumbnail URL
+    last_snapshot_time: Optional[datetime] = None  # When the snapshot was taken
     # Pulse Drop
     active_pulse_tier: Optional[Literal["spark", "flare", "supernova"]] = None
     pulse_expires_at: Optional[datetime] = None
