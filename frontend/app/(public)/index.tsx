@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,11 @@ import {
   ActivityIndicator,
   Platform,
   Modal,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
 import { useVibeStore } from '../../src/store/vibeStore';
 import { MockMap } from '../../src/components/MockMap';
@@ -33,6 +34,7 @@ const CITIES = [
 
 export default function MapScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string }>();
   const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,6 +42,22 @@ export default function MapScreen() {
   const [showList, setShowList] = useState(false);
   const [showCityPicker, setShowCityPicker] = useState(false);
   const [showCloutReward, setShowCloutReward] = useState(false);
+  const [highlightedVenueId, setHighlightedVenueId] = useState<string | null>(null);
+  
+  // Handle venue highlight from Trending page "Pull Up" button
+  useEffect(() => {
+    if (params.highlightVenue) {
+      setHighlightedVenueId(params.highlightVenue);
+      setShowList(false); // Ensure map view is shown
+      
+      // Clear highlight after 5 seconds
+      const timer = setTimeout(() => {
+        setHighlightedVenueId(null);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [params.highlightVenue]);
 
   // Calculate city stats for Daily Pulse
   const cityStats: CityStats = useMemo(() => {
