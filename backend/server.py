@@ -432,9 +432,20 @@ async def update_user_clout(user_id: str, venue_id: str, rating_score: float):
     current_accuracy = user.get("rating_accuracy_score", 0)
     new_accuracy = ((current_accuracy * total_ratings) + accuracy) / (total_ratings + 1)
     
+    # Base clout calculation
     clout_bonus = int(accuracy / 10)
     if venue.get("current_vibe_score", 0) > 70:
         clout_bonus += 5
+    
+    # 2x CLOUT MULTIPLIER for Pulse Drop venues
+    # This rewards scouts for checking boosted venues without affecting the energy score
+    is_pulse_boosted = (
+        venue.get("active_pulse_tier") is not None and 
+        venue.get("pulse_expires_at") and 
+        datetime.fromisoformat(str(venue.get("pulse_expires_at")).replace('Z', '+00:00')) > datetime.now(timezone.utc)
+    )
+    if is_pulse_boosted:
+        clout_bonus = clout_bonus * 2  # 2x multiplier
     
     new_clout = user.get("clout_points", 0) + clout_bonus
     new_total = total_ratings + 1
