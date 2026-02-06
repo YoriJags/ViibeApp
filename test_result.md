@@ -360,12 +360,15 @@ frontend:
 
 metadata:
   created_by: "main_agent"
-  version: "3.0"
-  test_sequence: 2
+  version: "3.1"
+  test_sequence: 3
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Trending Leaderboard API"
+    - "Top Scouts API"
+    - "Scout Profile API"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
