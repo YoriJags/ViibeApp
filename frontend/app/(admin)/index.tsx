@@ -1284,6 +1284,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  tourButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  tourButtonText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FFF',
+  },
   demoToggle: {
     flexDirection: 'row',
     alignItems: 'center',
