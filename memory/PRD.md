@@ -43,6 +43,7 @@ A nightlife intelligence platform connecting nightlife enthusiasts ("Scouts") wi
 - [x] Merchant Dashboard (frontend + backend)
 - [x] Admin Analytics Dashboard with Treasury/Venues/Users/Logs tabs
 - [x] **Demo Mode Toggle** for admin dashboard with realistic mock data
+- [x] **Demo Walkthrough** - 6-step guided tour with spotlight and tooltips
 - [x] Backend endpoints for all admin features
 - [x] Auth persistence using Zustand persist middleware
 - [x] Scrolling fixes for Trending and Venue Detail pages
