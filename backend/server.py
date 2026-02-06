@@ -1794,7 +1794,11 @@ async def seed_data():
             "entry_fee": "₦20,000",
             "music_genre": "Afrobeats/Amapiano",
             "tables_available": True,
-            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(minutes=18)
+            "last_snapshot_time": datetime.now(timezone.utc) - timedelta(minutes=18),
+            # Active Pulse Drop - but energy score remains honest
+            "active_pulse_tier": "spark",
+            "pulse_expires_at": datetime.now(timezone.utc) + timedelta(hours=4),
+            "glow_boost": 10
         },
         {
             "name": "Hard Rock Cafe Lagos",
@@ -1823,8 +1827,8 @@ async def seed_data():
             "city": "lagos",
             "venue_type": "lounge",
             "coordinates": {"lat": 6.4502, "lng": 3.4378},
-            "current_vibe_score": 68,
-            "energy_level": "popping",
+            "current_vibe_score": 25,  # LOW score to demonstrate transparency
+            "energy_level": "chill",
             "capacity_level": "sparse",
             "gate_level": "clear",
             "vibe_velocity": "cooling_down",
