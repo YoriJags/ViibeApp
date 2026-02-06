@@ -227,6 +227,12 @@ export default function RateScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Clout Reward Animation */}
+      <CloutReward 
+        visible={showCloutReward} 
+        onAnimationComplete={() => setShowCloutReward(false)} 
+      />
+      
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
