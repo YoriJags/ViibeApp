@@ -168,6 +168,52 @@ export default function VenueDetailScreen() {
     Linking.openURL(url as string);
   };
 
+  const handleSubmitRating = async (data: {
+    energy: 'chill' | 'popping' | 'electric';
+    capacity: 'sparse' | 'vibrant' | 'full';
+    gate: 'clear' | 'slow' | 'blocked';
+    photoBase64?: string;
+  }) => {
+    if (!user || !venue || !userLocation) {
+      Alert.alert('Error', 'Unable to submit rating');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/ratings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          venue_id: venue.id,
+          energy: data.energy,
+          capacity: data.capacity,
+          gate: data.gate,
+          photo_base64: data.photoBase64,
+          latitude: userLocation.lat,
+          longitude: userLocation.lng,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to submit rating');
+      }
+
+      const result = await response.json();
+      
+      // Show success with clout earned
+      Alert.alert(
+        '🎉 Vibe Updated!',
+        `You earned +${result.clout_earned || 10} Clout${data.photoBase64 ? ' (+5 bonus for photo!)' : ''}`,
+        [{ text: 'Nice!', onPress: () => loadVenueData() }]
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to submit rating');
+      throw error;
+    }
+  };
+
   const getEnergyLabel = (level: string) => {
     switch (level) {
       case 'electric': return 'ELECTRIC';
