@@ -9,6 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface Coordinates {
   lat: number;
@@ -27,6 +28,10 @@ interface Venue {
   gate_level: 'clear' | 'slow' | 'blocked';
   vibe_velocity: 'heating_up' | 'cooling_down' | 'stable';
   is_featured: boolean;
+  // New fields
+  active_pulse_tier?: 'spark' | 'flare' | 'supernova' | null;
+  entry_fee?: string;
+  music_genre?: string;
 }
 
 interface MockMapProps {
