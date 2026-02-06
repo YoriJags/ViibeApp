@@ -9,12 +9,26 @@ import {
   Animated,
   Linking,
   Platform,
+  Image,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useVibeStore } from '../../src/store/vibeStore';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Placeholder club interior images (high-quality Lagos club vibes)
+const CLUB_PLACEHOLDERS = [
+  'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=400&q=80',
+  'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80',
+  'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&q=80',
+  'https://images.unsplash.com/photo-1571266028243-d220c8b77883?w=400&q=80',
+];
 
 export default function VenueDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -26,19 +40,29 @@ export default function VenueDetailScreen() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isWithinGeofence, setIsWithinGeofence] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(false);
+  const [showGeofenceTooltip, setShowGeofenceTooltip] = useState(false);
   
-  // GPS Lock Animation
+  // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(100)).current;
+  const tooltipAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadVenueData();
     checkUserLocation();
+    
+    // Slide in animation
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      tension: 50,
+      friction: 8,
+      useNativeDriver: true,
+    }).start();
   }, [id]);
 
   useEffect(() => {
     if (isWithinGeofence) {
-      // Start pulse animation when GPS is locked
       Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
@@ -54,7 +78,6 @@ export default function VenueDetailScreen() {
         ])
       ).start();
       
-      // Glow animation
       Animated.timing(glowAnim, {
         toValue: 1,
         duration: 500,
@@ -95,7 +118,6 @@ export default function VenueDetailScreen() {
       };
       setUserLocation(coords);
 
-      // Check if within 50m of venue
       if (venue) {
         const distance = calculateDistance(
           coords.lat, coords.lng,
@@ -124,21 +146,31 @@ export default function VenueDetailScreen() {
     return R * c;
   };
 
-  const handleDirections = () => {
+  const handleGetDirections = () => {
     if (!venue) return;
     
-    // Record click for ROI tracking
     recordDirectionClick(venue.id);
     
-    // Open maps
     const { lat, lng } = venue.coordinates;
+    const label = encodeURIComponent(venue.name);
+    
+    // Native deep links for map apps
     const url = Platform.select({
-      ios: `maps:0,0?q=${lat},${lng}`,
-      android: `geo:0,0?q=${lat},${lng}`,
-      default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+      ios: `maps:0,0?q=${label}@${lat},${lng}`,
+      android: `geo:0,0?q=${lat},${lng}(${label})`,
+      default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${label}`,
     });
     
-    Linking.openURL(url);
+    Linking.openURL(url as string);
+  };
+
+  const getEnergyLabel = (level: string) => {
+    switch (level) {
+      case 'electric': return 'ELECTRIC';
+      case 'popping': return 'VIBE';
+      case 'chill': return 'QUIET';
+      default: return 'QUIET';
+    }
   };
 
   const getVibeColor = (score: number) => {
@@ -148,15 +180,41 @@ export default function VenueDetailScreen() {
     return '#3399FF';
   };
 
-  const getVelocityIcon = (velocity: string) => {
-    switch (velocity) {
-      case 'heating_up':
-        return { name: 'trending-up', color: '#4CAF50', text: 'Heating Up' };
-      case 'cooling_down':
-        return { name: 'trending-down', color: '#FF5252', text: 'Cooling Down' };
-      default:
-        return { name: 'remove', color: '#888', text: 'Stable' };
-    }
+  const getSnapshotTimeAgo = () => {
+    if (!venue?.last_snapshot_time) return 'No recent snapshot';
+    const now = new Date();
+    const snapshot = new Date(venue.last_snapshot_time);
+    const diffMs = now.getTime() - snapshot.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Verified just now';
+    if (diffMins < 60) return `Verified ${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `Verified ${diffHours}h ago`;
+    return `Verified ${Math.floor(diffHours / 24)}d ago`;
+  };
+
+  const getPlaceholderImage = () => {
+    // Consistent image per venue based on id
+    const hash = venue?.id?.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) || 0;
+    return CLUB_PLACEHOLDERS[hash % CLUB_PLACEHOLDERS.length];
+  };
+
+  const showTooltip = () => {
+    setShowGeofenceTooltip(true);
+    Animated.sequence([
+      Animated.timing(tooltipAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.delay(3000),
+      Animated.timing(tooltipAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setShowGeofenceTooltip(false));
   };
 
   if (loading) {
@@ -164,6 +222,7 @@ export default function VenueDetailScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FF3366" />
+          <Text style={styles.loadingText}>Loading venue...</Text>
         </View>
       </SafeAreaView>
     );
@@ -175,10 +234,7 @@ export default function VenueDetailScreen() {
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={64} color="#FF5252" />
           <Text style={styles.errorText}>Venue not found</Text>
-          <TouchableOpacity
-            style={styles.backButtonLarge}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backButtonLarge} onPress={() => router.back()}>
             <Text style={styles.backButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
@@ -187,81 +243,192 @@ export default function VenueDetailScreen() {
   }
 
   const vibeColor = getVibeColor(venue.current_vibe_score);
-  const velocityIcon = getVelocityIcon(venue.vibe_velocity);
-  const glowColor = glowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['rgba(76, 175, 80, 0)', 'rgba(76, 175, 80, 0.3)'],
-  });
+  const hasPulseDrop = venue.active_pulse_tier !== null;
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {venue.name}
-          </Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle} numberOfLines={1}>{venue.name}</Text>
           <View style={styles.headerBadges}>
             {venue.is_verified && (
               <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-                <Text style={styles.verifiedText}>Verified</Text>
+                <Ionicons name="checkmark-circle" size={12} color="#4CAF50" />
               </View>
             )}
-            {venue.is_featured && (
-              <View style={styles.featuredBadge}>
-                <Ionicons name="star" size={12} color="#FFD700" />
+            {hasPulseDrop && (
+              <View style={styles.pulseBadge}>
+                <Ionicons name="flame" size={12} color="#FFD700" />
               </View>
             )}
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.directionsButton}
-          onPress={handleDirections}
-        >
-          <Ionicons name="navigate" size={20} color="#FFF" />
-        </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView}>
-        {/* Vibe Score Hero */}
-        <View style={[styles.scoreHero, { borderColor: vibeColor + '40' }]}>
-          <View style={styles.scoreCircle}>
-            <Text style={[styles.scoreValue, { color: vibeColor }]}>
-              {Math.round(venue.current_vibe_score)}
-            </Text>
-            <Text style={styles.scoreLabel}>Vibe Score</Text>
-          </View>
-          <View style={styles.velocityIndicator}>
-            <Ionicons
-              name={velocityIcon.name as any}
-              size={20}
-              color={velocityIcon.color}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* ====== LIVE LOOK THUMBNAIL ====== */}
+        <Animated.View style={[styles.liveLookContainer, { transform: [{ translateY: slideAnim }] }]}>
+          <View style={styles.liveLookWrapper}>
+            <Image
+              source={{ uri: venue.last_snapshot_url || getPlaceholderImage() }}
+              style={styles.liveLookImage}
+              resizeMode="cover"
             />
-            <Text style={[styles.velocityText, { color: velocityIcon.color }]}>
-              {velocityIcon.text}
-            </Text>
+            
+            {/* Gradient Overlay */}
+            <LinearGradient
+              colors={['transparent', 'rgba(10,10,15,0.8)']}
+              style={styles.liveLookGradient}
+            />
+            
+            {/* Verified Badge */}
+            <View style={styles.liveLookBadge}>
+              <Ionicons name="eye" size={12} color="#4CAF50" />
+              <Text style={styles.liveLookBadgeText}>{getSnapshotTimeAgo()}</Text>
+            </View>
+            
+            {/* Pulse Drop Glow Effect */}
+            {hasPulseDrop && (
+              <View style={styles.pulseGlowOverlay}>
+                <LinearGradient
+                  colors={['rgba(255,215,0,0.3)', 'transparent']}
+                  style={styles.pulseGlow}
+                />
+              </View>
+            )}
           </View>
+        </Animated.View>
+
+        {/* ====== GLASSMORPHISM VENUE PULSE CARD ====== */}
+        <View style={styles.glassCardContainer}>
+          <BlurView intensity={20} tint="dark" style={styles.glassCard}>
+            <View style={styles.glassCardInner}>
+              {/* Energy Level Headline */}
+              <View style={styles.energyHeadline}>
+                <View style={[styles.energyDot, { backgroundColor: vibeColor }]} />
+                <Text style={[styles.energyLabel, { color: vibeColor }]}>
+                  {getEnergyLabel(venue.energy_level)}
+                </Text>
+                <View style={styles.energyScoreBadge}>
+                  <Text style={[styles.energyScoreText, { color: vibeColor }]}>
+                    {Math.round(venue.current_vibe_score)}%
+                  </Text>
+                </View>
+              </View>
+
+              {/* Utility Stats Row */}
+              <View style={styles.utilityStatsRow}>
+                {/* Entry Fee */}
+                <View style={styles.utilityStat}>
+                  <View style={styles.utilityIconContainer}>
+                    <Ionicons name="ticket-outline" size={18} color="#FFD700" />
+                  </View>
+                  <Text style={styles.utilityLabel}>Entry</Text>
+                  <Text style={styles.utilityValue}>{venue.entry_fee || 'Free'}</Text>
+                </View>
+
+                {/* Music Genre */}
+                <View style={styles.utilityStat}>
+                  <View style={styles.utilityIconContainer}>
+                    <Ionicons name="musical-notes" size={18} color="#FF3366" />
+                  </View>
+                  <Text style={styles.utilityLabel}>Music</Text>
+                  <Text style={styles.utilityValue} numberOfLines={1}>
+                    {venue.music_genre || 'Mixed'}
+                  </Text>
+                </View>
+
+                {/* Table Availability */}
+                <View style={styles.utilityStat}>
+                  <View style={styles.utilityIconContainer}>
+                    <Ionicons 
+                      name={venue.tables_available ? "checkmark-circle" : "close-circle"} 
+                      size={18} 
+                      color={venue.tables_available ? "#4CAF50" : "#FF5252"} 
+                    />
+                  </View>
+                  <Text style={styles.utilityLabel}>Tables</Text>
+                  <Text style={[
+                    styles.utilityValue,
+                    { color: venue.tables_available ? "#4CAF50" : "#FF5252" }
+                  ]}>
+                    {venue.tables_available ? 'Available' : 'Full'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Current Vibe Stats */}
+              <View style={styles.vibeStatsRow}>
+                <View style={styles.vibeStat}>
+                  <Ionicons name="people" size={16} color="#888" />
+                  <Text style={styles.vibeStatText}>
+                    {venue.capacity_level.charAt(0).toUpperCase() + venue.capacity_level.slice(1)}
+                  </Text>
+                </View>
+                <View style={styles.vibeStatDivider} />
+                <View style={styles.vibeStat}>
+                  <Ionicons name="enter" size={16} color="#888" />
+                  <Text style={styles.vibeStatText}>
+                    Gate: {venue.gate_level.charAt(0).toUpperCase() + venue.gate_level.slice(1)}
+                  </Text>
+                </View>
+                <View style={styles.vibeStatDivider} />
+                <View style={styles.vibeStat}>
+                  <Ionicons 
+                    name={venue.vibe_velocity === 'heating_up' ? 'trending-up' : venue.vibe_velocity === 'cooling_down' ? 'trending-down' : 'remove'}
+                    size={16} 
+                    color={venue.vibe_velocity === 'heating_up' ? '#4CAF50' : venue.vibe_velocity === 'cooling_down' ? '#FF5252' : '#888'} 
+                  />
+                  <Text style={[
+                    styles.vibeStatText,
+                    { color: venue.vibe_velocity === 'heating_up' ? '#4CAF50' : venue.vibe_velocity === 'cooling_down' ? '#FF5252' : '#888' }
+                  ]}>
+                    {venue.vibe_velocity === 'heating_up' ? 'Rising' : venue.vibe_velocity === 'cooling_down' ? 'Falling' : 'Stable'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </BlurView>
         </View>
 
-        {/* GPS Lock Indicator */}
+        {/* Location Card */}
+        <View style={styles.locationCard}>
+          <View style={styles.locationInfo}>
+            <Ionicons name="location" size={20} color="#FF3366" />
+            <View style={styles.locationTextContainer}>
+              <Text style={styles.locationAddress}>{venue.address}</Text>
+              <Text style={styles.locationArea}>{venue.area}</Text>
+            </View>
+          </View>
+          
+          {/* GET DIRECTIONS Button */}
+          <TouchableOpacity style={styles.directionsButton} onPress={handleGetDirections}>
+            <LinearGradient
+              colors={['#1E88E5', '#1565C0']}
+              style={styles.directionsGradient}
+            >
+              <Ionicons name="navigate" size={18} color="#FFF" />
+              <Text style={styles.directionsText}>GET DIRECTIONS</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
+        {/* GPS Lock / Geofence Status */}
         <Animated.View 
           style={[
-            styles.gpsLockContainer,
-            { backgroundColor: glowColor }
+            styles.gpsContainer,
+            isWithinGeofence && styles.gpsContainerActive
           ]}
         >
-          <View style={styles.gpsLockContent}>
+          <View style={styles.gpsContent}>
             <Animated.View style={{ transform: [{ scale: isWithinGeofence ? pulseAnim : 1 }] }}>
               <View style={[
-                styles.gpsLockIcon,
-                isWithinGeofence ? styles.gpsLockIconActive : styles.gpsLockIconInactive
+                styles.gpsIcon,
+                isWithinGeofence ? styles.gpsIconActive : styles.gpsIconInactive
               ]}>
                 <Ionicons 
                   name={isWithinGeofence ? "location" : "location-outline"} 
@@ -270,156 +437,110 @@ export default function VenueDetailScreen() {
                 />
               </View>
             </Animated.View>
-            <View style={styles.gpsLockTextContainer}>
-              <Text style={[
-                styles.gpsLockTitle,
-                { color: isWithinGeofence ? "#4CAF50" : "#888" }
-              ]}>
+            <View style={styles.gpsTextContainer}>
+              <Text style={[styles.gpsTitle, { color: isWithinGeofence ? "#4CAF50" : "#888" }]}>
                 {checkingLocation 
-                  ? "Checking location..." 
+                  ? "Verifying location..." 
                   : isWithinGeofence 
-                    ? "GPS Locked - Ready to Rate!" 
-                    : "Get closer to unlock rating"}
+                    ? "GPS Verified - Ready to Rate!" 
+                    : "Location Required"}
               </Text>
-              <Text style={styles.gpsLockSubtitle}>
+              <Text style={styles.gpsSubtitle}>
                 {isWithinGeofence 
-                  ? "You're verified at this venue" 
-                  : "Must be within 50m of venue"}
+                  ? "You're at the venue" 
+                  : "Must be within 50m to rate"}
               </Text>
             </View>
-            {checkingLocation && (
-              <ActivityIndicator size="small" color="#FF3366" />
-            )}
+            {checkingLocation && <ActivityIndicator size="small" color="#FF3366" />}
           </View>
         </Animated.View>
-
-        {/* Location Info */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <Ionicons name="location" size={20} color="#FF3366" />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Address</Text>
-              <Text style={styles.infoValue}>{venue.address}</Text>
-            </View>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="map" size={20} color="#2196F3" />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Area</Text>
-              <Text style={styles.infoValue}>{venue.area}, {venue.city}</Text>
-            </View>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="business" size={20} color="#9C27B0" />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Type</Text>
-              <Text style={[styles.infoValue, { textTransform: 'capitalize' }]}>{venue.venue_type}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Current Vibe Stats */}
-        <View style={styles.statsSection}>
-          <Text style={styles.sectionTitle}>Current Vibe</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Ionicons name="flash" size={28} color="#FFD700" />
-              <Text style={styles.statValue}>{venue.energy_level}</Text>
-              <Text style={styles.statLabel}>Energy</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Ionicons name="people" size={28} color="#4CAF50" />
-              <Text style={styles.statValue}>{venue.capacity_level}</Text>
-              <Text style={styles.statLabel}>Crowd</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Ionicons name="enter" size={28} color="#2196F3" />
-              <Text style={styles.statValue}>{venue.gate_level}</Text>
-              <Text style={styles.statLabel}>Gate</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Active Pulse Drop Badge */}
-        {venue.active_pulse_tier && (
-          <View style={styles.pulseDropBadge}>
-            <Ionicons name="flame" size={20} color="#FF3366" />
-            <Text style={styles.pulseDropText}>
-              {venue.active_pulse_tier.toUpperCase()} Boost Active
-            </Text>
-          </View>
-        )}
 
         {/* Rating Status */}
         {user && ratingStatus && (
           <View style={styles.ratingStatusCard}>
-            <Text style={styles.sectionTitle}>Your Rating Status</Text>
-            <View style={styles.ratingStatusContent}>
+            <View style={styles.ratingStatusHeader}>
+              <Text style={styles.ratingStatusTitle}>Your Rating Status</Text>
               <View style={styles.ratingCount}>
-                <Text style={styles.ratingCountValue}>
-                  {ratingStatus.ratings_count}/2
-                </Text>
-                <Text style={styles.ratingCountLabel}>Ratings Today</Text>
+                <Text style={styles.ratingCountText}>{ratingStatus.ratings_count}/2</Text>
               </View>
-              <View style={styles.ratingInfo}>
-                {ratingStatus.can_rate ? (
-                  <View style={styles.ratingInfoRow}>
-                    <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-                    <Text style={styles.ratingInfoText}>
-                      {ratingStatus.is_correction_available
-                        ? 'Correction available'
-                        : 'Ready to rate'}
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={styles.ratingInfoRow}>
-                    <Ionicons name="time" size={20} color="#FF9800" />
-                    <Text style={styles.ratingInfoText}>
-                      Limit reached (resets in 24h)
-                    </Text>
-                  </View>
-                )}
-              </View>
+            </View>
+            <View style={styles.ratingStatusContent}>
+              {ratingStatus.can_rate ? (
+                <View style={styles.ratingStatusRow}>
+                  <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
+                  <Text style={styles.ratingStatusText}>
+                    {ratingStatus.is_correction_available ? 'Correction available' : 'Ready to rate'}
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.ratingStatusRow}>
+                  <Ionicons name="time" size={18} color="#FF9800" />
+                  <Text style={styles.ratingStatusText}>Limit reached (resets in 24h)</Text>
+                </View>
+              )}
             </View>
           </View>
         )}
 
-        {/* Rate Button */}
+        {/* Geofence Tooltip */}
+        {showGeofenceTooltip && (
+          <Animated.View style={[styles.tooltip, { opacity: tooltipAnim }]}>
+            <Ionicons name="location-outline" size={16} color="#FFF" />
+            <Text style={styles.tooltipText}>You must be at the venue to rate it</Text>
+          </Animated.View>
+        )}
+
+        {/* RATE BUTTON with Geofence Enforcement */}
         <TouchableOpacity
           style={[
             styles.rateButton,
-            (!user || !ratingStatus?.can_rate || !isWithinGeofence) && styles.rateButtonDisabled,
+            (!user || !isWithinGeofence || !ratingStatus?.can_rate) && styles.rateButtonDisabled,
           ]}
           onPress={() => {
-            if (user && ratingStatus?.can_rate && isWithinGeofence) {
-              router.push(`/rate/${venue.id}`);
-            } else if (!user) {
+            if (!user) {
               router.push('/profile');
             } else if (!isWithinGeofence) {
+              showTooltip();
               checkUserLocation();
+            } else if (ratingStatus?.can_rate) {
+              router.push(`/rate/${venue.id}`);
             }
           }}
-          disabled={user && (!ratingStatus?.can_rate || !isWithinGeofence)}
         >
-          <Ionicons
-            name={!user ? 'person' : !isWithinGeofence ? 'location-outline' : ratingStatus?.can_rate ? 'star' : 'time'}
-            size={24}
-            color="#FFF"
-          />
-          <Text style={styles.rateButtonText}>
-            {!user
-              ? 'Sign in to Rate'
-              : !isWithinGeofence
-              ? 'Check Location'
-              : ratingStatus?.can_rate
-              ? ratingStatus?.is_correction_available
-                ? 'Update Your Vibe'
-                : 'Rate the Vibe'
-              : 'Rating Limit Reached'}
-          </Text>
+          <LinearGradient
+            colors={(!user || !isWithinGeofence || !ratingStatus?.can_rate) 
+              ? ['#333', '#222'] 
+              : ['#FF3366', '#FF6B35']}
+            style={styles.rateButtonGradient}
+          >
+            <Ionicons
+              name={!user ? 'person' : !isWithinGeofence ? 'location-outline' : 'star'}
+              size={24}
+              color="#FFF"
+            />
+            <Text style={styles.rateButtonText}>
+              {!user
+                ? 'Sign in to Rate'
+                : !isWithinGeofence
+                ? 'Get Closer to Rate'
+                : ratingStatus?.can_rate
+                ? 'Rate the Vibe'
+                : 'Limit Reached'}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
 
-        <View style={{ height: 100 }} />
+        {/* Geofence Warning when disabled */}
+        {user && !isWithinGeofence && (
+          <View style={styles.geofenceWarning}>
+            <Ionicons name="information-circle" size={16} color="#888" />
+            <Text style={styles.geofenceWarningText}>
+              You must be within 50m of the venue to submit a rating
+            </Text>
+          </View>
+        )}
+
+        <View style={{ height: 120 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -428,12 +549,17 @@ export default function VenueDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0A0F',
+    backgroundColor: '#0A0A0F', // Midnight Premium theme
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    color: '#888',
+    fontSize: 14,
   },
   errorContainer: {
     flex: 1,
@@ -455,263 +581,391 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: '#FFF',
-    fontSize: 16,
     fontWeight: '600',
+    fontSize: 16,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1A1A25',
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#151520',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1A1A25',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
-  headerContent: {
+  headerTitleContainer: {
     flex: 1,
+    marginLeft: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: '#FFF',
+    flex: 1,
   },
   headerBadges: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
+    gap: 6,
   },
   verifiedBadge: {
+    backgroundColor: '#4CAF5020',
+    padding: 4,
+    borderRadius: 6,
+  },
+  pulseBadge: {
+    backgroundColor: '#FFD70030',
+    padding: 4,
+    borderRadius: 6,
+  },
+  scrollView: {
+    flex: 1,
+  },
+
+  // ====== LIVE LOOK STYLES ======
+  liveLookContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  liveLookWrapper: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: '#1A1A25',
+  },
+  liveLookImage: {
+    width: '100%',
+    height: '100%',
+  },
+  liveLookGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+  },
+  liveLookBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  liveLookBadgeText: {
+    color: '#4CAF50',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  pulseGlowOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 3,
+    borderColor: '#FFD70060',
+    borderRadius: 20,
+  },
+  pulseGlow: {
+    flex: 1,
+  },
+
+  // ====== GLASSMORPHISM CARD ======
+  glassCardContainer: {
+    paddingHorizontal: 16,
+    marginTop: -40,
+    zIndex: 10,
+  },
+  glassCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  glassCardInner: {
+    padding: 20,
+    backgroundColor: 'rgba(26, 26, 37, 0.85)',
+  },
+  energyHeadline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  energyDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  energyLabel: {
+    fontSize: 24,
+    fontWeight: '900',
+    letterSpacing: 2,
+    flex: 1,
+  },
+  energyScoreBadge: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  energyScoreText: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  utilityStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  utilityStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  utilityIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  utilityLabel: {
+    fontSize: 11,
+    color: '#666',
+    marginBottom: 2,
+  },
+  utilityValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFF',
+    textAlign: 'center',
+  },
+  vibeStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+  },
+  vibeStat: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  verifiedText: {
+  vibeStatText: {
     fontSize: 12,
-    color: '#4CAF50',
-    fontWeight: '600',
+    color: '#888',
   },
-  featuredBadge: {
-    backgroundColor: '#FFD70020',
-    padding: 4,
-    borderRadius: 8,
+  vibeStatDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: '#333',
+    marginHorizontal: 12,
+  },
+
+  // ====== LOCATION CARD ======
+  locationCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: '#1A1A25',
+    borderRadius: 16,
+    padding: 16,
+  },
+  locationInfo: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  locationTextContainer: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  locationAddress: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  locationArea: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
   },
   directionsButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#2196F3',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  scoreHero: {
-    alignItems: 'center',
-    backgroundColor: '#151520',
-    borderRadius: 24,
-    padding: 32,
-    marginBottom: 16,
-    borderWidth: 2,
-  },
-  scoreCircle: {
-    alignItems: 'center',
-  },
-  scoreValue: {
-    fontSize: 72,
-    fontWeight: '900',
-  },
-  scoreLabel: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 4,
-  },
-  velocityIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 16,
-    gap: 8,
-  },
-  velocityText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  gpsLockContainer: {
-    borderRadius: 16,
-    marginBottom: 16,
+    borderRadius: 12,
     overflow: 'hidden',
   },
-  gpsLockContent: {
+  directionsGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#151520',
-    padding: 16,
-    borderRadius: 16,
-    gap: 12,
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 8,
   },
-  gpsLockIcon: {
+  directionsText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+
+  // ====== GPS CONTAINER ======
+  gpsContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: '#1A1A25',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  gpsContainerActive: {
+    borderColor: '#4CAF5040',
+    backgroundColor: '#4CAF5010',
+  },
+  gpsContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  gpsIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 12,
   },
-  gpsLockIconActive: {
+  gpsIconActive: {
     backgroundColor: '#4CAF5020',
-    borderWidth: 2,
-    borderColor: '#4CAF50',
   },
-  gpsLockIconInactive: {
-    backgroundColor: '#252530',
-    borderWidth: 2,
-    borderColor: '#333',
+  gpsIconInactive: {
+    backgroundColor: '#33333380',
   },
-  gpsLockTextContainer: {
+  gpsTextContainer: {
     flex: 1,
   },
-  gpsLockTitle: {
+  gpsTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  gpsLockSubtitle: {
+  gpsSubtitle: {
     fontSize: 12,
     color: '#666',
     marginTop: 2,
   },
-  infoCard: {
-    backgroundColor: '#151520',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  infoContent: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: '#666',
-  },
-  infoValue: {
-    fontSize: 14,
-    color: '#FFF',
-    marginTop: 2,
-  },
-  statsSection: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFF',
-    marginBottom: 12,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#151520',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFF',
-    marginTop: 8,
-    textTransform: 'capitalize',
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#666',
-    marginTop: 4,
-  },
-  pulseDropBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FF336620',
-    borderRadius: 12,
-    paddingVertical: 12,
-    marginBottom: 16,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#FF3366',
-  },
-  pulseDropText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FF3366',
-  },
+
+  // ====== RATING STATUS ======
   ratingStatusCard: {
-    backgroundColor: '#151520',
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: '#1A1A25',
     borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
   },
-  ratingStatusContent: {
+  ratingStatusHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 12,
+  },
+  ratingStatusTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFF',
   },
   ratingCount: {
-    alignItems: 'center',
-    paddingRight: 16,
-    borderRightWidth: 1,
-    borderRightColor: '#252530',
+    backgroundColor: '#FF336620',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
-  ratingCountValue: {
-    fontSize: 28,
-    fontWeight: '800',
+  ratingCountText: {
+    fontSize: 12,
+    fontWeight: '700',
     color: '#FF3366',
   },
-  ratingCountLabel: {
-    fontSize: 11,
-    color: '#666',
-  },
-  ratingInfo: {
-    flex: 1,
-    paddingLeft: 16,
-  },
-  ratingInfoRow: {
+  ratingStatusContent: {},
+  ratingStatusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  ratingInfoText: {
-    fontSize: 14,
-    color: '#FFF',
+  ratingStatusText: {
+    fontSize: 13,
+    color: '#888',
   },
+
+  // ====== TOOLTIP ======
+  tooltip: {
+    position: 'absolute',
+    bottom: 180,
+    left: 32,
+    right: 32,
+    backgroundColor: '#FF5252',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    zIndex: 100,
+  },
+  tooltipText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '500',
+    flex: 1,
+  },
+
+  // ====== RATE BUTTON ======
   rateButton: {
+    marginHorizontal: 16,
+    marginTop: 24,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  rateButtonDisabled: {
+    opacity: 0.6,
+  },
+  rateButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FF3366',
-    borderRadius: 16,
     paddingVertical: 18,
-    gap: 12,
-  },
-  rateButtonDisabled: {
-    backgroundColor: '#333',
+    gap: 10,
   },
   rateButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFF',
+  },
+  geofenceWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingHorizontal: 16,
+    gap: 6,
+  },
+  geofenceWarningText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
   },
 });
