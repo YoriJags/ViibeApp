@@ -108,6 +108,42 @@ export const MockMap: React.FC<MockMapProps> = ({
     }
   }, [highlightedVenueId]);
 
+  // Rated glow animation - shows after user submits a rating
+  useEffect(() => {
+    if (ratedGlowVenueId) {
+      // Start special "contribution" glow animation
+      ratedGlowOpacity.setValue(0);
+      
+      Animated.sequence([
+        Animated.timing(ratedGlowOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.loop(
+          Animated.parallel([
+            Animated.sequence([
+              Animated.timing(ratedPulseAnim, {
+                toValue: 1.5,
+                duration: 800,
+                useNativeDriver: true,
+              }),
+              Animated.timing(ratedPulseAnim, {
+                toValue: 1,
+                duration: 800,
+                useNativeDriver: true,
+              }),
+            ]),
+          ]),
+          { iterations: 5 }
+        ),
+      ]).start();
+    } else {
+      ratedPulseAnim.setValue(1);
+      ratedGlowOpacity.setValue(0);
+    }
+  }, [ratedGlowVenueId]);
+
   // Tooltip animation
   useEffect(() => {
     if (hoveredVenue) {
