@@ -386,4 +386,40 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: typography.fontWeight.semibold,
   },
+  // === DESKTOP RESPONSIVE STYLES ===
+  headerDesktop: {
+    paddingHorizontal: spacing.xxl,
+  },
+  headerTitleDesktop: {
+    fontSize: typography.fontSize.xxxl,
+  },
+  revenueRowDesktop: {
+    paddingHorizontal: spacing.xxl,
+  },
+  revenueCardDesktop: {
+    padding: spacing.xxl,
+  },
+  revenueAmountDesktop: {
+    fontSize: 56,
+  },
+  twoColumnLayout: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.lg,
+  },
+  sectionHalf: {
+    flex: 1,
+    paddingHorizontal: 0,
+  },
+  tiersRowDesktop: {
+    flexDirection: 'column',
+    gap: spacing.md,
+  },
+  healthGridDesktop: {
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+  },
+  healthCardDesktop: {
+    minWidth: 'auto',
+  },
 });
