@@ -48,6 +48,7 @@ export default function RateScreen() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isCorrection, setIsCorrection] = useState(false);
+  const [showCloutReward, setShowCloutReward] = useState(false);
 
   // Rating selections
   const [energy, setEnergy] = useState<EnergyLevel | null>(null);
