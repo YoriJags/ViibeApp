@@ -588,6 +588,14 @@ export default function AdminAnalytics() {
             </Text>
           </View>
           <View style={styles.headerActions}>
+            {/* Tour Button */}
+            <TouchableOpacity 
+              style={styles.tourButton}
+              onPress={restartWalkthrough}
+            >
+              <Ionicons name="help-circle-outline" size={14} color="#FFF" />
+              <Text style={styles.tourButtonText}>Tour</Text>
+            </TouchableOpacity>
             {/* Demo Mode Toggle */}
             <TouchableOpacity 
               style={[styles.demoToggle, isDemoMode && styles.demoToggleActive]}
