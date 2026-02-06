@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Animated,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -55,6 +56,11 @@ export const MockMap: React.FC<MockMapProps> = ({
   // Pulse animation for highlighted venue
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
+  
+  // Hover tooltip state (for web)
+  const [hoveredVenue, setHoveredVenue] = useState<Venue | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const tooltipOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (highlightedVenueId) {
@@ -93,11 +99,35 @@ export const MockMap: React.FC<MockMapProps> = ({
     }
   }, [highlightedVenueId]);
 
+  // Tooltip animation
+  useEffect(() => {
+    if (hoveredVenue) {
+      Animated.timing(tooltipOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(tooltipOpacity, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [hoveredVenue]);
+
   const getVibeColor = (score: number) => {
     if (score >= 80) return '#FF3366'; // Electric - Red/Pink
     if (score >= 60) return '#FF9933'; // Popping - Orange
     if (score >= 40) return '#9933FF'; // Moderate - Purple
     return '#3399FF'; // Chill - Blue
+  };
+
+  const getVibeLabel = (score: number) => {
+    if (score >= 80) return 'Electric';
+    if (score >= 60) return 'Popping';
+    if (score >= 40) return 'Moderate';
+    return 'Chill';
   };
 
   const getGlowSize = (score: number, isHighlighted: boolean) => {
@@ -120,6 +150,24 @@ export const MockMap: React.FC<MockMapProps> = ({
     inputRange: [0, 1],
     outputRange: ['rgba(255, 51, 102, 0.3)', 'rgba(255, 51, 102, 1)'],
   });
+
+  // Handle hover events (web only)
+  const handleMouseEnter = (venue: Venue, position: { x: number; y: number }) => {
+    if (Platform.OS === 'web') {
+      setHoveredVenue(venue);
+      // Position tooltip above the marker
+      setTooltipPosition({
+        x: position.x,
+        y: position.y - 80,
+      });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (Platform.OS === 'web') {
+      setHoveredVenue(null);
+    }
+  };
 
   return (
     <View style={styles.mapContainer}>
@@ -177,6 +225,7 @@ export const MockMap: React.FC<MockMapProps> = ({
             venue.coordinates.lng
           );
           const isHighlighted = venue.id === highlightedVenueId;
+          const isHovered = hoveredVenue?.id === venue.id;
           const color = getVibeColor(venue.current_vibe_score);
           const size = getGlowSize(venue.current_vibe_score, isHighlighted);
 
@@ -190,11 +239,14 @@ export const MockMap: React.FC<MockMapProps> = ({
                   top: position.y - size / 2,
                   width: size,
                   height: size,
-                  zIndex: isHighlighted ? 100 : 1,
+                  zIndex: isHighlighted || isHovered ? 100 : 1,
                 },
               ]}
               onPress={() => onVenuePress(venue)}
               activeOpacity={0.8}
+              // @ts-ignore - Web-only events
+              onMouseEnter={() => handleMouseEnter(venue, position)}
+              onMouseLeave={handleMouseLeave}
             >
               {/* Highlight pulse ring */}
               {isHighlighted && (
@@ -231,10 +283,11 @@ export const MockMap: React.FC<MockMapProps> = ({
                 style={[
                   styles.markerGlow,
                   {
-                    backgroundColor: isHighlighted ? color + '60' : color + '30',
-                    width: size,
-                    height: size,
+                    backgroundColor: isHighlighted || isHovered ? color + '60' : color + '30',
+                    width: isHovered ? size * 1.3 : size,
+                    height: isHovered ? size * 1.3 : size,
                     borderRadius: size / 2,
+                    transform: [{ scale: isHovered ? 1.2 : 1 }],
                   },
                 ]}
               />
@@ -247,8 +300,9 @@ export const MockMap: React.FC<MockMapProps> = ({
                     width: size * 0.5,
                     height: size * 0.5,
                     borderRadius: size * 0.25,
-                    borderWidth: isHighlighted ? 3 : 0,
-                    borderColor: '#FFD700',
+                    borderWidth: isHighlighted ? 3 : isHovered ? 2 : 0,
+                    borderColor: isHighlighted ? '#FFD700' : '#FFF',
+                    transform: [{ scale: isHovered ? 1.2 : 1 }],
                   },
                 ]}
               />
@@ -272,6 +326,63 @@ export const MockMap: React.FC<MockMapProps> = ({
             </TouchableOpacity>
           );
         })}
+
+        {/* ====== HOVER TOOLTIP (Web Only) ====== */}
+        {hoveredVenue && Platform.OS === 'web' && (
+          <Animated.View
+            style={[
+              styles.hoverTooltip,
+              {
+                left: Math.max(10, Math.min(tooltipPosition.x - 75, width - 170)),
+                top: Math.max(10, tooltipPosition.y),
+                opacity: tooltipOpacity,
+              },
+            ]}
+            pointerEvents="none"
+          >
+            <View style={styles.tooltipContent}>
+              {/* Venue Name */}
+              <Text style={styles.tooltipName} numberOfLines={1}>
+                {hoveredVenue.name}
+              </Text>
+              
+              {/* District/Area */}
+              <View style={styles.tooltipRow}>
+                <Ionicons name="location-outline" size={12} color="#888" />
+                <Text style={styles.tooltipDistrict}>{hoveredVenue.area}</Text>
+              </View>
+              
+              {/* Pulse Score */}
+              <View style={styles.tooltipScoreRow}>
+                <View style={[
+                  styles.tooltipScoreDot,
+                  { backgroundColor: getVibeColor(hoveredVenue.current_vibe_score) }
+                ]} />
+                <Text style={styles.tooltipScoreLabel}>Pulse Score</Text>
+                <Text style={[
+                  styles.tooltipScore,
+                  { color: getVibeColor(hoveredVenue.current_vibe_score) }
+                ]}>
+                  {hoveredVenue.current_vibe_score}%
+                </Text>
+              </View>
+              
+              {/* Vibe Level */}
+              <View style={[
+                styles.tooltipVibeBadge,
+                { backgroundColor: getVibeColor(hoveredVenue.current_vibe_score) + '30' }
+              ]}>
+                <Text style={[
+                  styles.tooltipVibeText,
+                  { color: getVibeColor(hoveredVenue.current_vibe_score) }
+                ]}>
+                  {getVibeLabel(hoveredVenue.current_vibe_score).toUpperCase()}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.tooltipArrow} />
+          </Animated.View>
+        )}
       </View>
 
       {/* Highlighted venue card at bottom */}
@@ -397,9 +508,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     justifyContent: 'center',
     alignItems: 'center',
+    cursor: 'pointer',
   },
   markerGlow: {
     position: 'absolute',
+    transition: 'all 0.2s ease',
   },
   markerDot: {
     position: 'absolute',
@@ -408,6 +521,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 8,
     elevation: 5,
+    transition: 'all 0.2s ease',
   },
   highlightRing: {
     position: 'absolute',
@@ -454,6 +568,84 @@ const styles = StyleSheet.create({
     padding: 2,
     borderRadius: 8,
   },
+  
+  // ====== HOVER TOOLTIP STYLES ======
+  hoverTooltip: {
+    position: 'absolute',
+    zIndex: 200,
+    width: 160,
+  },
+  tooltipContent: {
+    backgroundColor: '#1A1F2AEE',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  tooltipName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFF',
+    marginBottom: 6,
+  },
+  tooltipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 8,
+  },
+  tooltipDistrict: {
+    fontSize: 12,
+    color: '#888',
+  },
+  tooltipScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  tooltipScoreDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  tooltipScoreLabel: {
+    fontSize: 11,
+    color: '#666',
+    flex: 1,
+  },
+  tooltipScore: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  tooltipVibeBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  tooltipVibeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  tooltipArrow: {
+    alignSelf: 'center',
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#1A1F2AEE',
+  },
+
   highlightedCard: {
     position: 'absolute',
     bottom: 16,
