@@ -34,8 +34,8 @@ const CITIES = [
 
 export default function MapScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string }>();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity } = useVibeStore();
+  const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string }>();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
@@ -43,6 +43,7 @@ export default function MapScreen() {
   const [showCityPicker, setShowCityPicker] = useState(false);
   const [showCloutReward, setShowCloutReward] = useState(false);
   const [highlightedVenueId, setHighlightedVenueId] = useState<string | null>(null);
+  const [ratedGlowVenueId, setRatedGlowVenueId] = useState<string | null>(null);
   
   // Handle venue highlight from Trending page "Pull Up" button
   useEffect(() => {
@@ -58,6 +59,25 @@ export default function MapScreen() {
       return () => clearTimeout(timer);
     }
   }, [params.highlightVenue]);
+
+  // Handle "rated glow" effect after user submits a rating
+  useEffect(() => {
+    if (params.showRatedGlow === 'true' && lastRatedVenueId) {
+      setRatedGlowVenueId(lastRatedVenueId);
+      setShowList(false); // Ensure map view is shown
+      
+      // Refresh venues to get updated scores
+      fetchVenues(selectedCity);
+      
+      // Clear glow after 6 seconds
+      const timer = setTimeout(() => {
+        setRatedGlowVenueId(null);
+        setLastRatedVenueId(null);
+      }, 6000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [params.showRatedGlow, lastRatedVenueId]);
 
   // Calculate city stats for Daily Pulse
   const cityStats: CityStats = useMemo(() => {
