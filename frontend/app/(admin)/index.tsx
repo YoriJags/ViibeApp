@@ -76,17 +76,28 @@ export default function AdminTreasury() {
 
   const cities = data?.by_city ? Object.entries(data.by_city).sort((a, b) => b[1].total - a[1].total) : [];
 
+  // Responsive container style
+  const containerStyle = isDesktop ? {
+    maxWidth: 1200,
+    alignSelf: 'center' as const,
+    width: '100%' as const,
+    paddingHorizontal: spacing.xxl,
+  } : {};
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
+        contentContainerStyle={containerStyle}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, isDesktop && styles.headerDesktop]}>
           <View>
-            <Text style={styles.headerTitle}>Admin Treasury</Text>
+            <Text style={[styles.headerTitle, isDesktop && styles.headerTitleDesktop]}>
+              Admin Treasury
+            </Text>
             <Text style={styles.headerSubtitle}>Command Center</Text>
           </View>
           <View style={styles.liveBadge}>
@@ -95,16 +106,16 @@ export default function AdminTreasury() {
           </View>
         </View>
 
-        {/* Global Revenue */}
-        <View style={styles.revenueRow}>
-          <View style={[styles.revenueCard, styles.primaryRevenue]}>
+        {/* Global Revenue - Responsive Grid */}
+        <View style={[styles.revenueRow, isDesktop && styles.revenueRowDesktop]}>
+          <View style={[styles.revenueCard, styles.primaryRevenue, isDesktop && styles.revenueCardDesktop]}>
             <Text style={styles.revenueLabel}>Total Revenue</Text>
-            <Text style={styles.revenueAmount}>
+            <Text style={[styles.revenueAmount, isDesktop && styles.revenueAmountDesktop]}>
               ₦{(data?.global.total_revenue || 0).toLocaleString()}
             </Text>
             <Text style={styles.revenueSubLabel}>All Time</Text>
           </View>
-          <View style={styles.revenueCard}>
+          <View style={[styles.revenueCard, isDesktop && styles.revenueCardDesktop]}>
             <Text style={styles.revenueLabel}>Today</Text>
             <Text style={styles.revenueAmountSmall}>
               ₦{(data?.global.today_revenue || 0).toLocaleString()}
@@ -112,12 +123,14 @@ export default function AdminTreasury() {
           </View>
         </View>
 
-        {/* Revenue by City */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            <Ionicons name="business" size={20} color={colors.data.venues} /> Revenue by City
-          </Text>
-          {cities.map(([city, stats]) => (
+        {/* Desktop: Two-column layout for City and Tier */}
+        <View style={isDesktop ? styles.twoColumnLayout : undefined}>
+          {/* Revenue by City */}
+          <View style={[styles.section, isDesktop && styles.sectionHalf]}>
+            <Text style={styles.sectionTitle}>
+              <Ionicons name="business" size={20} color={colors.data.venues} /> Revenue by City
+            </Text>
+            {cities.map(([city, stats]) => (
             <View key={city} style={styles.cityRow}>
               <Text style={styles.cityFlag}>🏙️</Text>
               <Text style={styles.cityName}>{city.charAt(0).toUpperCase() + city.slice(1)}</Text>
