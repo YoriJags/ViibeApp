@@ -289,10 +289,13 @@ export default function TrendingScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         showsVerticalScrollIndicator={false}
+        bounces={true}
       >
         {/* Header */}
         <View style={styles.header}>
