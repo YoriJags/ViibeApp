@@ -173,17 +173,22 @@ export default function RateScreen() {
         photo || undefined
       );
 
-      Alert.alert(
-        isCorrection ? 'Vibe Updated!' : 'Vibe Rated!',
-        `Score: ${Math.round(result.venue_vibe_score)}. ${result.remaining_ratings > 0 ? 'You have 1 correction left.' : ''}
-+${Math.round(result.rating.vibe_score / 10)} Clout points earned!`,
-        [
-          {
-            text: 'Great!',
-            onPress: () => router.back(),
-          },
-        ]
-      );
+      // Show Clout Reward Animation
+      setShowCloutReward(true);
+
+      // Delay the alert to let the animation play
+      setTimeout(() => {
+        Alert.alert(
+          isCorrection ? 'Vibe Updated! 🎉' : 'Vibe Rated! 🔥',
+          `Score: ${Math.round(result.venue_vibe_score)}. ${result.remaining_ratings > 0 ? 'You have 1 correction left.' : ''}\n\n+5 Clout points earned! Your vibe check is helping the streets! 💯`,
+          [
+            {
+              text: 'Ehen! Nice!',
+              onPress: () => router.back(),
+            },
+          ]
+        );
+      }, 2000);
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to submit rating');
     } finally {
