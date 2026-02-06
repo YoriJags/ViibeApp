@@ -882,6 +882,97 @@ async def get_top_scouts(city: str, limit: int = 5):
         "time_window": "24h"
     }
 
+@api_router.get("/scout/{user_id}/profile")
+async def get_scout_profile(user_id: str):
+    """
+    Get scout mini-profile with activity heatmap
+    Returns user details, total clout, recent venue visits
+    """
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Scout not found")
+    
+    now = datetime.now(timezone.utc)
+    day_ago = now - timedelta(hours=24)
+    week_ago = now - timedelta(days=7)
+    
+    # Get recent ratings with venue info
+    recent_ratings = await db.ratings.find({
+        "user_id": user_id,
+        "timestamp": {"$gte": day_ago}
+    }).sort("timestamp", -1).to_list(20)
+    
+    # Build activity heatmap (recent check-ins with venues)
+    activity_heatmap = []
+    for rating in recent_ratings:
+        venue = await db.venues.find_one({"id": rating["venue_id"]}, {"_id": 0})
+        if venue:
+            time_diff = now - rating["timestamp"]
+            mins_ago = int(time_diff.total_seconds() / 60)
+            
+            if mins_ago < 60:
+                time_str = f"{mins_ago} min{'s' if mins_ago != 1 else ''} ago"
+            else:
+                hours_ago = mins_ago // 60
+                time_str = f"{hours_ago} hour{'s' if hours_ago != 1 else ''} ago"
+            
+            activity_heatmap.append({
+                "venue_id": venue["id"],
+                "venue_name": venue["name"],
+                "venue_area": venue.get("area", ""),
+                "vibe_score": rating.get("vibe_score", 0),
+                "energy": rating.get("energy", "chill"),
+                "timestamp": rating["timestamp"].isoformat(),
+                "time_ago": time_str
+            })
+    
+    # Get weekly stats
+    week_ratings = await db.ratings.count_documents({
+        "user_id": user_id,
+        "timestamp": {"$gte": week_ago}
+    })
+    
+    unique_venues_week = await db.ratings.distinct("venue_id", {
+        "user_id": user_id,
+        "timestamp": {"$gte": week_ago}
+    })
+    
+    # Determine tier
+    total_ratings = user.get("total_ratings", 0)
+    if total_ratings >= 50:
+        tier = "elite"
+        tier_color = "#FF3366"
+    elif total_ratings >= 25:
+        tier = "scout"
+        tier_color = "#FFD700"
+    elif total_ratings >= 10:
+        tier = "regular"
+        tier_color = "#00D4FF"
+    else:
+        tier = "newbie"
+        tier_color = "#666666"
+    
+    return {
+        "user": {
+            "id": user["id"],
+            "username": user.get("username", "Anonymous"),
+            "avatar": user.get("picture"),
+            "clout_points": user.get("clout_points", 0),
+            "scout_status": user.get("scout_status", "newbie"),
+            "rating_accuracy_score": user.get("rating_accuracy_score", 0),
+            "total_ratings": total_ratings,
+            "tier": tier,
+            "tier_color": tier_color
+        },
+        "activity_heatmap": activity_heatmap,
+        "stats": {
+            "checks_24h": len(recent_ratings),
+            "checks_7d": week_ratings,
+            "unique_venues_7d": len(unique_venues_week)
+        },
+        "last_seen": activity_heatmap[0] if activity_heatmap else None
+    }
+
 # ===== Rating Routes =====
 
 @api_router.post("/ratings")
