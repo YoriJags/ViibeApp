@@ -592,6 +592,15 @@ export default function VenueDetailScreen() {
 
         <View style={{ height: 120 }} />
       </ScrollView>
+
+      {/* Rate Vibe Modal */}
+      <RateVibeModal
+        visible={showRateModal}
+        onClose={() => setShowRateModal(false)}
+        onSubmit={handleSubmitRating}
+        venueName={venue?.name || ''}
+        isGpsVerified={isWithinGeofence}
+      />
     </SafeAreaView>
   );
 }
