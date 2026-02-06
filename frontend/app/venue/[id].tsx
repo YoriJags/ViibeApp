@@ -634,6 +634,15 @@ export default function VenueDetailScreen() {
         venueName={venue?.name || ''}
         isGpsVerified={isWithinGeofence}
       />
+
+      {/* Success Animation */}
+      <VibeSuccessAnimation
+        visible={showSuccessAnimation}
+        cloutEarned={lastCloutEarned}
+        hasPhoto={lastHadPhoto}
+        venueName={venue?.name || ''}
+        onComplete={handleSuccessAnimationComplete}
+      />
     </SafeAreaView>
   );
 }
