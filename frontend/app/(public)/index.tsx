@@ -282,6 +282,7 @@ export default function MapScreen() {
             venues={venues}
             userLocation={userLocation}
             onVenuePress={(venue) => router.push(`/venue/${venue.id}`)}
+            highlightedVenueId={highlightedVenueId}
           />
         </View>
       )}
@@ -292,7 +293,7 @@ export default function MapScreen() {
           <Text style={styles.statValue}>{venues.length}</Text>
           <Text style={styles.statLabel}>Venues</Text>
         </View>
-        <View style={styles.statItem}>
+        <View style={styles.statItem}>>
           <Text style={styles.statValue}>
             {venues.filter((v) => v.current_vibe_score >= 70).length}
           </Text>
