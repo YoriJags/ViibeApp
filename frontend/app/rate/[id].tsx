@@ -15,6 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import { useVibeStore } from '../../src/store/vibeStore';
+import CloutReward from '../../src/components/CloutReward';
 
 type EnergyLevel = 'chill' | 'popping' | 'electric';
 type CapacityLevel = 'sparse' | 'vibrant' | 'full';
