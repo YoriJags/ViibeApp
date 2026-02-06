@@ -187,7 +187,6 @@ export default function VenueDetailScreen() {
     photoBase64?: string;
   }) => {
     if (!user || !venue || !userLocation) {
-      Alert.alert('Error', 'Unable to submit rating');
       return;
     }
 
@@ -213,17 +212,39 @@ export default function VenueDetailScreen() {
       }
 
       const result = await response.json();
+      const cloutEarned = result.clout_earned || 10;
+      const hasPhoto = !!data.photoBase64;
       
-      // Show success with clout earned
-      Alert.alert(
-        '🎉 Vibe Updated!',
-        `You earned +${result.clout_earned || 10} Clout${data.photoBase64 ? ' (+5 bonus for photo!)' : ''}`,
-        [{ text: 'Nice!', onPress: () => loadVenueData() }]
-      );
+      // Update local user clout immediately
+      updateUserClout(hasPhoto ? cloutEarned + 5 : cloutEarned);
+      
+      // Set the last rated venue for map glow effect
+      setLastRatedVenueId(venue.id);
+      
+      // Store values for success animation
+      setLastCloutEarned(cloutEarned);
+      setLastHadPhoto(hasPhoto);
+      
+      // Close modal and show success animation
+      setShowRateModal(false);
+      setShowSuccessAnimation(true);
+      
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to submit rating');
+      console.error('Rating error:', error);
       throw error;
     }
+  };
+
+  const handleSuccessAnimationComplete = () => {
+    setShowSuccessAnimation(false);
+    // Navigate back to map with venue highlighted
+    router.push({
+      pathname: '/',
+      params: { 
+        highlightVenue: venue?.id,
+        showRatedGlow: 'true',
+      }
+    });
   };
 
   const getEnergyLabel = (level: string) => {
