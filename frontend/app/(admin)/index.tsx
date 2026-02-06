@@ -426,18 +426,36 @@ export default function AdminAnalytics() {
       >
         {/* Header */}
         <LinearGradient
-          colors={[adminColors.primary, adminColors.secondary]}
+          colors={isDemoMode ? ['#9333EA', '#6366F1'] : [adminColors.primary, adminColors.secondary]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.header}
         >
           <View style={styles.headerContent}>
             <Text style={styles.headerTitle}>Admin Analytics</Text>
-            <Text style={styles.headerSubtitle}>Royal Command Center</Text>
+            <Text style={styles.headerSubtitle}>
+              {isDemoMode ? 'Demo Mode - Sample Data' : 'Royal Command Center'}
+            </Text>
           </View>
-          <View style={styles.liveBadge}>
-            <View style={styles.liveIndicator} />
-            <Text style={styles.liveText}>LIVE</Text>
+          <View style={styles.headerActions}>
+            {/* Demo Mode Toggle */}
+            <TouchableOpacity 
+              style={[styles.demoToggle, isDemoMode && styles.demoToggleActive]}
+              onPress={() => setIsDemoMode(!isDemoMode)}
+            >
+              <Ionicons 
+                name={isDemoMode ? 'sparkles' : 'sparkles-outline'} 
+                size={14} 
+                color={isDemoMode ? '#000' : '#FFF'} 
+              />
+              <Text style={[styles.demoToggleText, isDemoMode && styles.demoToggleTextActive]}>
+                {isDemoMode ? 'DEMO' : 'Demo'}
+              </Text>
+            </TouchableOpacity>
+            <View style={[styles.liveBadge, isDemoMode && styles.demoBadge]}>
+              <View style={[styles.liveIndicator, isDemoMode && styles.demoIndicator]} />
+              <Text style={styles.liveText}>{isDemoMode ? 'DEMO' : 'LIVE'}</Text>
+            </View>
           </View>
         </LinearGradient>
 
