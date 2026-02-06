@@ -39,6 +39,36 @@ export default function MapScreen() {
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
   const [showList, setShowList] = useState(false);
   const [showCityPicker, setShowCityPicker] = useState(false);
+  const [showCloutReward, setShowCloutReward] = useState(false);
+
+  // Calculate city stats for Daily Pulse
+  const cityStats: CityStats = useMemo(() => {
+    const sortedVenues = [...venues].sort((a, b) => b.current_vibe_score - a.current_vibe_score);
+    const hotSpots = venues.filter(v => v.current_vibe_score >= 60).length;
+    const activeVenues = venues.filter(v => v.current_vibe_score >= 20).length;
+    const avgVibe = venues.length > 0 
+      ? venues.reduce((sum, v) => sum + v.current_vibe_score, 0) / venues.length 
+      : 0;
+    
+    const topVenue = sortedVenues[0] ? {
+      name: sortedVenues[0].name,
+      vibeScore: sortedVenues[0].current_vibe_score,
+      area: sortedVenues[0].area || 'Lagos',
+    } : null;
+
+    const today = new Date();
+    const isWeekend = today.getDay() === 5 || today.getDay() === 6; // Friday or Saturday
+
+    return {
+      city: selectedCity,
+      totalVenues: venues.length,
+      activeVenues,
+      averageVibe: avgVibe,
+      topVenue,
+      hotSpots,
+      isWeekend,
+    };
+  }, [venues, selectedCity]);
 
   useEffect(() => {
     initializeApp();
