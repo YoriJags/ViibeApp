@@ -1567,8 +1567,9 @@ async def get_global_treasury(request: Request, city: Optional[str] = None):
     }
     
     # Data Freshness
+    hour_ago = now - timedelta(hours=1)
     recent_ratings = await db.ratings.count_documents({"timestamp": {"$gte": now - timedelta(minutes=15)}})
-    total_hour_ratings = await db.ratings.count_documents({"timestamp": {"$gte": hour_ago}}) if 'hour_ago' in dir() else await db.ratings.count_documents({"timestamp": {"$gte": now - timedelta(hours=1)}})
+    total_hour_ratings = await db.ratings.count_documents({"timestamp": {"$gte": hour_ago}})
     data_freshness = (recent_ratings / total_hour_ratings * 100) if total_hour_ratings > 0 else 100
     
     return {
