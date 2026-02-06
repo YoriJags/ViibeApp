@@ -829,13 +829,13 @@ export default function AdminAnalytics() {
                   <Ionicons name="business" size={20} color={adminColors.venues} />
                   <Text style={styles.networkLabel}>Verified Venues</Text>
                   <Text style={styles.networkValue}>
-                    {treasury?.network_health?.verified_venues || 0}/{treasury?.network_health?.total_venues || 0}
+                    {displayTreasury?.network_health?.verified_venues || 0}/{displayTreasury?.network_health?.total_venues || 0}
                   </Text>
                 </View>
                 <View style={styles.networkItem}>
                   <Ionicons name="timer" size={20} color={adminColors.accent} />
                   <Text style={styles.networkLabel}>Data Freshness</Text>
-                  <Text style={styles.networkValue}>{treasury?.data_freshness_percent || 0}%</Text>
+                  <Text style={styles.networkValue}>{displayTreasury?.data_freshness_percent || 0}%</Text>
                 </View>
               </View>
             </View>
