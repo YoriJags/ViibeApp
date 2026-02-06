@@ -2266,6 +2266,67 @@ async def get_airdrop_history(request: Request, limit: int = 20):
     history = await db.clout_airdrops.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     return {"history": history}
 
+@api_router.get("/admin/user-analytics")
+async def get_user_analytics(request: Request):
+    """
+    User Analytics: Active vs Ghost users, tier distribution, signup trends.
+    Ghost users = signed up but never submitted a rating.
+    """
+    user = await get_current_user(request)
+    if not user or not user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="Super admin access required")
+    
+    now = datetime.now(timezone.utc)
+    day_ago = now - timedelta(days=1)
+    week_ago = now - timedelta(days=7)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Total users
+    total_users = await db.users.count_documents({})
+    
+    # Active users (24h) - users who have rated in the last 24 hours
+    active_user_ids_24h = await db.ratings.distinct("user_id", {"timestamp": {"$gte": day_ago}})
+    active_users_24h = len(active_user_ids_24h)
+    
+    # Active users (7d) - users who have rated in the last 7 days
+    active_user_ids_7d = await db.ratings.distinct("user_id", {"timestamp": {"$gte": week_ago}})
+    active_users_7d = len(active_user_ids_7d)
+    
+    # Ghost users - users with 0 ratings
+    ghost_users = await db.users.count_documents({"total_ratings": {"$lte": 0}})
+    ghost_percentage = round((ghost_users / total_users * 100) if total_users > 0 else 0, 1)
+    
+    # New users today
+    new_users_today = await db.users.count_documents({"created_at": {"$gte": today_start}})
+    
+    # Tier distribution
+    tier_pipeline = [
+        {"$group": {
+            "_id": "$scout_status",
+            "count": {"$sum": 1}
+        }}
+    ]
+    tier_stats = await db.users.aggregate(tier_pipeline).to_list(10)
+    tier_distribution = {
+        "elite": 0,
+        "scout": 0,
+        "regular": 0,
+        "newbie": 0
+    }
+    for stat in tier_stats:
+        if stat["_id"] in tier_distribution:
+            tier_distribution[stat["_id"]] = stat["count"]
+    
+    return {
+        "total_users": total_users,
+        "active_users_24h": active_users_24h,
+        "active_users_7d": active_users_7d,
+        "ghost_users": ghost_users,
+        "ghost_percentage": ghost_percentage,
+        "new_users_today": new_users_today,
+        "tier_distribution": tier_distribution
+    }
+
 # ===== Paystack Webhook =====
 
 @api_router.post("/webhook/paystack")
