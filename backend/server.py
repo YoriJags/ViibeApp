@@ -699,6 +699,189 @@ async def record_direction_click(venue_id: str):
     await db.venues.update_one({"id": venue_id}, {"$inc": {"direction_clicks": 1}})
     return {"message": "Direction click recorded"}
 
+# ===== Trending & Leaderboard Routes =====
+
+@api_router.get("/trending/{city}")
+async def get_trending_venues(city: str, limit: int = 10):
+    """
+    Get trending venues with dynamic scoring formula:
+    vibe_score = (avg_energy * 0.5) + (check_in_velocity * 0.3) + (scout_count * 0.2)
+    """
+    now = datetime.now(timezone.utc)
+    hour_ago = now - timedelta(hours=1)
+    day_ago = now - timedelta(hours=24)
+    
+    # Get all venues in the city
+    venues = await db.venues.find(
+        {"city": city.lower()}, 
+        {"_id": 0}
+    ).to_list(100)
+    
+    trending_data = []
+    
+    for venue in venues:
+        venue_id = venue["id"]
+        
+        # Get ratings from last hour for velocity calculation
+        recent_ratings = await db.ratings.find({
+            "venue_id": venue_id,
+            "timestamp": {"$gte": hour_ago}
+        }).to_list(100)
+        
+        # Get unique scouts (users) who rated in last 24h
+        day_ratings = await db.ratings.find({
+            "venue_id": venue_id,
+            "timestamp": {"$gte": day_ago}
+        }).to_list(500)
+        
+        unique_scouts = len(set(r.get("user_id") for r in day_ratings if r.get("user_id")))
+        
+        # Calculate metrics
+        avg_energy = venue.get("current_vibe_score", 0)
+        check_in_velocity = len(recent_ratings) * 10  # Scale up for scoring
+        scout_count = unique_scouts * 5  # Scale up for scoring
+        
+        # Apply formula: (avg_energy * 0.5) + (check_in_velocity * 0.3) + (scout_count * 0.2)
+        trending_score = (avg_energy * 0.5) + (check_in_velocity * 0.3) + (scout_count * 0.2)
+        
+        # Determine trend direction (compare to 6 hours ago)
+        six_hours_ago = now - timedelta(hours=6)
+        old_ratings = await db.ratings.find({
+            "venue_id": venue_id,
+            "timestamp": {"$gte": six_hours_ago, "$lt": hour_ago}
+        }).to_list(100)
+        
+        old_velocity = len(old_ratings)
+        new_velocity = len(recent_ratings)
+        
+        if new_velocity > old_velocity:
+            trend = "up"
+        elif new_velocity < old_velocity:
+            trend = "down"
+        else:
+            trend = "stable"
+        
+        trending_data.append({
+            "venue": venue,
+            "trending_score": round(trending_score, 1),
+            "energy_percent": min(100, round(avg_energy)),
+            "check_in_velocity": len(recent_ratings),
+            "scout_count": unique_scouts,
+            "trend": trend,
+            "last_rating": day_ratings[-1]["timestamp"].isoformat() if day_ratings else None
+        })
+    
+    # Sort by trending score
+    trending_data.sort(key=lambda x: x["trending_score"], reverse=True)
+    
+    # Add ranks
+    for i, item in enumerate(trending_data[:limit]):
+        item["rank"] = i + 1
+    
+    return {
+        "city": city,
+        "venues": trending_data[:limit],
+        "last_updated": now.isoformat(),
+        "total_venues": len(venues)
+    }
+
+@api_router.get("/top-scouts/{city}")
+async def get_top_scouts(city: str, limit: int = 5):
+    """
+    Get top scouts with most verified vibe checks in last 24 hours
+    """
+    now = datetime.now(timezone.utc)
+    day_ago = now - timedelta(hours=24)
+    
+    # Aggregate ratings by user in last 24h
+    pipeline = [
+        {
+            "$match": {
+                "timestamp": {"$gte": day_ago},
+                "superseded": {"$ne": True}  # Only count non-superseded ratings
+            }
+        },
+        {
+            "$lookup": {
+                "from": "venues",
+                "localField": "venue_id",
+                "foreignField": "id",
+                "as": "venue_info"
+            }
+        },
+        {
+            "$match": {
+                "venue_info.city": city.lower()
+            }
+        },
+        {
+            "$group": {
+                "_id": "$user_id",
+                "check_count": {"$sum": 1},
+                "total_vibe_score": {"$sum": "$vibe_score"},
+                "venues_rated": {"$addToSet": "$venue_id"},
+                "last_check": {"$max": "$timestamp"}
+            }
+        },
+        {
+            "$sort": {"check_count": -1}
+        },
+        {
+            "$limit": limit
+        }
+    ]
+    
+    scout_stats = await db.ratings.aggregate(pipeline).to_list(limit)
+    
+    top_scouts = []
+    for i, scout in enumerate(scout_stats):
+        user_id = scout["_id"]
+        if not user_id:
+            continue
+            
+        # Get user details
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        if not user:
+            continue
+        
+        # Determine scout tier based on total ratings
+        total_ratings = user.get("total_ratings", 0)
+        if total_ratings >= 50:
+            tier = "elite"
+            ring_color = "#FF3366"
+        elif total_ratings >= 25:
+            tier = "scout"
+            ring_color = "#FFD700"
+        elif total_ratings >= 10:
+            tier = "regular"
+            ring_color = "#00D4FF"
+        else:
+            tier = "newbie"
+            ring_color = "#666666"
+        
+        top_scouts.append({
+            "rank": i + 1,
+            "user_id": user_id,
+            "username": user.get("username", "Anonymous"),
+            "avatar": user.get("picture"),
+            "check_count": scout["check_count"],
+            "venues_visited": len(scout["venues_rated"]),
+            "avg_vibe_contribution": round(scout["total_vibe_score"] / scout["check_count"], 1) if scout["check_count"] > 0 else 0,
+            "last_check": scout["last_check"].isoformat() if scout["last_check"] else None,
+            "tier": tier,
+            "ring_color": ring_color,
+            "is_elite": tier == "elite",
+            "clout_points": user.get("clout_points", 0),
+            "accuracy_score": user.get("rating_accuracy_score", 0)
+        })
+    
+    return {
+        "city": city,
+        "scouts": top_scouts,
+        "last_updated": now.isoformat(),
+        "time_window": "24h"
+    }
+
 # ===== Rating Routes =====
 
 @api_router.post("/ratings")
