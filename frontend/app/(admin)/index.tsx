@@ -565,14 +565,14 @@ export default function AdminAnalytics() {
             {/* Transaction Ledger */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Pulse Drop Ledger</Text>
-              {ledger.length === 0 ? (
+              {displayLedger.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Ionicons name="receipt-outline" size={40} color={adminColors.textMuted} />
                   <Text style={styles.emptyText}>No transactions yet</Text>
                 </View>
               ) : (
                 <View style={styles.ledgerList}>
-                  {ledger.slice(0, 10).map((item) => (
+                  {displayLedger.slice(0, 10).map((item) => (
                     <View key={item.drop_id} style={styles.ledgerItem}>
                       <View style={styles.ledgerVenue}>
                         <Text style={styles.ledgerVenueName}>{item.venue_name}</Text>
@@ -599,19 +599,19 @@ export default function AdminAnalytics() {
         {activeTab === 'venues' && (
           <View style={styles.section}>
             {/* Integrity Health */}
-            <View style={[styles.integrityCard, { borderColor: getHealthColor(integrity?.health_status || 'healthy') }]}>
+            <View style={[styles.integrityCard, { borderColor: getHealthColor(displayIntegrity?.health_status || 'healthy') }]}>
               <View style={styles.integrityHeader}>
                 <Ionicons 
-                  name={integrity?.health_status === 'healthy' ? 'checkmark-circle' : 'alert-circle'} 
+                  name={displayIntegrity?.health_status === 'healthy' ? 'checkmark-circle' : 'alert-circle'} 
                   size={28} 
-                  color={getHealthColor(integrity?.health_status || 'healthy')} 
+                  color={getHealthColor(displayIntegrity?.health_status || 'healthy')} 
                 />
                 <View style={styles.integrityHeaderText}>
-                  <Text style={[styles.integrityStatus, { color: getHealthColor(integrity?.health_status || 'healthy') }]}>
-                    Integrity: {integrity?.health_status?.toUpperCase() || 'HEALTHY'}
+                  <Text style={[styles.integrityStatus, { color: getHealthColor(displayIntegrity?.health_status || 'healthy') }]}>
+                    Integrity: {displayIntegrity?.health_status?.toUpperCase() || 'HEALTHY'}
                   </Text>
                   <Text style={styles.integritySubtext}>
-                    {integrity?.health_status === 'healthy' ? 'Platform reputation protected' : 'Review sponsored venues'}
+                    {displayIntegrity?.health_status === 'healthy' ? 'Platform reputation protected' : 'Review sponsored venues'}
                   </Text>
                 </View>
               </View>
@@ -624,10 +624,10 @@ export default function AdminAnalytics() {
                 {/* Sponsored */}
                 <View style={styles.comparisonBox}>
                   <Text style={styles.comparisonLabel}>SPONSORED</Text>
-                  <Text style={styles.comparisonCount}>{integrity?.sponsored?.count || 0} venues</Text>
+                  <Text style={styles.comparisonCount}>{displayIntegrity?.sponsored?.count || 0} venues</Text>
                   <View style={[styles.scoreCircle, { borderColor: adminColors.gold }]}>
                     <Text style={[styles.scoreValue, { color: adminColors.gold }]}>
-                      {integrity?.sponsored?.average_energy || 0}%
+                      {displayIntegrity?.sponsored?.average_energy || 0}%
                     </Text>
                   </View>
                   <Text style={styles.scoreLabel}>Avg Energy</Text>
@@ -636,15 +636,15 @@ export default function AdminAnalytics() {
                 {/* Delta */}
                 <View style={styles.deltaBox}>
                   <Ionicons 
-                    name={(integrity?.delta || 0) >= 0 ? 'trending-up' : 'trending-down'} 
+                    name={(displayIntegrity?.delta || 0) >= 0 ? 'trending-up' : 'trending-down'} 
                     size={28} 
-                    color={(integrity?.delta || 0) >= 0 ? adminColors.success : adminColors.error} 
+                    color={(displayIntegrity?.delta || 0) >= 0 ? adminColors.success : adminColors.error} 
                   />
                   <Text style={[
                     styles.deltaValue,
-                    { color: (integrity?.delta || 0) >= 0 ? adminColors.success : adminColors.error }
+                    { color: (displayIntegrity?.delta || 0) >= 0 ? adminColors.success : adminColors.error }
                   ]}>
-                    {(integrity?.delta || 0) >= 0 ? '+' : ''}{integrity?.delta || 0}%
+                    {(displayIntegrity?.delta || 0) >= 0 ? '+' : ''}{displayIntegrity?.delta || 0}%
                   </Text>
                 </View>
 
