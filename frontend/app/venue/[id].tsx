@@ -553,7 +553,7 @@ export default function VenueDetailScreen() {
               showTooltip();
               checkUserLocation();
             } else if (ratingStatus?.can_rate) {
-              router.push(`/rate/${venue.id}`);
+              setShowRateModal(true);
             }
           }}
         >
