@@ -445,6 +445,59 @@ export default function TrendingScreen() {
           </View>
         </View>
 
+        {/* ====== SPONSORED SECTION (Pulse Drop Venues) ====== */}
+        {trendingData?.sponsored && trendingData.sponsored.length > 0 && (
+          <View style={styles.sponsoredSection}>
+            <View style={styles.sponsoredHeader}>
+              <Ionicons name="flash" size={16} color="#FFD700" />
+              <Text style={styles.sponsoredTitle}>Sponsored</Text>
+              <Text style={styles.sponsoredSubtitle}>2x Clout for check-ins!</Text>
+            </View>
+            {trendingData.sponsored.map((item) => (
+              <TouchableOpacity 
+                key={item.venue.id}
+                style={styles.sponsoredItem}
+                onPress={() => handlePullUp(item.venue)}
+                activeOpacity={0.8}
+              >
+                {/* Gold Border */}
+                <View style={styles.sponsoredGoldBorder} />
+                
+                {/* PULSE Badge */}
+                <View style={styles.sponsoredPulseBadge}>
+                  <Ionicons name="flash" size={10} color="#FFD700" />
+                  <Text style={styles.sponsoredPulseText}>PULSE</Text>
+                </View>
+
+                {/* Venue Info */}
+                <View style={styles.sponsoredVenueInfo}>
+                  <Text style={styles.sponsoredVenueName}>{item.venue.name}</Text>
+                  <Text style={styles.sponsoredVenueArea}>{item.venue.area}</Text>
+                </View>
+
+                {/* REAL Energy Score - Displayed Honestly */}
+                <View style={styles.sponsoredScoreContainer}>
+                  <Text style={[
+                    styles.sponsoredEnergyLabel,
+                    { color: getEnergyColor(item.energy_percent) }
+                  ]}>
+                    {item.energy_percent >= 70 ? 'Electric' : item.energy_percent >= 40 ? 'Vibe' : 'Quiet'}
+                  </Text>
+                  <Text style={[
+                    styles.sponsoredScore,
+                    { color: getEnergyColor(item.energy_percent) }
+                  ]}>
+                    {item.energy_percent}%
+                  </Text>
+                </View>
+
+                {/* Pull Up */}
+                <Ionicons name="chevron-forward" size={18} color="#FFD700" />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         {/* Rest of Leaderboard (#4 - #10) */}
         <View style={styles.listSection}>
           <Text style={styles.sectionTitle}>📊 The Ranks</Text>
