@@ -566,6 +566,16 @@ async def root():
 async def health():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
+# ===== Web Dashboard Routes =====
+
+@api_router.get("/dashboard/admin", response_class=HTMLResponse)
+async def admin_dashboard():
+    """Serve the Admin Dashboard HTML page."""
+    admin_html_path = ROOT_DIR / "static" / "admin.html"
+    if admin_html_path.exists():
+        return HTMLResponse(content=admin_html_path.read_text(), status_code=200)
+    return HTMLResponse(content="<h1>Admin Dashboard not found</h1>", status_code=404)
+
 # ===== Test/Dev Routes (for easy testing) =====
 
 @api_router.post("/dev/promote-user")
