@@ -40,8 +40,8 @@ export default function ProfileScreen() {
   const handleGoogleSignIn = async () => {
     setAuthLoading(true);
     try {
-      // Build redirect URL dynamically from current location
-      const redirectUrl = `${API_URL}/profile`;
+      // Build redirect URL using Expo Linking for proper deep linking support
+      const redirectUrl = Linking.createURL('/profile');
       const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
       
       // Open browser for auth
