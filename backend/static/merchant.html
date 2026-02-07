@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vibe Scout Merchant Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0A0A0F 0%, #1A1025 100%);
+      color: #FFFFFF;
+      min-height: 100vh;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #FF2D92, #FF6B35);
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .header h1 { font-size: 24px; font-weight: 900; }
+    .header-subtitle { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+    
+    .venue-badge {
+      background: rgba(255,255,255,0.2);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 16px;
+    }
+    
+    .stat-card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .stat-icon { font-size: 24px; margin-bottom: 8px; }
+    .stat-value { font-size: 28px; font-weight: 800; }
+    .stat-label { font-size: 11px; color: #94A3B8; margin-top: 4px; }
+    
+    .stat-card.vibe .stat-value { color: #22C55E; }
+    .stat-card.views .stat-value { color: #3B82F6; }
+    .stat-card.directions .stat-value { color: #FF2D92; }
+    .stat-card.wallet .stat-value { color: #FFD700; }
+    
+    .section { padding: 0 16px; margin-bottom: 24px; }
+    .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+    
+    .card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    
+    .pulse-tiers {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    
+    .pulse-tier {
+      background: rgba(255,255,255,0.05);
+      border: 2px solid;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .pulse-tier:hover { transform: translateY(-2px); }
+    
+    .pulse-tier.spark { border-color: #FF9800; }
+    .pulse-tier.flare { border-color: #E91E63; }
+    .pulse-tier.supernova { border-color: #FFD700; }
+    
+    .pulse-tier .tier-icon { font-size: 32px; margin-bottom: 8px; }
+    .pulse-tier .tier-name { font-weight: 700; font-size: 14px; }
+    .pulse-tier .tier-price { font-size: 18px; font-weight: 800; margin-top: 8px; }
+    .pulse-tier .tier-duration { font-size: 11px; color: #94A3B8; }
+    .pulse-tier .tier-boost { font-size: 11px; color: #22C55E; margin-top: 8px; }
+    
+    .wallet-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,107,53,0.1));
+      border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 16px;
+    }
+    
+    .wallet-balance { font-size: 32px; font-weight: 900; color: #FFD700; }
+    .wallet-label { font-size: 12px; color: #94A3B8; }
+    
+    .topup-btn {
+      background: linear-gradient(135deg, #FFD700, #FF6B35);
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    
+    .venue-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .venue-avatar {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #FF2D92, #FF6B35);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 900;
+    }
+    
+    .venue-details h3 { font-size: 18px; font-weight: 700; }
+    .venue-details p { font-size: 12px; color: #94A3B8; margin-top: 4px; }
+    
+    .energy-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    
+    .energy-badge.electric { background: rgba(34,197,94,0.2); color: #22C55E; }
+    .energy-badge.popping { background: rgba(234,179,8,0.2); color: #EAB308; }
+    
+    .loading { text-align: center; padding: 40px; color: #64748B; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Merchant Dashboard</h1>
+      <div class="header-subtitle" id="venue-subtitle">Loading...</div>
+    </div>
+    <div class="venue-badge" id="energy-badge">--</div>
+  </div>
+  
+  <div style="padding: 16px;">
+    <div class="venue-info" id="venue-info">
+      <div class="venue-avatar" id="venue-initial">?</div>
+      <div class="venue-details">
+        <h3 id="venue-name">Loading...</h3>
+        <p id="venue-location">--</p>
+        <div class="energy-badge electric" id="venue-energy">
+          ⚡ Loading...
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="stats-grid">
+    <div class="stat-card vibe">
+      <div class="stat-icon">📊</div>
+      <div class="stat-value" id="vibe-score">--</div>
+      <div class="stat-label">Vibe Score</div>
+    </div>
+    <div class="stat-card views">
+      <div class="stat-icon">👁️</div>
+      <div class="stat-value" id="profile-views">--</div>
+      <div class="stat-label">Profile Views</div>
+    </div>
+    <div class="stat-card directions">
+      <div class="stat-icon">🧭</div>
+      <div class="stat-value" id="direction-clicks">--</div>
+      <div class="stat-label">Direction Clicks</div>
+    </div>
+    <div class="stat-card wallet">
+      <div class="stat-icon">💰</div>
+      <div class="stat-value" id="wallet-balance">₦0</div>
+      <div class="stat-label">Wallet Balance</div>
+    </div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">💳 Wallet</div>
+    <div class="wallet-section">
+      <div>
+        <div class="wallet-label">Available Balance</div>
+        <div class="wallet-balance" id="wallet-display">₦0</div>
+      </div>
+      <button class="topup-btn" onclick="alert('Paystack integration - Top up your wallet!')">+ Top Up</button>
+    </div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">🚀 Pulse Drops</div>
+    <p style="font-size: 13px; color: #94A3B8; margin-bottom: 16px;">Boost your venue's visibility and attract more scouts!</p>
+    
+    <div class="pulse-tiers">
+      <div class="pulse-tier spark" onclick="launchPulse('spark')">
+        <div class="tier-icon">⚡</div>
+        <div class="tier-name">SPARK</div>
+        <div class="tier-price">₦2,500</div>
+        <div class="tier-duration">2 hours</div>
+        <div class="tier-boost">+20% visibility</div>
+      </div>
+      <div class="pulse-tier flare" onclick="launchPulse('flare')">
+        <div class="tier-icon">🔥</div>
+        <div class="tier-name">FLARE</div>
+        <div class="tier-price">₦12,500</div>
+        <div class="tier-duration">6 hours</div>
+        <div class="tier-boost">+50% visibility</div>
+      </div>
+      <div class="pulse-tier supernova" onclick="launchPulse('supernova')">
+        <div class="tier-icon">⭐</div>
+        <div class="tier-name">SUPERNOVA</div>
+        <div class="tier-price">₦50,000</div>
+        <div class="tier-duration">24 hours</div>
+        <div class="tier-boost">+100% visibility</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">📈 Performance (24h)</div>
+    <div class="card" id="performance-stats">
+      <div class="loading">Loading performance data...</div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+    const MERCHANT_USER_ID = 'c9bf2f6d-7301-4ec9-bf41-5627bb8caa41';
+    const VENUE_ID = '1993abc2-1ac8-482d-b9eb-44b700ad2a49';
+    
+    function formatNumber(num) {
+      return num.toLocaleString();
+    }
+    
+    function formatCurrency(num) {
+      return '₦' + formatNumber(num);
+    }
+    
+    async function fetchData(endpoint) {
+      try {
+        const res = await fetch(`${API_URL}${endpoint}`, {
+          headers: { 'X-User-Id': MERCHANT_USER_ID }
+        });
+        return await res.json();
+      } catch (err) {
+        console.error('Fetch error:', err);
+        return null;
+      }
+    }
+    
+    async function loadVenueStats() {
+      const data = await fetchData(`/api/merchant/venue/${VENUE_ID}/stats`);
+      if (!data || !data.venue) return;
+      
+      const venue = data.venue;
+      
+      document.getElementById('venue-name').textContent = venue.name;
+      document.getElementById('venue-subtitle').textContent = venue.name;
+      document.getElementById('venue-location').textContent = `${venue.area}, ${venue.city}`;
+      document.getElementById('venue-initial').textContent = venue.name.charAt(0);
+      document.getElementById('vibe-score').textContent = venue.current_vibe_score + '%';
+      document.getElementById('profile-views').textContent = formatNumber(venue.profile_views || 0);
+      document.getElementById('direction-clicks').textContent = formatNumber(venue.direction_clicks || 0);
+      document.getElementById('energy-badge').textContent = venue.energy_level?.toUpperCase() || 'CHILL';
+      
+      const energyBadge = document.getElementById('venue-energy');
+      energyBadge.textContent = `⚡ ${venue.energy_level?.toUpperCase() || 'CHILL'}`;
+      energyBadge.className = `energy-badge ${venue.energy_level || 'popping'}`;
+      
+      // Performance stats
+      document.getElementById('performance-stats').innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+          <div style="text-align: center;">
+            <div style="font-size: 24px; font-weight: 800; color: #3B82F6;">${data.ratings_24h || 0}</div>
+            <div style="font-size: 11px; color: #94A3B8;">Ratings (24h)</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 24px; font-weight: 800; color: #22C55E;">${data.ratings_7d || 0}</div>
+            <div style="font-size: 11px; color: #94A3B8;">Ratings (7d)</div>
+          </div>
+        </div>
+      `;
+    }
+    
+    async function loadWallet() {
+      const data = await fetchData(`/api/merchant/wallet/${VENUE_ID}`);
+      if (!data) return;
+      
+      const balance = data.balance || 0;
+      document.getElementById('wallet-balance').textContent = formatCurrency(balance);
+      document.getElementById('wallet-display').textContent = formatCurrency(balance);
+    }
+    
+    function launchPulse(tier) {
+      const prices = { spark: 2500, flare: 12500, supernova: 50000 };
+      const duration = { spark: '2 hours', flare: '6 hours', supernova: '24 hours' };
+      
+      if (confirm(`Launch ${tier.toUpperCase()} Pulse Drop for ${formatCurrency(prices[tier])}?\n\nDuration: ${duration[tier]}\nThis will boost your venue's visibility!`)) {
+        alert(`Pulse Drop launched! Your venue will be featured for ${duration[tier]}.`);
+      }
+    }
+    
+    async function init() {
+      await Promise.all([
+        loadVenueStats(),
+        loadWallet()
+      ]);
+    }
+    
+    init();
+    setInterval(init, 30000);
+  </script>
+</body>
+</html>
