@@ -12,7 +12,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ErrorType, AppError } from './logger';
+import { ErrorType, AppError } from '../utils/logger';
 
 const colors = {
   background: '#0A0A0F',
