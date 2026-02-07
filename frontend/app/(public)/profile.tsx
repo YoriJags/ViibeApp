@@ -8,7 +8,6 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
-  Linking,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
