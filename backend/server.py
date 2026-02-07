@@ -576,6 +576,14 @@ async def admin_dashboard():
         return HTMLResponse(content=admin_html_path.read_text(), status_code=200)
     return HTMLResponse(content="<h1>Admin Dashboard not found</h1>", status_code=404)
 
+@api_router.get("/dashboard/merchant", response_class=HTMLResponse)
+async def merchant_dashboard():
+    """Serve the Merchant Dashboard HTML page."""
+    merchant_html_path = ROOT_DIR / "static" / "merchant.html"
+    if merchant_html_path.exists():
+        return HTMLResponse(content=merchant_html_path.read_text(), status_code=200)
+    return HTMLResponse(content="<h1>Merchant Dashboard not found</h1>", status_code=404)
+
 # ===== Test/Dev Routes (for easy testing) =====
 
 @api_router.post("/dev/promote-user")
