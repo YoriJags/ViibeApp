@@ -565,6 +565,44 @@ async def root():
 async def health():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
+# ===== Test/Dev Routes (for easy testing) =====
+
+@api_router.post("/dev/promote-user")
+async def promote_user(request: Request):
+    """Promote a user to admin/merchant for testing. DEV ONLY."""
+    body = await request.json()
+    user_id = body.get("user_id")
+    role = body.get("role")  # "admin", "super_admin", "merchant"
+    venue_id = body.get("venue_id")  # Required for merchant role
+    
+    if not user_id or not role:
+        raise HTTPException(status_code=400, detail="user_id and role required")
+    
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    update_data = {}
+    
+    if role == "admin":
+        update_data = {"is_admin": True}
+    elif role == "super_admin":
+        update_data = {"is_admin": True, "is_super_admin": True}
+    elif role == "merchant":
+        if not venue_id:
+            raise HTTPException(status_code=400, detail="venue_id required for merchant role")
+        venue = await db.venues.find_one({"id": venue_id})
+        if not venue:
+            raise HTTPException(status_code=404, detail="Venue not found")
+        update_data = {"is_merchant": True, "merchant_venue_id": venue_id}
+    else:
+        raise HTTPException(status_code=400, detail="Invalid role. Use: admin, super_admin, or merchant")
+    
+    await db.users.update_one({"id": user_id}, {"$set": update_data})
+    
+    updated_user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    return {"message": f"User promoted to {role}", "user": updated_user}
+
 # ===== Auth Routes =====
 
 @api_router.post("/auth/session")
