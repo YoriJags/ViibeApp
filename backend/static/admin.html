@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vibe Scout Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0A0E14;
+      color: #FFFFFF;
+      min-height: 100vh;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #4169E1, #6C8EBF);
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      font-weight: 900;
+    }
+    
+    .header-subtitle {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+    
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.2);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: #22C55E;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .quick-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 16px;
+    }
+    
+    .stat-card {
+      background: #12181F;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      border-left: 3px solid;
+    }
+    
+    .stat-card.revenue { border-color: #22C55E; }
+    .stat-card.users { border-color: #3B82F6; }
+    .stat-card.clout { border-color: #FFD700; }
+    
+    .stat-value {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 8px 0 4px;
+    }
+    
+    .stat-label {
+      font-size: 10px;
+      color: #64748B;
+    }
+    
+    .tabs {
+      display: flex;
+      padding: 0 16px;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .tab {
+      flex: 1;
+      padding: 12px;
+      background: #12181F;
+      border: 1px solid #1E3A5F;
+      border-radius: 8px;
+      color: #64748B;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    
+    .tab.active {
+      border-color: #4169E1;
+      background: rgba(65,105,225,0.15);
+      color: #4169E1;
+    }
+    
+    .tab:hover {
+      border-color: #4169E1;
+    }
+    
+    .section {
+      padding: 0 16px;
+    }
+    
+    .card {
+      background: #12181F;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid #1E3A5F;
+    }
+    
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    
+    .revenue-main {
+      background: rgba(65,105,225,0.15);
+      border: 1px solid rgba(65,105,225,0.4);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    
+    .revenue-label {
+      font-size: 12px;
+      color: #4169E1;
+      font-weight: 600;
+    }
+    
+    .revenue-value {
+      font-size: 36px;
+      font-weight: 900;
+      margin-top: 8px;
+    }
+    
+    .revenue-growth {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      color: #22C55E;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .tier-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .tier-info {
+      width: 100px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .tier-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    
+    .tier-badge.supernova { background: rgba(255,215,0,0.2); }
+    .tier-badge.flare { background: rgba(233,30,99,0.2); }
+    .tier-badge.spark { background: rgba(255,152,0,0.2); }
+    
+    .tier-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .tier-bar-container {
+      flex: 1;
+      height: 8px;
+      background: #1E2A36;
+      border-radius: 4px;
+      margin: 0 12px;
+      overflow: hidden;
+    }
+    
+    .tier-bar {
+      height: 100%;
+      border-radius: 4px;
+    }
+    
+    .tier-bar.supernova { background: #FFD700; }
+    .tier-bar.flare { background: #E91E63; }
+    .tier-bar.spark { background: #FF9800; }
+    
+    .tier-stats {
+      width: 80px;
+      text-align: right;
+    }
+    
+    .tier-amount {
+      font-size: 13px;
+      font-weight: 700;
+    }
+    
+    .tier-count {
+      font-size: 10px;
+      color: #64748B;
+    }
+    
+    .ledger-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #1E3A5F;
+    }
+    
+    .ledger-venue {
+      flex: 1;
+    }
+    
+    .ledger-venue-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .ledger-venue-area {
+      font-size: 11px;
+      color: #64748B;
+      margin-top: 2px;
+    }
+    
+    .ledger-tier {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    
+    .ledger-tier.supernova { background: rgba(255,215,0,0.2); color: #FFD700; }
+    .ledger-tier.flare { background: rgba(233,30,99,0.2); color: #E91E63; }
+    .ledger-tier.spark { background: rgba(255,152,0,0.2); color: #FF9800; }
+    
+    .ledger-amount {
+      font-size: 14px;
+      font-weight: 700;
+      color: #22C55E;
+      margin-left: 12px;
+    }
+    
+    .ledger-time {
+      font-size: 11px;
+      color: #64748B;
+      width: 50px;
+      text-align: right;
+    }
+    
+    .user-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    
+    .user-stat-card {
+      background: #12181F;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      border: 1px solid #1E3A5F;
+    }
+    
+    .user-stat-value {
+      font-size: 24px;
+      font-weight: 800;
+      margin: 8px 0 4px;
+    }
+    
+    .user-stat-label {
+      font-size: 11px;
+      color: #64748B;
+    }
+    
+    .scout-row {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #1E3A5F;
+    }
+    
+    .scout-rank {
+      width: 30px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #94A3B8;
+    }
+    
+    .scout-rank.top3 { color: #FFD700; }
+    
+    .scout-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #1E2A36;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      margin-right: 12px;
+      border: 2px solid;
+    }
+    
+    .scout-info {
+      flex: 1;
+    }
+    
+    .scout-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .scout-tier {
+      font-size: 10px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+    
+    .scout-clout {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #FFD700;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #64748B;
+    }
+    
+    .error {
+      text-align: center;
+      padding: 40px;
+      color: #EF4444;
+    }
+    
+    .demo-banner {
+      background: rgba(147,51,234,0.15);
+      border: 1px solid rgba(147,51,234,0.3);
+      margin: 0 16px 16px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: #9333EA;
+    }
+    
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Admin Analytics</h1>
+      <div class="header-subtitle">Royal Command Center</div>
+    </div>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      LIVE
+    </div>
+  </div>
+  
+  <div class="quick-stats">
+    <div class="stat-card revenue">
+      <div>💰</div>
+      <div class="stat-value" id="total-revenue">₦0</div>
+      <div class="stat-label">Total Revenue</div>
+    </div>
+    <div class="stat-card users">
+      <div>👥</div>
+      <div class="stat-value" id="total-users">0</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+    <div class="stat-card clout">
+      <div>⚡</div>
+      <div class="stat-value" id="total-clout">0</div>
+      <div class="stat-label">Clout</div>
+    </div>
+  </div>
+  
+  <div class="tabs">
+    <div class="tab active" data-tab="treasury">💳 Treasury</div>
+    <div class="tab" data-tab="users">👥 Users</div>
+    <div class="tab" data-tab="venues">🏢 Venues</div>
+  </div>
+  
+  <!-- Treasury Tab -->
+  <div class="section" id="treasury-section">
+    <div class="revenue-main">
+      <div class="revenue-label">Total Platform Revenue</div>
+      <div class="revenue-value" id="revenue-display">₦0</div>
+      <div class="revenue-growth">
+        📈 +₦<span id="today-revenue">0</span> today
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">Most Purchased Tiers</div>
+      <div id="tiers-chart"></div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">Pulse Drop Ledger</div>
+      <div id="ledger-list"></div>
+    </div>
+  </div>
+  
+  <!-- Users Tab -->
+  <div class="section hidden" id="users-section">
+    <div class="user-stats-grid" id="user-stats-grid"></div>
+    
+    <div class="card">
+      <div class="card-title">Global Clout Economy</div>
+      <div id="clout-stats"></div>
+      <h4 style="margin: 16px 0 12px; font-size: 14px; color: #94A3B8;">Top 10 Scouts</h4>
+      <div id="top-scouts"></div>
+    </div>
+  </div>
+  
+  <!-- Venues Tab -->
+  <div class="section hidden" id="venues-section">
+    <div class="card">
+      <div class="card-title">Venue Integrity Monitor</div>
+      <div id="integrity-data"></div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">All Venues</div>
+      <div id="venues-list"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+    const ADMIN_USER_ID = '1b753c6d-5c38-4746-b0c5-dfa376b82dd8';
+    
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+        document.getElementById(`${tab.dataset.tab}-section`).classList.remove('hidden');
+      });
+    });
+    
+    // Format numbers
+    function formatNumber(num) {
+      return num.toLocaleString();
+    }
+    
+    function formatCurrency(num) {
+      return '₦' + formatNumber(num);
+    }
+    
+    // Fetch data
+    async function fetchData(endpoint) {
+      try {
+        const res = await fetch(`${API_URL}${endpoint}`, {
+          headers: { 'X-User-Id': ADMIN_USER_ID }
+        });
+        return await res.json();
+      } catch (err) {
+        console.error('Fetch error:', err);
+        return null;
+      }
+    }
+    
+    // Load Treasury data
+    async function loadTreasury() {
+      const data = await fetchData('/api/admin/treasury');
+      if (!data) return;
+      
+      document.getElementById('total-revenue').textContent = formatCurrency(data.global?.total_revenue || 0);
+      document.getElementById('revenue-display').textContent = formatCurrency(data.global?.total_revenue || 0);
+      document.getElementById('today-revenue').textContent = formatNumber(data.global?.today_revenue || 0);
+      document.getElementById('total-users').textContent = formatNumber(data.network_health?.total_users || 0);
+      
+      // Tiers chart
+      const tiers = data.revenue_by_tier || {};
+      const maxTotal = Math.max(...Object.values(tiers).map(t => t.total || 0)) || 1;
+      
+      document.getElementById('tiers-chart').innerHTML = Object.entries(tiers)
+        .sort((a, b) => (b[1].total || 0) - (a[1].total || 0))
+        .map(([tier, stats]) => {
+          const pct = ((stats.total || 0) / maxTotal) * 100;
+          const icon = tier === 'supernova' ? '⭐' : tier === 'flare' ? '🔥' : '⚡';
+          return `
+            <div class="tier-row">
+              <div class="tier-info">
+                <div class="tier-badge ${tier}">${icon}</div>
+                <span class="tier-name">${tier.charAt(0).toUpperCase() + tier.slice(1)}</span>
+              </div>
+              <div class="tier-bar-container">
+                <div class="tier-bar ${tier}" style="width: ${pct}%"></div>
+              </div>
+              <div class="tier-stats">
+                <div class="tier-amount">${formatCurrency(stats.total || 0)}</div>
+                <div class="tier-count">${stats.transactions || 0} drops</div>
+              </div>
+            </div>
+          `;
+        }).join('') || '<div class="loading">No tier data</div>';
+    }
+    
+    // Load Ledger
+    async function loadLedger() {
+      const data = await fetchData('/api/admin/pulse-ledger');
+      if (!data || !data.ledger) return;
+      
+      document.getElementById('ledger-list').innerHTML = data.ledger.slice(0, 10)
+        .map(item => `
+          <div class="ledger-item">
+            <div class="ledger-venue">
+              <div class="ledger-venue-name">${item.venue_name}</div>
+              <div class="ledger-venue-area">${item.venue_area}</div>
+            </div>
+            <span class="ledger-tier ${item.tier}">${item.tier.toUpperCase()}</span>
+            <span class="ledger-amount">${formatCurrency(item.amount)}</span>
+          </div>
+        `).join('') || '<div class="loading">No transactions</div>';
+    }
+    
+    // Load User Analytics
+    async function loadUsers() {
+      const data = await fetchData('/api/admin/user-analytics');
+      if (!data) return;
+      
+      document.getElementById('user-stats-grid').innerHTML = `
+        <div class="user-stat-card">
+          <div>👥</div>
+          <div class="user-stat-value">${formatNumber(data.total_users || 0)}</div>
+          <div class="user-stat-label">Total Users</div>
+        </div>
+        <div class="user-stat-card">
+          <div>⚡</div>
+          <div class="user-stat-value">${formatNumber(data.active_users_24h || 0)}</div>
+          <div class="user-stat-label">Active (24h)</div>
+        </div>
+        <div class="user-stat-card">
+          <div>👻</div>
+          <div class="user-stat-value">${formatNumber(data.ghost_users || 0)}</div>
+          <div class="user-stat-label">Ghost Users</div>
+        </div>
+        <div class="user-stat-card">
+          <div>🆕</div>
+          <div class="user-stat-value">${formatNumber(data.new_users_today || 0)}</div>
+          <div class="user-stat-label">New Today</div>
+        </div>
+      `;
+    }
+    
+    // Load Clout Economy
+    async function loadClout() {
+      const data = await fetchData('/api/admin/clout-economy');
+      if (!data) return;
+      
+      document.getElementById('total-clout').textContent = formatNumber(data.total_clout_circulation || 0);
+      
+      document.getElementById('clout-stats').innerHTML = `
+        <div style="display: flex; justify-content: space-around; padding: 16px 0; border-bottom: 1px solid #1E3A5F;">
+          <div style="text-align: center;">
+            <div style="font-size: 24px; font-weight: 800; color: #FFD700;">${formatNumber(data.total_clout_circulation || 0)}</div>
+            <div style="font-size: 11px; color: #64748B;">Total Circulation</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 24px; font-weight: 800; color: #FFD700;">${data.average_clout || 0}</div>
+            <div style="font-size: 11px; color: #64748B;">Avg per User</div>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('top-scouts').innerHTML = (data.top_scouts || []).slice(0, 5)
+        .map(scout => `
+          <div class="scout-row">
+            <span class="scout-rank ${scout.rank <= 3 ? 'top3' : ''}">#${scout.rank}</span>
+            <div class="scout-avatar" style="border-color: ${scout.tier_color}">
+              ${(scout.username || '?').charAt(0).toUpperCase()}
+            </div>
+            <div class="scout-info">
+              <div class="scout-name">${scout.username}</div>
+              <div class="scout-tier" style="color: ${scout.tier_color}">${scout.scout_status} • ${scout.total_ratings} ratings</div>
+            </div>
+            <div class="scout-clout">⚡ ${formatNumber(scout.clout_points)}</div>
+          </div>
+        `).join('') || '<div class="loading">No scouts</div>';
+    }
+    
+    // Load Venues
+    async function loadVenues() {
+      const integrity = await fetchData('/api/admin/integrity-monitor');
+      const venues = await fetchData('/api/venues?city=lagos');
+      
+      if (integrity) {
+        document.getElementById('integrity-data').innerHTML = `
+          <div style="display: flex; justify-content: space-around; text-align: center; padding: 16px 0;">
+            <div>
+              <div style="font-size: 10px; color: #64748B; letter-spacing: 1px;">SPONSORED</div>
+              <div style="font-size: 24px; font-weight: 800; color: #FFD700; margin-top: 8px;">${integrity.sponsored?.average_energy || 0}%</div>
+              <div style="font-size: 11px; color: #64748B;">${integrity.sponsored?.count || 0} venues</div>
+            </div>
+            <div>
+              <div style="font-size: 18px; font-weight: 800; color: ${(integrity.delta || 0) >= 0 ? '#22C55E' : '#EF4444'};">
+                ${(integrity.delta || 0) >= 0 ? '+' : ''}${integrity.delta || 0}%
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 10px; color: #64748B; letter-spacing: 1px;">ORGANIC</div>
+              <div style="font-size: 24px; font-weight: 800; color: #22C55E; margin-top: 8px;">${integrity.organic?.average_energy || 0}%</div>
+              <div style="font-size: 11px; color: #64748B;">${integrity.organic?.count || 0} venues</div>
+            </div>
+          </div>
+          <div style="text-align: center; padding: 8px; background: rgba(34,197,94,0.15); border-radius: 8px; color: #22C55E; font-size: 12px; font-weight: 600;">
+            ✓ Integrity: ${integrity.health_status?.toUpperCase() || 'HEALTHY'}
+          </div>
+        `;
+      }
+      
+      if (venues) {
+        document.getElementById('venues-list').innerHTML = venues.slice(0, 10)
+          .map(v => `
+            <div class="ledger-item">
+              <div class="ledger-venue">
+                <div class="ledger-venue-name">${v.name}</div>
+                <div class="ledger-venue-area">${v.area} • ${v.venue_type}</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 18px; font-weight: 700; color: ${v.current_vibe_score >= 70 ? '#22C55E' : v.current_vibe_score >= 50 ? '#EAB308' : '#64748B'};">${v.current_vibe_score}%</div>
+                <div style="font-size: 10px; color: #64748B;">${v.energy_level}</div>
+              </div>
+            </div>
+          `).join('') || '<div class="loading">No venues</div>';
+      }
+    }
+    
+    // Initialize
+    async function init() {
+      await Promise.all([
+        loadTreasury(),
+        loadLedger(),
+        loadUsers(),
+        loadClout(),
+        loadVenues()
+      ]);
+    }
+    
+    init();
+    
+    // Refresh every 30 seconds
+    setInterval(init, 30000);
+  </script>
+</body>
+</html>
