@@ -44,7 +44,7 @@ export const GPSLockIndicator: React.FC<GPSLockIndicatorProps> = ({
   isLocked,
   isChecking = false,
   distance,
-  maxDistance = 50,
+  maxDistance = 100,
   onRetry,
 }) => {
   // ========================================

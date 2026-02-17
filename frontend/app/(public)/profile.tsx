@@ -9,11 +9,19 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
+import StreakBadge from '../../src/components/StreakBadge';
+import CrewCard from '../../src/components/CrewCard';
+import DemoModeBanner from '../../src/components/DemoModeBanner';
+import AvatarDisplay from '../../src/components/AvatarDisplay';
+import AvatarBuilder from '../../src/components/AvatarBuilder';
+import AchievementBadge from '../../src/components/AchievementBadge';
+import { DEMO_BADGES } from '../../src/data/demoData';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 
@@ -21,11 +29,16 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, logout, loading, processGoogleAuth } = useVibeStore();
+  const {
+    user, fetchUser, fetchAuthUser, createUser, logout, loading, processGoogleAuth,
+    streak, fetchStreak, crew, fetchCrew, isDemoMode, toggleDemoMode, restartDemoTutorial,
+    avatarConfig, updateAvatar, locationSharingEnabled, toggleLocationSharing,
+  } = useVibeStore();
   const [showSignup, setShowSignup] = useState(false);
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
 
   useEffect(() => {
     // Check for existing session
@@ -34,6 +47,8 @@ export default function ProfileScreen() {
         fetchUser();
       }
     });
+    fetchStreak();
+    fetchCrew();
   }, []);
 
   // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
@@ -166,6 +181,15 @@ export default function ProfileScreen() {
           <Text style={styles.termsText}>
             By signing in, you agree to our Terms & Privacy Policy
           </Text>
+
+          {/* Demo Mode - Developer Only */}
+          <TouchableOpacity
+            style={styles.demoButton}
+            onPress={toggleDemoMode}
+          >
+            <Ionicons name="flask" size={16} color="#D4A017" />
+            <Text style={styles.demoButtonText}>Enter Demo Mode</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -231,6 +255,7 @@ export default function ProfileScreen() {
   // User Profile Screen
   return (
     <SafeAreaView style={styles.container}>
+      <DemoModeBanner />
       <ScrollView style={styles.scrollView}>
         {/* Header */}
         <View style={styles.header}>
@@ -243,17 +268,11 @@ export default function ProfileScreen() {
         {/* User Card */}
         <View style={styles.userCard}>
           <View style={styles.avatarContainer}>
-            {user?.picture ? (
-              <View style={styles.avatarImage}>
-                <Text style={styles.avatarText}>
-                  {user?.name?.charAt(0).toUpperCase() || user?.username?.charAt(0).toUpperCase()}
-                </Text>
-              </View>
-            ) : (
-              <Text style={styles.avatarText}>
-                {user?.username?.charAt(0).toUpperCase()}
-              </Text>
-            )}
+            <AvatarDisplay
+              config={avatarConfig || null}
+              username={user?.name || user?.username || '?'}
+              size={80}
+            />
             <View
               style={[
                 styles.statusBadge,
@@ -267,15 +286,24 @@ export default function ProfileScreen() {
               />
             </View>
           </View>
+          <TouchableOpacity
+            style={styles.editAvatarButton}
+            onPress={() => setShowAvatarBuilder(true)}
+          >
+            <Ionicons name="color-palette" size={14} color="#FF3366" />
+            <Text style={styles.editAvatarText}>
+              {avatarConfig ? 'Edit Avatar' : 'Create Avatar'}
+            </Text>
+          </TouchableOpacity>
           <Text style={styles.userName}>{user?.name || user?.username}</Text>
           {user?.email && (
             <Text style={styles.userEmail}>{user.email}</Text>
           )}
           <View style={styles.authBadge}>
-            <Ionicons 
-              name={user?.auth_provider === 'google' ? 'logo-google' : 'phone-portrait'} 
-              size={12} 
-              color="#888" 
+            <Ionicons
+              name={user?.auth_provider === 'google' ? 'logo-google' : 'phone-portrait'}
+              size={12}
+              color="#888"
             />
             <Text style={styles.authText}>
               {user?.auth_provider === 'google' ? 'Google' : 'Phone'} Account
@@ -311,6 +339,111 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Status</Text>
           </View>
         </View>
+
+        {/* Streak Card */}
+        {streak && streak.current_streak > 0 && (
+          <View style={styles.streakCard}>
+            <View style={styles.streakHeader}>
+              <StreakBadge
+                streak={streak.current_streak}
+                multiplier={streak.multiplier}
+                size="lg"
+              />
+              <View style={styles.streakInfo}>
+                <Text style={styles.streakTitle}>{streak.current_streak}-Day Streak</Text>
+                <Text style={styles.streakSubtitle}>
+                  {streak.multiplier > 1 ? `${streak.multiplier.toFixed(1)}x clout multiplier active` : 'Keep it up!'}
+                </Text>
+              </View>
+            </View>
+            {streak.next_milestone && (
+              <View style={styles.milestoneRow}>
+                <Text style={styles.milestoneText}>
+                  Next milestone: {streak.next_milestone} days
+                </Text>
+                <View style={styles.milestoneBar}>
+                  <View style={[
+                    styles.milestoneFill,
+                    { width: `${Math.min((streak.current_streak / streak.next_milestone) * 100, 100)}%` },
+                  ]} />
+                </View>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* My Cartel */}
+        {crew ? (
+          <View style={styles.crewSection}>
+            <CrewCard
+              name={crew.name}
+              members={crew.member_details || []}
+              inviteCode={crew.invite_code}
+              isCaptain={crew.is_captain}
+              onPress={() => router.push('/(public)/crew')}
+            />
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.joinCrewCard}
+            onPress={() => router.push('/(public)/crew')}
+          >
+            <Ionicons name="people" size={24} color="#FF3366" />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.joinCrewTitle}>Start Your Cartel</Text>
+              <Text style={styles.joinCrewDesc}>Create or join a Cartel to vote on venues together</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#666" />
+          </TouchableOpacity>
+        )}
+
+        {/* Notification Settings */}
+        <TouchableOpacity
+          style={styles.settingsRow}
+          onPress={() => router.push('/(public)/crew')}
+        >
+          <View style={[styles.dashboardIcon, { backgroundColor: '#FF336620' }]}>
+            <Ionicons name="notifications-outline" size={24} color="#FF3366" />
+          </View>
+          <View style={styles.dashboardContent}>
+            <Text style={styles.dashboardTitle}>After Dark Alerts</Text>
+            <Text style={styles.dashboardDesc}>Get notified when your spots go electric</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#666" />
+        </TouchableOpacity>
+
+        {/* Location Sharing Toggle */}
+        <View style={styles.settingsRow}>
+          <View style={[styles.dashboardIcon, { backgroundColor: '#00E67620' }]}>
+            <Ionicons name="location" size={24} color="#00E676" />
+          </View>
+          <View style={styles.dashboardContent}>
+            <Text style={styles.dashboardTitle}>Share Location with Crew</Text>
+            <Text style={styles.dashboardDesc}>Let your squad see which venue you're at</Text>
+          </View>
+          <Switch
+            value={locationSharingEnabled}
+            onValueChange={toggleLocationSharing}
+            trackColor={{ false: '#333', true: '#00E67660' }}
+            thumbColor={locationSharingEnabled ? '#00E676' : '#888'}
+          />
+        </View>
+
+        {/* Achievement Badges */}
+        {isDemoMode && (
+          <AchievementBadge badges={DEMO_BADGES as any} />
+        )}
+
+        {/* Restart Demo Tutorial */}
+        {isDemoMode && (
+          <TouchableOpacity
+            style={styles.restartTutorialBtn}
+            onPress={restartDemoTutorial}
+          >
+            <Ionicons name="refresh" size={18} color="#FF3366" />
+            <Text style={styles.restartTutorialText}>Restart Demo Tutorial</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Dashboard Access Section - Only show if user has permissions */}
         {(user?.is_merchant || user?.is_super_admin) && (
@@ -425,6 +558,17 @@ export default function ProfileScreen() {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* Avatar Builder Modal */}
+      <AvatarBuilder
+        visible={showAvatarBuilder}
+        onClose={() => setShowAvatarBuilder(false)}
+        onSave={(config) => {
+          updateAvatar(config);
+          setShowAvatarBuilder(false);
+        }}
+        initialConfig={avatarConfig}
+      />
     </SafeAreaView>
   );
 }
@@ -600,23 +744,24 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#FF3366',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  avatarImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FF3366',
-    justifyContent: 'center',
+  editAvatarButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: '#FF336618',
+    marginBottom: 10,
   },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#FFF',
+  editAvatarText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FF3366',
   },
   statusBadge: {
     position: 'absolute',
@@ -864,5 +1009,126 @@ const styles = StyleSheet.create({
   dashboardDesc: {
     fontSize: 13,
     color: '#888',
+  },
+
+  // ====== STREAK ======
+  streakCard: {
+    backgroundColor: '#151520',
+    marginHorizontal: 16,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+  },
+  streakHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  streakInfo: {
+    flex: 1,
+  },
+  streakTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  streakSubtitle: {
+    fontSize: 13,
+    color: '#888',
+    marginTop: 2,
+  },
+  milestoneRow: {
+    marginTop: 16,
+  },
+  milestoneText: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 6,
+  },
+  milestoneBar: {
+    height: 4,
+    backgroundColor: '#252530',
+    borderRadius: 2,
+  },
+  milestoneFill: {
+    height: '100%',
+    backgroundColor: '#FF9800',
+    borderRadius: 2,
+  },
+
+  // ====== CREW ======
+  crewSection: {
+    marginHorizontal: 16,
+    marginBottom: 20,
+  },
+  joinCrewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#151520',
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  },
+  joinCrewTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFF',
+    marginBottom: 4,
+  },
+  joinCrewDesc: {
+    fontSize: 13,
+    color: '#888',
+  },
+
+  // ====== DEMO MODE ======
+  demoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 32,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#D4A01740',
+    backgroundColor: '#D4A01710',
+  },
+  demoButtonText: {
+    color: '#D4A017',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+
+  // ====== RESTART TUTORIAL ======
+  restartTutorialBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginHorizontal: 16,
+    marginBottom: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,51,102,0.2)',
+    backgroundColor: 'rgba(255,51,102,0.06)',
+  },
+  restartTutorialText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FF3366',
+  },
+
+  // ====== SETTINGS ROW ======
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#151520',
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
   },
 });

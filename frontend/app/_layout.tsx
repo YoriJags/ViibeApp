@@ -1,9 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
 import { useVibeStore } from '../src/store/vibeStore';
+import OnboardingFlow from '../src/components/OnboardingFlow';
+import SplashAnimation from '../src/components/SplashAnimation';
+import DemoTutorial from '../src/components/DemoTutorial';
+
+// Keep native splash visible until we're ready to show our animated one
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -40,42 +47,35 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-// Loading Screen Component
-function LoadingScreen() {
-  return (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#FF2D92" />
-      <Text style={styles.loadingText}>Loading Vibe Scout...</Text>
-    </View>
-  );
-}
-
-// App Initializer Component
+// App Initializer Component — manages splash → content transition
 function AppInitializer({ children }: { children: React.ReactNode }) {
-  const { hasHydrated, fetchVenues, fetchCities, connectSocket } = useVibeStore();
+  const { hasHydrated, fetchVenues, fetchCities, connectSocket, hasSeenOnboarding, completeOnboarding } = useVibeStore();
   const [isReady, setIsReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
+
+  // Hide native splash once our animated splash mounts
+  useEffect(() => {
+    if (!nativeSplashHidden) {
+      SplashScreen.hideAsync().catch(() => {});
+      setNativeSplashHidden(true);
+    }
+  }, []);
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Wait for store hydration
-        if (!hasHydrated) {
-          return;
-        }
+        if (!hasHydrated) return;
 
-        // Fetch initial data
         await Promise.all([
           fetchVenues('lagos'),
           fetchCities(),
         ]);
 
-        // Connect socket for real-time updates
         connectSocket();
-
         setIsReady(true);
       } catch (error) {
         console.error('App initialization error:', error);
-        // Still show the app even if initial fetch fails
         setIsReady(true);
       }
     };
@@ -83,8 +83,23 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
     initializeApp();
   }, [hasHydrated]);
 
-  if (!hasHydrated || !isReady) {
-    return <LoadingScreen />;
+  const handleSplashComplete = useCallback(() => {
+    setShowSplash(false);
+  }, []);
+
+  // Show splash overlay while loading
+  if (showSplash) {
+    return (
+      <SplashAnimation
+        isReady={isReady}
+        onAnimationComplete={handleSplashComplete}
+      />
+    );
+  }
+
+  // After splash exits, show onboarding or main app
+  if (!hasSeenOnboarding) {
+    return <OnboardingFlow onComplete={completeOnboarding} />;
   }
 
   return <>{children}</>;
@@ -113,6 +128,7 @@ export default function RootLayout() {
               <Stack.Screen name="venue/[id]" options={{ headerShown: false }} />
               <Stack.Screen name="rate/[id]" options={{ headerShown: false }} />
             </Stack>
+            <DemoTutorial />
           </View>
         </AppInitializer>
       </SafeAreaProvider>
@@ -124,18 +140,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0A0A0F',
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#0A0A0F',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    marginTop: 16,
-    fontWeight: '500',
   },
   errorContainer: {
     flex: 1,

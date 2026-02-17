@@ -37,7 +37,7 @@ interface TreasuryData {
 
 export default function AdminTreasury() {
   const router = useRouter();
-  const { user, fetchUser } = useVibeStore();
+  const { user, fetchUser, getAuthHeaders } = useVibeStore();
   const [data, setData] = useState<TreasuryData | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -74,13 +74,8 @@ export default function AdminTreasury() {
     
     try {
       setError(null);
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'X-User-Id': user.id,
-      };
-      
       const response = await fetch(`${API_URL}/api/admin/treasury`, {
-        headers,
+        headers: getAuthHeaders(),
       });
       
       if (response.status === 403) {

@@ -1,0 +1,885 @@
+app/(merchant)/index.tsx(113,42): error TS2339: Property 'entry_fee' does not exist on type '{ id: string; name: string; address: string; area: string; city: string; venue_type: "club"; coordinates: { lat: number; lng: number; }; current_vibe_score: number; energy_level: "electric"; capacity_level: "vibrant"; ... 11 more ...; certified_since: string; } | ... 10 more ... | { ...; }'.
+  Property 'entry_fee' does not exist on type '{ id: string; name: string; address: string; area: string; city: string; venue_type: "club"; coordinates: { lat: number; lng: number; }; current_vibe_score: number; energy_level: "electric"; capacity_level: "vibrant"; ... 11 more ...; certified_since: string; }'.
+app/(merchant)/index.tsx(114,44): error TS2339: Property 'music_genre' does not exist on type '{ id: string; name: string; address: string; area: string; city: string; venue_type: "club"; coordinates: { lat: number; lng: number; }; current_vibe_score: number; energy_level: "electric"; capacity_level: "vibrant"; ... 11 more ...; certified_since: string; } | ... 10 more ... | { ...; }'.
+  Property 'music_genre' does not exist on type '{ id: string; name: string; address: string; area: string; city: string; venue_type: "club"; coordinates: { lat: number; lng: number; }; current_vibe_score: number; energy_level: "electric"; capacity_level: "vibrant"; ... 11 more ...; certified_since: string; }'.
+app/(merchant)/index.tsx(295,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(296,15): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(297,61): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(298,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(299,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(307,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(308,15): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(310,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(320,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(323,9): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(334,11): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(337,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(338,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(342,13): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(344,61): error TS2339: Property 'success' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(345,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(350,15): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(351,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(358,13): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(360,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(361,29): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'TextStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(362,31): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'ViewStyle' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(363,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(365,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(366,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(368,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(369,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(371,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(373,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(374,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(376,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(378,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(379,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(386,15): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'TextStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(395,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'ViewStyle' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(405,15): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(406,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(407,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(409,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(411,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(412,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(414,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(416,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(419,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(422,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(423,31): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'TextStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(428,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(429,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(431,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(433,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(436,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(439,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(440,31): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'TextStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(445,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(446,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(448,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(450,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(453,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(456,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(457,31): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'TextStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(464,15): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(465,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(466,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(468,15): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(472,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(475,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(478,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(480,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(481,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(483,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(487,48): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(492,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(493,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(495,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(499,48): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(504,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(506,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(507,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(518,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(519,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(520,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(521,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(526,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'TextStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(527,25): error TS2322: Type 'false | ViewStyle | TextStyle | ImageStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'TextStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(532,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'ViewStyle' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(533,25): error TS2322: Type 'false | ViewStyle | TextStyle | ImageStyle' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'ViewStyle' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(544,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(553,27): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(559,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(560,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(561,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(562,75): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(563,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(564,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(566,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(567,74): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(568,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(569,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(571,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(577,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(579,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'ViewStyle' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(585,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(586,75): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(587,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(588,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(596,15): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(597,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(598,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(602,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(605,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(607,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(609,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(610,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(611,27): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(618,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(619,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(620,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(623,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(624,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(626,27): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(628,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(630,27): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(632,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(634,27): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(643,19): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(648,21): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'TextStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(649,21): error TS2322: Type 'false | ViewStyle | TextStyle | ImageStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'TextStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(653,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(654,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(655,25): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(658,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(665,31): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(676,15): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(677,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(678,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(681,27): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'TextStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(688,58): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(694,23): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'TextStyle' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(698,21): error TS2322: Type '{ fontSize: number; fontWeight: "600"; color: { primary: string; secondary: string; muted: string; }; marginTop: number; }' is not assignable to type 'StyleProp<TextStyle>'.
+  Types of property 'color' are incompatible.
+    Type '{ primary: string; secondary: string; muted: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(701,58): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(710,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(717,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(723,15): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type 'TextStyle' is not assignable to type 'StyleProp<ViewStyle>'.
+    Type 'TextStyle' is not assignable to type 'ViewStyle'.
+      Types of property 'cursor' are incompatible.
+        Type 'string | undefined' is not assignable to type 'CursorValue | undefined'.
+          Type 'string' is not assignable to type 'CursorValue | undefined'.
+app/(merchant)/index.tsx(724,69): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(725,17): error TS2322: Type 'ViewStyle | TextStyle | ImageStyle' is not assignable to type 'StyleProp<TextStyle>'.
+  Type 'ViewStyle' is not assignable to type 'StyleProp<TextStyle>'.
+    Type 'ViewStyle' is not assignable to type 'TextStyle'.
+      Types of property 'userSelect' are incompatible.
+        Type 'string | undefined' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+          Type 'string' is not assignable to type '"none" | "auto" | "contain" | "text" | "all" | undefined'.
+app/(merchant)/index.tsx(757,5): error TS2322: Type '{ dark: string; card: string; elevated: string; input: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(769,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(781,5): error TS2322: Type '{ primary: string; secondary: string; muted: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(786,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(799,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(804,5): error TS2322: Type '{ primary: string; secondary: string; muted: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(810,29): error TS2339: Property 'success' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(819,19): error TS2339: Property 'success' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(833,5): error TS2322: Type '{ primary: string; secondary: string; muted: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(838,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(844,29): error TS2551: Property 'cardBackground' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'. Did you mean 'background'?
+app/(merchant)/index.tsx(858,5): error TS2322: Type '{ dark: string; card: string; elevated: string; input: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(869,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(884,5): error TS2322: Type '{ primary: string; secondary: string; muted: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(890,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(915,29): error TS2551: Property 'cardBackground' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'. Did you mean 'background'?
+app/(merchant)/index.tsx(929,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(935,5): error TS2322: Type '{ primary: string; secondary: string; muted: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(939,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(944,5): error TS2322: Type '{ dark: string; card: string; elevated: string; input: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(965,29): error TS2551: Property 'cardBackground' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'. Did you mean 'background'?
+app/(merchant)/index.tsx(976,5): error TS2322: Type '{ primary: string; secondary: string; muted: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(981,5): error TS2322: Type '{ dark: string; card: string; elevated: string; input: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(985,5): error TS2322: Type '{ primary: string; secondary: string; muted: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(998,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(1020,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(1044,29): error TS2551: Property 'cardBackground' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'. Did you mean 'background'?
+app/(merchant)/index.tsx(1060,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(1065,5): error TS2322: Type '{ primary: string; secondary: string; muted: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(1111,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(1131,5): error TS2322: Type '{ primary: string; secondary: string; muted: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(1139,29): error TS2551: Property 'cardBackground' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'. Did you mean 'background'?
+app/(merchant)/index.tsx(1153,5): error TS2322: Type '{ primary: string; secondary: string; muted: string; }' is not assignable to type 'ColorValue | undefined'.
+app/(merchant)/index.tsx(1157,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(merchant)/index.tsx(1190,19): error TS2339: Property 'textMuted' does not exist on type '{ background: { dark: string; card: string; elevated: string; input: string; }; primary: string; secondary: string; accent: string; gold: string; text: { primary: string; secondary: string; muted: string; }; status: { ...; }; border: string; chart: { ...; }; }'.
+app/(public)/index.tsx(424,19): error TS2719: Type 'Venue' is not assignable to type 'Venue'. Two different types with this name exist, but they are unrelated.
+  Types of property 'active_pulse_tier' are incompatible.
+    Type 'string | undefined' is not assignable to type '"spark" | "flare" | "supernova" | null | undefined'.
+      Type 'string' is not assignable to type '"spark" | "flare" | "supernova" | null | undefined'.
+app/(public)/index.tsx(445,13): error TS2719: Type 'Venue[]' is not assignable to type 'Venue[]'. Two different types with this name exist, but they are unrelated.
+  Type 'Venue' is not assignable to type 'Venue'. Two different types with this name exist, but they are unrelated.
+    Types of property 'active_pulse_tier' are incompatible.
+      Type 'string | undefined' is not assignable to type '"spark" | "flare" | "supernova" | null | undefined'.
+        Type 'string' is not assignable to type '"spark" | "flare" | "supernova" | null | undefined'.
+app/(tabs)/index.tsx(201,17): error TS2719: Type 'Venue' is not assignable to type 'Venue'. Two different types with this name exist, but they are unrelated.
+  Types of property 'active_pulse_tier' are incompatible.
+    Type 'string | undefined' is not assignable to type '"spark" | "flare" | "supernova" | null | undefined'.
+      Type 'string' is not assignable to type '"spark" | "flare" | "supernova" | null | undefined'.
+app/(tabs)/index.tsx(210,13): error TS2719: Type 'Venue[]' is not assignable to type 'Venue[]'. Two different types with this name exist, but they are unrelated.
+  Type 'Venue' is not assignable to type 'Venue'. Two different types with this name exist, but they are unrelated.
+    Types of property 'active_pulse_tier' are incompatible.
+      Type 'string | undefined' is not assignable to type '"spark" | "flare" | "supernova" | null | undefined'.
+        Type 'string' is not assignable to type '"spark" | "flare" | "supernova" | null | undefined'.
+app/admin/treasury.tsx(324,86): error TS2345: Argument of type '"/admin/venues"' is not assignable to parameter of type '"/(public)" | "/(public)/trending" | "/(public)/crew" | "/(public)/profile" | "/(merchant)" | "/(admin)" | RelativePathString | ExternalPathString | ... 128 more ... | { ...; }'.
+app/admin/treasury.tsx(328,86): error TS2345: Argument of type '"/admin/pricing"' is not assignable to parameter of type '"/(public)" | "/(public)/trending" | "/(public)/crew" | "/(public)/profile" | "/(merchant)" | "/(admin)" | RelativePathString | ExternalPathString | ... 128 more ... | { ...; }'.
+app/venue/[id].tsx(832,26): error TS2339: Property 'media_url' does not exist on type 'StoryListItem'.
+src/components/DailyPulseCard.tsx(113,11): error TS2322: Type 'string[]' is not assignable to type 'readonly [ColorValue, ColorValue, ...ColorValue[]]'.
+  Source provides no match for required element at position 0 in target.
+src/components/GradientButton.tsx(84,11): error TS2322: Type 'string[]' is not assignable to type 'readonly [ColorValue, ColorValue, ...ColorValue[]]'.
+  Source provides no match for required element at position 0 in target.
+src/components/MockMap.tsx(258,15): error TS2322: Type '{ x: number; y: number; }' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+src/components/MockMap.tsx(674,5): error TS2345: Argument of type '{ mapContainer: { flex: number; borderRadius: number; overflow: "hidden"; }; mapBackground: { flex: number; backgroundColor: string; position: "relative"; }; gridLineH: { position: "absolute"; left: number; right: number; height: number; backgroundColor: string; }; ... 49 more ...; featuredText: { ...; }; }' is not assignable to parameter of type '{ mapContainer: { flex: number; borderRadius: number; overflow: "hidden"; }; mapBackground: { flex: number; backgroundColor: string; position: "relative"; }; gridLineH: { position: "absolute"; left: number; right: number; height: number; backgroundColor: string; }; ... 49 more ...; featuredText: { ...; }; } & NamedS...'.
+  Property 'markerGlow' is incompatible with index signature.
+    Object literal may only specify known properties, and 'transition' does not exist in type 'ViewStyle | TextStyle | ImageStyle'.

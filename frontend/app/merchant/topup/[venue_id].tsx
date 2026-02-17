@@ -31,7 +31,7 @@ const PRESET_AMOUNTS = [5000, 10000, 25000, 50000];
 export default function WalletTopUp() {
   const { venue_id } = useLocalSearchParams<{ venue_id: string }>();
   const router = useRouter();
-  const { user } = useVibeStore();
+  const { user, getAuthHeaders } = useVibeStore();
   
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,10 +55,7 @@ export default function WalletTopUp() {
     try {
       const response = await fetch(`${API_URL}/api/merchant/wallet/${venue_id}/topup/initialize`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-User-Id': user?.id || '',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           amount: numAmount,
           email: user?.email || 'merchant@vibeapp.ng',
@@ -94,10 +91,7 @@ export default function WalletTopUp() {
       try {
         const verifyResponse = await fetch(`${API_URL}/api/merchant/wallet/verify/${reference}`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-User-Id': user?.id || '',
-          },
+          headers: getAuthHeaders(),
         });
 
         if (verifyResponse.ok) {
@@ -216,10 +210,7 @@ export default function WalletTopUp() {
                 try {
                   const verifyResponse = await fetch(`${API_URL}/api/merchant/wallet/verify/${reference}`, {
                     method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'X-User-Id': user?.id || '',
-                    },
+                    headers: getAuthHeaders(),
                   });
 
                   if (verifyResponse.ok) {

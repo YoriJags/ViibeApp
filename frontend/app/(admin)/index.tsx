@@ -30,6 +30,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useVibeStore } from '../../src/store/vibeStore';
 import { useRouter } from 'expo-router';
+import FloorSwitcher from '../../src/components/FloorSwitcher';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -278,7 +279,7 @@ const WALKTHROUGH_STORAGE_KEY = 'admin_walkthrough_completed';
 
 export default function AdminAnalytics() {
   const router = useRouter();
-  const { user, hasHydrated } = useVibeStore();
+  const { user, hasHydrated, getAuthHeaders } = useVibeStore();
   
   // Demo Mode State
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -305,7 +306,7 @@ export default function AdminAnalytics() {
   const [selectedScouts, setSelectedScouts] = useState<string[]>([]);
   const [isAirdropping, setIsAirdropping] = useState(false);
 
-  const headers = { 'X-User-Id': user?.id || '' };
+  const headers = getAuthHeaders();
   
   // Get data based on demo mode
   const displayTreasury = isDemoMode ? DEMO_TREASURY : treasury;
@@ -1198,6 +1199,7 @@ export default function AdminAnalytics() {
           </View>
         </View>
       </Modal>
+      <FloorSwitcher currentFloor="admin" />
     </SafeAreaView>
   );
 }

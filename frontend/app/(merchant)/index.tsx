@@ -26,6 +26,18 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { merchantTheme, spacing, borderRadius, typography } from '../../src/theme/floors';
 import { useVibeStore } from '../../src/store/vibeStore';
+import VibeIntelCard from '../../src/components/VibeIntelCard';
+import VibeForecast from '../../src/components/VibeForecast';
+import CreateCampaignModal from '../../src/components/CreateCampaignModal';
+import MerchantOnboarding from '../../src/components/MerchantOnboarding';
+import DemoModeBanner from '../../src/components/DemoModeBanner';
+import FloorSwitcher from '../../src/components/FloorSwitcher';
+import {
+  DEMO_VENUE_STATS,
+  DEMO_SENTIMENT,
+  DEMO_PULSE_STATUS,
+  DEMO_ACTIVE_CAMPAIGN,
+} from '../../src/data/demoData';
 
 const { colors } = merchantTheme;
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -67,30 +79,49 @@ interface PulseStatus {
 
 export default function MerchantDashboard() {
   const router = useRouter();
-  const { user } = useVibeStore();
+  const { user, getAuthHeaders, hasSeenMerchantOnboarding, completeMerchantOnboarding, isDemoMode } = useVibeStore();
   const [stats, setStats] = useState<VenueStats | null>(null);
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
   const [pulseStatus, setPulseStatus] = useState<PulseStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Content Management State
   const [entryFee, setEntryFee] = useState('');
   const [musicGenre, setMusicGenre] = useState('');
   const [tablesAvailable, setTablesAvailable] = useState(true);
+  const [geofenceRadius, setGeofenceRadius] = useState(100);
   const [isSaving, setIsSaving] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
-  
+
   // Pulse Drop State
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [isActivatingPulse, setIsActivatingPulse] = useState(false);
   const [countdown, setCountdown] = useState<string>('');
 
+  // Campaign State
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [activeCampaign, setActiveCampaign] = useState<any>(null);
+
   const fetchAllData = async () => {
+    // In demo mode, use mock data instead of API calls
+    if (isDemoMode) {
+      setStats(DEMO_VENUE_STATS as any);
+      setSentiment(DEMO_SENTIMENT as any);
+      setPulseStatus(DEMO_PULSE_STATUS as any);
+      setActiveCampaign(DEMO_ACTIVE_CAMPAIGN as any);
+      setEntryFee(DEMO_VENUE_STATS.venue.entry_fee || '5,000');
+      setMusicGenre(DEMO_VENUE_STATS.venue.music_genre || 'Afrobeats / Amapiano');
+      setTablesAvailable(true);
+      setGeofenceRadius(DEMO_VENUE_STATS.venue.geofence_radius_m || 150);
+      setLoading(false);
+      return;
+    }
+
     if (!user?.merchant_venue_id) return;
-    
-    const headers = { 'X-User-Id': user.id };
-    
+
+    const headers = getAuthHeaders();
+
     try {
       // Fetch stats
       const statsRes = await fetch(
@@ -103,6 +134,7 @@ export default function MerchantDashboard() {
         setEntryFee(data.venue?.entry_fee || '');
         setMusicGenre(data.venue?.music_genre || '');
         setTablesAvailable(data.venue?.tables_available ?? true);
+        setGeofenceRadius(data.venue?.geofence_radius_m ?? 100);
       }
       
       // Fetch sentiment
@@ -121,6 +153,17 @@ export default function MerchantDashboard() {
       );
       if (pulseRes.ok) {
         setPulseStatus(await pulseRes.json());
+      }
+
+      // Fetch active campaign
+      const campaignRes = await fetch(
+        `${API_URL}/api/merchant/venue/${user.merchant_venue_id}/campaigns`,
+        { headers }
+      );
+      if (campaignRes.ok) {
+        const campaignData = await campaignRes.json();
+        const active = (campaignData.campaigns || []).find((c: any) => c.status === 'active');
+        setActiveCampaign(active || null);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -161,28 +204,32 @@ export default function MerchantDashboard() {
   }, [pulseStatus?.is_active, pulseStatus?.time_remaining]);
 
   const onRefresh = useCallback(async () => {
+    if (isDemoMode) return;
     setRefreshing(true);
     await fetchAllData();
     setRefreshing(false);
-  }, [user?.merchant_venue_id]);
+  }, [user?.merchant_venue_id, isDemoMode]);
 
   const handleSaveContent = async () => {
+    if (isDemoMode) {
+      Alert.alert('Demo Mode', 'Changes are simulated in demo mode.');
+      setShowEditForm(false);
+      return;
+    }
     if (!user?.merchant_venue_id) return;
-    
+
     setIsSaving(true);
     try {
       const response = await fetch(
         `${API_URL}/api/merchant/venue/${user.merchant_venue_id}/update`,
         {
           method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-User-Id': user.id 
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             entry_fee: entryFee,
             music_genre: musicGenre,
             tables_available: tablesAvailable,
+            geofence_radius_m: geofenceRadius,
           }),
         }
       );
@@ -203,21 +250,23 @@ export default function MerchantDashboard() {
   };
 
   const handleActivatePulse = async (tier: string) => {
+    if (isDemoMode) {
+      Alert.alert('Demo Mode', `${tier.toUpperCase()} Pulse simulated in demo mode.`);
+      setSelectedTier(null);
+      return;
+    }
     if (!user?.merchant_venue_id) return;
-    
+
     setIsActivatingPulse(true);
     try {
       const response = await fetch(
         `${API_URL}/api/merchant/venue/${user.merchant_venue_id}/pulse-drop?tier=${tier}`,
         {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-User-Id': user.id 
-          },
+          headers: getAuthHeaders(),
         }
       );
-      
+
       if (response.ok) {
         const result = await response.json();
         Alert.alert('🚀 Pulse Activated!', result.message);
@@ -269,6 +318,7 @@ export default function MerchantDashboard() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <DemoModeBanner />
       <ScrollView
         style={styles.scrollView}
         refreshControl={
@@ -276,26 +326,39 @@ export default function MerchantDashboard() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Glowed-Up Header */}
+        <LinearGradient
+          colors={['#1A1510', '#0D0D0A']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
           <View>
             <Text style={styles.welcomeText}>Your Venue</Text>
             <Text style={styles.venueName}>{stats?.venue?.name}</Text>
           </View>
-          <View style={styles.walletBadge}>
+          <LinearGradient
+            colors={['#D4AF3730', '#D4AF3710']}
+            style={styles.walletBadge}
+          >
             <Ionicons name="wallet" size={16} color={colors.success} />
-            <Text style={styles.walletBalance}>₦{(stats?.wallet_balance || 0).toLocaleString()}</Text>
-          </View>
-        </View>
+            <Text style={styles.walletBalance}>{'\u20A6'}{(stats?.wallet_balance || 0).toLocaleString()}</Text>
+          </LinearGradient>
+        </LinearGradient>
 
         {/* ====== LIVE PERFORMANCE METRICS ====== */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📊 Live Performance</Text>
           
-          {/* Main Score Card */}
-          <View style={styles.scoreCard}>
+          {/* Main Score Card — Glow-Up */}
+          <LinearGradient
+            colors={['#1A1510', vibeColor + '08']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.scoreCard}
+          >
             <View style={styles.scoreMainRow}>
-              <View style={styles.scoreCircle}>
+              <View style={[styles.scoreCircle, { borderColor: vibeColor + '40', shadowColor: vibeColor }]}>
                 <Text style={[styles.scoreValue, { color: vibeColor }]}>{Math.round(vibeScore)}%</Text>
                 <Text style={styles.scoreLabel}>ENERGY</Text>
               </View>
@@ -335,7 +398,7 @@ export default function MerchantDashboard() {
                 {(stats?.heatmap_delta?.delta || 0) >= 0 ? '+' : ''}{stats?.heatmap_delta?.delta || 0}% vs district avg
               </Text>
             </View>
-          </View>
+          </LinearGradient>
         </View>
 
         {/* ====== VIBE SENTIMENT ====== */}
@@ -450,7 +513,32 @@ export default function MerchantDashboard() {
                   thumbColor={tablesAvailable ? colors.accent : '#666'}
                 />
               </View>
-              
+
+              {/* Geofence Radius */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Geofence Radius</Text>
+                <Text style={styles.switchSubtext}>How close scouts must be to rate (in meters)</Text>
+                <View style={styles.radiusOptions}>
+                  {[50, 100, 150, 200].map((r) => (
+                    <TouchableOpacity
+                      key={r}
+                      style={[
+                        styles.radiusChip,
+                        geofenceRadius === r && styles.radiusChipActive,
+                      ]}
+                      onPress={() => setGeofenceRadius(r)}
+                    >
+                      <Text style={[
+                        styles.radiusChipText,
+                        geofenceRadius === r && styles.radiusChipTextActive,
+                      ]}>
+                        {r}m
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
               {/* Save Button */}
               <TouchableOpacity 
                 style={styles.saveButton}
@@ -481,10 +569,10 @@ export default function MerchantDashboard() {
                   <Text style={styles.previewValue}>{stats?.venue?.music_genre || 'Not set'}</Text>
                 </View>
                 <View style={styles.previewItem}>
-                  <Ionicons 
-                    name={stats?.venue?.tables_available ? 'checkmark-circle' : 'close-circle'} 
-                    size={16} 
-                    color={stats?.venue?.tables_available ? '#4CAF50' : '#FF5252'} 
+                  <Ionicons
+                    name={stats?.venue?.tables_available ? 'checkmark-circle' : 'close-circle'}
+                    size={16}
+                    color={stats?.venue?.tables_available ? '#4CAF50' : '#FF5252'}
                   />
                   <Text style={styles.previewLabel}>Tables</Text>
                   <Text style={[
@@ -493,6 +581,11 @@ export default function MerchantDashboard() {
                   ]}>
                     {stats?.venue?.tables_available ? 'Available' : 'Full'}
                   </Text>
+                </View>
+                <View style={styles.previewItem}>
+                  <Ionicons name="locate-outline" size={16} color={colors.textMuted} />
+                  <Text style={styles.previewLabel}>Geofence</Text>
+                  <Text style={styles.previewValue}>{stats?.venue?.geofence_radius_m || 100}m</Text>
                 </View>
               </View>
             </View>
@@ -579,6 +672,53 @@ export default function MerchantDashboard() {
           )}
         </View>
 
+        {/* ====== ENERGY CAMPAIGNS ====== */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Energy Campaigns</Text>
+          <Text style={styles.sectionSubtitle}>Scouts earn bonus Clout at your venue</Text>
+
+          {activeCampaign ? (
+            <View style={[styles.scoreCard, { borderColor: '#FFD70050' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 8 }}>
+                <Ionicons name="flash" size={24} color="#FFD700" />
+                <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFD700', flex: 1 }}>
+                  {activeCampaign.multiplier}x CLOUT ACTIVE
+                </Text>
+              </View>
+              <Text style={{ fontSize: 13, color: colors.textMuted }}>
+                Scouts earn {activeCampaign.multiplier}x Clout when they rate your venue. Campaign ends {new Date(activeCampaign.expires_at).toLocaleTimeString()}.
+              </Text>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.scoreCard, { alignItems: 'center', paddingVertical: 24 }]}
+              onPress={() => isDemoMode ? Alert.alert('Demo Mode', 'Campaign creation simulated in demo mode.') : setShowCampaignModal(true)}
+            >
+              <Ionicons name="flash-outline" size={32} color={colors.accent} />
+              <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text, marginTop: 8 }}>
+                Launch Energy Campaign
+              </Text>
+              <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4, textAlign: 'center' }}>
+                Attract more scouts with Clout multipliers
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* ====== VIBE INTELLIGENCE ====== */}
+        {user?.merchant_venue_id && (
+          <View style={styles.section}>
+            <VibeIntelCard venueId={user.merchant_venue_id} getAuthHeaders={getAuthHeaders} />
+          </View>
+        )}
+
+        {/* ====== VIBE FORECAST ====== */}
+        {user?.merchant_venue_id && (
+          <View style={styles.section}>
+            <VibeForecast venueId={user.merchant_venue_id} />
+          </View>
+        )}
+
         {/* Privacy Notice */}
         <View style={styles.privacyNotice}>
           <Ionicons name="shield-checkmark" size={16} color={colors.textMuted} />
@@ -589,6 +729,24 @@ export default function MerchantDashboard() {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* Campaign Creation Modal */}
+      <CreateCampaignModal
+        visible={showCampaignModal}
+        venueId={user?.merchant_venue_id || ''}
+        venueName={stats?.venue?.name || ''}
+        walletBalance={stats?.wallet_balance || 0}
+        getAuthHeaders={getAuthHeaders}
+        onClose={() => setShowCampaignModal(false)}
+        onSuccess={() => fetchAllData()}
+      />
+
+      {/* Merchant Onboarding */}
+      {!hasSeenMerchantOnboarding && !loading && (
+        <MerchantOnboarding visible={true} onComplete={completeMerchantOnboarding} />
+      )}
+
+      <FloorSwitcher currentFloor="merchant" />
     </SafeAreaView>
   );
 }
@@ -839,6 +997,32 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  radiusOptions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  radiusChip: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border || '#333',
+    alignItems: 'center',
+  },
+  radiusChipActive: {
+    backgroundColor: colors.accent + '20',
+    borderColor: colors.accent,
+  },
+  radiusChipText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textMuted,
+    fontWeight: typography.fontWeight.medium,
+  },
+  radiusChipTextActive: {
+    color: colors.accent,
+    fontWeight: typography.fontWeight.bold,
   },
   saveButton: {
     flexDirection: 'row',

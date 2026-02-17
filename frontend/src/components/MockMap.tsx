@@ -332,7 +332,7 @@ export const MockMap: React.FC<MockMapProps> = ({
                   </Animated.View>
                 </>
               )}
-            >
+
               {/* Gold Glow for Pulse Drop venues */}
               {hasPulseDrop && (
                 <Animated.View
@@ -354,8 +354,8 @@ export const MockMap: React.FC<MockMapProps> = ({
                     style={[
                       styles.highlightRing,
                       {
-                        width: size * 2,
-                        height: size * 2,
+                        width: markerSize * 2,
+                        height: markerSize * 2,
                         borderRadius: markerSize,
                         transform: [{ scale: pulseAnim }],
                         borderColor: glowInterpolate,

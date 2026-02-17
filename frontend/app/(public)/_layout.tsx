@@ -1,66 +1,45 @@
 /**
  * PUBLIC FLOOR - Layout
  * The Social Experience - Neon/Midnight Theme
- * 
- * Navigation: Map | Trending | Profile
+ *
+ * Navigation: Map | Trending | Lobby | Profile
  * Access: All users (default entry point)
+ *
+ * Features: Custom AnimatedTabBar with neon pink glow
  */
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { publicTheme } from '../../src/theme/floors';
+import { AnimatedTabBar } from '../../src/components/AnimatedTabBar';
 
 const { colors } = publicTheme;
+
+const PUBLIC_TABS = [
+  { name: 'index', label: 'Map', icon: 'map-outline' as const, iconFocused: 'map' as const },
+  { name: 'trending', label: 'Trending', icon: 'flame-outline' as const, iconFocused: 'flame' as const },
+  { name: 'lobby', label: 'Lobby', icon: 'bookmark-outline' as const, iconFocused: 'bookmark' as const },
+  { name: 'profile', label: 'Profile', icon: 'person-outline' as const, iconFocused: 'person' as const },
+];
 
 export default function PublicLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.text.muted,
-        tabBarStyle: {
-          backgroundColor: colors.background.card,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
-          paddingTop: 8,
-          height: Platform.OS === 'ios' ? 85 : 65,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-        },
       }}
+      tabBar={(props) => (
+        <AnimatedTabBar
+          {...props}
+          glowColor={colors.primary}
+          inactiveColor={colors.text.muted}
+          tabs={PUBLIC_TABS}
+        />
+      )}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Map',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="trending"
-        options={{
-          title: 'Trending',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="flame" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="trending" />
+      <Tabs.Screen name="lobby" />
+      <Tabs.Screen name="profile" />
     </Tabs>
   );
 }

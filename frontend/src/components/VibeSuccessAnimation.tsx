@@ -17,6 +17,9 @@ interface VibeSuccessAnimationProps {
   hasPhoto: boolean;
   venueName: string;
   onComplete: () => void;
+  streakExtended?: boolean;
+  streakCount?: number;
+  multiplier?: number;
 }
 
 // Confetti particle component
@@ -100,6 +103,9 @@ const VibeSuccessAnimation: React.FC<VibeSuccessAnimationProps> = ({
   hasPhoto,
   venueName,
   onComplete,
+  streakExtended = false,
+  streakCount = 0,
+  multiplier = 1.0,
 }) => {
   const [showContent, setShowContent] = useState(false);
   
@@ -245,7 +251,8 @@ const VibeSuccessAnimation: React.FC<VibeSuccessAnimationProps> = ({
     );
   }
 
-  const totalClout = hasPhoto ? cloutEarned + 5 : cloutEarned;
+  const baseClout = hasPhoto ? cloutEarned + 5 : cloutEarned;
+  const totalClout = multiplier > 1 ? Math.round(baseClout * multiplier) : baseClout;
 
   return (
     <Modal transparent visible={visible || showContent} animationType="none">
@@ -310,6 +317,22 @@ const VibeSuccessAnimation: React.FC<VibeSuccessAnimationProps> = ({
               <View style={styles.bonusTag}>
                 <Ionicons name="camera" size={12} color="#4CAF50" />
                 <Text style={styles.bonusText}>+5 Photo Bonus!</Text>
+              </View>
+            )}
+            {multiplier > 1 && (
+              <View style={[styles.bonusTag, { backgroundColor: '#FF980020' }]}>
+                <Ionicons name="flame" size={12} color="#FF9800" />
+                <Text style={[styles.bonusText, { color: '#FF9800' }]}>
+                  {multiplier.toFixed(1)}x Streak Multiplier!
+                </Text>
+              </View>
+            )}
+            {streakExtended && streakCount > 0 && (
+              <View style={[styles.bonusTag, { backgroundColor: '#FF336620' }]}>
+                <Ionicons name="flame" size={12} color="#FF3366" />
+                <Text style={[styles.bonusText, { color: '#FF3366' }]}>
+                  Streak +1! ({streakCount} days)
+                </Text>
               </View>
             )}
           </Animated.View>

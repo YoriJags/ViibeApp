@@ -259,7 +259,8 @@
 
   <script>
     const API_URL = window.location.origin;
-    const MERCHANT_USER_ID = 'c9bf2f6d-7301-4ec9-bf41-5627bb8caa41';
+    // NOTE: Set a valid session token after logging in via the API
+    const SESSION_TOKEN = localStorage.getItem('merchant_session_token') || '';
     const VENUE_ID = '1993abc2-1ac8-482d-b9eb-44b700ad2a49';
     
     function formatNumber(num) {
@@ -273,7 +274,7 @@
     async function fetchData(endpoint) {
       try {
         const res = await fetch(`${API_URL}${endpoint}`, {
-          headers: { 'X-User-Id': MERCHANT_USER_ID }
+          headers: { 'Authorization': `Bearer ${SESSION_TOKEN}` }
         });
         return await res.json();
       } catch (err) {

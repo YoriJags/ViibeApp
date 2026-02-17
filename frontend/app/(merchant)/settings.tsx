@@ -8,12 +8,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { merchantTheme, spacing, borderRadius, typography } from '../../src/theme/floors';
 import { useVibeStore } from '../../src/store/vibeStore';
+import AuraShieldToggle from '../../src/components/AuraShieldToggle';
 
 const { colors } = merchantTheme;
 
 export default function MerchantSettings() {
   const router = useRouter();
-  const { user, logout } = useVibeStore();
+  const { user, logout, getAuthHeaders } = useVibeStore();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -56,6 +57,16 @@ export default function MerchantSettings() {
             <Ionicons name="chevron-forward" size={24} color={colors.text.muted} />
           </TouchableOpacity>
         </View>
+
+        {/* Aura Shield */}
+        {user?.merchant_venue_id && (
+          <View style={styles.section}>
+            <Text style={[styles.headerTitle, { fontSize: typography.fontSize.lg, marginBottom: spacing.md, paddingHorizontal: 0 }]}>
+              Aura Shield
+            </Text>
+            <AuraShieldToggle venueId={user.merchant_venue_id} getAuthHeaders={getAuthHeaders} />
+          </View>
+        )}
 
         <View style={styles.section}>
           <TouchableOpacity 

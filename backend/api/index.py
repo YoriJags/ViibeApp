@@ -113,10 +113,26 @@ async def get_current_user(request: Request):
     database = get_db()
     if not database:
         return None
-    user_id = request.headers.get("X-User-Id")
-    if not user_id:
+    # Extract session token from Authorization header or cookie
+    session_token = None
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        session_token = auth_header[7:]
+    if not session_token:
+        session_token = request.cookies.get("session_token")
+    if not session_token:
         return None
-    user = await database.users.find_one({"id": user_id}, {"_id": 0})
+    session = await database.user_sessions.find_one({"session_token": session_token}, {"_id": 0})
+    if not session:
+        return None
+    expires_at = session.get("expires_at")
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at)
+    if expires_at and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at and expires_at < datetime.now(timezone.utc):
+        return None
+    user = await database.users.find_one({"id": session["user_id"]}, {"_id": 0})
     return user
 
 def get_scout_tier_color(status: str) -> str:
@@ -256,14 +272,15 @@ async def create_rating(request: CreateRatingRequest):
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
     
-    # Check geofence (50m)
+    # Check geofence (venue-specific radius, default 100m)
+    venue_radius = venue.get("geofence_radius_m", 100)
     distance = calculate_distance(
         request.coordinates.lat, request.coordinates.lng,
         venue["coordinates"]["lat"], venue["coordinates"]["lng"]
     )
-    
-    if distance > 50:
-        raise HTTPException(status_code=400, detail="You must be within 50m of the venue to rate")
+
+    if distance > venue_radius:
+        raise HTTPException(status_code=400, detail=f"You must be within {int(venue_radius)}m of the venue to rate")
     
     # Calculate vibe score
     vibe_score = calculate_vibe_score(request.energy, request.capacity, request.gate)

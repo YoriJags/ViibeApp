@@ -1,0 +1,201 @@
+"""
+Vibe App - Rating Routes
+Submit ratings, offline sync, and user-venue rating status.
+"""
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, HTTPException, Request
+
+from app.config import db, MAX_RATINGS_PER_VENUE_PER_DAY
+from app.models import Rating, RatingCreate, Coordinates
+from app.services.vibe import (
+    calculate_vibe_score,
+    calculate_venue_aggregate,
+    is_within_geofence,
+    update_user_clout,
+)
+from app.services.realtime import broadcast_venue_update, broadcast_leaderboard
+from app.services.streaks import update_streak
+from app.services.vibe import save_vibe_snapshot
+
+router = APIRouter(tags=["ratings"])
+
+
+@router.post("/ratings")
+async def create_rating(rating_data: RatingCreate):
+    """Submit a vibe rating for a venue. Geofence-enforced."""
+    venue = await db.venues.find_one({"id": rating_data.venue_id})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    venue_coords = Coordinates(**venue["coordinates"])
+    venue_radius = venue.get("geofence_radius_m", 100)
+    if not is_within_geofence(rating_data.coordinates, venue_coords, radius_m=venue_radius):
+        raise HTTPException(
+            status_code=403,
+            detail=f"You must be within {int(venue_radius)}m of the venue to rate. Please get closer.",
+        )
+
+    now = datetime.now(timezone.utc)
+    day_ago = now - timedelta(hours=24)
+
+    existing_ratings = await db.ratings.find({
+        "user_id": rating_data.user_id,
+        "venue_id": rating_data.venue_id,
+        "timestamp": {"$gte": day_ago},
+    }).sort("timestamp", -1).to_list(10)
+
+    if len(existing_ratings) >= MAX_RATINGS_PER_VENUE_PER_DAY:
+        raise HTTPException(
+            status_code=429,
+            detail="Rating limit reached. You can rate this venue again in 24 hours.",
+        )
+
+    vibe_score = calculate_vibe_score(
+        rating_data.energy,
+        rating_data.capacity,
+        rating_data.gate,
+    )
+
+    is_correction = len(existing_ratings) == 1
+    rating = Rating(
+        **rating_data.dict(exclude={"coordinates", "offline_id"}),
+        vibe_score=vibe_score,
+        is_correction=is_correction,
+    )
+
+    if is_correction and existing_ratings:
+        await db.ratings.update_one(
+            {"id": existing_ratings[0]["id"]},
+            {"$set": {"superseded": True}},
+        )
+
+    await db.ratings.insert_one(rating.dict())
+
+    aggregate = await calculate_venue_aggregate(rating_data.venue_id)
+    await db.venues.update_one(
+        {"id": rating_data.venue_id},
+        {"$set": aggregate},
+    )
+
+    await update_user_clout(rating_data.user_id, rating_data.venue_id, vibe_score)
+
+    # Update streak + apply multiplier
+    streak_result = await update_streak(rating_data.user_id)
+    if streak_result.get("multiplier", 1.0) > 1.0:
+        bonus = int(vibe_score / 10 * (streak_result["multiplier"] - 1.0))
+        if bonus > 0:
+            await db.users.update_one(
+                {"id": rating_data.user_id},
+                {"$inc": {"clout_points": bonus}},
+            )
+
+    # Save vibe snapshot for timeline (also triggers Aura Shield check)
+    await save_vibe_snapshot(rating_data.venue_id, aggregate)
+
+    # Check for active energy campaign -> apply campaign clout multiplier
+    campaign_multiplier = 1
+    now = datetime.now(timezone.utc)
+    active_campaign = await db.campaigns.find_one({
+        "venue_id": rating_data.venue_id,
+        "status": "active",
+        "expires_at": {"$gt": now},
+    })
+    if active_campaign:
+        campaign_multiplier = active_campaign.get("multiplier", 1)
+        if campaign_multiplier > 1:
+            campaign_bonus = int(vibe_score / 10 * (campaign_multiplier - 1))
+            if campaign_bonus > 0:
+                await db.users.update_one(
+                    {"id": rating_data.user_id},
+                    {"$inc": {"clout_points": campaign_bonus}},
+                )
+            # Track campaign attribution
+            await db.campaigns.update_one(
+                {"id": active_campaign["id"]},
+                {"$inc": {"ratings_during": 1, "clout_distributed": campaign_bonus}},
+            )
+
+    # Check for squad bonus: 3+ crew members rated same venue within 1 hour
+    squad_bonus = await _check_squad_bonus(rating_data.user_id, rating_data.venue_id)
+
+    await broadcast_venue_update(rating_data.venue_id)
+    await broadcast_leaderboard(venue.get("city", "lagos"))
+    await broadcast_leaderboard("all")
+
+    return {
+        "rating": rating.dict(),
+        "is_correction": is_correction,
+        "remaining_ratings": 1 if not is_correction else 0,
+        "venue_vibe_score": aggregate.get("current_vibe_score", 0),
+        "streak": streak_result,
+        "squad_bonus": squad_bonus,
+        "campaign_multiplier": campaign_multiplier,
+    }
+
+
+@router.post("/ratings/sync")
+async def sync_offline_ratings(request: Request):
+    """Sync ratings that were created offline."""
+    body = await request.json()
+    ratings = body.get("ratings", [])
+    synced = []
+
+    for rating_data in ratings:
+        try:
+            result = await create_rating(RatingCreate(**rating_data))
+            synced.append({"offline_id": rating_data.get("offline_id"), "success": True})
+        except Exception as e:
+            synced.append({"offline_id": rating_data.get("offline_id"), "success": False, "error": str(e)})
+
+    return {"synced": synced}
+
+
+@router.get("/ratings/user/{user_id}/venue/{venue_id}")
+async def get_user_venue_ratings(user_id: str, venue_id: str):
+    """Get a user's ratings for a specific venue in the last 24 hours."""
+    now = datetime.now(timezone.utc)
+    day_ago = now - timedelta(hours=24)
+
+    ratings = await db.ratings.find({
+        "user_id": user_id,
+        "venue_id": venue_id,
+        "timestamp": {"$gte": day_ago},
+    }, {"_id": 0}).to_list(10)
+
+    return {
+        "ratings_count": len(ratings),
+        "can_rate": len(ratings) < MAX_RATINGS_PER_VENUE_PER_DAY,
+        "is_correction_available": len(ratings) == 1,
+        "ratings": ratings,
+    }
+
+
+SQUAD_BONUS_CLOUT = 10
+
+
+async def _check_squad_bonus(user_id: str, venue_id: str) -> int:
+    """Check if 3+ crew members rated the same venue within 1 hour. Awards squad bonus."""
+    crew = await db.crews.find_one({"members": user_id})
+    if not crew:
+        return 0
+
+    now = datetime.now(timezone.utc)
+    hour_ago = now - timedelta(hours=1)
+    members = crew.get("members", [])
+
+    # Count how many crew members rated this venue in the last hour
+    crew_ratings = await db.ratings.count_documents({
+        "user_id": {"$in": members},
+        "venue_id": venue_id,
+        "timestamp": {"$gte": hour_ago},
+    })
+
+    if crew_ratings >= 3:
+        # Award bonus to this user
+        await db.users.update_one(
+            {"id": user_id},
+            {"$inc": {"clout_points": SQUAD_BONUS_CLOUT}},
+        )
+        return SQUAD_BONUS_CLOUT
+
+    return 0

@@ -161,6 +161,55 @@ export const animation = {
   normal: 300,
   slow: 500,
   pulse: 1000,
+  stagger: 80,
+};
+
+// Easing presets for consistent animation feel
+export const easing = {
+  spring: { tension: 40, friction: 7 },
+  bounce: { tension: 80, friction: 10 },
+  snappy: { tension: 100, friction: 12 },
+  gentle: { tension: 30, friction: 8 },
+};
+
+// Predefined gradient arrays
+export const gradients = {
+  neonPink: ['#FF3366', '#FF6B35'] as const,
+  neonPurple: ['#9933FF', '#6B1FCC'] as const,
+  electric: ['#FF3366', '#FF6B35', '#FFD700'] as const,
+  glass: ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)'] as const,
+  shimmer: ['transparent', 'rgba(255,255,255,0.08)', 'transparent'] as const,
+  midnight: ['#0A0A0F', '#151520', '#0A0A0F'] as const,
+  gold: ['#FFD700', '#FFA500'] as const,
+  goldShimmer: ['#FFD700', '#FFC107', '#FFD700'] as const,
+  royalBlue: ['#4169E1', '#6C8EBF'] as const,
+  success: ['#00E676', '#4CAF50'] as const,
+};
+
+// Neon glow shadow utility
+export const neonGlow = (color: string, intensity: 'soft' | 'medium' | 'strong' = 'medium') => {
+  const config = {
+    soft: { radius: 4, opacity: 0.4 },
+    medium: { radius: 12, opacity: 0.6 },
+    strong: { radius: 20, opacity: 0.8 },
+  };
+  const { radius, opacity } = config[intensity];
+  return {
+    shadowColor: color,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: opacity,
+    shadowRadius: radius,
+    elevation: Math.ceil(radius / 2),
+  };
+};
+
+// Glassmorphism style preset
+export const glassStyle = {
+  backgroundColor: 'rgba(20, 20, 35, 0.7)',
+  borderWidth: 1,
+  borderColor: 'rgba(255,255,255,0.08)',
+  borderRadius: 16,
+  overflow: 'hidden' as const,
 };
 
 // Touch targets (minimum 44pt for iOS, 48dp for Android)
@@ -189,6 +238,10 @@ export default {
   typography,
   shadows,
   animation,
+  easing,
+  gradients,
+  neonGlow,
+  glassStyle,
   touchTargets,
   getVibeColor,
   getScoutColor,

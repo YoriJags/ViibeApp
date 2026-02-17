@@ -4,7 +4,7 @@
  * Top Scouts with Mini-Profile Modal
  * Map integration via 'Pull Up' button
  */
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { publicTheme, spacing, borderRadius, typography } from '../../src/theme/floors';
 import { useVibeStore } from '../../src/store/vibeStore';
+import EnergyMeter, { getEnergyLevel } from '../../src/components/EnergyMeter';
+import VibeIntelCarousel from '../../src/components/VibeIntelCarousel';
+import EnergyLevelGuide from '../../src/components/EnergyLevelGuide';
+import { neonGlow } from '../../src/theme';
 
 const { colors } = publicTheme;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -105,7 +109,7 @@ interface ScoutsData {
 
 export default function TrendingScreen() {
   const router = useRouter();
-  const { selectedCity, setSelectedCity } = useVibeStore();
+  const { selectedCity, setSelectedCity, isDemoMode } = useVibeStore();
   const [trendingData, setTrendingData] = useState<TrendingData | null>(null);
   const [scoutsData, setScoutsData] = useState<ScoutsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -170,6 +174,15 @@ export default function TrendingScreen() {
   }, []);
 
   const fetchData = async () => {
+    // Demo mode: use local mock data
+    if (isDemoMode) {
+      const { DEMO_TRENDING, DEMO_TOP_SCOUTS } = require('../../src/data/demoData');
+      setTrendingData(DEMO_TRENDING);
+      setScoutsData(DEMO_TOP_SCOUTS);
+      setLoading(false);
+      return;
+    }
+
     try {
       const [trendingRes, scoutsRes] = await Promise.all([
         fetch(`${API_URL}/api/trending/${selectedCity}`),
@@ -194,6 +207,28 @@ export default function TrendingScreen() {
 
   const fetchScoutProfile = async (userId: string) => {
     setLoadingProfile(true);
+
+    // Demo mode: use mock scout profile
+    if (isDemoMode) {
+      const { DEMO_SCOUT_PROFILE, DEMO_TOP_SCOUTS } = require('../../src/data/demoData');
+      const scout = DEMO_TOP_SCOUTS.scouts.find((s: any) => s.user_id === userId);
+      if (scout) {
+        setScoutProfile({
+          ...DEMO_SCOUT_PROFILE,
+          user: {
+            ...DEMO_SCOUT_PROFILE.user,
+            id: scout.user_id,
+            username: scout.username,
+            clout_points: scout.clout_points,
+            tier: scout.tier,
+            tier_color: scout.ring_color,
+          },
+        });
+      }
+      setLoadingProfile(false);
+      return;
+    }
+
     try {
       const response = await fetch(`${API_URL}/api/scout/${userId}/profile`);
       if (response.ok) {
@@ -209,13 +244,13 @@ export default function TrendingScreen() {
 
   useEffect(() => {
     fetchData();
-  }, [selectedCity]);
+  }, [selectedCity, isDemoMode]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchData();
     setRefreshing(false);
-  }, [selectedCity]);
+  }, [selectedCity, isDemoMode]);
 
   const handleScoutPress = async (scout: TopScout) => {
     setSelectedScout(scout);
@@ -264,6 +299,11 @@ export default function TrendingScreen() {
     if (percent >= 40) return colors.vibe.moderate;
     return colors.vibe.chill;
   };
+
+  const isWeekend = useMemo(() => {
+    const day = new Date().getDay();
+    return day === 5 || day === 6;
+  }, []);
 
   if (loading) {
     return (
@@ -321,6 +361,12 @@ export default function TrendingScreen() {
           </View>
         )}
 
+        {/* ====== VIBE INTEL CAROUSEL ====== */}
+        <VibeIntelCarousel venues={venues} city={selectedCity} isWeekend={isWeekend} />
+
+        {/* ====== ENERGY LEVEL GUIDE ====== */}
+        <EnergyLevelGuide />
+
         {/* ====== PREMIUM TOP 3 PODIUM ====== */}
         <View style={styles.podiumSection}>
           <View style={styles.sectionHeader}>
@@ -345,7 +391,9 @@ export default function TrendingScreen() {
                   </Text>
                   <Text style={styles.podiumArea}>{topThree[1].venue.area}</Text>
                   <View style={styles.podiumScoreContainer}>
-                    <Text style={styles.podiumScoreLabel}>ENERGY</Text>
+                    <View style={styles.podiumMeterWrap}>
+                      <EnergyMeter percent={topThree[1].energy_percent} size="sm" showLabel={false} />
+                    </View>
                     <Text style={[styles.podiumScore, { color: '#C0C0C0' }]}>
                       {topThree[1].energy_percent}%
                     </Text>
@@ -406,7 +454,9 @@ export default function TrendingScreen() {
                   <Text style={styles.goldArea}>{topThree[0].venue.area}</Text>
                   
                   <View style={styles.goldScoreContainer}>
-                    <Text style={styles.goldScoreLabel}>ENERGY</Text>
+                    <View style={styles.podiumMeterWrap}>
+                      <EnergyMeter percent={topThree[0].energy_percent} size="sm" showLabel={false} />
+                    </View>
                     <Text style={styles.goldScore}>{topThree[0].energy_percent}%</Text>
                   </View>
                   
@@ -437,7 +487,9 @@ export default function TrendingScreen() {
                   </Text>
                   <Text style={styles.podiumArea}>{topThree[2].venue.area}</Text>
                   <View style={styles.podiumScoreContainer}>
-                    <Text style={styles.podiumScoreLabel}>ENERGY</Text>
+                    <View style={styles.podiumMeterWrap}>
+                      <EnergyMeter percent={topThree[2].energy_percent} size="sm" showLabel={false} />
+                    </View>
                     <Text style={[styles.podiumScore, { color: '#CD7F32' }]}>
                       {topThree[2].energy_percent}%
                     </Text>
@@ -478,24 +530,41 @@ export default function TrendingScreen() {
                   <Text style={styles.sponsoredVenueArea}>{item.venue.area}</Text>
                 </View>
 
-                {/* REAL Energy Score - Displayed Honestly */}
+                {/* Energy Score */}
                 <View style={styles.sponsoredScoreContainer}>
                   <Text style={[
                     styles.sponsoredEnergyLabel,
-                    { color: getEnergyColor(item.energy_percent) }
+                    { color: getEnergyLevel(item.energy_percent).accent }
                   ]}>
-                    {item.energy_percent >= 70 ? 'Electric' : item.energy_percent >= 40 ? 'Vibe' : 'Quiet'}
+                    {getEnergyLevel(item.energy_percent).label}
                   </Text>
                   <Text style={[
                     styles.sponsoredScore,
-                    { color: getEnergyColor(item.energy_percent) }
+                    { color: getEnergyLevel(item.energy_percent).accent }
                   ]}>
                     {item.energy_percent}%
                   </Text>
                 </View>
 
-                {/* Pull Up */}
-                <Ionicons name="chevron-forward" size={18} color="#FFD700" />
+                {/* Rate Button (Gold) */}
+                <TouchableOpacity
+                  style={styles.rateChip}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    router.push(`/venue/${item.venue.id}?openRateModal=true`);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <LinearGradient
+                    colors={['#FFD700', '#FFA500']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.rateChipGradient}
+                  >
+                    <Ionicons name="star" size={12} color="#0A0A0F" />
+                    <Text style={[styles.rateChipText, { color: '#0A0A0F' }]}>RATE</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
               </TouchableOpacity>
             ))}
           </View>
@@ -505,13 +574,13 @@ export default function TrendingScreen() {
         <View style={styles.listSection}>
           <Text style={styles.sectionTitle}>📊 The Ranks</Text>
           {restOfList.map((item) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={item.venue.id}
               style={styles.listItem}
               onPress={() => handlePullUp(item.venue)}
               activeOpacity={0.8}
             >
-              {/* Rank */}
+              {/* Rank + Trend */}
               <View style={styles.rankContainer}>
                 <Text style={styles.rankNumber}>#{item.rank}</Text>
                 {getTrendIcon(item.trend)}
@@ -523,31 +592,29 @@ export default function TrendingScreen() {
                 <Text style={styles.venueArea}>{item.venue.area}</Text>
               </View>
 
-              {/* Energy */}
+              {/* Energy Meter */}
               <View style={styles.energyContainer}>
-                <View style={styles.energyBar}>
-                  <View 
-                    style={[
-                      styles.energyFill, 
-                      { 
-                        width: `${item.energy_percent}%`,
-                        backgroundColor: getEnergyColor(item.energy_percent)
-                      }
-                    ]} 
-                  />
-                </View>
-                <Text style={[styles.energyText, { color: getEnergyColor(item.energy_percent) }]}>
-                  {item.energy_percent}%
-                </Text>
+                <EnergyMeter percent={item.energy_percent} size="sm" />
               </View>
 
-              {/* Pull Up Button */}
-              <TouchableOpacity 
-                style={styles.pullUpButton}
-                onPress={() => handlePullUp(item.venue)}
+              {/* Rate Button */}
+              <TouchableOpacity
+                style={styles.rateChip}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  router.push(`/venue/${item.venue.id}?openRateModal=true`);
+                }}
+                activeOpacity={0.7}
               >
-                <Ionicons name="location" size={14} color={colors.primary} />
-                <Text style={styles.pullUpText}>Pull up</Text>
+                <LinearGradient
+                  colors={['#FF3366', '#FF6B35']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.rateChipGradient}
+                >
+                  <Ionicons name="star" size={12} color="#FFF" />
+                  <Text style={styles.rateChipText}>RATE</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </TouchableOpacity>
           ))}
@@ -613,11 +680,6 @@ export default function TrendingScreen() {
                 <Text style={[styles.scoutTier, { color: scout.ring_color }]}>
                   {scout.tier.toUpperCase()}
                 </Text>
-                
-                {/* Clout Points */}
-                <View style={styles.cloutBadge}>
-                  <Text style={styles.cloutText}>⚡ {scout.clout_points}</Text>
-                </View>
               </TouchableOpacity>
             ))}
 
@@ -872,6 +934,7 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     color: colors.text.muted,
   },
+
   sectionHeader: {
     marginBottom: spacing.lg,
   },
@@ -895,7 +958,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'flex-end',
-    height: 260,
+    height: 220,
     paddingHorizontal: spacing.sm,
   },
   podiumItem: {
@@ -987,7 +1050,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   goldBar: {
-    height: 200,
+    height: 160,
     shadowColor: '#FFD700',
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.4,
@@ -995,14 +1058,14 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   silverBar: {
-    height: 150,
+    height: 130,
     backgroundColor: colors.background.card,
     borderWidth: 2,
     borderColor: '#C0C0C080',
     borderBottomWidth: 0,
   },
   bronzeBar: {
-    height: 130,
+    height: 110,
     backgroundColor: colors.background.card,
     borderWidth: 2,
     borderColor: '#CD7F3280',
@@ -1133,39 +1196,33 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   energyContainer: {
-    width: 60,
-    alignItems: 'center',
+    width: 90,
+    justifyContent: 'center',
   },
-  energyBar: {
-    width: '100%',
-    height: 4,
-    backgroundColor: colors.background.input,
-    borderRadius: 2,
-    overflow: 'hidden',
+
+  // ====== RATE CHIP ======
+  rateChip: {
+    marginLeft: spacing.sm,
   },
-  energyFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  energyText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    marginTop: spacing.xs,
-  },
-  pullUpButton: {
+  rateChipGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primary + '20',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
-    marginLeft: spacing.sm,
-    gap: spacing.xs,
+    gap: 3,
   },
-  pullUpText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.primary,
+  rateChipText: {
+    fontSize: 10,
+    fontWeight: typography.fontWeight.bold,
+    color: '#FFF',
+    letterSpacing: 0.5,
+  },
+
+  // ====== PODIUM METER ======
+  podiumMeterWrap: {
+    width: '100%',
+    marginBottom: spacing.xs,
   },
 
   // ====== SCOUTS STYLES ======
@@ -1183,7 +1240,7 @@ const styles = StyleSheet.create({
     paddingRight: spacing.lg,
   },
   scoutCard: {
-    width: 110,
+    width: 100,
     backgroundColor: colors.background.card,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
@@ -1266,18 +1323,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     fontWeight: typography.fontWeight.bold,
   },
-  cloutBadge: {
-    marginTop: spacing.sm,
-    backgroundColor: colors.gold + '20',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
-  },
-  cloutText: {
-    fontSize: 10,
-    color: colors.gold,
-    fontWeight: typography.fontWeight.bold,
-  },
+  // cloutBadge moved to profile modal only
   noScoutsCard: {
     width: SCREEN_WIDTH - 64,
     backgroundColor: colors.background.card,

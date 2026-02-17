@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { io, Socket } from 'socket.io-client';
+import { DEMO_USER, DEMO_VENUES, DEMO_STREAK, DEMO_CREW, DEMO_ACTIVE_CAMPAIGNS } from '../data/demoData';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -23,7 +24,7 @@ interface Venue {
   address: string;
   area: string;
   city: string;
-  venue_type: 'club' | 'lounge' | 'restaurant' | 'bar';
+  venue_type: 'club' | 'lounge' | 'restaurant' | 'bar' | 'church' | 'concert' | 'rave' | 'block_party' | 'festival' | 'event' | 'other';
   coordinates: Coordinates;
   current_vibe_score: number;
   energy_level: 'chill' | 'popping' | 'electric';
@@ -38,6 +39,9 @@ interface Venue {
   active_pulse_tier?: string;
   glow_boost: number;
   custom_icon?: string;
+  geofence_radius_m?: number;
+  vibe_certified?: boolean;
+  certified_since?: string;
 }
 
 interface User {
@@ -81,12 +85,127 @@ interface PulseDrop {
   expires_at: string;
 }
 
+// ===== New Feature Interfaces =====
+
+interface StreakData {
+  current_streak: number;
+  longest_streak: number;
+  multiplier: number;
+  last_activity_date: string | null;
+  milestones_claimed: number[];
+  next_milestone: number | null;
+  next_milestone_clout: number | null;
+}
+
+export interface ActiveCheckin {
+  user_id: string;
+  venue_id: string;
+  venue_name: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
+}
+
+interface StoryListItem {
+  id: string;
+  username: string;
+  scout_status: string;
+  venue_id: string;
+  venue_name: string;
+  caption: string;
+  views: number;
+  created_at: string;
+}
+
+interface TimelinePoint {
+  hour: string;
+  hour_label: string;
+  avg_vibe_score: number;
+  peak_score: number;
+  energy_level: string;
+  rating_count: number;
+  checkin_count: number;
+}
+
+interface Crew {
+  id: string;
+  name: string;
+  captain_id: string;
+  members: string[];
+  member_details: {
+    user_id: string;
+    username: string;
+    scout_status: string;
+    checked_in?: boolean;
+    venue_name?: string;
+  }[];
+  invite_code: string;
+  is_captain: boolean;
+  active_vote: CrewVote | null;
+}
+
+interface CrewVote {
+  id: string;
+  crew_id: string;
+  options: {
+    id: string;
+    name: string;
+    area: string;
+    current_vibe_score: number;
+    energy_level: string;
+    votes: number;
+    voters: string[];
+  }[];
+  status: string;
+  total_votes: number;
+  has_voted?: boolean;
+  winner?: any;
+}
+
+interface AlertPrefs {
+  lobby_alerts: boolean;
+  streak_reminders: boolean;
+  crew_alerts: boolean;
+  nearby_alerts: boolean;
+  registered: boolean;
+}
+
+interface ActiveCampaign {
+  id: string;
+  venue_id: string;
+  venue_name: string;
+  multiplier: number;
+  expires_at: string;
+}
+
 // Separate persisted state from transient state
 interface PersistedState {
   user: User | null;
+  sessionToken: string | null;
   selectedCity: string;
   isAuthenticated: boolean;
   pendingRatings: PendingRating[];
+  hasSeenOnboarding: boolean;
+  hasSeenMerchantOnboarding: boolean;
+  isDemoMode: boolean;
+  hasSeenDemoTutorial: boolean;
+  avatarConfig: { emoji: string; bgColor: string; accentColor: string } | null;
+  locationSharingEnabled: boolean;
+}
+
+interface LobbyVenue extends Venue {
+  lobby_added_at: string;
+  lobby_entry_id: string;
+}
+
+interface LobbyNudge {
+  type: 'go_here' | 'quiet_night';
+  venue_id: string | null;
+  venue_name?: string;
+  score?: number;
+  message: string;
+  energy?: string;
+  margin?: number;
 }
 
 interface TransientState {
@@ -100,9 +219,24 @@ interface TransientState {
   gpsLocked: boolean;
   lastRatedVenueId: string | null;
   hasHydrated: boolean;
+  lobbyVenues: LobbyVenue[];
+  lobbyNudge: LobbyNudge | null;
+  lobbyLoading: boolean;
+  // New features
+  streak: StreakData | null;
+  activeCheckin: ActiveCheckin | null;
+  venueStories: StoryListItem[];
+  venueTimeline: TimelinePoint[];
+  timelinePeakHour: string | null;
+  crew: Crew | null;
+  activeVote: CrewVote | null;
+  alertPrefs: AlertPrefs | null;
+  venueCheckinCount: number;
+  activeCampaigns: ActiveCampaign[];
 }
 
 interface VibeStoreActions {
+  getAuthHeaders: () => Record<string, string>;
   setUser: (user: User | null) => void;
   setVenues: (venues: Venue[]) => void;
   updateVenue: (venue: Venue) => void;
@@ -137,6 +271,46 @@ interface VibeStoreActions {
   syncPendingRatings: () => Promise<void>;
   connectSocket: () => void;
   disconnectSocket: () => void;
+  fetchLobby: () => Promise<void>;
+  addToLobby: (venueId: string) => Promise<boolean>;
+  removeFromLobby: (venueId: string) => Promise<boolean>;
+  isInLobby: (venueId: string) => boolean;
+  // Ghost Check-ins
+  ghostCheckIn: (venueId: string, lat: number, lng: number) => Promise<any>;
+  ghostCheckOut: (venueId: string) => Promise<void>;
+  fetchActiveCheckin: () => Promise<void>;
+  fetchVenueCheckins: (venueId: string) => Promise<void>;
+  // Streaks
+  fetchStreak: () => Promise<void>;
+  // Stories
+  fetchStories: (venueId: string) => Promise<void>;
+  postStory: (venueId: string, mediaUrl: string, caption: string, lat: number, lng: number) => Promise<any>;
+  viewStory: (storyId: string) => Promise<void>;
+  // Timeline
+  fetchTimeline: (venueId: string) => Promise<void>;
+  // Crews
+  createCrew: (name: string) => Promise<any>;
+  joinCrew: (inviteCode: string) => Promise<any>;
+  fetchCrew: () => Promise<void>;
+  leaveCrew: (crewId: string) => Promise<void>;
+  startVote: (crewId: string, venueIds: string[]) => Promise<any>;
+  castVote: (crewId: string, voteId: string, venueId: string) => Promise<void>;
+  // Alerts
+  registerPushToken: (token: string) => Promise<void>;
+  updateAlertPrefs: (prefs: Partial<AlertPrefs>) => Promise<void>;
+  fetchAlertPrefs: () => Promise<void>;
+  // Onboarding
+  completeOnboarding: () => void;
+  completeMerchantOnboarding: () => void;
+  // Campaigns
+  fetchActiveCampaigns: (city?: string) => Promise<void>;
+  // Demo Mode
+  toggleDemoMode: () => void;
+  completeDemoTutorial: () => void;
+  restartDemoTutorial: () => void;
+  // Avatar & Privacy
+  updateAvatar: (config: { emoji: string; bgColor: string; accentColor: string }) => void;
+  toggleLocationSharing: () => void;
 }
 
 type VibeStore = PersistedState & TransientState & VibeStoreActions;
@@ -146,10 +320,17 @@ export const useVibeStore = create<VibeStore>()(
     (set, get) => ({
       // Persisted state
       user: null,
+      sessionToken: null,
       selectedCity: 'lagos',
       isAuthenticated: false,
       pendingRatings: [],
-      
+      hasSeenOnboarding: false,
+      hasSeenMerchantOnboarding: false,
+      isDemoMode: false,
+      hasSeenDemoTutorial: false,
+      avatarConfig: null,
+      locationSharingEnabled: true,
+
       // Transient state (not persisted)
       venues: [],
       cities: [],
@@ -161,9 +342,32 @@ export const useVibeStore = create<VibeStore>()(
       gpsLocked: false,
       lastRatedVenueId: null,
       hasHydrated: false,
+      lobbyVenues: [],
+      lobbyNudge: null,
+      lobbyLoading: false,
+      streak: null,
+      activeCheckin: null,
+      venueStories: [],
+      venueTimeline: [],
+      timelinePeakHour: null,
+      crew: null,
+      activeVote: null,
+      alertPrefs: null,
+      venueCheckinCount: 0,
+      activeCampaigns: [],
 
       // Hydration tracker
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
+
+      // Auth helper - returns headers with Bearer token for authenticated requests
+      getAuthHeaders: () => {
+        const { sessionToken } = get();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (sessionToken) {
+          headers['Authorization'] = `Bearer ${sessionToken}`;
+        }
+        return headers;
+      },
 
       // Setters
       setUser: (user) => set({ user, isAuthenticated: !!user }),
@@ -210,25 +414,20 @@ export const useVibeStore = create<VibeStore>()(
       // Fetch user from storage (used at app start)
       fetchUser: async () => {
         try {
-          const { user, isAuthenticated } = get();
-          // If already have user from persistence, just refresh from API
-          if (user?.id) {
-            const response = await fetch(`${API_URL}/api/users/${user.id}`);
+          const { sessionToken } = get();
+          // If we have a session token, use it to fetch the authenticated user
+          if (sessionToken) {
+            const response = await fetch(`${API_URL}/api/auth/me`, {
+              headers: { 'Authorization': `Bearer ${sessionToken}` },
+            });
             if (response.ok) {
               const userData = await response.json();
               set({ user: userData, isAuthenticated: true });
+            } else {
+              // Session expired or invalid - clear auth state
+              set({ user: null, sessionToken: null, isAuthenticated: false });
             }
             return;
-          }
-          
-          // Fallback to legacy storage check
-          const storedUserId = await AsyncStorage.getItem('vibe_user_id');
-          if (storedUserId) {
-            const response = await fetch(`${API_URL}/api/users/${storedUserId}`);
-            if (response.ok) {
-              const userData = await response.json();
-              set({ user: userData, isAuthenticated: true });
-            }
           }
         } catch (error) {
           console.error('Error fetching user:', error);
@@ -238,7 +437,13 @@ export const useVibeStore = create<VibeStore>()(
       // Fetch authenticated user via session
       fetchAuthUser: async () => {
         try {
+          const { sessionToken } = get();
+          const headers: Record<string, string> = {};
+          if (sessionToken) {
+            headers['Authorization'] = `Bearer ${sessionToken}`;
+          }
           const response = await fetch(`${API_URL}/api/auth/me`, {
+            headers,
             credentials: 'include',
           });
           if (response.ok) {
@@ -264,9 +469,9 @@ export const useVibeStore = create<VibeStore>()(
           });
 
           if (response.ok) {
-            const user = await response.json();
-            // Store persists automatically via zustand persist
-            set({ user, loading: false, isAuthenticated: true });
+            const data = await response.json();
+            const { session_token, ...user } = data;
+            set({ user, sessionToken: session_token, loading: false, isAuthenticated: true });
             return true;
           }
           set({ loading: false });
@@ -290,9 +495,9 @@ export const useVibeStore = create<VibeStore>()(
           });
 
           if (response.ok) {
-            const user = await response.json();
-            // Store persists automatically via zustand persist
-            set({ user, loading: false, isAuthenticated: true });
+            const data = await response.json();
+            const { session_token, ...user } = data;
+            set({ user, sessionToken: session_token, loading: false, isAuthenticated: true });
             return true;
           }
           set({ loading: false });
@@ -307,15 +512,21 @@ export const useVibeStore = create<VibeStore>()(
       // Logout
       logout: async () => {
         try {
+          const { sessionToken } = get();
+          const headers: Record<string, string> = {};
+          if (sessionToken) {
+            headers['Authorization'] = `Bearer ${sessionToken}`;
+          }
           await fetch(`${API_URL}/api/auth/logout`, {
             method: 'POST',
+            headers,
             credentials: 'include',
           });
         } catch (error) {
           console.error('Error logging out:', error);
         }
-        // Clear persisted state
-        set({ user: null, isAuthenticated: false });
+        // Clear persisted state including session token
+        set({ user: null, sessionToken: null, isAuthenticated: false });
       },
 
       // Fetch cities
@@ -352,6 +563,11 @@ export const useVibeStore = create<VibeStore>()(
 
       // Fetch single venue
       fetchVenue: async (id) => {
+        // Demo mode: return venue from local demo data
+        if (get().isDemoMode) {
+          const demoVenue = get().venues.find((v: any) => v.id === id);
+          return demoVenue || null;
+        }
         try {
           const response = await fetch(`${API_URL}/api/venues/${id}`);
           if (response.ok) {
@@ -366,9 +582,19 @@ export const useVibeStore = create<VibeStore>()(
 
       // Submit a rating
       submitRating: async (venueId, energy, capacity, gate, coordinates, photoBase64) => {
-        const { user, isOnline } = get();
+        const { user, isOnline, isDemoMode } = get();
         if (!user) {
           throw new Error('User not logged in');
+        }
+
+        // Demo mode: simulate successful rating
+        if (isDemoMode) {
+          return {
+            success: true,
+            clout_earned: 15,
+            new_clout_total: (user as any).clout_points + 15,
+            message: 'Demo rating submitted!',
+          };
         }
 
         const ratingData = {
@@ -422,9 +648,13 @@ export const useVibeStore = create<VibeStore>()(
 
       // Get user's rating status for a venue
       getUserRatingStatus: async (venueId) => {
-        const { user } = get();
+        const { user, isDemoMode } = get();
         if (!user) {
           return { can_rate: false, ratings_count: 0 };
+        }
+        // Demo mode: always allow rating
+        if (isDemoMode) {
+          return { can_rate: true, ratings_count: 3, cooldown_remaining: 0 };
         }
 
         try {
@@ -440,6 +670,7 @@ export const useVibeStore = create<VibeStore>()(
 
       // Record direction click for ROI tracking
       recordDirectionClick: async (venueId) => {
+        if (get().isDemoMode) return;
         try {
           await fetch(`${API_URL}/api/venues/${venueId}/direction-click`, {
             method: 'POST',
@@ -480,6 +711,491 @@ export const useVibeStore = create<VibeStore>()(
           }
         } catch (error) {
           console.error('Error syncing ratings:', error);
+        }
+      },
+
+      // Lobby actions
+      fetchLobby: async () => {
+        const { getAuthHeaders, isAuthenticated, isDemoMode } = get();
+
+        // Demo mode: use local mock lobby data
+        if (isDemoMode) {
+          const { DEMO_LOBBY } = require('../data/demoData');
+          set({
+            lobbyVenues: DEMO_LOBBY.venues,
+            lobbyNudge: DEMO_LOBBY.nudge,
+            lobbyLoading: false,
+          });
+          return;
+        }
+
+        if (!isAuthenticated) return;
+        set({ lobbyLoading: true });
+        try {
+          const response = await fetch(`${API_URL}/api/lobby`, {
+            headers: getAuthHeaders(),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            set({
+              lobbyVenues: data.venues || [],
+              lobbyNudge: data.nudge || null,
+              lobbyLoading: false,
+            });
+          } else {
+            set({ lobbyLoading: false });
+          }
+        } catch (error) {
+          console.error('Error fetching lobby:', error);
+          set({ lobbyLoading: false });
+        }
+      },
+
+      addToLobby: async (venueId: string) => {
+        const { getAuthHeaders } = get();
+        try {
+          const response = await fetch(`${API_URL}/api/lobby`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ venue_id: venueId }),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data.added) {
+              get().fetchLobby();
+            }
+            return data.added;
+          }
+          return false;
+        } catch (error) {
+          console.error('Error adding to lobby:', error);
+          return false;
+        }
+      },
+
+      removeFromLobby: async (venueId: string) => {
+        const { getAuthHeaders } = get();
+        try {
+          const response = await fetch(`${API_URL}/api/lobby/${venueId}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+          });
+          if (response.ok) {
+            set((state) => ({
+              lobbyVenues: state.lobbyVenues.filter((v) => v.id !== venueId),
+            }));
+            return true;
+          }
+          return false;
+        } catch (error) {
+          console.error('Error removing from lobby:', error);
+          return false;
+        }
+      },
+
+      isInLobby: (venueId: string) => {
+        return get().lobbyVenues.some((v) => v.id === venueId);
+      },
+
+      // ===== Ghost Check-in Actions =====
+      ghostCheckIn: async (venueId: string, lat: number, lng: number) => {
+        const { getAuthHeaders, isDemoMode, venues } = get();
+        if (isDemoMode) {
+          const venue = venues.find((v: any) => v.id === venueId);
+          const checkin = {
+            user_id: 'demo_user_001',
+            venue_id: venueId,
+            venue_name: venue?.name || 'Demo Venue',
+            status: 'active',
+            created_at: new Date().toISOString(),
+            expires_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
+          };
+          set({ activeCheckin: checkin });
+          return { success: true, checkin };
+        }
+        try {
+          const response = await fetch(`${API_URL}/api/checkins`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ venue_id: venueId, latitude: lat, longitude: lng }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || 'Check-in failed');
+          get().fetchActiveCheckin();
+          return data;
+        } catch (error) {
+          console.error('Error checking in:', error);
+          throw error;
+        }
+      },
+
+      ghostCheckOut: async (venueId: string) => {
+        const { getAuthHeaders, isDemoMode } = get();
+        if (isDemoMode) {
+          set({ activeCheckin: null });
+          return;
+        }
+        try {
+          await fetch(`${API_URL}/api/checkins/${venueId}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+          });
+          set({ activeCheckin: null });
+        } catch (error) {
+          console.error('Error checking out:', error);
+        }
+      },
+
+      fetchActiveCheckin: async () => {
+        const { getAuthHeaders, isAuthenticated, isDemoMode } = get();
+        if (!isAuthenticated) return;
+        if (isDemoMode) {
+          set({ activeCheckin: null });
+          return;
+        }
+        try {
+          const response = await fetch(`${API_URL}/api/checkins/me`, {
+            headers: getAuthHeaders(),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            set({ activeCheckin: data.checkin || null });
+          }
+        } catch (error) {
+          console.error('Error fetching checkin:', error);
+        }
+      },
+
+      fetchVenueCheckins: async (venueId: string) => {
+        if (get().isDemoMode) {
+          set({ venueCheckinCount: Math.floor(Math.random() * 30) + 5 });
+          return;
+        }
+        try {
+          const response = await fetch(`${API_URL}/api/checkins/venue/${venueId}`);
+          if (response.ok) {
+            const data = await response.json();
+            set({ venueCheckinCount: data.active_count || 0 });
+          }
+        } catch (error) {
+          console.error('Error fetching venue checkins:', error);
+        }
+      },
+
+      // ===== Streak Actions =====
+      fetchStreak: async () => {
+        const { getAuthHeaders, isAuthenticated } = get();
+        if (!isAuthenticated) return;
+        try {
+          const response = await fetch(`${API_URL}/api/streaks/me`, {
+            headers: getAuthHeaders(),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            set({ streak: data });
+          }
+        } catch (error) {
+          console.error('Error fetching streak:', error);
+        }
+      },
+
+      // ===== Story Actions =====
+      fetchStories: async (venueId: string) => {
+        if (get().isDemoMode) {
+          const { DEMO_STORIES } = require('../data/demoData');
+          const stories = DEMO_STORIES.filter((s: any) => s.venue_id === venueId);
+          set({ venueStories: stories });
+          return;
+        }
+        try {
+          const response = await fetch(`${API_URL}/api/stories/venue/${venueId}`);
+          if (response.ok) {
+            const data = await response.json();
+            set({ venueStories: data.stories || [] });
+          }
+        } catch (error) {
+          console.error('Error fetching stories:', error);
+        }
+      },
+
+      postStory: async (venueId: string, mediaUrl: string, caption: string, lat: number, lng: number) => {
+        const { getAuthHeaders } = get();
+        try {
+          const response = await fetch(`${API_URL}/api/stories`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              venue_id: venueId,
+              media_url: mediaUrl,
+              caption,
+              latitude: lat,
+              longitude: lng,
+            }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || 'Failed to post story');
+          return data;
+        } catch (error) {
+          console.error('Error posting story:', error);
+          throw error;
+        }
+      },
+
+      viewStory: async (storyId: string) => {
+        const { getAuthHeaders } = get();
+        try {
+          await fetch(`${API_URL}/api/stories/${storyId}/view`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+          });
+        } catch (error) {
+          console.error('Error viewing story:', error);
+        }
+      },
+
+      // ===== Timeline Actions =====
+      fetchTimeline: async (venueId: string) => {
+        if (get().isDemoMode) {
+          // Generate realistic hourly timeline for demo
+          const hours = ['6PM', '7PM', '8PM', '9PM', '10PM', '11PM', '12AM', '1AM', '2AM'];
+          const scores = [25, 38, 52, 68, 82, 91, 88, 75, 45];
+          const energies = ['chill', 'chill', 'popping', 'popping', 'electric', 'electric', 'electric', 'popping', 'chill'];
+          set({
+            venueTimeline: hours.map((hour, i) => ({
+              hour,
+              hour_label: hour,
+              avg_vibe_score: scores[i],
+              peak_score: scores[i] + 5,
+              energy_level: energies[i],
+              rating_count: Math.floor(Math.random() * 15) + 3,
+              checkin_count: Math.floor(Math.random() * 20) + 2,
+            })),
+            timelinePeakHour: '11PM',
+          });
+          return;
+        }
+        try {
+          const response = await fetch(`${API_URL}/api/timeline/${venueId}`);
+          if (response.ok) {
+            const data = await response.json();
+            set({
+              venueTimeline: data.timeline || [],
+              timelinePeakHour: data.peak_hour || null,
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching timeline:', error);
+        }
+      },
+
+      // ===== Crew Actions =====
+      createCrew: async (name: string) => {
+        const { getAuthHeaders } = get();
+        try {
+          const response = await fetch(`${API_URL}/api/crews`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ name }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || 'Failed to create crew');
+          get().fetchCrew();
+          return data;
+        } catch (error) {
+          console.error('Error creating crew:', error);
+          throw error;
+        }
+      },
+
+      joinCrew: async (inviteCode: string) => {
+        const { getAuthHeaders } = get();
+        try {
+          const response = await fetch(`${API_URL}/api/crews/join`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ invite_code: inviteCode }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || 'Failed to join crew');
+          get().fetchCrew();
+          return data;
+        } catch (error) {
+          console.error('Error joining crew:', error);
+          throw error;
+        }
+      },
+
+      fetchCrew: async () => {
+        const { getAuthHeaders, isAuthenticated } = get();
+        if (!isAuthenticated) return;
+        try {
+          const response = await fetch(`${API_URL}/api/crews/me`, {
+            headers: getAuthHeaders(),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            set({
+              crew: data.crew || null,
+              activeVote: data.crew?.active_vote || null,
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching crew:', error);
+        }
+      },
+
+      leaveCrew: async (crewId: string) => {
+        const { getAuthHeaders } = get();
+        try {
+          await fetch(`${API_URL}/api/crews/${crewId}/leave`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+          });
+          set({ crew: null, activeVote: null });
+        } catch (error) {
+          console.error('Error leaving crew:', error);
+        }
+      },
+
+      startVote: async (crewId: string, venueIds: string[]) => {
+        const { getAuthHeaders } = get();
+        try {
+          const response = await fetch(`${API_URL}/api/crews/${crewId}/vote`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ venue_ids: venueIds }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || 'Failed to start vote');
+          get().fetchCrew();
+          return data;
+        } catch (error) {
+          console.error('Error starting vote:', error);
+          throw error;
+        }
+      },
+
+      castVote: async (crewId: string, voteId: string, venueId: string) => {
+        const { getAuthHeaders } = get();
+        try {
+          const response = await fetch(`${API_URL}/api/crews/${crewId}/vote/${voteId}/cast`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ venue_id: venueId }),
+          });
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.detail || 'Failed to cast vote');
+          }
+          get().fetchCrew();
+        } catch (error) {
+          console.error('Error casting vote:', error);
+          throw error;
+        }
+      },
+
+      // ===== Alert Actions =====
+      registerPushToken: async (token: string) => {
+        const { getAuthHeaders, isAuthenticated } = get();
+        if (!isAuthenticated) return;
+        try {
+          await fetch(`${API_URL}/api/alerts/register`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ expo_push_token: token }),
+          });
+        } catch (error) {
+          console.error('Error registering push token:', error);
+        }
+      },
+
+      updateAlertPrefs: async (prefs: Partial<AlertPrefs>) => {
+        const { getAuthHeaders, alertPrefs } = get();
+        const merged = { ...alertPrefs, ...prefs };
+        try {
+          await fetch(`${API_URL}/api/alerts/preferences`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(merged),
+          });
+          set({ alertPrefs: merged as AlertPrefs });
+        } catch (error) {
+          console.error('Error updating alert prefs:', error);
+        }
+      },
+
+      fetchAlertPrefs: async () => {
+        const { getAuthHeaders, isAuthenticated } = get();
+        if (!isAuthenticated) return;
+        try {
+          const response = await fetch(`${API_URL}/api/alerts/preferences`, {
+            headers: getAuthHeaders(),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            set({ alertPrefs: data });
+          }
+        } catch (error) {
+          console.error('Error fetching alert prefs:', error);
+        }
+      },
+
+      // ===== Onboarding =====
+      completeOnboarding: () => set({ hasSeenOnboarding: true }),
+      completeMerchantOnboarding: () => set({ hasSeenMerchantOnboarding: true }),
+
+      // ===== Demo Mode =====
+      toggleDemoMode: () => {
+        const { isDemoMode, user, sessionToken } = get();
+        if (!isDemoMode) {
+          // Entering demo mode - save real user, set demo user
+          set({
+            isDemoMode: true,
+            user: DEMO_USER as any,
+            isAuthenticated: true,
+            venues: DEMO_VENUES as any[],
+            streak: DEMO_STREAK as any,
+            crew: DEMO_CREW as any,
+            activeCampaigns: DEMO_ACTIVE_CAMPAIGNS as any[],
+          });
+        } else {
+          // Exiting demo mode - clear demo data
+          set({
+            isDemoMode: false,
+            user: null,
+            sessionToken: null,
+            isAuthenticated: false,
+            venues: [],
+            streak: null,
+            crew: null,
+            activeCampaigns: [],
+          });
+        }
+      },
+
+      // ===== Demo Tutorial =====
+      completeDemoTutorial: () => set({ hasSeenDemoTutorial: true }),
+      restartDemoTutorial: () => set({ hasSeenDemoTutorial: false }),
+
+      // ===== Avatar & Privacy =====
+      updateAvatar: (config) => {
+        set({ avatarConfig: config });
+      },
+      toggleLocationSharing: () => {
+        set({ locationSharingEnabled: !get().locationSharingEnabled });
+      },
+
+      // ===== Campaign Actions =====
+      fetchActiveCampaigns: async (city?: string) => {
+        const cityParam = city || get().selectedCity;
+        try {
+          const response = await fetch(`${API_URL}/api/campaigns/active?city=${cityParam}`);
+          if (response.ok) {
+            const data = await response.json();
+            set({ activeCampaigns: data.campaigns || [] });
+          }
+        } catch (error) {
+          console.error('Error fetching campaigns:', error);
         }
       },
 
@@ -533,9 +1249,16 @@ export const useVibeStore = create<VibeStore>()(
       // Only persist these specific fields
       partialize: (state) => ({
         user: state.user,
+        sessionToken: state.sessionToken,
         selectedCity: state.selectedCity,
         isAuthenticated: state.isAuthenticated,
         pendingRatings: state.pendingRatings,
+        hasSeenOnboarding: state.hasSeenOnboarding,
+        hasSeenMerchantOnboarding: state.hasSeenMerchantOnboarding,
+        isDemoMode: state.isDemoMode,
+        hasSeenDemoTutorial: state.hasSeenDemoTutorial,
+        avatarConfig: state.avatarConfig,
+        locationSharingEnabled: state.locationSharingEnabled,
       }),
       onRehydrateStorage: () => (state) => {
         // Called when store is rehydrated from storage
@@ -550,3 +1273,21 @@ export const useVibeStore = create<VibeStore>()(
     }
   )
 );
+
+// ===== NIGHT PHASE DETECTION =====
+export type NightPhase = 'planning' | 'locked_in' | 'recap';
+
+/**
+ * Derives the current night phase from store state.
+ * - 'locked_in': user has an active check-in
+ * - 'planning': evening hours (6PM-4AM) with no check-in
+ * - 'recap': daytime / morning after
+ * In demo mode, always returns 'planning' unless checked in.
+ */
+export function getNightPhase(activeCheckin: ActiveCheckin | null, isDemoMode: boolean): NightPhase {
+  if (activeCheckin) return 'locked_in';
+  const hour = new Date().getHours();
+  if (hour >= 18 || hour < 4) return 'planning';
+  if (isDemoMode) return 'planning';
+  return 'recap';
+}

@@ -23,7 +23,7 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function MerchantWallet() {
   const router = useRouter();
-  const { user } = useVibeStore();
+  const { user, getAuthHeaders } = useVibeStore();
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -33,7 +33,7 @@ export default function MerchantWallet() {
     try {
       const response = await fetch(
         `${API_URL}/api/merchant/venue/${user.merchant_venue_id}/stats`,
-        { headers: { 'X-User-Id': user.id } }
+        { headers: getAuthHeaders() }
       );
       if (response.ok) {
         const data = await response.json();

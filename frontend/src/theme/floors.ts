@@ -44,6 +44,9 @@ export const publicTheme = {
     primary: ['#FF3366', '#FF6B35'],
     card: ['#1A1A28', '#151520'],
     vibe: ['#FF3366', '#FF6B35', '#FFD700'],
+    tabBarGlow: '#FF3366',
+    glass: 'rgba(255, 51, 102, 0.06)',
+    glassBorder: 'rgba(255, 51, 102, 0.12)',
   },
 };
 
@@ -85,6 +88,9 @@ export const merchantTheme = {
     primary: ['#D4AF37', '#C9A227'],
     card: ['#1C1C26', '#16161D'],
     profit: ['#00E676', '#4CAF50'],
+    tabBarGlow: '#D4AF37',
+    glass: 'rgba(212, 175, 55, 0.06)',
+    glassBorder: 'rgba(212, 175, 55, 0.12)',
   },
 };
 
@@ -127,6 +133,9 @@ export const adminTheme = {
     primary: ['#4169E1', '#6C8EBF'],
     card: ['#1A222C', '#12181F'],
     royal: ['#4169E1', '#00BFFF'],
+    tabBarGlow: '#4169E1',
+    glass: 'rgba(65, 105, 225, 0.06)',
+    glassBorder: 'rgba(65, 105, 225, 0.12)',
   },
 };
 

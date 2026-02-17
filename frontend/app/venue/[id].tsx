@@ -16,11 +16,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
+import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVibeStore } from '../../src/store/vibeStore';
+import { calculateDistance } from '../../src/utils/geo';
 import RateVibeModal from '../../src/components/RateVibeModal';
 import VibeSuccessAnimation from '../../src/components/VibeSuccessAnimation';
+import StoryBubble from '../../src/components/StoryBubble';
+import StoryViewer from '../../src/components/StoryViewer';
+import VibeTimeline from '../../src/components/VibeTimeline';
+import VibeForecast from '../../src/components/VibeForecast';
+import CampaignBadge from '../../src/components/CampaignBadge';
+import CheckInCelebration from '../../src/components/CheckInCelebration';
+import CertifiedBadge from '../../src/components/CertifiedBadge';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -34,17 +43,33 @@ const CLUB_PLACEHOLDERS = [
 ];
 
 export default function VenueDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, openRateModal } = useLocalSearchParams<{ id: string; openRateModal?: string }>();
   const router = useRouter();
-  const { 
-    fetchVenue, 
-    getUserRatingStatus, 
-    user, 
-    recordDirectionClick, 
-    gpsLocked, 
+  const {
+    fetchVenue,
+    getUserRatingStatus,
+    user,
+    recordDirectionClick,
+    gpsLocked,
     setGpsLocked,
     setLastRatedVenueId,
     updateUserClout,
+    addToLobby,
+    removeFromLobby,
+    isInLobby,
+    isAuthenticated,
+    ghostCheckIn,
+    ghostCheckOut,
+    fetchActiveCheckin,
+    fetchVenueCheckins,
+    fetchStories,
+    fetchTimeline,
+    activeCheckin,
+    venueStories,
+    venueTimeline,
+    timelinePeakHour,
+    venueCheckinCount,
+    isDemoMode,
   } = useVibeStore();
   const [venue, setVenue] = useState<any>(null);
   const [ratingStatus, setRatingStatus] = useState<any>(null);
@@ -57,7 +82,12 @@ export default function VenueDetailScreen() {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [lastCloutEarned, setLastCloutEarned] = useState(10);
   const [lastHadPhoto, setLastHadPhoto] = useState(false);
-  
+  const [inLobby, setInLobby] = useState(false);
+  const [showStoryViewer, setShowStoryViewer] = useState(false);
+  const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
+  const [checkinLoading, setCheckinLoading] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -67,7 +97,14 @@ export default function VenueDetailScreen() {
   useEffect(() => {
     loadVenueData();
     checkUserLocation();
-    
+    if (id) {
+      setInLobby(isInLobby(id));
+      fetchStories(id);
+      fetchVenueCheckins(id);
+      fetchTimeline(id);
+    }
+    if (isAuthenticated) fetchActiveCheckin();
+
     // Slide in animation
     Animated.spring(slideAnim, {
       toValue: 0,
@@ -76,6 +113,42 @@ export default function VenueDetailScreen() {
       useNativeDriver: true,
     }).start();
   }, [id]);
+
+  // Auto-open rate modal when navigated with ?openRateModal=true
+  useEffect(() => {
+    const canOpen = openRateModal === 'true' && venue && ratingStatus?.can_rate;
+    if (canOpen && (isWithinGeofence || isDemoMode)) {
+      setShowRateModal(true);
+    }
+  }, [openRateModal, venue, isWithinGeofence, ratingStatus, isDemoMode]);
+
+  const handleToggleLobby = async () => {
+    if (!isAuthenticated || !id) return;
+    if (inLobby) {
+      const removed = await removeFromLobby(id);
+      if (removed) setInLobby(false);
+    } else {
+      const added = await addToLobby(id);
+      if (added) setInLobby(true);
+    }
+  };
+
+  const handleGhostCheckin = async () => {
+    if (!user || !venue || !userLocation || !isWithinGeofence) return;
+    setCheckinLoading(true);
+    try {
+      if (activeCheckin && activeCheckin.venue_id === venue.id) {
+        await ghostCheckOut(venue.id);
+      } else {
+        await ghostCheckIn(venue.id, userLocation.lat, userLocation.lng);
+        setShowCelebration(true);
+      }
+      fetchVenueCheckins(venue.id);
+    } catch (e) {
+      // silently fail
+    }
+    setCheckinLoading(false);
+  };
 
   useEffect(() => {
     if (isWithinGeofence) {
@@ -116,6 +189,14 @@ export default function VenueDetailScreen() {
   };
 
   const checkUserLocation = async () => {
+    // Demo mode: bypass GPS, always in geofence
+    if (isDemoMode) {
+      setIsWithinGeofence(true);
+      setGpsLocked(true);
+      setUserLocation({ lat: 6.4316, lng: 3.4223 });
+      return;
+    }
+
     setCheckingLocation(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -127,7 +208,7 @@ export default function VenueDetailScreen() {
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
-      
+
       const coords = {
         lat: location.coords.latitude,
         lng: location.coords.longitude,
@@ -139,7 +220,8 @@ export default function VenueDetailScreen() {
           coords.lat, coords.lng,
           venue.coordinates.lat, venue.coordinates.lng
         );
-        const within = distance <= 50;
+        const venueRadius = venue.geofence_radius_m || 100;
+        const within = distance <= venueRadius;
         setIsWithinGeofence(within);
         setGpsLocked(within);
       }
@@ -147,19 +229,6 @@ export default function VenueDetailScreen() {
       console.error('Error getting location:', error);
     }
     setCheckingLocation(false);
-  };
-
-  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
-    const R = 6371000;
-    const phi1 = (lat1 * Math.PI) / 180;
-    const phi2 = (lat2 * Math.PI) / 180;
-    const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
-    const deltaLambda = ((lng2 - lng1) * Math.PI) / 180;
-    const a =
-      Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-      Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
   };
 
   const handleGetDirections = () => {
@@ -338,6 +407,9 @@ export default function VenueDetailScreen() {
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle} numberOfLines={1}>{venue.name}</Text>
           <View style={styles.headerBadges}>
+            {venue.vibe_certified && (
+              <CertifiedBadge compact />
+            )}
             {venue.is_verified && (
               <View style={styles.verifiedBadge}>
                 <Ionicons name="checkmark-circle" size={12} color="#4CAF50" />
@@ -350,6 +422,15 @@ export default function VenueDetailScreen() {
             )}
           </View>
         </View>
+        {isAuthenticated && (
+          <TouchableOpacity style={styles.lobbyButton} onPress={handleToggleLobby}>
+            <Ionicons
+              name={inLobby ? 'bookmark' : 'bookmark-outline'}
+              size={22}
+              color={inLobby ? '#FF3366' : '#888'}
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView 
@@ -390,6 +471,36 @@ export default function VenueDetailScreen() {
             )}
           </View>
         </Animated.View>
+
+        {/* ====== STORY BUBBLES + CROWD COUNT ====== */}
+        {(venueStories.length > 0 || venueCheckinCount > 0) && (
+          <View style={styles.storyRow}>
+            {venueStories.length > 0 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.storyScroll}
+              >
+                {venueStories.map((story, i) => (
+                  <StoryBubble
+                    key={story.id}
+                    username={story.username}
+                    onPress={() => {
+                      setSelectedStoryIndex(i);
+                      setShowStoryViewer(true);
+                    }}
+                  />
+                ))}
+              </ScrollView>
+            )}
+            {venueCheckinCount > 0 && (
+              <View style={styles.crowdBadge}>
+                <Ionicons name="people" size={14} color="#00E676" />
+                <Text style={styles.crowdText}>{venueCheckinCount} here now</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* ====== GLASSMORPHISM VENUE PULSE CARD ====== */}
         <View style={styles.glassCardContainer}>
@@ -483,6 +594,35 @@ export default function VenueDetailScreen() {
           </BlurView>
         </View>
 
+        {/* ====== VIBE TIMELINE ====== */}
+        {venueTimeline.length > 0 && (
+          <VibeTimeline timeline={venueTimeline} peakHour={timelinePeakHour} />
+        )}
+
+        {/* ====== CAMPAIGN BADGE ====== */}
+        {venue.active_campaign_multiplier && (
+          <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+            <CampaignBadge
+              multiplier={venue.active_campaign_multiplier}
+              expiresAt={venue.active_campaign_expires}
+            />
+          </View>
+        )}
+
+        {/* ====== VIBE CERTIFICATION ====== */}
+        {venue.vibe_certified && (
+          <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+            <CertifiedBadge score={venue.certification_score} />
+          </View>
+        )}
+
+        {/* ====== VIBE FORECAST ====== */}
+        {id && (
+          <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+            <VibeForecast venueId={id} />
+          </View>
+        )}
+
         {/* Location Card */}
         <View style={styles.locationCard}>
           <View style={styles.locationInfo}>
@@ -536,7 +676,7 @@ export default function VenueDetailScreen() {
               <Text style={styles.gpsSubtitle}>
                 {isWithinGeofence 
                   ? "You're at the venue" 
-                  : "Must be within 50m to rate"}
+                  : `Must be within ${venue?.geofence_radius_m || 100}m to rate`}
               </Text>
             </View>
             {checkingLocation && <ActivityIndicator size="small" color="#FF3366" />}
@@ -578,58 +718,98 @@ export default function VenueDetailScreen() {
           </Animated.View>
         )}
 
-        {/* RATE BUTTON with Geofence Enforcement */}
-        <TouchableOpacity
-          style={[
-            styles.rateButton,
-            (!user || !isWithinGeofence || !ratingStatus?.can_rate) && styles.rateButtonDisabled,
-          ]}
-          onPress={() => {
-            if (!user) {
-              router.push('/profile');
-            } else if (!isWithinGeofence) {
-              showTooltip();
-              checkUserLocation();
-            } else if (ratingStatus?.can_rate) {
-              setShowRateModal(true);
-            }
-          }}
-        >
-          <LinearGradient
-            colors={(!user || !isWithinGeofence || !ratingStatus?.can_rate) 
-              ? ['#333', '#222'] 
-              : ['#FF3366', '#FF6B35']}
-            style={styles.rateButtonGradient}
-          >
-            <Ionicons
-              name={!user ? 'person' : !isWithinGeofence ? 'location-outline' : 'star'}
-              size={24}
-              color="#FFF"
-            />
-            <Text style={styles.rateButtonText}>
-              {!user
-                ? 'Sign in to Rate'
-                : !isWithinGeofence
-                ? 'Get Closer to Rate'
-                : ratingStatus?.can_rate
-                ? 'Rate the Vibe'
-                : 'Limit Reached'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        {/* Geofence Warning when disabled */}
+        {/* Geofence Warning inline */}
         {user && !isWithinGeofence && (
           <View style={styles.geofenceWarning}>
             <Ionicons name="information-circle" size={16} color="#888" />
             <Text style={styles.geofenceWarningText}>
-              You must be within 50m of the venue to submit a rating
+              You must be within {venue?.geofence_radius_m || 100}m of the venue to submit a rating
             </Text>
           </View>
         )}
 
+        {/* Ghost Check-in "I'm Here" Button */}
+        {user && isWithinGeofence && (
+          <TouchableOpacity
+            style={[
+              styles.ghostCheckinButton,
+              activeCheckin?.venue_id === venue?.id && styles.ghostCheckinActive,
+            ]}
+            onPress={handleGhostCheckin}
+            disabled={checkinLoading}
+          >
+            <Ionicons
+              name={activeCheckin?.venue_id === venue?.id ? 'radio-button-on' : 'radio-button-off'}
+              size={20}
+              color={activeCheckin?.venue_id === venue?.id ? '#00E676' : '#888'}
+            />
+            <Text style={[
+              styles.ghostCheckinText,
+              activeCheckin?.venue_id === venue?.id && { color: '#00E676' },
+            ]}>
+              {checkinLoading
+                ? 'Updating...'
+                : activeCheckin?.venue_id === venue?.id
+                ? "You're Here"
+                : "I'm Here (Ghost Check-in)"}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <View style={{ height: 120 }} />
       </ScrollView>
+
+      {/* ═══ Sticky Rate Footer ═══ */}
+      <View style={styles.stickyRateFooter}>
+        <BlurView intensity={30} tint="dark" style={styles.stickyBlur}>
+          <LinearGradient
+            colors={['rgba(15,15,25,0.92)', 'rgba(10,10,18,0.98)']}
+            style={styles.stickyGradient}
+          >
+            <TouchableOpacity
+              style={styles.stickyRateBtn}
+              activeOpacity={0.8}
+              onPress={() => {
+                if (!user) {
+                  router.push('/profile');
+                } else if (!isWithinGeofence) {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                  checkUserLocation();
+                } else if (ratingStatus?.can_rate) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setShowRateModal(true);
+                }
+              }}
+            >
+              <LinearGradient
+                colors={
+                  user && isWithinGeofence && ratingStatus?.can_rate
+                    ? ['#FF3366', '#FF6B35']
+                    : ['#2A2A3E', '#1A1A2E']
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.stickyRateGradient}
+              >
+                <Ionicons
+                  name={!user ? 'person' : !isWithinGeofence ? 'location-outline' : 'star'}
+                  size={20}
+                  color="#FFF"
+                />
+                <Text style={styles.stickyRateText}>
+                  {!user
+                    ? 'Sign in to Rate'
+                    : !isWithinGeofence
+                    ? 'Get Closer to Rate'
+                    : ratingStatus?.can_rate
+                    ? 'Rate the Vibe'
+                    : 'Limit Reached'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </LinearGradient>
+        </BlurView>
+      </View>
 
       {/* Rate Vibe Modal */}
       <RateVibeModal
@@ -638,7 +818,27 @@ export default function VenueDetailScreen() {
         onSubmit={handleSubmitRating}
         venueName={venue?.name || ''}
         isGpsVerified={isWithinGeofence}
+        geofenceRadius={venue?.geofence_radius_m || 100}
       />
+
+      {/* Story Viewer Modal */}
+      {venueStories.length > 0 && (
+        <StoryViewer
+          visible={showStoryViewer}
+          stories={venueStories.map(s => ({
+            id: s.id,
+            username: s.username,
+            scout_status: s.scout_status || 'regular',
+            media_url: s.media_url || '',
+            caption: s.caption || '',
+            views: s.views || 0,
+            created_at: s.created_at,
+            venue_name: venue?.name || '',
+          }))}
+          initialIndex={selectedStoryIndex}
+          onClose={() => setShowStoryViewer(false)}
+        />
+      )}
 
       {/* Success Animation */}
       <VibeSuccessAnimation
@@ -647,6 +847,14 @@ export default function VenueDetailScreen() {
         hasPhoto={lastHadPhoto}
         venueName={venue?.name || ''}
         onComplete={handleSuccessAnimationComplete}
+      />
+
+      {/* Check-in Celebration Overlay */}
+      <CheckInCelebration
+        visible={showCelebration}
+        cloutEarned={20}
+        emoji={'\u{1F525}'}
+        onComplete={() => setShowCelebration(false)}
       />
     </SafeAreaView>
   );
@@ -731,6 +939,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFD70030',
     padding: 4,
     borderRadius: 6,
+  },
+  lobbyButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1A1A25',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollView: {
     flex: 1,
@@ -1077,5 +1293,95 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     textAlign: 'center',
+  },
+
+  // ====== STICKY RATE FOOTER ======
+  stickyRateFooter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    overflow: 'hidden',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+  },
+  stickyBlur: {
+    overflow: 'hidden',
+  },
+  stickyGradient: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 16,
+  },
+  stickyRateBtn: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  stickyRateGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 10,
+    borderRadius: 16,
+  },
+  stickyRateText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFF',
+    letterSpacing: 0.3,
+  },
+
+  // ====== STORY BUBBLES + CROWD ======
+  storyRow: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  storyScroll: {
+    gap: 12,
+    paddingRight: 12,
+    flex: 1,
+  },
+  crowdBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#00E67615',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+  },
+  crowdText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#00E676',
+  },
+
+  // ====== GHOST CHECK-IN ======
+  ghostCheckinButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: '#1A1A25',
+    borderWidth: 1,
+    borderColor: '#333',
+    borderStyle: 'dashed',
+    gap: 8,
+  },
+  ghostCheckinActive: {
+    borderColor: '#00E67640',
+    backgroundColor: '#00E67610',
+    borderStyle: 'solid',
+  },
+  ghostCheckinText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#888',
   },
 });
