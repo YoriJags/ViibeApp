@@ -737,3 +737,40 @@ export const DEMO_CATEGORY_TRENDING = {
     { rank: 1, name: 'Burna Boy Live Concert', score: 91, trend: 'up' as const },
   ],
 };
+
+// Demo crew locations for CartelRadarMap
+export const DEMO_CREW_LOCATIONS = [
+  {
+    user_id: 'demo_crew_1',
+    username: 'Tunde_V',
+    venue_name: 'Quilox Nightclub',
+    venue_id: 'demo_venue_quilox',
+    lat: 6.4281,
+    lng: 3.4219,
+    avatar_config: { emoji: '🔥', bgColor: '#FF3366', accentColor: '#FF6B35' },
+    checked_in_at: new Date().toISOString(),
+    is_out: true,
+  },
+  {
+    user_id: 'demo_crew_2',
+    username: 'AdeVibe',
+    venue_name: 'Hard Rock Cafe',
+    venue_id: 'demo_venue_hardrock',
+    lat: 6.4301,
+    lng: 3.4245,
+    avatar_config: { emoji: '💎', bgColor: '#7C3AED', accentColor: '#A855F7' },
+    checked_in_at: new Date().toISOString(),
+    is_out: true,
+  },
+  {
+    user_id: 'demo_crew_3',
+    username: 'Zara_Scout',
+    venue_name: 'Escape Nightclub',
+    venue_id: 'demo_venue_escape',
+    lat: 6.4265,
+    lng: 3.4198,
+    avatar_config: { emoji: '⚡', bgColor: '#059669', accentColor: '#34D399' },
+    checked_in_at: new Date().toISOString(),
+    is_out: true,
+  },
+];

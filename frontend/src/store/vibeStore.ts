@@ -144,6 +144,18 @@ interface Crew {
   active_vote: CrewVote | null;
 }
 
+interface CrewMemberLocation {
+  user_id: string;
+  username: string;
+  venue_name: string;
+  venue_id: string;
+  lat: number;
+  lng: number;
+  avatar_config?: { emoji: string; bgColor: string; accentColor: string } | null;
+  checked_in_at?: string;
+  is_out: boolean;
+}
+
 interface CrewVote {
   id: string;
   crew_id: string;
@@ -233,6 +245,8 @@ interface TransientState {
   alertPrefs: AlertPrefs | null;
   venueCheckinCount: number;
   activeCampaigns: ActiveCampaign[];
+  crewLocations: CrewMemberLocation[];
+  ghostMode: boolean;
 }
 
 interface VibeStoreActions {
@@ -311,6 +325,11 @@ interface VibeStoreActions {
   // Avatar & Privacy
   updateAvatar: (config: { emoji: string; bgColor: string; accentColor: string }) => void;
   toggleLocationSharing: () => void;
+  // Cooldown
+  cooldownSkip: (venueId: string, method: 'clout' | 'payment') => Promise<{ success: boolean; clout_remaining?: number; error?: string }>;
+  // Crew Tracker
+  fetchCrewLocations: (crewId: string) => Promise<void>;
+  toggleGhostMode: () => void;
 }
 
 type VibeStore = PersistedState & TransientState & VibeStoreActions;
@@ -355,6 +374,8 @@ export const useVibeStore = create<VibeStore>()(
       alertPrefs: null,
       venueCheckinCount: 0,
       activeCampaigns: [],
+      crewLocations: [],
+      ghostMode: false,
 
       // Hydration tracker
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
@@ -650,21 +671,47 @@ export const useVibeStore = create<VibeStore>()(
       getUserRatingStatus: async (venueId) => {
         const { user, isDemoMode } = get();
         if (!user) {
-          return { can_rate: false, ratings_count: 0 };
+          return { can_rate: false, ratings_count: 0, cooldown_remaining_seconds: 0 };
         }
         // Demo mode: always allow rating
         if (isDemoMode) {
-          return { can_rate: true, ratings_count: 3, cooldown_remaining: 0 };
+          return { can_rate: true, ratings_count: 3, cooldown_remaining_seconds: 0 };
         }
 
         try {
           const response = await fetch(
-            `${API_URL}/api/ratings/user/${user.id}/venue/${venueId}`
+            `${API_URL}/api/ratings/status/${user.id}/${venueId}`
           );
           return await response.json();
         } catch (error) {
           console.error('Error getting rating status:', error);
-          return { can_rate: false, ratings_count: 0 };
+          return { can_rate: true, ratings_count: 0, cooldown_remaining_seconds: 0 };
+        }
+      },
+
+      // Skip rating cooldown (spend Clout or pay)
+      cooldownSkip: async (venueId, method) => {
+        const { user, getAuthHeaders, isDemoMode } = get();
+        if (!user) return { success: false, error: 'Not authenticated' };
+        if (isDemoMode) return { success: true, clout_remaining: user.clout_points };
+        try {
+          const response = await fetch(`${API_URL}/api/ratings/skip-cooldown`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ user_id: user.id, venue_id: venueId, method }),
+          });
+          const data = await response.json();
+          if (!response.ok) return { success: false, error: data.detail };
+          // Update local clout if method was clout
+          if (method === 'clout' && data.clout_remaining !== undefined) {
+            set((state) => ({
+              user: state.user ? { ...state.user, clout_points: data.clout_remaining } : state.user,
+            }));
+          }
+          return { success: true, clout_remaining: data.clout_remaining };
+        } catch (error) {
+          console.error('Error skipping cooldown:', error);
+          return { success: false, error: 'Network error' };
         }
       },
 
@@ -817,7 +864,7 @@ export const useVibeStore = create<VibeStore>()(
           const response = await fetch(`${API_URL}/api/checkins`, {
             method: 'POST',
             headers: getAuthHeaders(),
-            body: JSON.stringify({ venue_id: venueId, latitude: lat, longitude: lng }),
+            body: JSON.stringify({ venue_id: venueId, lat, lng, latitude: lat, longitude: lng }),
           });
           const data = await response.json();
           if (!response.ok) throw new Error(data.detail || 'Check-in failed');
@@ -881,6 +928,29 @@ export const useVibeStore = create<VibeStore>()(
           console.error('Error fetching venue checkins:', error);
         }
       },
+
+      // ===== Crew Location Tracker =====
+      fetchCrewLocations: async (crewId: string) => {
+        const { getAuthHeaders, isDemoMode } = get();
+        if (isDemoMode) {
+          const { DEMO_CREW_LOCATIONS } = require('../data/demoData');
+          set({ crewLocations: DEMO_CREW_LOCATIONS });
+          return;
+        }
+        try {
+          const response = await fetch(`${API_URL}/api/crews/${crewId}/locations`, {
+            headers: getAuthHeaders(),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            set({ crewLocations: Array.isArray(data) ? data : [] });
+          }
+        } catch (error) {
+          console.error('Error fetching crew locations:', error);
+        }
+      },
+
+      toggleGhostMode: () => set((state) => ({ ghostMode: !state.ghostMode })),
 
       // ===== Streak Actions =====
       fetchStreak: async () => {

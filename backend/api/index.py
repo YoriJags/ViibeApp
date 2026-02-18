@@ -276,6 +276,84 @@ def handle_auth_logout(headers):
             db.user_sessions.delete_one({"session_token": token})
     return 200, {"message": "Logged out"}
 
+RATING_COOLDOWN_SECONDS = 1800  # 30 minutes
+RATING_COOLDOWN_CLOUT_COST = 50
+MAX_RATINGS_PER_VENUE_PER_DAY = 3
+
+def handle_get_rating_status(user_id, venue_id):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    now = datetime.now(timezone.utc)
+    day_ago = now - timedelta(hours=24)
+    recent = list(db.ratings.find(
+        {"user_id": user_id, "venue_id": venue_id, "timestamp": {"$gte": day_ago}},
+        {"_id": 0, "timestamp": 1}
+    ).sort("timestamp", -1).limit(MAX_RATINGS_PER_VENUE_PER_DAY))
+
+    ratings_today = len(recent)
+    if ratings_today == 0:
+        return 200, {"can_rate": True, "cooldown_remaining_seconds": 0, "ratings_today": 0}
+
+    # Check if a cooldown skip was used after the last rating
+    last_ts = recent[0]["timestamp"]
+    if isinstance(last_ts, str):
+        last_ts = datetime.fromisoformat(last_ts)
+    if last_ts.tzinfo is None:
+        last_ts = last_ts.replace(tzinfo=timezone.utc)
+
+    skip = db.cooldown_skips.find_one(
+        {"user_id": user_id, "venue_id": venue_id, "skipped_at": {"$gte": last_ts}},
+        {"_id": 0}
+    )
+    elapsed = (now - last_ts).total_seconds()
+    cooldown_remaining = max(0, RATING_COOLDOWN_SECONDS - elapsed)
+
+    if skip or cooldown_remaining == 0:
+        can_rate = ratings_today < MAX_RATINGS_PER_VENUE_PER_DAY
+        return 200, {"can_rate": can_rate, "cooldown_remaining_seconds": 0, "ratings_today": ratings_today}
+
+    return 200, {
+        "can_rate": False,
+        "cooldown_remaining_seconds": int(cooldown_remaining),
+        "ratings_today": ratings_today,
+        "can_skip": True,
+        "clout_cost": RATING_COOLDOWN_CLOUT_COST
+    }
+
+def handle_skip_cooldown(body):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user_id = body.get("user_id")
+    venue_id = body.get("venue_id")
+    method = body.get("method", "clout")  # "clout" or "payment"
+
+    if not user_id or not venue_id:
+        return 400, {"detail": "user_id and venue_id required"}
+
+    user = db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        return 404, {"detail": "User not found"}
+
+    if method == "clout":
+        current_clout = user.get("clout_points", 0)
+        if current_clout < RATING_COOLDOWN_CLOUT_COST:
+            return 400, {"detail": f"Not enough Clout. Need {RATING_COOLDOWN_CLOUT_COST}, have {current_clout}"}
+        db.users.update_one({"id": user_id}, {"$inc": {"clout_points": -RATING_COOLDOWN_CLOUT_COST}})
+        clout_remaining = current_clout - RATING_COOLDOWN_CLOUT_COST
+    else:
+        # Payment path — trust client for now (Paystack ref would be verified here)
+        clout_remaining = user.get("clout_points", 0)
+
+    db.cooldown_skips.insert_one({
+        "user_id": user_id,
+        "venue_id": venue_id,
+        "method": method,
+        "skipped_at": datetime.now(timezone.utc)
+    })
+    return 200, {"success": True, "clout_remaining": clout_remaining}
+
 def handle_create_rating(body):
     db = get_db()
     if not db:
@@ -286,6 +364,36 @@ def handle_create_rating(body):
     venue = db.venues.find_one({"id": body.get("venue_id")}, {"_id": 0})
     if not venue:
         return 404, {"detail": "Venue not found"}
+
+    # Cooldown check
+    now = datetime.now(timezone.utc)
+    day_ago = now - timedelta(hours=24)
+    recent_ratings = list(db.ratings.find(
+        {"user_id": body["user_id"], "venue_id": body["venue_id"], "timestamp": {"$gte": day_ago}},
+        {"_id": 0, "timestamp": 1}
+    ).sort("timestamp", -1).limit(1))
+
+    if recent_ratings:
+        last_ts = recent_ratings[0]["timestamp"]
+        if isinstance(last_ts, str):
+            last_ts = datetime.fromisoformat(last_ts)
+        if last_ts.tzinfo is None:
+            last_ts = last_ts.replace(tzinfo=timezone.utc)
+        elapsed = (now - last_ts).total_seconds()
+        if elapsed < RATING_COOLDOWN_SECONDS:
+            # Check if skip was used
+            skip = db.cooldown_skips.find_one(
+                {"user_id": body["user_id"], "venue_id": body["venue_id"], "skipped_at": {"$gte": last_ts}},
+                {"_id": 0}
+            )
+            if not skip:
+                remaining = int(RATING_COOLDOWN_SECONDS - elapsed)
+                return 429, {
+                    "detail": "Cooldown active",
+                    "cooldown_remaining_seconds": remaining,
+                    "can_skip": True,
+                    "clout_cost": RATING_COOLDOWN_CLOUT_COST
+                }
 
     coords = body.get("coordinates", {})
     venue_radius = venue.get("geofence_radius_m", 100)
@@ -438,6 +546,8 @@ def handle_checkins_create(body, headers):
         "user_id": user["id"],
         "venue_id": body["venue_id"],
         "venue_name": venue.get("name", ""),
+        "lat": body.get("lat", venue["coordinates"].get("lat", 0)),
+        "lng": body.get("lng", venue["coordinates"].get("lng", 0)),
         "status": "active",
         "created_at": datetime.now(timezone.utc),
         "expires_at": datetime.now(timezone.utc) + timedelta(hours=4)
@@ -445,6 +555,49 @@ def handle_checkins_create(body, headers):
     db.checkins.insert_one(checkin)
     checkin.pop("_id", None)
     return 200, {"success": True, "checkin": checkin}
+
+def handle_crew_locations(crew_id, headers):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+
+    crew = db.crews.find_one({"id": crew_id}, {"_id": 0})
+    if not crew:
+        return 404, {"detail": "Crew not found"}
+
+    # Check user is a member
+    if user["id"] not in crew.get("members", []):
+        return 403, {"detail": "Not a crew member"}
+
+    now = datetime.now(timezone.utc)
+    member_ids = crew.get("members", [])
+    result = []
+
+    for member_id in member_ids:
+        member = db.users.find_one({"id": member_id}, {"_id": 0, "id": 1, "username": 1, "avatar_config": 1})
+        if not member:
+            continue
+        checkin = db.checkins.find_one(
+            {"user_id": member_id, "status": "active", "expires_at": {"$gte": now}},
+            {"_id": 0}
+        )
+        if checkin:
+            result.append({
+                "user_id": member_id,
+                "username": member.get("username", "Anonymous"),
+                "venue_name": checkin.get("venue_name", ""),
+                "venue_id": checkin.get("venue_id", ""),
+                "lat": checkin.get("lat", 0),
+                "lng": checkin.get("lng", 0),
+                "avatar_config": member.get("avatar_config"),
+                "checked_in_at": checkin.get("created_at"),
+                "is_out": True
+            })
+
+    return 200, result
 
 def handle_checkins_me(headers):
     db = get_db()
@@ -507,6 +660,12 @@ def route_get(path, query_params, headers):
     m = re.match(r'^/api/top-scouts/([^/]+)$', path)
     if m:
         return handle_get_top_scouts(m.group(1), query_params)
+    m = re.match(r'^/api/ratings/status/([^/]+)/([^/]+)$', path)
+    if m:
+        return handle_get_rating_status(m.group(1), m.group(2))
+    m = re.match(r'^/api/crews/([^/]+)/locations$', path)
+    if m:
+        return handle_crew_locations(m.group(1), headers)
 
     return 404, {"detail": "Not found"}
 
@@ -522,6 +681,8 @@ def route_post(path, body, headers):
         return handle_create_rating(body)
     if path == "/api/ratings/sync":
         return handle_ratings_sync(body, headers)
+    if path == "/api/ratings/skip-cooldown":
+        return handle_skip_cooldown(body)
     if path == "/api/seed":
         return handle_seed()
     if path == "/api/checkins":

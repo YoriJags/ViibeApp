@@ -34,12 +34,22 @@ interface Venue {
   music_genre?: string;
 }
 
+interface CrewPin {
+  id: string;
+  username: string;
+  lat: number;
+  lng: number;
+  emoji: string;
+  color: string;
+}
+
 interface MockMapProps {
   venues: Venue[];
   userLocation: Coordinates | null;
   onVenuePress: (venue: Venue) => void;
   highlightedVenueId?: string | null;
   ratedGlowVenueId?: string | null;
+  crewPins?: CrewPin[];
 }
 
 const { width, height } = Dimensions.get('window');
@@ -58,6 +68,7 @@ export const MockMap: React.FC<MockMapProps> = ({
   userLocation,
   onVenuePress,
   highlightedVenueId,
+  crewPins,
   ratedGlowVenueId,
 }) => {
   // Pulse animation for highlighted venue
@@ -425,6 +436,31 @@ export const MockMap: React.FC<MockMapProps> = ({
                 </View>
               )}
             </TouchableOpacity>
+          );
+        })}
+
+        {/* ====== CREW MEMBER PINS ====== */}
+        {crewPins && crewPins.map((pin) => {
+          const pos = coordsToPosition(pin.lat, pin.lng);
+          return (
+            <View
+              key={pin.id}
+              style={[
+                styles.crewPin,
+                {
+                  left: pos.x - 20,
+                  top: pos.y - 44,
+                  zIndex: 200,
+                },
+              ]}
+              pointerEvents="none"
+            >
+              <View style={[styles.crewPinBubble, { backgroundColor: pin.color }]}>
+                <Text style={styles.crewPinEmoji}>{pin.emoji}</Text>
+              </View>
+              <View style={[styles.crewPinTail, { borderTopColor: pin.color }]} />
+              <Text style={styles.crewPinLabel} numberOfLines={1}>{pin.username}</Text>
+            </View>
           );
         })}
 
@@ -886,5 +922,49 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  // Crew pin styles
+  crewPin: {
+    position: 'absolute',
+    alignItems: 'center',
+  },
+  crewPinBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  crewPinEmoji: {
+    fontSize: 18,
+  },
+  crewPinTail: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    marginTop: -1,
+  },
+  crewPinLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFF',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginTop: 2,
+    maxWidth: 60,
+    textAlign: 'center',
   },
 });

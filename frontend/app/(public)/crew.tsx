@@ -22,6 +22,7 @@ import { publicTheme, spacing, borderRadius, typography } from '../../src/theme/
 import { useVibeStore } from '../../src/store/vibeStore';
 import VoteCard from '../../src/components/VoteCard';
 import AvatarDisplay from '../../src/components/AvatarDisplay';
+import CartelRadarMap from '../../src/components/CartelRadarMap';
 
 const { colors } = publicTheme;
 
@@ -255,34 +256,18 @@ export default function CrewScreen() {
           ))}
         </View>
 
-        {/* Squad Locations */}
-        {crew.member_details.some((m: any) => m.checked_in) && (
-          <View style={styles.section}>
-            <View style={styles.locationHeader}>
-              <Ionicons name="location" size={16} color={colors.primary} />
-              <Text style={styles.sectionTitle}>Cartel Radar</Text>
-            </View>
-            {crew.member_details
-              .filter((m: any) => m.checked_in && m.venue_name)
-              .map((member: any) => (
-                <View key={member.user_id + '_loc'} style={styles.locationRow}>
-                  <AvatarDisplay
-                    config={member.avatar_config || null}
-                    username={member.username}
-                    size={32}
-                  />
-                  <View style={styles.locationInfo}>
-                    <Text style={styles.locationName}>{member.username}</Text>
-                    <Text style={styles.locationVenue}>{member.venue_name}</Text>
-                  </View>
-                  <View style={styles.locationLive}>
-                    <View style={styles.liveDot} />
-                    <Text style={styles.liveText}>Live</Text>
-                  </View>
-                </View>
-              ))}
+        {/* Cartel Radar — live squad tracker */}
+        <View style={styles.section}>
+          <View style={styles.locationHeader}>
+            <Ionicons name="location" size={16} color={colors.primary} />
+            <Text style={styles.sectionTitle}>Cartel Radar</Text>
           </View>
-        )}
+          <CartelRadarMap
+            crewId={crew.id}
+            crewSize={crew.members?.length || crew.member_details?.length || 1}
+            height={300}
+          />
+        </View>
 
         {/* Active Vote */}
         {activeVote && user && (

@@ -44,6 +44,10 @@ interface RateVibeModalProps {
   venueName: string;
   isGpsVerified: boolean;
   geofenceRadius?: number;
+  // Cooldown props
+  cooldownRemainingSeconds?: number;
+  userClout?: number;
+  onSkipCooldown?: (method: 'clout' | 'payment') => Promise<{ success: boolean; error?: string }>;
 }
 
 // ─── Option Configs ───────────────────────────────────────────
@@ -78,12 +82,19 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
   venueName,
   isGpsVerified,
   geofenceRadius = 100,
+  cooldownRemainingSeconds = 0,
+  userClout = 0,
+  onSkipCooldown,
 }) => {
   const [energy, setEnergy] = useState<EnergyLevel | null>(null);
   const [capacity, setCapacity] = useState<CapacityLevel | null>(null);
   const [gate, setGate] = useState<GateLevel | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [skipping, setSkipping] = useState(false);
+  const [skipError, setSkipError] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(cooldownRemainingSeconds);
+  const isOnCooldown = countdown > 0;
 
   // Animations
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
@@ -118,6 +129,24 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
       backdropOpacity.setValue(0);
     }
   }, [visible]);
+
+  // ─── Sync cooldown from props ─────────────────────────────────
+  useEffect(() => {
+    setCountdown(cooldownRemainingSeconds);
+    setSkipError(null);
+  }, [cooldownRemainingSeconds, visible]);
+
+  // ─── Countdown tick ────────────────────────────────────────────
+  useEffect(() => {
+    if (!visible || countdown <= 0) return;
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) { clearInterval(timer); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [visible, countdown > 0]);
 
   // ─── Submit Button Pulse when all filled ──────────────────────
   useEffect(() => {
@@ -269,6 +298,90 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
     }
   };
 
+  const handleSkip = async (method: 'clout' | 'payment') => {
+    if (!onSkipCooldown || skipping) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setSkipping(true);
+    setSkipError(null);
+    const result = await onSkipCooldown(method);
+    setSkipping(false);
+    if (result.success) {
+      setCountdown(0);
+    } else {
+      setSkipError(result.error || 'Skip failed');
+    }
+  };
+
+  const formatCountdown = (secs: number) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  const renderCooldownScreen = () => (
+    <View style={styles.cooldownContainer}>
+      {/* Timer ring */}
+      <View style={styles.timerRing}>
+        <Ionicons name="time" size={32} color="#FF9800" />
+        <Text style={styles.timerText}>{formatCountdown(countdown)}</Text>
+        <Text style={styles.timerLabel}>NEXT RATING</Text>
+      </View>
+
+      <Text style={styles.cooldownTitle}>Cooldown Active</Text>
+      <Text style={styles.cooldownSubtitle}>
+        The vibe is fresh — come back soon or skip the wait.
+      </Text>
+
+      {skipError && (
+        <View style={styles.skipErrorPill}>
+          <Ionicons name="warning" size={12} color="#FF5252" />
+          <Text style={styles.skipErrorText}>{skipError}</Text>
+        </View>
+      )}
+
+      {/* Skip with Clout */}
+      <TouchableOpacity
+        style={[
+          styles.skipBtn,
+          userClout < 50 && styles.skipBtnDisabled,
+        ]}
+        onPress={() => handleSkip('clout')}
+        disabled={userClout < 50 || skipping}
+        activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={userClout >= 50 ? ['#FFD700', '#FF9800'] : ['#333', '#444']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.skipBtnGradient}
+        >
+          {skipping ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <>
+              <Ionicons name="star" size={16} color="#FFF" />
+              <Text style={styles.skipBtnText}>Skip Wait · 50 Clout</Text>
+            </>
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
+      <Text style={styles.cloutBalance}>
+        Your Clout: {userClout} {userClout < 50 ? '(not enough)' : '✓'}
+      </Text>
+
+      {/* Pay to skip */}
+      <TouchableOpacity
+        style={styles.payBtn}
+        onPress={() => handleSkip('payment')}
+        disabled={skipping}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="card" size={15} color="#00D4FF" />
+        <Text style={styles.payBtnText}>Rate Now · ₦100</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   // ─── Render Helpers ───────────────────────────────────────────
   const renderProgressDots = () => (
     <View style={styles.progressRow}>
@@ -403,16 +516,21 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
               </View>
             </View>
 
-            {/* Progress Dots */}
-            {renderProgressDots()}
+            {/* Cooldown Screen or Rating Form */}
+            {isOnCooldown ? renderCooldownScreen() : (
+              <>
+                {/* Progress Dots */}
+                {renderProgressDots()}
 
-            {/* Sections */}
-            {renderSection('ENERGY', 'flash', ENERGY_OPTIONS, energy, setEnergy, SECTION_COLORS.energy, 0)}
-            {renderSection('CAPACITY', 'people', CAPACITY_OPTIONS, capacity, setCapacity, SECTION_COLORS.capacity, 3)}
-            {renderSection('GATE / QUEUE', 'ellipse-outline', GATE_OPTIONS, gate, setGate, SECTION_COLORS.gate, 6)}
+                {/* Sections */}
+                {renderSection('ENERGY', 'flash', ENERGY_OPTIONS, energy, setEnergy, SECTION_COLORS.energy, 0)}
+                {renderSection('CAPACITY', 'people', CAPACITY_OPTIONS, capacity, setCapacity, SECTION_COLORS.capacity, 3)}
+                {renderSection('GATE / QUEUE', 'ellipse-outline', GATE_OPTIONS, gate, setGate, SECTION_COLORS.gate, 6)}
+              </>
+            )}
 
-            {/* Action Row */}
-            <View style={styles.actionRow}>
+            {/* Action Row (hidden during cooldown) */}
+            {!isOnCooldown && (<View style={styles.actionRow}>
               {/* Photo Button */}
               <TouchableOpacity
                 style={[styles.photoBtn, photo && styles.photoBtnActive]}
@@ -473,7 +591,7 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
                   )}
                 </TouchableOpacity>
               </Animated.View>
-            </View>
+            </View>)}
           </LinearGradient>
         </BlurView>
       </Animated.View>
@@ -695,6 +813,108 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#555',
+  },
+  // Cooldown styles
+  cooldownContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 12,
+  },
+  timerRing: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#FF9800',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    backgroundColor: 'rgba(255,152,0,0.08)',
+    marginBottom: 8,
+  },
+  timerText: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#FF9800',
+    letterSpacing: -1,
+  },
+  timerLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FF9800',
+    letterSpacing: 2,
+    opacity: 0.7,
+  },
+  cooldownTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFF',
+  },
+  cooldownSubtitle: {
+    fontSize: 13,
+    color: '#888',
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 8,
+  },
+  skipErrorPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,82,82,0.12)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  skipErrorText: {
+    fontSize: 12,
+    color: '#FF5252',
+    fontWeight: '600',
+  },
+  skipBtn: {
+    width: '100%',
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  skipBtnDisabled: {
+    opacity: 0.5,
+  },
+  skipBtnGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 8,
+    borderRadius: 14,
+  },
+  skipBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFF',
+  },
+  cloutBalance: {
+    fontSize: 11,
+    color: '#888',
+    fontWeight: '600',
+  },
+  payBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 13,
+    width: '100%',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(0,212,255,0.3)',
+    backgroundColor: 'rgba(0,212,255,0.05)',
+  },
+  payBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#00D4FF',
   },
 });
 
