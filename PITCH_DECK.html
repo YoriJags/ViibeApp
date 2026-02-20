@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibeApp — Investor Pitch Deck</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --pink:   #FF3366;
+    --gold:   #FFD700;
+    --green:  #00E676;
+    --purple: #9933FF;
+    --cyan:   #00D4FF;
+    --bg:     #070709;
+    --card:   rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+    --text:   #FFFFFF;
+    --muted:  #888;
+    --dim:    #444;
+  }
+
+  html, body { width: 100%; height: 100%; background: var(--bg); overflow: hidden; }
+
+  /* ── SLIDE ENGINE ── */
+  .deck { width: 100%; height: 100%; position: relative; }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 60px 80px;
+    opacity: 0; transform: translateX(60px);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+    pointer-events: none;
+  }
+  .slide.active {
+    opacity: 1; transform: translateX(0);
+    pointer-events: all;
+  }
+  .slide.exit {
+    opacity: 0; transform: translateX(-60px);
+    pointer-events: none;
+  }
+
+  /* ── NAV ── */
+  .nav {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; z-index: 100;
+  }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--dim); cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+  }
+  .dot.active { background: var(--pink); transform: scale(1.4); }
+
+  .arrow {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+    color: var(--muted); font-size: 20px; width: 44px; height: 44px;
+    border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; z-index: 100;
+  }
+  .arrow:hover { background: rgba(255,51,102,0.15); color: var(--pink); border-color: var(--pink); }
+  .arrow.left  { left: 20px; }
+  .arrow.right { right: 20px; }
+
+  .slide-num {
+    position: fixed; top: 24px; right: 32px;
+    color: var(--dim); font-size: 12px; letter-spacing: 1px;
+    font-family: monospace; z-index: 100;
+  }
+
+  /* ── TYPOGRAPHY ── */
+  body { font-family: -apple-system, 'Segoe UI', sans-serif; color: var(--text); }
+
+  .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--pink); margin-bottom: 16px;
+  }
+  .eyebrow.gold { color: var(--gold); }
+  .eyebrow.green { color: var(--green); }
+  .eyebrow.purple { color: var(--purple); }
+
+  h1 { font-size: 72px; font-weight: 800; line-height: 1; letter-spacing: -2px; }
+  h2 { font-size: 48px; font-weight: 800; line-height: 1.1; letter-spacing: -1px; }
+  h3 { font-size: 28px; font-weight: 700; }
+  p  { font-size: 18px; line-height: 1.65; color: #CCC; }
+
+  .gradient-text {
+    background: linear-gradient(135deg, var(--pink), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px 28px;
+  }
+  .card.pink-glow  { border-color: rgba(255,51,102,0.3);  box-shadow: 0 0 40px rgba(255,51,102,0.08); }
+  .card.gold-glow  { border-color: rgba(255,215,0,0.3);   box-shadow: 0 0 40px rgba(255,215,0,0.08); }
+  .card.green-glow { border-color: rgba(0,230,118,0.3);   box-shadow: 0 0 40px rgba(0,230,118,0.08); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; width: 100%; }
+  .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; width: 100%; }
+
+  /* ── STAT PILLS ── */
+  .stat-big { text-align: center; }
+  .stat-big .num { font-size: 42px; font-weight: 800; line-height: 1; }
+  .stat-big .lbl { font-size: 12px; color: var(--muted); margin-top: 6px; letter-spacing: 0.5px; }
+
+  /* ── LOGO ── */
+  .logo {
+    font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--pink); }
+
+  /* ── TAG CHIPS ── */
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    border: 1px solid;
+  }
+  .chip.pink   { color: var(--pink);   background: rgba(255,51,102,0.1);  border-color: rgba(255,51,102,0.3); }
+  .chip.gold   { color: var(--gold);   background: rgba(255,215,0,0.1);   border-color: rgba(255,215,0,0.3); }
+  .chip.green  { color: var(--green);  background: rgba(0,230,118,0.1);   border-color: rgba(0,230,118,0.3); }
+  .chip.purple { color: var(--purple); background: rgba(153,51,255,0.1);  border-color: rgba(153,51,255,0.3); }
+  .chip.cyan   { color: var(--cyan);   background: rgba(0,212,255,0.1);   border-color: rgba(0,212,255,0.3); }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+       padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); color: #CCC; }
+  td:first-child { color: var(--text); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── DIVIDER ── */
+  .divider { width: 48px; height: 3px; border-radius: 2px; background: var(--pink); margin: 20px 0; }
+
+  /* ── SLIDE SPECIFIC ── */
+
+  /* S1 — Cover */
+  #s1 { text-align: center; }
+  #s1 .tagline { font-size: 22px; color: var(--muted); margin-top: 20px; }
+  #s1 .sub     { font-size: 14px; color: var(--dim); margin-top: 12px; letter-spacing: 1px; }
+  #s1 .logo-wrap { margin-bottom: 40px; justify-content: center; }
+  .pulse-ring {
+    position: absolute; width: 400px; height: 400px; border-radius: 50%;
+    border: 1px solid rgba(255,51,102,0.15); animation: pulse 3s ease-in-out infinite;
+  }
+  .pulse-ring:nth-child(2) { width: 600px; height: 600px; animation-delay: 1s; }
+  .pulse-ring:nth-child(3) { width: 800px; height: 800px; animation-delay: 2s; }
+  @keyframes pulse { 0%,100% { opacity:0.4; transform:scale(1); } 50% { opacity:0.1; transform:scale(1.02); } }
+
+  /* S2 — Problem */
+  #s2 .pain { font-size: 32px; font-weight: 800; line-height: 1.3; }
+  #s2 .pain span { color: var(--pink); }
+
+  /* S3 — Solution */
+  #s3 .quote {
+    font-size: 26px; font-weight: 700; line-height: 1.4; color: #FFF;
+    border-left: 4px solid var(--pink); padding-left: 24px; margin: 24px 0;
+  }
+
+  /* S5 — Market */
+  .market-bar { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+  .market-bar .bar-label { width: 180px; font-size: 13px; color: var(--muted); flex-shrink: 0; }
+  .market-bar .bar-fill  { height: 8px; border-radius: 4px; }
+  .market-bar .bar-val   { font-size: 14px; font-weight: 700; margin-left: 8px; }
+
+  /* S7 — Traction */
+  .build-item { display: flex; align-items: flex-start; gap: 12px; margin: 10px 0; }
+  .build-check { color: var(--green); font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+  .build-text  { font-size: 15px; color: #CCC; }
+  .build-text strong { color: var(--text); }
+
+  /* S8 — AI */
+  .ai-feature { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .ai-feature:last-child { border-bottom: none; }
+  .ai-icon { font-size: 28px; flex-shrink: 0; }
+  .ai-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .ai-desc { font-size: 13px; color: var(--muted); }
+  .ai-status { font-size: 11px; font-weight: 700; margin-top: 6px; }
+
+  /* S11 — Financials */
+  .proj-row { display: flex; justify-content: space-between; align-items: center;
+              padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .proj-row:last-child { border-bottom: none; }
+
+  /* Print */
+  @media print {
+    .arrow, .nav, .slide-num { display: none; }
+    .slide { position: relative; opacity: 1; transform: none; page-break-after: always;
+             height: 100vh; pointer-events: none; }
+    html, body { overflow: visible; height: auto; }
+    .deck { height: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- ── SLIDE 1 — COVER ── -->
+  <div class="slide active" id="s1">
+    <div class="pulse-ring"></div>
+    <div class="pulse-ring"></div>
+    <div class="pulse-ring"></div>
+
+    <div class="logo logo-wrap" style="display:flex;justify-content:center;margin-bottom:40px;">
+      <div class="logo-dot"></div>
+      <span style="font-size:28px;font-weight:900;letter-spacing:-1px;">VIBEZ</span>
+    </div>
+
+    <h1 class="gradient-text" style="font-size:80px;">Where's the<br>energy?</h1>
+    <p class="tagline">Real-time nightlife intelligence for Africa</p>
+    <p class="sub">Pre-Seed · February 2026 · Lagos, Nigeria</p>
+
+    <div style="display:flex;gap:12px;margin-top:40px;flex-wrap:wrap;justify-content:center;">
+      <span class="chip pink">🌍 Africa-First</span>
+      <span class="chip gold">⚡ Real-Time</span>
+      <span class="chip green">🧬 AI-Powered</span>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 2 — PROBLEM ── -->
+  <div class="slide" id="s2">
+    <div class="eyebrow">The Problem</div>
+    <h2 style="max-width:700px;text-align:center;">You never know where the energy is <span style="color:var(--pink)">until it's over</span></h2>
+    <div class="divider" style="margin:24px auto;"></div>
+
+    <div class="grid3" style="max-width:860px;margin-top:8px;">
+      <div class="card pink-glow" style="text-align:center;">
+        <div style="font-size:36px;margin-bottom:12px;">😩</div>
+        <div style="font-weight:700;margin-bottom:8px;">Google Maps</div>
+        <div style="font-size:13px;color:var(--muted);">"Popular Times" shows historical data from 3 months ago. Not tonight.</div>
+      </div>
+      <div class="card pink-glow" style="text-align:center;">
+        <div style="font-size:36px;margin-bottom:12px;">😞</div>
+        <div style="font-weight:700;margin-bottom:8px;">Yelp / TripAdvisor</div>
+        <div style="font-size:13px;color:var(--muted);">Static reviews written last Thursday. Dead by the time you read them.</div>
+      </div>
+      <div class="card pink-glow" style="text-align:center;">
+        <div style="font-size:36px;margin-bottom:12px;">🤷</div>
+        <div style="font-weight:700;margin-bottom:8px;">WhatsApp Groups</div>
+        <div style="font-size:13px;color:var(--muted);">Unreliable, unstructured, and only your 12 closest friends are in it.</div>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:860px;margin-top:24px;text-align:center;border-color:rgba(255,215,0,0.2);">
+      <p style="font-size:17px;">Nigeria's nightlife economy is worth <strong style="color:var(--gold);">$2.5B+</strong> annually.<br>
+      Not a single platform tells you <strong style="color:var(--text);">where the energy is right now.</strong></p>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 3 — SOLUTION ── -->
+  <div class="slide" id="s3">
+    <div class="eyebrow">The Solution</div>
+    <h2 style="text-align:center;max-width:640px;">Live vibe scores from scouts on the ground</h2>
+    <div class="divider" style="margin:24px auto;"></div>
+
+    <div class="quote" style="max-width:680px;margin:0 auto 28px;">
+      "Quilox will be electric by 12:30am tonight — 87% confidence.<br>Best time to arrive: 11:45pm."
+    </div>
+
+    <div class="grid3" style="max-width:900px;">
+      <div class="card" style="text-align:center;">
+        <div style="font-size:32px;margin-bottom:10px;">📡</div>
+        <div style="font-weight:700;margin-bottom:6px;">Live Scouts</div>
+        <div style="font-size:13px;color:var(--muted);">On-the-ground users rate Energy, Capacity & Gate in real time from inside venues</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:32px;margin-bottom:10px;">⚡</div>
+        <div style="font-weight:700;margin-bottom:6px;">Vibe Score</div>
+        <div style="font-size:13px;color:var(--muted);">Live composite score (0-100) updated every few minutes with time-decay weighting</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:32px;margin-bottom:10px;">🧬</div>
+        <div style="font-weight:700;margin-bottom:6px;">AI Intelligence</div>
+        <div style="font-size:13px;color:var(--muted);">Oracle predicts peaks. DNA learns your taste. Night Planner plans your night.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
+      <span class="chip pink">3-Storey Platform</span>
+      <span class="chip gold">Scouts · Merchants · Admins</span>
+      <span class="chip green">iOS + Android</span>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 4 — PRODUCT ── -->
+  <div class="slide" id="s4">
+    <div class="eyebrow">The Product</div>
+    <h2 style="text-align:center;margin-bottom:32px;">Three floors. One platform.</h2>
+
+    <div class="grid3" style="max-width:960px;">
+      <!-- Scout Floor -->
+      <div class="card pink-glow">
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--pink);margin-bottom:14px;">PUBLIC FLOOR · SCOUTS</div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text">Live venue map + vibe score pins</div></div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text">3-dimension rating: Energy / Capacity / Gate</div></div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text">Clout system + scout rankings</div></div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text">Crew & Cartel (squad features)</div></div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text">Vibe Oracle + DNA + Night Planner</div></div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text">Streaks, badges, leaderboards</div></div>
+      </div>
+      <!-- Merchant Floor -->
+      <div class="card gold-glow">
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:14px;">MERCHANT FLOOR · VENUE OWNERS</div>
+        <div class="build-item"><div class="build-check" style="color:var(--gold);">✓</div><div class="build-text">Live analytics dashboard</div></div>
+        <div class="build-item"><div class="build-check" style="color:var(--gold);">✓</div><div class="build-text">Hourly energy curves + peak detection</div></div>
+        <div class="build-item"><div class="build-check" style="color:var(--gold);">✓</div><div class="build-text">Pulse Drops — promoted venue pins</div></div>
+        <div class="build-item"><div class="build-check" style="color:var(--gold);">✓</div><div class="build-text">Aura Shield — auto-alerts on vibe drop</div></div>
+        <div class="build-item"><div class="build-check" style="color:var(--gold);">✓</div><div class="build-text">Campaign tools + direction tracking</div></div>
+        <div class="build-item"><div class="build-check" style="color:var(--gold);">✓</div><div class="build-text">Scout demographics breakdown</div></div>
+      </div>
+      <!-- Admin Floor -->
+      <div class="card green-glow">
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);margin-bottom:14px;">ADMIN FLOOR · PLATFORM OPS</div>
+        <div class="build-item"><div class="build-check" style="color:var(--green);">✓</div><div class="build-text">Full platform command center</div></div>
+        <div class="build-item"><div class="build-check" style="color:var(--green);">✓</div><div class="build-text">Treasury & revenue management</div></div>
+        <div class="build-item"><div class="build-check" style="color:var(--green);">✓</div><div class="build-text">Venue certification system</div></div>
+        <div class="build-item"><div class="build-check" style="color:var(--green);">✓</div><div class="build-text">Platform-wide analytics</div></div>
+        <div class="build-item"><div class="build-check" style="color:var(--green);">✓</div><div class="build-text">User & venue management</div></div>
+        <div class="build-item"><div class="build-check" style="color:var(--green);">✓</div><div class="build-text">Paystack payment integration</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 5 — MARKET ── -->
+  <div class="slide" id="s5">
+    <div class="eyebrow">Market Size</div>
+    <h2 style="text-align:center;margin-bottom:8px;">A category nobody owns yet</h2>
+    <p style="text-align:center;max-width:560px;margin-bottom:36px;">Real-time nightlife intelligence doesn't exist at scale anywhere in Africa. We're building the category from scratch.</p>
+
+    <div class="grid2" style="max-width:900px;gap:24px;">
+      <div>
+        <div style="margin-bottom:20px;">
+          <div class="market-bar">
+            <div class="bar-label" style="color:var(--text);font-weight:600;">Lagos nightlife</div>
+            <div class="bar-fill" style="width:180px;background:var(--pink);"></div>
+            <div class="bar-val" style="color:var(--pink);">$1B+</div>
+          </div>
+          <div class="market-bar">
+            <div class="bar-label">Nigeria total</div>
+            <div class="bar-fill" style="width:260px;background:linear-gradient(90deg,var(--pink),var(--gold));"></div>
+            <div class="bar-val" style="color:var(--gold);">$2.5B</div>
+          </div>
+          <div class="market-bar">
+            <div class="bar-label">Africa nightlife</div>
+            <div class="bar-fill" style="width:340px;background:linear-gradient(90deg,var(--gold),var(--green));"></div>
+            <div class="bar-val" style="color:var(--green);">$10B+</div>
+          </div>
+          <div class="market-bar">
+            <div class="bar-label">Global experiences</div>
+            <div class="bar-fill" style="width:440px;background:linear-gradient(90deg,var(--green),var(--cyan));"></div>
+            <div class="bar-val" style="color:var(--cyan);">$50B+</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="card" style="padding:18px 20px;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">SERVICEABLE MARKET (5-YR)</div>
+          <div style="font-size:28px;font-weight:800;color:var(--gold);">$500M</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">5 countries × SaaS + marketplace + data</div>
+        </div>
+        <div class="card" style="padding:18px 20px;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">BEACHHEAD — LAGOS YEAR 1</div>
+          <div style="font-size:28px;font-weight:800;color:var(--pink);">₦60M</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">50 venues × ₦100K avg subscription</div>
+        </div>
+        <div class="card" style="padding:18px 20px;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">NIGERIA ALONE · 200M PEOPLE</div>
+          <div style="font-size:28px;font-weight:800;color:var(--green);">0 competitors</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">with real-time nightlife data</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 6 — BUSINESS MODEL ── -->
+  <div class="slide" id="s6">
+    <div class="eyebrow">Business Model</div>
+    <h2 style="text-align:center;margin-bottom:32px;">Multiple high-margin revenue streams</h2>
+
+    <div style="max-width:900px;width:100%;">
+      <table>
+        <thead>
+          <tr>
+            <th>Revenue Stream</th>
+            <th>Pricing</th>
+            <th>Margin</th>
+            <th>Launches</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>🏢 Merchant Subscriptions</td>
+            <td style="color:var(--muted);">₦50K–500K / venue / month</td>
+            <td><span style="color:var(--green);">90%+</span></td>
+            <td style="color:var(--muted);">Month 3</td>
+          </tr>
+          <tr>
+            <td>⚡ Pulse Drops</td>
+            <td style="color:var(--muted);">₦20K–100K per drop</td>
+            <td><span style="color:var(--green);">95%</span></td>
+            <td style="color:var(--muted);">Month 4</td>
+          </tr>
+          <tr>
+            <td>🛡️ Aura Shield Premium</td>
+            <td style="color:var(--muted);">₦100K / venue / month</td>
+            <td><span style="color:var(--green);">92%</span></td>
+            <td style="color:var(--muted);">Month 4</td>
+          </tr>
+          <tr>
+            <td>🥂 Brand Partnerships</td>
+            <td style="color:var(--muted);">₦2M–10M / quarter / brand</td>
+            <td><span style="color:var(--green);">80%</span></td>
+            <td style="color:var(--muted);">Month 9</td>
+          </tr>
+          <tr>
+            <td>📊 Data Licensing</td>
+            <td style="color:var(--muted);">₦500K–2M / quarter</td>
+            <td><span style="color:var(--green);">98%</span></td>
+            <td style="color:var(--muted);">Month 9</td>
+          </tr>
+          <tr>
+            <td>🎟️ Event Ticketing</td>
+            <td style="color:var(--muted);">5–10% commission</td>
+            <td><span style="color:var(--green);">85%</span></td>
+            <td style="color:var(--muted);">Month 12</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grid3" style="margin-top:24px;">
+        <div class="card" style="text-align:center;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">LTV / CAC</div>
+          <div style="font-size:28px;font-weight:800;color:var(--green);">10–25×</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">GROSS MARGIN</div>
+          <div style="font-size:28px;font-weight:800;color:var(--gold);">90%+</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">USER ACQ COST</div>
+          <div style="font-size:28px;font-weight:800;color:var(--pink);">$0.50–2</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 7 — TRACTION / WHAT WE'VE BUILT ── -->
+  <div class="slide" id="s7">
+    <div class="eyebrow green">What We've Built</div>
+    <h2 style="text-align:center;margin-bottom:8px;">Production-ready. <span class="gradient-text">Investor-presentable.</span></h2>
+    <p style="text-align:center;max-width:560px;margin-bottom:28px;">10-14 months of equivalent dev work. Full-stack. Demo-ready tonight.</p>
+
+    <div class="grid2" style="max-width:900px;gap:20px;">
+      <div class="card green-glow">
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);margin-bottom:16px;">INTELLIGENCE LAYER</div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text"><strong>15 custom algorithms</strong> — vibe scoring, time-decay, trending, forecast, geofence</div></div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text"><strong>Vibe Oracle</strong> — peak-time predictions per venue (pipes ready for ML upgrade)</div></div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text"><strong>Vibe DNA</strong> — behavioral taste fingerprint from rating history</div></div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text"><strong>Night Planner</strong> — AI concierge (Claude API path live on key set)</div></div>
+      </div>
+      <div class="card pink-glow">
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--pink);margin-bottom:16px;">PLATFORM DEPTH</div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text"><strong>3 full user tiers</strong> — Scouts, Merchants, Admins with separate experiences</div></div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text"><strong>Real-time infrastructure</strong> — Socket.IO live updates, Paystack payments</div></div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text"><strong>Demo mode</strong> — investor walkthrough with 12 venues, scripted Planner conversation</div></div>
+        <div class="build-item"><div class="build-check">✓</div><div class="build-text"><strong>Social graph</strong> — Crew, Cartel Radar, squad locations, persona system</div></div>
+      </div>
+    </div>
+
+    <div class="grid4" style="max-width:900px;margin-top:20px;">
+      <div class="card stat-big"><div class="num" style="color:var(--pink);">15+</div><div class="lbl">Custom Algorithms</div></div>
+      <div class="card stat-big"><div class="num" style="color:var(--gold);">3</div><div class="lbl">AI Feature Pipes</div></div>
+      <div class="card stat-big"><div class="num" style="color:var(--green);">3</div><div class="lbl">User Tiers Built</div></div>
+      <div class="card stat-big"><div class="num" style="color:var(--cyan);">12</div><div class="lbl">Demo Venues Seeded</div></div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 8 — AI VISION ── -->
+  <div class="slide" id="s8">
+    <div class="eyebrow gold">AI Strategy — The Real Moat</div>
+    <h2 style="text-align:center;max-width:680px;margin-bottom:8px;">The app is the data collection device.<br><span class="gradient-text">The AI is the actual product.</span></h2>
+    <p style="text-align:center;max-width:580px;margin-bottom:28px;">After 12 months in Lagos we'll have a dataset nobody else on earth has collected.</p>
+
+    <div class="grid2" style="max-width:960px;gap:20px;">
+      <div class="card gold-glow" style="padding:20px 24px;">
+        <div class="ai-feature">
+          <div class="ai-icon">🔮</div>
+          <div>
+            <div class="ai-name">Vibe Oracle</div>
+            <div class="ai-desc">"Quilox will be electric by 12:30am — 87% confidence." Predictive peak-time intelligence per venue.</div>
+            <div class="ai-status" style="color:var(--green);">✅ PIPES BUILT — Prophet upgrade at 20K users</div>
+          </div>
+        </div>
+        <div class="ai-feature">
+          <div class="ai-icon">🧬</div>
+          <div>
+            <div class="ai-name">Vibe DNA</div>
+            <div class="ai-desc">Behavioral taste fingerprint. Learns what you actually enjoy from rating patterns, not what you say you like.</div>
+            <div class="ai-status" style="color:var(--green);">✅ PIPES BUILT — Collaborative filtering at 20K users</div>
+          </div>
+        </div>
+        <div class="ai-feature" style="border-bottom:none;">
+          <div class="ai-icon">✨</div>
+          <div>
+            <div class="ai-name">Night Planner</div>
+            <div class="ai-desc">Natural language nightlife concierge with real-time venue data. Vertical AI agent nobody else has.</div>
+            <div class="ai-status" style="color:var(--gold);">🔑 CLAUDE API READY — activates on key set</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="card" style="padding:18px;">
+          <div style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:10px;">DATA ASSETS WE'LL OWN</div>
+          <div class="build-item"><div class="build-check">→</div><div class="build-text" style="font-size:13px;">Real-time crowd behavior (nobody else in Africa)</div></div>
+          <div class="build-item"><div class="build-check">→</div><div class="build-text" style="font-size:13px;">Hour-by-hour venue performance patterns</div></div>
+          <div class="build-item"><div class="build-check">→</div><div class="build-text" style="font-size:13px;">Social graph of nightlife — who goes where, with whom</div></div>
+          <div class="build-item"><div class="build-check">→</div><div class="build-text" style="font-size:13px;">Real-world taste profiles of 100K Nigerians</div></div>
+          <div class="build-item"><div class="build-check">→</div><div class="build-text" style="font-size:13px;">Location movement patterns between venues</div></div>
+        </div>
+
+        <div class="card" style="background:rgba(255,215,0,0.04);border-color:rgba(255,215,0,0.2);padding:18px;">
+          <div style="font-size:13px;line-height:1.7;color:#CCC;">
+            <strong style="color:#FFF;">The pitch that gets the $250M exit:</strong><br>
+            "We're building the real-time intelligence layer for human social behavior in Africa. Our AI knows where 100,000 people will be tonight before they decide."
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 9 — COMPETITION ── -->
+  <div class="slide" id="s9">
+    <div class="eyebrow">Competition</div>
+    <h2 style="text-align:center;margin-bottom:32px;">Nobody does <span style="color:var(--pink);">real-time</span> in Africa</h2>
+
+    <div style="max-width:900px;width:100%;">
+      <table>
+        <thead>
+          <tr><th>Platform</th><th>Data Type</th><th>Africa Focus</th><th>Real-Time</th><th>AI Intelligence</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Google Maps</td>
+            <td style="color:var(--muted);">Historical "Popular Times"</td>
+            <td>❌</td>
+            <td>❌</td>
+            <td>❌</td>
+          </tr>
+          <tr>
+            <td>Yelp / TripAdvisor</td>
+            <td style="color:var(--muted);">Static text reviews</td>
+            <td>❌</td>
+            <td>❌</td>
+            <td>❌</td>
+          </tr>
+          <tr>
+            <td>Instagram</td>
+            <td style="color:var(--muted);">Unstructured social posts</td>
+            <td>Partial</td>
+            <td>Partial</td>
+            <td>❌</td>
+          </tr>
+          <tr>
+            <td>Eventbrite / Tix.africa</td>
+            <td style="color:var(--muted);">Event ticketing only</td>
+            <td>Partial</td>
+            <td>❌</td>
+            <td>❌</td>
+          </tr>
+          <tr style="background:rgba(255,51,102,0.06);">
+            <td style="color:var(--pink);font-weight:800;">VIBEZ ✦</td>
+            <td style="color:var(--pink);">Live vibe scores from scouts</td>
+            <td style="color:var(--green);">✅ Built for Lagos</td>
+            <td style="color:var(--green);">✅ Every few minutes</td>
+            <td style="color:var(--green);">✅ Oracle + DNA + Planner</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="card" style="margin-top:24px;border-color:rgba(255,51,102,0.2);padding:20px 24px;text-align:center;">
+        <p style="font-size:16px;">First-mover advantage in real-time nightlife data is nearly <strong>impossible to replicate</strong>.<br>
+        The data moat compounds every night we operate.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 10 — TEAM ── -->
+  <div class="slide" id="s10">
+    <div class="eyebrow">Team</div>
+    <h2 style="text-align:center;margin-bottom:32px;">Built by someone who lives the problem</h2>
+
+    <div class="grid2" style="max-width:860px;gap:20px;">
+      <div class="card pink-glow" style="text-align:center;padding:32px;">
+        <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--purple));margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:32px;">👤</div>
+        <div style="font-size:20px;font-weight:800;margin-bottom:4px;">[Founder Name]</div>
+        <div style="font-size:13px;color:var(--pink);margin-bottom:12px;font-weight:600;">CEO & CTO · Lagos</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">
+          Full-stack engineer. Built the entire platform — backend, mobile, AI layer — from scratch. Deeply embedded in Lagos nightlife culture.
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+          <span class="chip pink">React Native</span>
+          <span class="chip purple">Python / FastAPI</span>
+          <span class="chip cyan">MongoDB</span>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="card">
+          <div style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:10px;">WHAT WE'VE PROVEN</div>
+          <div class="build-item"><div class="build-check">✓</div><div class="build-text">Can ship at speed — full 3-tier platform built in months</div></div>
+          <div class="build-item"><div class="build-check">✓</div><div class="build-text">Product instinct — 30+ features, zero wasted builds</div></div>
+          <div class="build-item"><div class="build-check">✓</div><div class="build-text">AI-forward thinking — Oracle/DNA/Planner without a prompt</div></div>
+        </div>
+        <div class="card">
+          <div style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:10px;">IMMEDIATE HIRES WITH FUNDING</div>
+          <div class="build-item"><div style="color:var(--gold);font-size:16px;">→</div><div class="build-text">Lagos City Lead — venue onboarding + scout recruitment</div></div>
+          <div class="build-item"><div style="color:var(--gold);font-size:16px;">→</div><div class="build-text">Growth / Community Lead — WhatsApp groups, influencers</div></div>
+          <div class="build-item"><div style="color:var(--gold);font-size:16px;">→</div><div class="build-text">Partnerships Lead — alcohol brands, venues, events</div></div>
+        </div>
+        <div class="card" style="border-color:rgba(255,215,0,0.2);">
+          <div style="font-size:13px;color:#CCC;line-height:1.7;">
+            <strong style="color:var(--gold);">Looking for:</strong> Advisors with Lagos venue networks, Nigerian consumer startup experience, or alcohol brand relationships.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 11 — FINANCIALS ── -->
+  <div class="slide" id="s11">
+    <div class="eyebrow gold">Financials & Milestones</div>
+    <h2 style="text-align:center;margin-bottom:28px;">Clear path to <span class="gradient-text">$250M exit</span></h2>
+
+    <div class="grid2" style="max-width:960px;gap:20px;">
+      <div class="card">
+        <div style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:14px;">GROWTH PROJECTIONS</div>
+        <div class="proj-row">
+          <div><div style="font-weight:700;">Month 12 · Lagos</div><div style="font-size:12px;color:var(--muted);">50 venues · 10K MAU</div></div>
+          <div style="text-align:right;"><div style="color:var(--pink);font-weight:700;">₦5M MRR</div><div style="font-size:12px;color:var(--muted);">~$3.3K</div></div>
+        </div>
+        <div class="proj-row">
+          <div><div style="font-weight:700;">Month 24 · Nigeria</div><div style="font-size:12px;color:var(--muted);">200+ venues · 100K MAU</div></div>
+          <div style="text-align:right;"><div style="color:var(--gold);font-weight:700;">$50K MRR</div></div>
+        </div>
+        <div class="proj-row">
+          <div><div style="font-weight:700;">Month 36 · West Africa</div><div style="font-size:12px;color:var(--muted);">5+ countries · 500K MAU</div></div>
+          <div style="text-align:right;"><div style="color:var(--green);font-weight:700;">$200K MRR</div></div>
+        </div>
+        <div class="proj-row">
+          <div><div style="font-weight:700;">Month 42 · Exit / Series B</div><div style="font-size:12px;color:var(--muted);">Pan-Africa · AI data moat</div></div>
+          <div style="text-align:right;"><div style="color:var(--cyan);font-weight:700;">$250M+</div></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="card gold-glow">
+          <div style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:14px;">FUNDRAISING ROADMAP</div>
+          <div class="proj-row" style="padding:10px 0;">
+            <div><div style="font-weight:700;color:var(--gold);">Pre-seed · Now</div><div style="font-size:12px;color:var(--muted);">Lagos launch · 3-person team</div></div>
+            <div style="color:var(--gold);font-weight:800;">$150–300K</div>
+          </div>
+          <div class="proj-row" style="padding:10px 0;">
+            <div><div style="font-weight:700;">Seed · Month 10</div><div style="font-size:12px;color:var(--muted);">Nigeria expansion · 10-person team</div></div>
+            <div style="color:var(--text);font-weight:700;">$1–2M</div>
+          </div>
+          <div class="proj-row" style="padding:10px 0;border-bottom:none;">
+            <div><div style="font-weight:700;">Series A · Month 24</div><div style="font-size:12px;color:var(--muted);">West Africa · AI features</div></div>
+            <div style="color:var(--text);font-weight:700;">$5–10M</div>
+          </div>
+        </div>
+
+        <div class="card" style="border-color:rgba(255,51,102,0.2);">
+          <div style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:10px;">WHO ACQUIRES US</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <span class="chip pink">Booking.com</span>
+            <span class="chip gold">Spotify</span>
+            <span class="chip green">Google Maps</span>
+            <span class="chip purple">Meta</span>
+            <span class="chip cyan">Uber</span>
+            <span class="chip pink">Flutterwave</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SLIDE 12 — ASK ── -->
+  <div class="slide" id="s12">
+    <div class="eyebrow gold">The Ask</div>
+    <h2 style="text-align:center;max-width:700px;margin-bottom:8px;">We're raising <span class="gradient-text">$150–300K pre-seed</span><br>at a $2–3M valuation</h2>
+    <p style="text-align:center;max-width:560px;margin-bottom:36px;">To dominate Lagos nightlife before anyone else moves.</p>
+
+    <div class="grid3" style="max-width:900px;gap:16px;">
+      <div class="card" style="text-align:center;border-color:rgba(255,51,102,0.3);">
+        <div style="font-size:32px;margin-bottom:10px;">🏙️</div>
+        <div style="font-weight:700;margin-bottom:8px;color:var(--pink);">40% — Lagos Operations</div>
+        <div style="font-size:13px;color:var(--muted);">City Lead hire. Scout recruitment. 20 venue onboardings. Launch night coordination.</div>
+      </div>
+      <div class="card" style="text-align:center;border-color:rgba(255,215,0,0.3);">
+        <div style="font-size:32px;margin-bottom:10px;">📱</div>
+        <div style="font-weight:700;margin-bottom:8px;color:var(--gold);">35% — Product & Tech</div>
+        <div style="font-size:13px;color:var(--muted);">App Store / Play Store listings. Claude API key (Night Planner goes live). Infrastructure scale.</div>
+      </div>
+      <div class="card" style="text-align:center;border-color:rgba(0,230,118,0.3);">
+        <div style="font-size:32px;margin-bottom:10px;">📣</div>
+        <div style="font-weight:700;margin-bottom:8px;color:var(--green);">25% — Growth & Brand</div>
+        <div style="font-size:13px;color:var(--muted);">PR push (TechCabal, Techpoint). Influencer scout network. Social media blitz. Launch events.</div>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:900px;margin-top:24px;border-color:rgba(255,215,0,0.25);padding:20px 28px;">
+      <div class="grid3" style="gap:20px;">
+        <div style="text-align:center;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">6-MONTH MILESTONES</div>
+          <div style="font-size:14px;color:#CCC;line-height:1.8;">20 Lagos venues onboarded<br>500 active scouts<br>2,000 MAU<br>5 paying merchants</div>
+        </div>
+        <div style="text-align:center;border-left:1px solid var(--border);border-right:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">SEED TRIGGER</div>
+          <div style="font-size:14px;color:#CCC;line-height:1.8;">10K MAU<br>₦5M MRR<br>50+ venues<br>Clear retention data</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">WHAT YOU'RE BUYING</div>
+          <div style="font-size:14px;color:#CCC;line-height:1.8;">Category creation<br>First-mover data moat<br>AI intelligence layer<br>Africa nightlife graph</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:28px;text-align:center;">
+      <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:8px;">Built with conviction. Launching from Lagos. Scaling across Africa.</div>
+      <div style="color:var(--muted);font-size:14px;">Let's talk → [your@email.com]</div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- Navigation -->
+<button class="arrow left" id="prev">‹</button>
+<button class="arrow right" id="next">›</button>
+<div class="nav" id="nav"></div>
+<div class="slide-num" id="slideNum"></div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const nav    = document.getElementById('nav');
+  const num    = document.getElementById('slideNum');
+  let cur = 0;
+
+  // Build dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => goTo(i));
+    nav.appendChild(d);
+  });
+
+  function goTo(n) {
+    if (n < 0 || n >= slides.length) return;
+    slides[cur].classList.remove('active');
+    slides[cur].classList.add('exit');
+    setTimeout(() => slides[cur < n ? cur : n + 1 - 1].classList.remove('exit'), 450);
+    slides[cur].classList.remove('exit');
+
+    // simpler approach
+    slides.forEach((s, i) => {
+      s.classList.remove('active', 'exit');
+      if (i === cur && i !== n) s.classList.add('exit');
+    });
+
+    cur = n;
+    slides[cur].classList.add('active');
+
+    // Update dots
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === cur));
+    num.textContent = `${cur + 1} / ${slides.length}`;
+
+    // Clean exit class after animation
+    setTimeout(() => slides.forEach(s => s.classList.remove('exit')), 500);
+  }
+
+  document.getElementById('prev').addEventListener('click', () => goTo(cur - 1));
+  document.getElementById('next').addEventListener('click', () => goTo(cur + 1));
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ')  goTo(cur + 1);
+    if (e.key === 'ArrowLeft')                     goTo(cur - 1);
+    if (e.key === 'ArrowUp')                       goTo(0);
+    if (e.key === 'ArrowDown')                     goTo(slides.length - 1);
+  });
+
+  // Init counter
+  num.textContent = `1 / ${slides.length}`;
+</script>
+</body>
+</html>
