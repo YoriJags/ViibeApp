@@ -774,3 +774,13 @@ export const DEMO_CREW_LOCATIONS = [
     is_out: true,
   },
 ];
+
+// ===== DEMO TOP SCOUTS PER VENUE =====
+// Reused for any venue in demo mode
+export const DEMO_VENUE_TOP_SCOUTS = [
+  { rank: 1, user_id: 'scout_001', username: 'TundeElite', scout_status: 'elite', ratings_count: 34, clout_earned: 680, tier_color: '#FFD700' },
+  { rank: 2, user_id: 'scout_002', username: 'AdeVibe', scout_status: 'scout', ratings_count: 21, clout_earned: 420, tier_color: '#C0C0C0' },
+  { rank: 3, user_id: 'scout_003', username: 'Zara_Scout', scout_status: 'scout', ratings_count: 18, clout_earned: 360, tier_color: '#C0C0C0' },
+  { rank: 4, user_id: 'scout_004', username: 'LagosNight', scout_status: 'regular', ratings_count: 12, clout_earned: 240, tier_color: '#CD7F32' },
+  { rank: 5, user_id: 'scout_005', username: 'VIScout', scout_status: 'regular', ratings_count: 9, clout_earned: 180, tier_color: '#CD7F32' },
+];

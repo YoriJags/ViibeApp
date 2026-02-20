@@ -30,6 +30,7 @@ import VibeForecast from '../../src/components/VibeForecast';
 import CampaignBadge from '../../src/components/CampaignBadge';
 import CheckInCelebration from '../../src/components/CheckInCelebration';
 import CertifiedBadge from '../../src/components/CertifiedBadge';
+import TopScoutsCard from '../../src/components/TopScoutsCard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -629,6 +630,9 @@ export default function VenueDetailScreen() {
             <VibeForecast venueId={id} />
           </View>
         )}
+
+        {/* ====== TOP SCOUTS ====== */}
+        {id && <TopScoutsCard venueId={id} />}
 
         {/* Location Card */}
         <View style={styles.locationCard}>

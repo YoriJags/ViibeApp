@@ -491,6 +491,41 @@ def handle_get_top_scouts(city, query_params):
         })
     return 200, result
 
+def handle_get_venue_top_scouts(venue_id):
+    """Return top scouts for a specific venue (most ratings, then highest clout)."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    # Aggregate ratings for this venue grouped by user_id
+    pipeline = [
+        {"$match": {"venue_id": venue_id}},
+        {"$group": {
+            "_id": "$user_id",
+            "ratings_count": {"$sum": 1},
+            "clout_earned": {"$sum": {"$ifNull": ["$clout_earned", 10]}}
+        }},
+        {"$sort": {"ratings_count": -1, "clout_earned": -1}},
+        {"$limit": 5}
+    ]
+    top = list(db.ratings.aggregate(pipeline))
+    result = []
+    for i, entry in enumerate(top):
+        user_id = entry["_id"]
+        user = db.users.find_one(
+            {"id": user_id},
+            {"_id": 0, "username": 1, "scout_status": 1}
+        ) or {}
+        result.append({
+            "rank": i + 1,
+            "user_id": user_id,
+            "username": user.get("username", "Anonymous"),
+            "scout_status": user.get("scout_status", "newbie"),
+            "ratings_count": entry["ratings_count"],
+            "clout_earned": entry["clout_earned"],
+            "tier_color": get_scout_tier_color(user.get("scout_status", "newbie"))
+        })
+    return 200, result
+
 def handle_direction_click(venue_id):
     db = get_db()
     if not db:
@@ -753,6 +788,9 @@ def route_get(path, query_params, headers):
     m = re.match(r'^/api/top-scouts/([^/]+)$', path)
     if m:
         return handle_get_top_scouts(m.group(1), query_params)
+    m = re.match(r'^/api/venues/([^/]+)/top-scouts$', path)
+    if m:
+        return handle_get_venue_top_scouts(m.group(1))
     m = re.match(r'^/api/ratings/status/([^/]+)/([^/]+)$', path)
     if m:
         return handle_get_rating_status(m.group(1), m.group(2))
