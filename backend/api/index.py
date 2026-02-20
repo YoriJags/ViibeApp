@@ -526,6 +526,292 @@ def handle_get_venue_top_scouts(venue_id):
         })
     return 200, result
 
+# ── Vibe Oracle heuristic tables ──────────────────────────────────────────
+_ORACLE_PEAK_WINDOWS = {
+    "club":        {"weekday": ("12:30am","2:00am"),  "weekend": ("1:00am","3:00am")},
+    "lounge":      {"weekday": ("10:00pm","12:00am"), "weekend": ("11:00pm","1:00am")},
+    "bar":         {"weekday": ("9:00pm","11:30pm"),  "weekend": ("10:00pm","1:00am")},
+    "restaurant":  {"weekday": ("7:00pm","9:30pm"),   "weekend": ("8:00pm","10:00pm")},
+    "concert":     {"weekday": ("8:00pm","10:30pm"),  "weekend": ("8:00pm","11:00pm")},
+    "rave":        {"weekday": ("11:00pm","4:00am"),  "weekend": ("12:00am","5:00am")},
+    "block_party": {"weekday": ("5:00pm","10:00pm"),  "weekend": ("4:00pm","11:00pm")},
+    "event":       {"weekday": ("6:00pm","9:00pm"),   "weekend": ("5:00pm","10:00pm")},
+    "church":      {"weekday": ("9:00am","11:30am"),  "weekend": ("9:00am","12:00pm")},
+}
+_ORACLE_BASE_CONF = {"club":82,"lounge":78,"bar":75,"restaurant":80,"concert":85,"rave":70,"block_party":88,"event":80,"church":90}
+_ORACLE_ENERGY_LABELS = {"club":"electric","lounge":"popping","bar":"popping","restaurant":"warm","concert":"electric","rave":"electric","block_party":"electric","event":"popping","church":"uplifting"}
+
+def _oracle_best_arrival(peak_start_str):
+    """Return '45 min before X' as a human string."""
+    import re as _re
+    m = _re.match(r'(\d+):(\d+)(am|pm)', peak_start_str)
+    if not m:
+        return peak_start_str
+    h, mi, period = int(m.group(1)), int(m.group(2)), m.group(3)
+    total_min = (h % 12 + (12 if period == 'pm' else 0)) * 60 + mi - 45
+    if total_min < 0:
+        total_min += 24 * 60
+    arr_h, arr_m = divmod(total_min, 60)
+    arr_period = 'am' if arr_h < 12 else 'pm'
+    arr_h = arr_h % 12 or 12
+    return f"{arr_h}:{arr_m:02d}{arr_period}"
+
+def handle_get_oracle(venue_id):
+    """Predict peak time and confidence for a venue using heuristics."""
+    db = get_db()
+    if not db:
+        # Return a graceful fallback so frontend doesn't break without DB
+        return 200, {"insufficient_data": True}
+    venue = db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        return 404, {"detail": "Venue not found"}
+
+    venue_type = venue.get("venue_type", "club")
+    now = datetime.now()
+    day_of_week = now.weekday()  # 0=Mon, 6=Sun
+    is_weekend = day_of_week >= 4  # Fri/Sat/Sun
+    day_key = "weekend" if is_weekend else "weekday"
+    day_label = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][day_of_week]
+
+    windows = _ORACLE_PEAK_WINDOWS.get(venue_type, _ORACLE_PEAK_WINDOWS["club"])
+    peak_start, peak_end = windows[day_key]
+    best_arrival = _oracle_best_arrival(peak_start)
+
+    # Confidence calculation
+    base_conf = _ORACLE_BASE_CONF.get(venue_type, 75)
+    velocity = venue.get("vibe_velocity", "stable")
+    velocity_delta = {"heating_up": 8, "stable": 0, "cooling_down": -10}.get(velocity, 0)
+    activity = venue.get("total_ratings_24h", 0)
+    activity_delta = 5 if activity > 30 else (-5 if activity < 10 else 0)
+    confidence = max(50, min(95, base_conf + velocity_delta + activity_delta))
+
+    # Headline
+    energy_label = _ORACLE_ENERGY_LABELS.get(venue_type, "popping")
+    headline = f"{venue.get('name', 'This venue')} will be {energy_label} by {peak_start} tonight"
+
+    # Signals
+    signals = []
+    if is_weekend:
+        signals.append({"icon": "🌙", "label": f"{day_label} Night", "type": "day_of_week"})
+    else:
+        signals.append({"icon": "📅", "label": f"{day_label} Night", "type": "day_of_week"})
+    if velocity == "heating_up":
+        signals.append({"icon": "📈", "label": "Heating Up", "type": "velocity"})
+    elif velocity == "cooling_down":
+        signals.append({"icon": "📉", "label": "Cooling Down", "type": "velocity"})
+    music = venue.get("music_genre", "")
+    if music:
+        signals.append({"icon": "🎵", "label": music.split("/")[0].strip(), "type": "genre"})
+    if venue.get("vibe_certified"):
+        signals.append({"icon": "✅", "label": "Vibe Certified", "type": "certification"})
+    signals = signals[:3]  # max 3 chips
+
+    # Current trajectory (simple: just based on confidence + velocity)
+    if velocity == "heating_up":
+        trajectory = "rising"
+    elif velocity == "cooling_down":
+        trajectory = "fading"
+    elif activity > 25:
+        trajectory = "peaking"
+    else:
+        trajectory = "rising"
+
+    return 200, {
+        "venue_id": venue_id,
+        "headline": headline,
+        "confidence": confidence,
+        "peak_window_start": peak_start,
+        "peak_window_end": peak_end,
+        "best_arrival": best_arrival,
+        "current_trajectory": trajectory,
+        "signals": signals,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def handle_get_user_dna(user_id):
+    """Compute user's vibe affinity fingerprint from their rating history."""
+    db = get_db()
+    if not db:
+        return 200, {"insufficient_data": True}
+
+    ratings = list(db.ratings.find({"user_id": user_id}, {"_id": 0, "venue_id": 1, "vibe_score": 1, "timestamp": 1}))
+    if len(ratings) < 3:
+        return 200, {"insufficient_data": True, "min_ratings": 3, "current_ratings": len(ratings)}
+
+    # Group by venue_type
+    type_scores = {}  # venue_type -> [scores]
+    type_hours = []   # hours of rating for night_style
+    venue_cache = {}
+    for r in ratings:
+        vid = r.get("venue_id")
+        if vid not in venue_cache:
+            v = db.venues.find_one({"id": vid}, {"_id": 0, "venue_type": 1})
+            venue_cache[vid] = v.get("venue_type", "other") if v else "other"
+        vtype = venue_cache[vid]
+        if vtype not in type_scores:
+            type_scores[vtype] = []
+        type_scores[vtype].append(r.get("vibe_score", 50))
+        ts = r.get("timestamp")
+        if ts:
+            h = ts.hour if isinstance(ts, datetime) else 0
+            type_hours.append(h)
+
+    # Average per type
+    avgs = {vt: sum(scores)/len(scores) for vt, scores in type_scores.items()}
+    max_avg = max(avgs.values()) or 1
+    # Normalize to 0-100
+    normalized = {vt: round((avg / max_avg) * 100) for vt, avg in avgs.items()}
+
+    def label(score):
+        if score >= 80: return "Electric"
+        if score >= 60: return "Popping"
+        if score >= 40: return "Chill"
+        return "Low Key"
+
+    affinities = sorted([
+        {"venue_type": vt, "score": normalized[vt], "rating_count": len(type_scores[vt]), "label": label(normalized[vt])}
+        for vt in normalized
+    ], key=lambda x: x["score"], reverse=True)
+
+    # Dominant type = most ratings (frequency)
+    dominant_type = max(type_scores, key=lambda vt: len(type_scores[vt]))
+
+    # Night style from avg hour
+    avg_hour = sum(type_hours) / len(type_hours) if type_hours else 22
+    if avg_hour < 22 and avg_hour >= 6:
+        night_style = "early_bird"
+        night_style_label = "Early Bird — you like to get there first"
+    elif avg_hour >= 0 and avg_hour < 4:
+        night_style = "night_owl"
+        night_style_label = "Night Owl — you peak after midnight"
+    else:
+        night_style = "midnight_crew"
+        night_style_label = "Midnight Crew — you hit your stride at midnight"
+
+    return 200, {
+        "user_id": user_id,
+        "affinities": affinities,
+        "dominant_type": dominant_type,
+        "night_style": night_style,
+        "night_style_label": night_style_label,
+        "total_ratings_analyzed": len(ratings),
+        "computed_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def handle_planner_chat(body):
+    """Night Planner — keyword-based venue recommendation. Claude path activates via ANTHROPIC_API_KEY."""
+    city = body.get("city", "lagos").lower()
+    message = body.get("message", "").strip()
+    history = body.get("history", [])
+    conversation_id = body.get("conversation_id") or str(uuid.uuid4())
+
+    if not message:
+        return 400, {"detail": "Message is required"}
+
+    db = get_db()
+    venues = list(db.venues.find({"city": city}, {"_id": 0}).limit(30)) if db else []
+
+    # ── Claude path ──────────────────────────────────────────────────────
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if api_key and venues:
+        try:
+            import anthropic
+            venue_ctx = json.dumps([{
+                "id": v["id"], "name": v["name"], "area": v.get("area",""),
+                "venue_type": v.get("venue_type",""), "current_vibe_score": v.get("current_vibe_score",50),
+                "energy_level": v.get("energy_level","chill"), "capacity_level": v.get("capacity_level","sparse"),
+                "gate_level": v.get("gate_level","clear"), "entry_fee": v.get("entry_fee","Free"),
+                "music_genre": v.get("music_genre",""), "vibe_velocity": v.get("vibe_velocity","stable"),
+            } for v in venues], ensure_ascii=False)
+            system = (
+                "You are Vibe, a nightlife AI concierge for Nigeria. Tonight's live venue data:\n"
+                f"{venue_ctx}\n\n"
+                "Rules: Recommend 1-3 venues max from the data. Be warm, Nigerian-casual (use 'squad', 'vibe', 'mad'). "
+                "Respond in JSON only: {\"reply\": \"...\", \"venue_ids\": [\"id1\",\"id2\"], \"follow_up_prompts\": [\"...\",\"...\"]}"
+            )
+            messages = history + [{"role": "user", "content": message}]
+            client = anthropic.Anthropic(api_key=api_key)
+            resp = client.messages.create(model="claude-haiku-4-5-20251001", max_tokens=600, system=system, messages=messages)
+            raw = resp.content[0].text.strip()
+            parsed = json.loads(raw)
+            rec_venues = [v for v in venues if v["id"] in parsed.get("venue_ids", [])]
+            result_venues = [{"venue_id": v["id"], "name": v["name"], "area": v.get("area",""),
+                              "current_vibe_score": v.get("current_vibe_score",50),
+                              "energy_level": v.get("energy_level","chill"),
+                              "entry_fee": v.get("entry_fee","Free"),
+                              "music_genre": v.get("music_genre",""),
+                              "match_reason": "Recommended by AI", "match_score": 90} for v in rec_venues]
+            return 200, {"conversation_id": conversation_id, "reply": parsed.get("reply",""),
+                         "venues": result_venues, "follow_up_prompts": parsed.get("follow_up_prompts",[]),
+                         "powered_by": "claude"}
+        except Exception as e:
+            logging.warning(f"Claude planner failed, falling back to rules: {e}")
+
+    # ── Rule-based path ──────────────────────────────────────────────────
+    msg = message.lower()
+    AREAS = ["lekki","vi","victoria island","ikeja","ikoyi","surulere","yaba","ajah","gbagada","maryland"]
+    GENRES = ["afrobeats","afrobeat","amapiano","house","highlife","hiphop","hip hop","r&b","rnb"]
+    BUDGET_KW = ["budget","cheap","free","affordable","low key","lowkey"]
+    CLUB_KW = ["club","dance","turn up","turnup","party","rave"]
+    LOUNGE_KW = ["lounge","chill","relax","quiet","sit down","vibe","grown"]
+    GROUP_KW = ["squad","crew","group","gang","6","7","8","9","10","large"]
+
+    target_area = next((a for a in AREAS if a in msg), None)
+    target_genre = next((g for g in GENRES if g in msg), None)
+    want_budget = any(k in msg for k in BUDGET_KW)
+    want_club = any(k in msg for k in CLUB_KW)
+    want_lounge = any(k in msg for k in LOUNGE_KW)
+    want_group = any(k in msg for k in GROUP_KW)
+
+    scored = []
+    for v in venues:
+        s = v.get("current_vibe_score", 50)
+        if target_area and target_area in v.get("area","").lower(): s += 20
+        if target_genre and target_genre in v.get("music_genre","").lower(): s += 15
+        if want_budget and "free" in v.get("entry_fee","").lower(): s += 20
+        if want_club and v.get("venue_type") == "club": s += 15
+        if want_lounge and v.get("venue_type") in ["lounge","bar"]: s += 15
+        if want_group and v.get("capacity_level") in ["vibrant","full"]: s += 10
+        scored.append((s, v))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    top = [v for _, v in scored[:3]]
+
+    # Build reply
+    if not top:
+        reply = "I couldn't find a match right now — try a different area or vibe?"
+        follow_ups = ["Show me all venues", "Any clubs nearby?"]
+    else:
+        names = " and ".join(f"**{v['name']}**" for v in top)
+        reply = f"Your squad is set! Based on your vibe, check out {names} tonight."
+        if target_area:
+            reply += f" All in {target_area.title()}."
+        if top[0].get("vibe_velocity") == "heating_up":
+            reply += f" {top[0]['name']} is heating up fast right now."
+        follow_ups = ["What's the gate like?", "Any free entry spots?", f"More in {target_area.title() if target_area else 'Lagos'}"]
+
+    result_venues = [{"venue_id": v["id"], "name": v["name"], "area": v.get("area",""),
+                      "current_vibe_score": v.get("current_vibe_score",50),
+                      "energy_level": v.get("energy_level","chill"), "entry_fee": v.get("entry_fee","Free"),
+                      "music_genre": v.get("music_genre",""),
+                      "match_reason": _build_match_reason(v, target_genre, target_area, want_budget),
+                      "match_score": min(95, v.get("current_vibe_score",50) + 20)} for v in top]
+
+    return 200, {"conversation_id": conversation_id, "reply": reply,
+                 "venues": result_venues, "follow_up_prompts": follow_ups[:3],
+                 "powered_by": "rules"}
+
+def _build_match_reason(venue, genre, area, budget):
+    parts = []
+    if genre and genre in venue.get("music_genre","").lower(): parts.append(genre.title())
+    if area and area in venue.get("area","").lower(): parts.append(f"in {area.title()}")
+    if budget and "free" in venue.get("entry_fee","").lower(): parts.append("Free entry")
+    if not parts: parts.append(f"{venue.get('venue_type','').title()} vibes")
+    return " · ".join(parts)
+
+
 def handle_direction_click(venue_id):
     db = get_db()
     if not db:
@@ -791,6 +1077,12 @@ def route_get(path, query_params, headers):
     m = re.match(r'^/api/venues/([^/]+)/top-scouts$', path)
     if m:
         return handle_get_venue_top_scouts(m.group(1))
+    m = re.match(r'^/api/venues/([^/]+)/oracle$', path)
+    if m:
+        return handle_get_oracle(m.group(1))
+    m = re.match(r'^/api/users/([^/]+)/dna$', path)
+    if m:
+        return handle_get_user_dna(m.group(1))
     m = re.match(r'^/api/ratings/status/([^/]+)/([^/]+)$', path)
     if m:
         return handle_get_rating_status(m.group(1), m.group(2))
@@ -838,6 +1130,8 @@ def route_post(path, body, headers):
         return handle_checkins_create(body, headers)
     if path == "/api/admin/venues":
         return handle_admin_create_venue(body)
+    if path == "/api/planner/chat":
+        return handle_planner_chat(body)
 
     # Dynamic routes
     m = re.match(r'^/api/venues/([^/]+)/direction-click$', path)

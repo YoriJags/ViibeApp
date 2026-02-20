@@ -249,6 +249,19 @@ interface TransientState {
   crewLocations: CrewMemberLocation[];
   ghostMode: boolean;
   demoRatedVenues: Record<string, number>; // venueId → timestamp of last demo rating
+  vibeDNA: VibeDNA | null;
+}
+
+export interface VenueAffinity { venue_type: string; score: number; rating_count: number; label: string; }
+export interface VibeDNA {
+  user_id: string;
+  affinities: VenueAffinity[];
+  dominant_type: string;
+  night_style: 'early_bird' | 'night_owl' | 'midnight_crew';
+  night_style_label: string;
+  total_ratings_analyzed: number;
+  computed_at: string;
+  insufficient_data?: boolean;
 }
 
 interface VibeStoreActions {
@@ -333,6 +346,8 @@ interface VibeStoreActions {
   // Crew Tracker
   fetchCrewLocations: (crewId: string) => Promise<void>;
   toggleGhostMode: () => void;
+  // Vibe DNA
+  fetchVibeDNA: (userId: string) => Promise<void>;
 }
 
 type VibeStore = PersistedState & TransientState & VibeStoreActions;
@@ -381,6 +396,7 @@ export const useVibeStore = create<VibeStore>()(
       crewLocations: [],
       ghostMode: false,
       demoRatedVenues: {},
+      vibeDNA: null,
 
       // Hydration tracker
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
@@ -975,6 +991,27 @@ export const useVibeStore = create<VibeStore>()(
       },
 
       toggleGhostMode: () => set((state) => ({ ghostMode: !state.ghostMode })),
+
+      // ===== Vibe DNA =====
+      fetchVibeDNA: async (userId: string) => {
+        const { isDemoMode, getAuthHeaders } = get();
+        if (isDemoMode) {
+          const { DEMO_VIBE_DNA } = require('../data/demoData');
+          set({ vibeDNA: DEMO_VIBE_DNA });
+          return;
+        }
+        try {
+          const res = await fetch(`${API_URL}/api/users/${userId}/dna`, {
+            headers: getAuthHeaders(),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            set({ vibeDNA: data });
+          }
+        } catch (e) {
+          console.error('fetchVibeDNA error:', e);
+        }
+      },
 
       // ===== Streak Actions =====
       fetchStreak: async () => {

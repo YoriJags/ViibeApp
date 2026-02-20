@@ -22,6 +22,7 @@ import AvatarDisplay from '../../src/components/AvatarDisplay';
 import AvatarBuilder from '../../src/components/AvatarBuilder';
 import AchievementBadge from '../../src/components/AchievementBadge';
 import { DEMO_BADGES } from '../../src/data/demoData';
+import VibeDNACard from '../../src/components/VibeDNACard';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 
@@ -49,6 +50,7 @@ export default function ProfileScreen() {
     });
     fetchStreak();
     fetchCrew();
+    if (user?.id) useVibeStore.getState().fetchVibeDNA(user.id);
   }, []);
 
   // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
@@ -339,6 +341,9 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Status</Text>
           </View>
         </View>
+
+        {/* Vibe DNA */}
+        {user && <VibeDNACard userId={user.id} />}
 
         {/* Streak Card */}
         {streak && streak.current_streak > 0 && (

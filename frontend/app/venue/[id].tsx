@@ -31,6 +31,7 @@ import CampaignBadge from '../../src/components/CampaignBadge';
 import CheckInCelebration from '../../src/components/CheckInCelebration';
 import CertifiedBadge from '../../src/components/CertifiedBadge';
 import TopScoutsCard from '../../src/components/TopScoutsCard';
+import VibeOracle from '../../src/components/VibeOracle';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -601,6 +602,9 @@ export default function VenueDetailScreen() {
             </View>
           </BlurView>
         </View>
+
+        {/* ====== VIBE ORACLE ====== */}
+        {id && <VibeOracle venueId={id} venueName={venue?.name} />}
 
         {/* ====== VIBE TIMELINE ====== */}
         {venueTimeline.length > 0 && (

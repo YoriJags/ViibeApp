@@ -31,7 +31,9 @@ import ElectricTransition from '../../src/components/ElectricTransition';
 import TonightHero from '../../src/components/TonightHero';
 import CartelPulse from '../../src/components/CartelPulse';
 import VibePrompt from '../../src/components/VibePrompt';
-import { DEMO_ACTIVITY_FEED, DEMO_TONIGHT, DEMO_PROMPTS } from '../../src/data/demoData';
+import { DEMO_ACTIVITY_FEED, DEMO_TONIGHT, DEMO_PROMPTS, DEMO_VIBE_MATCH } from '../../src/data/demoData';
+import VibeMatch from '../../src/components/VibeMatch';
+import NightPlannerModal from '../../src/components/NightPlannerModal';
 import { getNightPhase } from '../../src/store/vibeStore';
 import { calculateDistance } from '../../src/utils/geo';
 
@@ -55,7 +57,7 @@ const CITIES = [
 export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string }>();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
@@ -67,6 +69,7 @@ export default function MapScreen() {
   const [selectedCategory, setSelectedCategory] = useState<VenueCategory>('all');
   const [showTransition, setShowTransition] = useState(false);
   const [dismissedPrompts, setDismissedPrompts] = useState<Set<string>>(new Set());
+  const [showPlanner, setShowPlanner] = useState(false);
 
   // Animations
   const headerGlowAnim = useRef(new Animated.Value(0.6)).current;
@@ -221,6 +224,24 @@ export default function MapScreen() {
     });
   }, [venues, selectedCategory, vibePersona]);
 
+  // DNA-powered VibeMatch: blend affinity (40%) + vibe score (60%) → top match
+  const vibeMatchVenue = useMemo(() => {
+    if (isDemoMode) return DEMO_VIBE_MATCH;
+    if (!vibeDNA || !venues.length) return null;
+    const top = venues
+      .map((v: any) => {
+        const affinity = vibeDNA.affinities.find((a) => a.venue_type === v.venue_type);
+        const dnaScore = affinity?.score ?? 50;
+        const matchPercent = Math.round(dnaScore * 0.4 + (v.current_vibe_score ?? 50) * 0.6);
+        const reason = affinity
+          ? `${dnaScore}% affinity for ${v.venue_type}s · Vibe score ${v.current_vibe_score ?? '?'}`
+          : `Trending in ${v.area || selectedCity}`;
+        return { venueName: v.name, venueId: v.id, venueArea: v.area, matchPercent, vibeScore: v.current_vibe_score ?? 50, energyLevel: v.energy_level ?? 'popping', reason };
+      })
+      .sort((a, b) => b.matchPercent - a.matchPercent)[0];
+    return top ?? null;
+  }, [vibeDNA, venues, isDemoMode]);
+
   // Night phase detection
   const nightPhase = useMemo(() =>
     getNightPhase(activeCheckin, isDemoMode),
@@ -300,17 +321,26 @@ export default function MapScreen() {
             </Animated.View>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.viewToggle}
-          onPress={() => setShowList(!showList)}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name={showList ? 'map' : 'list'}
-            size={22}
-            color="#FF3366"
-          />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.plannerButton}
+            onPress={() => setShowPlanner(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="sparkles" size={20} color="#FFD700" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.viewToggle}
+            onPress={() => setShowList(!showList)}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={showList ? 'map' : 'list'}
+              size={22}
+              color="#FF3366"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* City Picker Modal */}
@@ -425,6 +455,19 @@ export default function MapScreen() {
             />
           ))}
 
+          {/* VibeMatch — DNA-powered recommendation */}
+          {vibeMatchVenue && (
+            <VibeMatch
+              venueName={vibeMatchVenue.venueName}
+              venueArea={vibeMatchVenue.venueArea}
+              matchPercent={vibeMatchVenue.matchPercent}
+              vibeScore={vibeMatchVenue.vibeScore}
+              energyLevel={vibeMatchVenue.energyLevel}
+              reason={vibeMatchVenue.reason}
+              onPress={() => router.push(`/venue/${vibeMatchVenue.venueId}`)}
+            />
+          )}
+
           {/* Category filter */}
           <VenueCategoryFilter
             selected={selectedCategory}
@@ -531,6 +574,13 @@ export default function MapScreen() {
       />
 
       <FloorSwitcher currentFloor="public" />
+
+      {/* Night Planner Modal */}
+      <NightPlannerModal
+        visible={showPlanner}
+        onClose={() => setShowPlanner(false)}
+        city={selectedCity}
+      />
     </SafeAreaView>
   );
 }
@@ -577,6 +627,21 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 12,
     color: '#B0B0B0',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  plannerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,215,0,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   viewToggle: {
     width: 44,

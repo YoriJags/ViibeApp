@@ -784,3 +784,189 @@ export const DEMO_VENUE_TOP_SCOUTS = [
   { rank: 4, user_id: 'scout_004', username: 'LagosNight', scout_status: 'regular', ratings_count: 12, clout_earned: 240, tier_color: '#CD7F32' },
   { rank: 5, user_id: 'scout_005', username: 'VIScout', scout_status: 'regular', ratings_count: 9, clout_earned: 180, tier_color: '#CD7F32' },
 ];
+
+// ===== VIBE ORACLE — Demo predictions per venue =====
+interface OracleSignal { icon: string; label: string; type: string; }
+interface OraclePrediction {
+  venue_id: string; headline: string; confidence: number;
+  peak_window_start: string; peak_window_end: string;
+  best_arrival: string; current_trajectory: 'rising'|'peaking'|'fading'|'quiet';
+  signals: OracleSignal[]; generated_at: string;
+}
+
+const _now = new Date().toISOString();
+export const DEMO_ORACLE_PREDICTIONS: Record<string, OraclePrediction> = {
+  'demo_venue_quilox': {
+    venue_id: 'demo_venue_quilox', confidence: 89,
+    headline: "Quilox will be electric by 12:30am tonight",
+    peak_window_start: "12:30am", peak_window_end: "2:00am",
+    best_arrival: "11:45pm", current_trajectory: 'rising',
+    signals: [{ icon:"🌙", label:"Friday Night", type:"day_of_week"}, {icon:"📈", label:"Heating Up", type:"velocity"}, {icon:"🎵", label:"Afrobeats", type:"genre"}],
+    generated_at: _now,
+  },
+  'demo_venue_escape': {
+    venue_id: 'demo_venue_escape', confidence: 92,
+    headline: "Escape is already peaking — go now",
+    peak_window_start: "11:30pm", peak_window_end: "1:30am",
+    best_arrival: "Now", current_trajectory: 'peaking',
+    signals: [{icon:"🌙", label:"Friday Night", type:"day_of_week"}, {icon:"⚡", label:"Peak Window", type:"activity"}, {icon:"✅", label:"Vibe Certified", type:"certification"}],
+    generated_at: _now,
+  },
+  'demo_venue_house70': {
+    venue_id: 'demo_venue_house70', confidence: 85,
+    headline: "House 70 will be electric by 1:00am tonight",
+    peak_window_start: "1:00am", peak_window_end: "3:00am",
+    best_arrival: "12:15am", current_trajectory: 'rising',
+    signals: [{icon:"🌙", label:"Saturday Night", type:"day_of_week"}, {icon:"🎵", label:"Afrobeats", type:"genre"}, {icon:"📈", label:"Heating Up", type:"velocity"}],
+    generated_at: _now,
+  },
+  'demo_venue_shiro': {
+    venue_id: 'demo_venue_shiro', confidence: 80,
+    headline: "Shiro Lagos will be popping by 10:00pm",
+    peak_window_start: "10:00pm", peak_window_end: "12:00am",
+    best_arrival: "9:15pm", current_trajectory: 'rising',
+    signals: [{icon:"🌙", label:"Friday Night", type:"day_of_week"}, {icon:"🍸", label:"Lounge Night", type:"genre"}],
+    generated_at: _now,
+  },
+  'demo_venue_reddoor': {
+    venue_id: 'demo_venue_reddoor', confidence: 76,
+    headline: "Red Door will be popping from 11:00pm",
+    peak_window_start: "11:00pm", peak_window_end: "1:00am",
+    best_arrival: "10:15pm", current_trajectory: 'rising',
+    signals: [{icon:"📅", label:"Weeknight", type:"day_of_week"}, {icon:"🍸", label:"Lounge Vibes", type:"genre"}],
+    generated_at: _now,
+  },
+  'demo_venue_cova': {
+    venue_id: 'demo_venue_cova', confidence: 74,
+    headline: "Cova Lounge heats up from 9:00pm",
+    peak_window_start: "9:00pm", peak_window_end: "11:30pm",
+    best_arrival: "8:15pm", current_trajectory: 'rising',
+    signals: [{icon:"📅", label:"Friday Night", type:"day_of_week"}, {icon:"🎵", label:"Amapiano", type:"genre"}],
+    generated_at: _now,
+  },
+  'demo_venue_hardrock': {
+    venue_id: 'demo_venue_hardrock', confidence: 82,
+    headline: "Hard Rock Cafe peaks around 7:30pm tonight",
+    peak_window_start: "7:00pm", peak_window_end: "9:30pm",
+    best_arrival: "6:15pm", current_trajectory: 'rising',
+    signals: [{icon:"🌅", label:"Dinner Rush", type:"day_of_week"}, {icon:"🍽️", label:"Restaurant", type:"genre"}],
+    generated_at: _now,
+  },
+  'demo_venue_church': {
+    venue_id: 'demo_venue_church', confidence: 93,
+    headline: "Daystar Sunday service peaks at 9:00am",
+    peak_window_start: "9:00am", peak_window_end: "12:00pm",
+    best_arrival: "8:15am", current_trajectory: 'rising',
+    signals: [{icon:"⛪", label:"Sunday Service", type:"day_of_week"}, {icon:"✅", label:"Verified Venue", type:"certification"}],
+    generated_at: _now,
+  },
+  'demo_venue_play': {
+    venue_id: 'demo_venue_play', confidence: 84,
+    headline: "Play Abuja will be electric by 1:00am",
+    peak_window_start: "1:00am", peak_window_end: "3:00am",
+    best_arrival: "12:15am", current_trajectory: 'rising',
+    signals: [{icon:"🌙", label:"Saturday Night", type:"day_of_week"}, {icon:"🎵", label:"Afrobeats", type:"genre"}],
+    generated_at: _now,
+  },
+  'demo_venue_cube': {
+    venue_id: 'demo_venue_cube', confidence: 77,
+    headline: "The Cube Lounge is the place to be from 10pm",
+    peak_window_start: "10:00pm", peak_window_end: "12:00am",
+    best_arrival: "9:15pm", current_trajectory: 'rising',
+    signals: [{icon:"🌙", label:"Friday Night", type:"day_of_week"}, {icon:"🍸", label:"Lounge Night", type:"genre"}],
+    generated_at: _now,
+  },
+  'demo_venue_blockparty': {
+    venue_id: 'demo_venue_blockparty', confidence: 91,
+    headline: "Detty December Block Party peaks from 6:00pm",
+    peak_window_start: "6:00pm", peak_window_end: "10:00pm",
+    best_arrival: "5:15pm", current_trajectory: 'rising',
+    signals: [{icon:"🎉", label:"Detty December", type:"day_of_week"}, {icon:"📈", label:"Crowd Building", type:"activity"}],
+    generated_at: _now,
+  },
+  'demo_venue_concert': {
+    venue_id: 'demo_venue_concert', confidence: 96,
+    headline: "Burna Boy Live hits peak energy by 8:00pm",
+    peak_window_start: "8:00pm", peak_window_end: "11:00pm",
+    best_arrival: "7:15pm", current_trajectory: 'rising',
+    signals: [{icon:"🎤", label:"Live Concert", type:"day_of_week"}, {icon:"📈", label:"Selling Out", type:"activity"}, {icon:"🎵", label:"Afrobeats", type:"genre"}],
+    generated_at: _now,
+  },
+};
+
+// Fallback for any venue not in the dict above
+export const DEMO_ORACLE_DEFAULT: OraclePrediction = {
+  venue_id: 'default', confidence: 78,
+  headline: "This spot will be popping by midnight tonight",
+  peak_window_start: "12:00am", peak_window_end: "2:00am",
+  best_arrival: "11:15pm", current_trajectory: 'rising',
+  signals: [{icon:"🌙", label:"Tonight", type:"day_of_week"}, {icon:"📈", label:"Heating Up", type:"velocity"}],
+  generated_at: _now,
+};
+
+// ===== VIBE DNA — Demo user fingerprint =====
+export interface VenueAffinity { venue_type: string; score: number; rating_count: number; label: string; }
+export interface VibeDNA {
+  user_id: string; affinities: VenueAffinity[]; dominant_type: string;
+  night_style: 'early_bird'|'night_owl'|'midnight_crew'; night_style_label: string;
+  total_ratings_analyzed: number; computed_at: string; insufficient_data?: boolean;
+}
+
+export const DEMO_VIBE_DNA: VibeDNA = {
+  user_id: 'demo_user_001',
+  dominant_type: 'club',
+  night_style: 'night_owl',
+  night_style_label: "Night Owl — you peak after midnight",
+  total_ratings_analyzed: 187,
+  computed_at: _now,
+  affinities: [
+    { venue_type: 'club',        score: 91, rating_count: 89, label: 'Electric' },
+    { venue_type: 'concert',     score: 85, rating_count: 28, label: 'Electric' },
+    { venue_type: 'lounge',      score: 68, rating_count: 34, label: 'Popping'  },
+    { venue_type: 'bar',         score: 55, rating_count: 19, label: 'Chill'    },
+    { venue_type: 'restaurant',  score: 47, rating_count: 12, label: 'Chill'    },
+    { venue_type: 'block_party', score: 96, rating_count: 5,  label: 'Electric' },
+  ],
+};
+
+// ===== NIGHT PLANNER — Scripted demo conversation =====
+export interface PlannerVenueResult {
+  venue_id: string; name: string; area: string;
+  current_vibe_score: number; energy_level: string;
+  entry_fee: string; music_genre: string;
+  match_reason: string; match_score: number;
+}
+export interface PlannerMessage {
+  id: string; role: 'user'|'assistant'; content: string;
+  venues?: PlannerVenueResult[]; follow_up_prompts?: string[];
+}
+
+export const DEMO_PLANNER_CONVERSATION: PlannerMessage[] = [
+  {
+    id: 'demo_msg_1', role: 'user',
+    content: "Where should my squad of 6 go tonight? Afrobeats, Lekki, budget-friendly",
+  },
+  {
+    id: 'demo_msg_2', role: 'assistant',
+    content: "Your squad is set for a mad night! I found 2 perfect spots in Lekki right now — both Afrobeats, both accessible. Escape is already heating up and House 70 peaks later if you want to make a night of it.",
+    venues: [
+      { venue_id: 'demo_venue_escape', name: 'Escape Nightclub', area: 'Victoria Island',
+        current_vibe_score: 88, energy_level: 'electric', entry_fee: '₦5,000',
+        music_genre: 'Afrobeats', match_reason: 'Afrobeats · VI · Capacity for groups', match_score: 94 },
+      { venue_id: 'demo_venue_house70', name: 'House 70', area: 'Lekki Phase 1',
+        current_vibe_score: 76, energy_level: 'popping', entry_fee: 'Free before 11pm',
+        music_genre: 'Afrobeats / Amapiano', match_reason: 'Free entry · Afrobeats · Lekki', match_score: 89 },
+    ],
+    follow_up_prompts: ["What's the gate like at Escape?", "Any free entry spots?", "Show me VI options"],
+  },
+  {
+    id: 'demo_msg_3', role: 'user',
+    content: "What's the gate looking like at Escape?",
+  },
+  {
+    id: 'demo_msg_4', role: 'assistant',
+    content: "Escape's gate is currently slow — scouts are reporting about a 15-minute wait. Get there before 11pm to walk straight in. 52 scouts have checked in tonight so the vibe is confirmed electric. Your squad will love it.",
+    venues: [],
+    follow_up_prompts: ["Navigate to Escape", "Book a table at House 70"],
+  },
+];
