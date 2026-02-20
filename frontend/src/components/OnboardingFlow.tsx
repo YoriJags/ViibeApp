@@ -71,7 +71,7 @@ type VibePersona = 'turn_up' | 'grown_sexy' | 'culture' | 'chill_set';
 
 const PERSONAS: { key: VibePersona; emoji: string; label: string; subtitle: string; gradient: [string, string] }[] = [
   { key: 'turn_up', emoji: '🎉', label: 'The Turn Up', subtitle: 'Clubs · Parties · High energy nights', gradient: ['#FF3366', '#9933FF'] },
-  { key: 'grown_sexy', emoji: '🍸', label: 'Grown & Sexy', subtitle: 'Lounges · Rooftops · Fine dining', gradient: ['#9933FF', '#4169E1'] },
+  { key: 'grown_sexy', emoji: '🍸', label: 'The Luxe', subtitle: 'Lounges · Rooftops · Fine dining', gradient: ['#9933FF', '#4169E1'] },
   { key: 'culture', emoji: '🎵', label: 'The Culture', subtitle: 'Live music · Concerts · Art events', gradient: ['#FF9800', '#FFD700'] },
   { key: 'chill_set', emoji: '🌙', label: 'The Chill Set', subtitle: 'Restaurants · Cafes · Low-key spots', gradient: ['#00D4FF', '#00E676'] },
 ];
