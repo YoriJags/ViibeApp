@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vibez — Financial Model</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --pink:#FF3366; --gold:#FFD700; --green:#00E676; --purple:#9933FF;
+    --cyan:#00D4FF; --bg:#070709; --card:rgba(255,255,255,0.04);
+    --border:rgba(255,255,255,0.08); --text:#FFFFFF; --muted:#888; --dim:#444;
+  }
+  html,body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe UI',sans-serif; min-height:100%; }
+  body { padding:40px 48px 80px; }
+
+  /* ── HEADER ── */
+  .header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:40px; }
+  .logo { font-size:28px; font-weight:900; letter-spacing:-1px; }
+  .logo span { background:linear-gradient(135deg,var(--pink),var(--gold)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .header-meta { font-size:12px; color:var(--muted); text-align:right; line-height:1.8; }
+
+  /* ── SECTION LABELS ── */
+  .section-label {
+    font-size:11px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase;
+    color:var(--pink); margin-bottom:16px;
+  }
+  .section-label.gold { color:var(--gold); }
+  .section-label.green { color:var(--green); }
+  .section-label.cyan { color:var(--cyan); }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:40px; }
+  .kpi {
+    background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:18px 20px;
+  }
+  .kpi-label { font-size:10px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+  .kpi-value { font-size:24px; font-weight:800; }
+  .kpi-sub { font-size:11px; color:var(--muted); margin-top:4px; }
+  .kpi.pink { border-color:rgba(255,51,102,0.3); }
+  .kpi.gold { border-color:rgba(255,215,0,0.3); }
+  .kpi.green { border-color:rgba(0,230,118,0.3); }
+  .kpi.cyan { border-color:rgba(0,212,255,0.3); }
+  .kpi.purple { border-color:rgba(153,51,255,0.3); }
+
+  /* ── LAYOUT ── */
+  .two-col { display:grid; grid-template-columns:320px 1fr; gap:24px; margin-bottom:40px; }
+
+  /* ── ASSUMPTIONS PANEL ── */
+  .assumptions {
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:24px; position:sticky; top:20px; align-self:start;
+  }
+  .assumption-group { margin-bottom:20px; }
+  .assumption-group:last-child { margin-bottom:0; }
+  .group-title {
+    font-size:10px; color:var(--muted); letter-spacing:1px; text-transform:uppercase;
+    margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);
+  }
+  .assumption-row { margin-bottom:12px; }
+  .assumption-label {
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:12px; color:#CCC; margin-bottom:5px;
+  }
+  .assumption-label .val {
+    font-weight:700; color:var(--text); font-size:13px;
+    background:rgba(255,255,255,0.07); padding:2px 8px; border-radius:6px;
+    min-width:52px; text-align:center;
+  }
+  input[type=range] {
+    -webkit-appearance:none; appearance:none; width:100%; height:4px;
+    background:var(--dim); border-radius:2px; outline:none; cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:14px; height:14px; border-radius:50%;
+    background:var(--pink); cursor:pointer; box-shadow:0 0 6px rgba(255,51,102,0.5);
+  }
+
+  /* ── CHART ── */
+  .chart-area {
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:24px; display:flex; flex-direction:column;
+  }
+  .chart-title { font-size:14px; font-weight:700; margin-bottom:4px; }
+  .chart-sub { font-size:11px; color:var(--muted); margin-bottom:20px; }
+  #chartSvg { width:100%; overflow:visible; }
+
+  /* ── REVENUE BREAKDOWN ── */
+  .breakdown-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:40px; }
+  .stream-card {
+    background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:20px;
+  }
+  .stream-name { font-size:13px; font-weight:700; margin-bottom:4px; }
+  .stream-launch { font-size:10px; color:var(--muted); margin-bottom:12px; }
+  .stream-bar-bg { background:var(--dim); border-radius:4px; height:6px; margin-bottom:8px; }
+  .stream-bar { height:6px; border-radius:4px; transition:width 0.5s; }
+  .stream-values { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    overflow:hidden; margin-bottom:40px;
+  }
+  .table-header {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:20px 24px 16px; border-bottom:1px solid var(--border);
+  }
+  .table-header h3 { font-size:16px; font-weight:700; }
+  .show-toggle {
+    font-size:12px; color:var(--pink); cursor:pointer; font-weight:600;
+    background:none; border:none; padding:4px 10px; border-radius:6px;
+    border:1px solid rgba(255,51,102,0.3); transition:all 0.2s;
+  }
+  .show-toggle:hover { background:rgba(255,51,102,0.1); }
+  table { width:100%; border-collapse:collapse; }
+  th {
+    font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--muted);
+    text-align:right; padding:10px 14px; border-bottom:1px solid var(--border);
+  }
+  th:first-child { text-align:left; }
+  td {
+    font-size:12px; text-align:right; padding:9px 14px;
+    border-bottom:1px solid rgba(255,255,255,0.04); font-variant-numeric:tabular-nums;
+  }
+  td:first-child { text-align:left; font-weight:600; }
+  tr:hover td { background:rgba(255,255,255,0.02); }
+  .positive { color:var(--green); }
+  .negative { color:var(--pink); }
+  .milestone-row td { background:rgba(255,215,0,0.04); }
+  .milestone-row td:first-child::after {
+    content:' ⭐'; font-size:10px; color:var(--gold);
+  }
+  .hidden-row { display:none; }
+
+  /* ── UNIT ECONOMICS ── */
+  .unit-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:40px; }
+  .unit-card {
+    background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:20px; text-align:center;
+  }
+  .unit-label { font-size:10px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+  .unit-value { font-size:28px; font-weight:800; }
+  .unit-desc { font-size:11px; color:var(--muted); margin-top:6px; line-height:1.5; }
+
+  /* ── FOOTER ── */
+  .footer { font-size:11px; color:var(--dim); text-align:center; line-height:1.8; }
+  .footnote {
+    background:rgba(255,215,0,0.06); border:1px solid rgba(255,215,0,0.15);
+    border-radius:10px; padding:14px 20px; margin-bottom:24px; font-size:12px;
+    color:#CCC; line-height:1.7;
+  }
+  .tag {
+    display:inline-block; font-size:10px; font-weight:700; letter-spacing:1px;
+    padding:2px 8px; border-radius:4px; margin-right:6px;
+  }
+  .tag.pink { background:rgba(255,51,102,0.15); color:var(--pink); border:1px solid rgba(255,51,102,0.3); }
+  .tag.gold { background:rgba(255,215,0,0.15); color:var(--gold); border:1px solid rgba(255,215,0,0.3); }
+  .tag.green { background:rgba(0,230,118,0.15); color:var(--green); border:1px solid rgba(0,230,118,0.3); }
+
+  @media print {
+    body { padding:20px; background:#fff; color:#000; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div>
+    <div class="logo"><span>VIBEZ</span></div>
+    <div style="font-size:13px;color:var(--muted);margin-top:4px;">Financial Model · Pre-Seed · Lagos 2026</div>
+  </div>
+  <div class="header-meta">
+    Confidential · February 2026<br>
+    Yoriajagun08@gmail.com<br>
+    <span style="color:var(--dim);">Adjust assumptions → model recalculates live</span>
+  </div>
+</div>
+
+<!-- ── KPI CARDS ── -->
+<div class="section-label">Live Metrics — Month 12 Projection</div>
+<div class="kpi-grid">
+  <div class="kpi pink">
+    <div class="kpi-label">MRR — Month 12</div>
+    <div class="kpi-value" id="kpi-mrr12">—</div>
+    <div class="kpi-sub" id="kpi-mrr12-ngn">—</div>
+  </div>
+  <div class="kpi gold">
+    <div class="kpi-label">Paying Venues — M12</div>
+    <div class="kpi-value" id="kpi-venues12">—</div>
+    <div class="kpi-sub" id="kpi-totalvenues12">of — onboarded</div>
+  </div>
+  <div class="kpi green">
+    <div class="kpi-label">Runway</div>
+    <div class="kpi-value" id="kpi-runway">—</div>
+    <div class="kpi-sub">months from pre-seed</div>
+  </div>
+  <div class="kpi cyan">
+    <div class="kpi-label">Break-Even Month</div>
+    <div class="kpi-value" id="kpi-breakeven">—</div>
+    <div class="kpi-sub">revenue ≥ burn</div>
+  </div>
+  <div class="kpi purple">
+    <div class="kpi-label">ARR — Month 24</div>
+    <div class="kpi-value" id="kpi-arr24">—</div>
+    <div class="kpi-sub" id="kpi-arr24-sub">—</div>
+  </div>
+</div>
+
+<!-- ── TWO COL: ASSUMPTIONS + CHART ── -->
+<div class="two-col">
+
+  <!-- ASSUMPTIONS -->
+  <div class="assumptions">
+    <div class="section-label" style="margin-bottom:20px;">Model Assumptions</div>
+
+    <div class="assumption-group">
+      <div class="group-title">Macro</div>
+      <div class="assumption-row">
+        <div class="assumption-label">Exchange Rate (₦/$) <span class="val" id="v-fx">1500</span></div>
+        <input type="range" id="r-fx" min="1200" max="2000" step="50" value="1500" oninput="recalc()">
+      </div>
+      <div class="assumption-row">
+        <div class="assumption-label">Pre-Seed Funding ($K) <span class="val" id="v-seed">250</span></div>
+        <input type="range" id="r-seed" min="150" max="400" step="25" value="250" oninput="recalc()">
+      </div>
+    </div>
+
+    <div class="assumption-group">
+      <div class="group-title">Growth</div>
+      <div class="assumption-row">
+        <div class="assumption-label">Venues Launched (Month 3) <span class="val" id="v-launch">5</span></div>
+        <input type="range" id="r-launch" min="3" max="15" step="1" value="5" oninput="recalc()">
+      </div>
+      <div class="assumption-row">
+        <div class="assumption-label">New Venues/Month <span class="val" id="v-growth">4</span></div>
+        <input type="range" id="r-growth" min="1" max="15" step="1" value="4" oninput="recalc()">
+      </div>
+      <div class="assumption-row">
+        <div class="assumption-label">Merchant Conversion % <span class="val" id="v-conv">40%</span></div>
+        <input type="range" id="r-conv" min="10" max="80" step="5" value="40" oninput="recalc()">
+      </div>
+      <div class="assumption-row">
+        <div class="assumption-label">Monthly Churn % <span class="val" id="v-churn">5%</span></div>
+        <input type="range" id="r-churn" min="1" max="20" step="1" value="5" oninput="recalc()">
+      </div>
+    </div>
+
+    <div class="assumption-group">
+      <div class="group-title">Pricing (₦K)</div>
+      <div class="assumption-row">
+        <div class="assumption-label">Avg Subscription /venue/mo <span class="val" id="v-sub">150</span></div>
+        <input type="range" id="r-sub" min="50" max="500" step="25" value="150" oninput="recalc()">
+      </div>
+      <div class="assumption-row">
+        <div class="assumption-label">Pulse Drops/venue/mo <span class="val" id="v-drops">2</span></div>
+        <input type="range" id="r-drops" min="0" max="8" step="1" value="2" oninput="recalc()">
+      </div>
+      <div class="assumption-row">
+        <div class="assumption-label">Avg Drop Price (₦K) <span class="val" id="v-dropprice">50</span></div>
+        <input type="range" id="r-dropprice" min="20" max="100" step="5" value="50" oninput="recalc()">
+      </div>
+      <div class="assumption-row">
+        <div class="assumption-label">Aura Shield Adoption % <span class="val" id="v-aura">20%</span></div>
+        <input type="range" id="r-aura" min="0" max="60" step="5" value="20" oninput="recalc()">
+      </div>
+    </div>
+
+    <div class="assumption-group">
+      <div class="group-title">Costs ($/month)</div>
+      <div class="assumption-row">
+        <div class="assumption-label">Team Salaries (3-person) <span class="val" id="v-salaries">$1,800</span></div>
+        <input type="range" id="r-salaries" min="500" max="5000" step="100" value="1800" oninput="recalc()">
+      </div>
+      <div class="assumption-row">
+        <div class="assumption-label">Infrastructure / month <span class="val" id="v-infra">$300</span></div>
+        <input type="range" id="r-infra" min="50" max="1000" step="50" value="300" oninput="recalc()">
+      </div>
+      <div class="assumption-row">
+        <div class="assumption-label">Marketing / month <span class="val" id="v-mktg">$600</span></div>
+        <input type="range" id="r-mktg" min="100" max="3000" step="100" value="600" oninput="recalc()">
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-area">
+    <div class="section-label gold">Revenue Trajectory</div>
+    <div class="chart-title">Monthly Recurring Revenue ($)</div>
+    <div class="chart-sub">36-month projection · Adjust assumptions to see impact</div>
+    <svg id="chartSvg" height="280"></svg>
+    <div id="chartLegend" style="display:flex;gap:20px;margin-top:16px;font-size:11px;color:var(--muted);flex-wrap:wrap;"></div>
+  </div>
+
+</div>
+
+<!-- ── REVENUE STREAMS BREAKDOWN ── -->
+<div class="section-label gold">Revenue Streams — Month 12 Mix</div>
+<div class="breakdown-grid">
+  <div class="stream-card" style="border-color:rgba(255,51,102,0.25);">
+    <div class="stream-name">🏢 Merchant Subscriptions</div>
+    <div class="stream-launch">Launches Month 3 · Core recurring revenue</div>
+    <div class="stream-bar-bg"><div class="stream-bar" id="bar-sub" style="background:var(--pink);width:0%"></div></div>
+    <div class="stream-values"><span id="pct-sub">0%</span><span id="amt-sub">$0</span></div>
+  </div>
+  <div class="stream-card" style="border-color:rgba(255,215,0,0.25);">
+    <div class="stream-name">⚡ Pulse Drops</div>
+    <div class="stream-launch">Launches Month 4 · Per-drop merchant spend</div>
+    <div class="stream-bar-bg"><div class="stream-bar" id="bar-pulse" style="background:var(--gold);width:0%"></div></div>
+    <div class="stream-values"><span id="pct-pulse">0%</span><span id="amt-pulse">$0</span></div>
+  </div>
+  <div class="stream-card" style="border-color:rgba(0,212,255,0.25);">
+    <div class="stream-name">🛡️ Aura Shield</div>
+    <div class="stream-launch">Launches Month 4 · Premium add-on</div>
+    <div class="stream-bar-bg"><div class="stream-bar" id="bar-aura" style="background:var(--cyan);width:0%"></div></div>
+    <div class="stream-values"><span id="pct-aura">0%</span><span id="amt-aura">$0</span></div>
+  </div>
+  <div class="stream-card" style="border-color:rgba(153,51,255,0.25);">
+    <div class="stream-name">🥂 Brand Partnerships</div>
+    <div class="stream-launch">Launches Month 9 · Alcohol, F&amp;B brands</div>
+    <div class="stream-bar-bg"><div class="stream-bar" id="bar-brand" style="background:var(--purple);width:0%"></div></div>
+    <div class="stream-values"><span id="pct-brand">0%</span><span id="amt-brand">$0</span></div>
+  </div>
+  <div class="stream-card" style="border-color:rgba(0,230,118,0.25);">
+    <div class="stream-name">📊 Data Licensing</div>
+    <div class="stream-launch">Launches Month 9 · Sell anonymized venue data</div>
+    <div class="stream-bar-bg"><div class="stream-bar" id="bar-data" style="background:var(--green);width:0%"></div></div>
+    <div class="stream-values"><span id="pct-data">0%</span><span id="amt-data">$0</span></div>
+  </div>
+  <div class="stream-card" style="border-color:rgba(255,153,51,0.25);">
+    <div class="stream-name">🎟️ Event Ticketing</div>
+    <div class="stream-launch">Launches Month 12 · 5–10% commission</div>
+    <div class="stream-bar-bg"><div class="stream-bar" id="bar-ticket" style="background:#FF9933;width:0%"></div></div>
+    <div class="stream-values"><span id="pct-ticket">0%</span><span id="amt-ticket">$0</span></div>
+  </div>
+</div>
+
+<!-- ── UNIT ECONOMICS ── -->
+<div class="section-label cyan">Unit Economics</div>
+<div class="unit-grid">
+  <div class="unit-card" style="border-color:rgba(255,51,102,0.3);">
+    <div class="unit-label">LTV (Merchant)</div>
+    <div class="unit-value" id="ue-ltv" style="color:var(--pink);">—</div>
+    <div class="unit-desc">Avg subscription × avg tenure<br>(18-month at 5% monthly churn)</div>
+  </div>
+  <div class="unit-card" style="border-color:rgba(0,230,118,0.3);">
+    <div class="unit-label">LTV / CAC</div>
+    <div class="unit-value" id="ue-ltvcac" style="color:var(--green);">—</div>
+    <div class="unit-desc">CAC = cost to onboard one paying merchant<br>(City Lead time allocation)</div>
+  </div>
+  <div class="unit-card" style="border-color:rgba(255,215,0,0.3);">
+    <div class="unit-label">Gross Margin</div>
+    <div class="unit-value" style="color:var(--gold);">90%+</div>
+    <div class="unit-desc">SaaS product — near-zero COGS<br>Infrastructure scales slowly vs revenue</div>
+  </div>
+  <div class="unit-card" style="border-color:rgba(0,212,255,0.3);">
+    <div class="unit-label">Scout CAC</div>
+    <div class="unit-value" style="color:var(--cyan);">$0.50–2</div>
+    <div class="unit-desc">Organic referral via crew system<br>WhatsApp group onboarding loops</div>
+  </div>
+</div>
+
+<!-- ── PROJECTIONS TABLE ── -->
+<div class="table-wrap">
+  <div class="table-header">
+    <div>
+      <h3>Monthly Projections — 36 Months</h3>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">⭐ = pitch deck milestone months</div>
+    </div>
+    <button class="show-toggle" onclick="toggleRows()">Show All</button>
+  </div>
+  <div style="overflow-x:auto;">
+    <table id="projTable">
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Venues</th>
+          <th>Paying</th>
+          <th>Sub Rev (₦K)</th>
+          <th>In-App Rev (₦K)</th>
+          <th>Partnerships ($)</th>
+          <th>Total MRR ($)</th>
+          <th>Burn ($)</th>
+          <th>Net ($/mo)</th>
+          <th>Cash Bal ($)</th>
+        </tr>
+      </thead>
+      <tbody id="projBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── FOOTNOTES ── -->
+<div class="section-label" style="color:var(--muted);">Model Notes</div>
+<div class="footnote">
+  <span class="tag pink">Conservative</span> Revenue recognition starts Month 3 after soft-launch and venue onboarding. First month free trial for all merchants — subscription billing kicks in Month 4.<br><br>
+  <span class="tag gold">Assumptions</span> Exchange rate locked at model assumption. Brand partnerships assumed at ₦5M/quarter per brand, 1 brand from Month 9, +1 brand every 6 months. Data licensing at ₦500K/quarter from Month 9, growing 15% per quarter.<br><br>
+  <span class="tag green">Costs</span> Burn is pre-team expansion. Seed round (Month 10) triggers team scale-up — model shows only pre-seed phase. Infrastructure costs grow $100/month every 6 months. No founder salary before Month 6 (lean Lagos operation).<br><br>
+  All ₦ figures converted to $ at assumption exchange rate. MRR = total of all recurring streams in a given month. Churn applied monthly to paying venue count.
+</div>
+
+<div class="footer">
+  VIBEZ · Financial Model · Pre-Seed · February 2026<br>
+  Confidential · Yoriajagun08@gmail.com · github.com/YoriJags<br>
+  <span style="color:var(--dim);">Projections are forward-looking estimates. Actual results will vary.</span>
+</div>
+
+<script>
+// ── HELPERS ──
+const fmt = (n, digits=0) => n < 0
+  ? '-$' + Math.abs(n).toLocaleString('en-US', {maximumFractionDigits:digits})
+  : '$' + n.toLocaleString('en-US', {maximumFractionDigits:digits});
+const fmtK = (n, digits=1) => fmt(n/1000, digits) + 'K';
+const fmtNGN = n => '₦' + (n/1000).toLocaleString('en-US', {maximumFractionDigits:0}) + 'K';
+const el = id => document.getElementById(id);
+const val = id => parseFloat(el(id).value);
+const pct = (part, total) => total > 0 ? Math.round(part/total*100) : 0;
+
+let showAll = false;
+function toggleRows() {
+  showAll = !showAll;
+  document.querySelectorAll('.hidden-row').forEach(r => r.style.display = showAll ? '' : 'none');
+  el('projTable').querySelector('.show-toggle') && null;
+  document.querySelector('.show-toggle').textContent = showAll ? 'Show Less' : 'Show All';
+}
+
+// ── MAIN CALCULATE ──
+function recalc() {
+  // Read assumptions
+  const fx         = val('r-fx');
+  const seedUSD    = val('r-seed') * 1000;
+  const launchV    = val('r-launch');
+  const growthV    = val('r-growth');
+  const convPct    = val('r-conv') / 100;
+  const churnPct   = val('r-churn') / 100;
+  const subNGN     = val('r-sub') * 1000;
+  const drops      = val('r-drops');
+  const dropNGN    = val('r-dropprice') * 1000;
+  const auraPct    = val('r-aura') / 100;
+  const salUSD     = val('r-salaries');
+  const infraUSD   = val('r-infra');
+  const mktgUSD    = val('r-mktg');
+
+  // Update display labels
+  el('v-fx').textContent = fx;
+  el('v-seed').textContent = val('r-seed');
+  el('v-launch').textContent = launchV;
+  el('v-growth').textContent = growthV;
+  el('v-conv').textContent = val('r-conv') + '%';
+  el('v-churn').textContent = val('r-churn') + '%';
+  el('v-sub').textContent = val('r-sub');
+  el('v-drops').textContent = drops;
+  el('v-dropprice').textContent = val('r-dropprice');
+  el('v-aura').textContent = val('r-aura') + '%';
+  el('v-salaries').textContent = '$' + salUSD.toLocaleString();
+  el('v-infra').textContent = '$' + infraUSD;
+  el('v-mktg').textContent = '$' + mktgUSD;
+
+  // Merchant CAC estimate (1 City Lead @ $500/mo onboards 4 venues/mo = $125/venue, 40% convert = $312.5)
+  const merchantCAC = (salUSD * 0.4) / Math.max(growthV * convPct, 0.1);
+
+  // Build month-by-month model
+  let months = [];
+  let cash = seedUSD;
+  let payingVenues = 0;
+  let breakEvenMonth = null;
+  let mrrChartData = [];
+
+  // Brand partnerships: 1 brand Month 9, +1 every 6 months
+  // Data licensing: ₦500K/quarter starting Month 9, grows 15%/quarter
+  // Ticketing: grows with venue count × events/venue
+
+  let brandBrands = 0;
+  let dataLicBase = 500000 / fx; // $333/qtr → ~$111/mo
+
+  for (let m = 1; m <= 36; m++) {
+    // ── VENUE COUNT ──
+    let totalVenues = 0;
+    if (m >= 3) {
+      totalVenues = launchV + (m - 3) * growthV;
+    }
+
+    // ── PAYING VENUES with churn ──
+    if (m === 3) {
+      payingVenues = Math.round(launchV * convPct);
+    } else if (m > 3) {
+      // New conversions from new venues
+      const newVenuesThisMonth = growthV;
+      const newConversions = Math.round(newVenuesThisMonth * convPct);
+      // Churn from existing paying
+      const churned = Math.round(payingVenues * churnPct);
+      payingVenues = Math.max(0, payingVenues - churned + newConversions);
+    }
+
+    // ── REVENUE STREAMS ──
+    // 1. Subscriptions (Month 4+ because Month 3 = free trial)
+    const subRevNGN = m >= 4 ? payingVenues * subNGN : 0;
+
+    // 2. Pulse Drops (Month 4+)
+    const pulseRevNGN = m >= 4 ? payingVenues * drops * dropNGN : 0;
+
+    // 3. Aura Shield (Month 4+)
+    const auraRevNGN = m >= 4 ? payingVenues * auraPct * 100000 : 0;
+
+    // 4. Brand Partnerships (Month 9+)
+    if (m === 9) brandBrands = 1;
+    if (m > 9 && (m - 9) % 6 === 0) brandBrands++;
+    const brandRevUSD = m >= 9 ? brandBrands * (5000000 / fx / 3) : 0; // ₦5M/quarter/brand → monthly
+
+    // 5. Data Licensing (Month 9+, grows 15%/quarter)
+    const dataRevUSD = m >= 9
+      ? dataLicBase * Math.pow(1.15, Math.floor((m - 9) / 3))
+      : 0;
+
+    // 6. Event Ticketing (Month 12+)
+    const ticketRevUSD = m >= 12 ? totalVenues * 0.5 * 15000 / fx * 0.07 : 0;
+    // 0.5 events/venue/month avg, ₦15K avg ticket, 7% commission
+
+    // Convert NGN streams
+    const subRevUSD   = subRevNGN / fx;
+    const pulseRevUSD = pulseRevNGN / fx;
+    const auraRevUSD  = auraRevNGN / fx;
+
+    const totalMRR = subRevUSD + pulseRevUSD + auraRevUSD + brandRevUSD + dataRevUSD + ticketRevUSD;
+
+    // ── COSTS ──
+    // Salaries: pre-hire Months 1-2, full team Month 3+
+    const salCost = m >= 3 ? salUSD : salUSD * 0.35; // before hires it's just founder
+    // Infrastructure grows slowly
+    const infraCost = infraUSD + Math.floor(m / 6) * 100;
+    // Marketing
+    const mktgCost = m >= 3 ? mktgUSD : mktgUSD * 0.3;
+    // Misc (legal, banking, etc.)
+    const miscCost = 150;
+    // One-time launch costs at Month 3 (events, equipment)
+    const onetime = m === 3 ? 8000 : 0;
+
+    const totalBurn = salCost + infraCost + mktgCost + miscCost + onetime;
+    const net = totalMRR - totalBurn;
+    cash += net;
+
+    if (!breakEvenMonth && net >= 0 && m >= 3) breakEvenMonth = m;
+
+    months.push({
+      m, totalVenues: Math.round(totalVenues), payingVenues,
+      subRevNGN, pulseRevNGN, auraRevNGN,
+      subRevUSD, pulseRevUSD, auraRevUSD, brandRevUSD, dataRevUSD, ticketRevUSD,
+      totalMRR, totalBurn, net, cash,
+      milestone: [3, 6, 9, 12, 18, 24, 30, 36].includes(m)
+    });
+    mrrChartData.push(totalMRR);
+  }
+
+  // ── UPDATE KPI CARDS ──
+  const m12 = months[11];
+  const m24 = months[23];
+  el('kpi-mrr12').textContent = fmtK(m12.totalMRR);
+  el('kpi-mrr12-ngn').textContent = fmtNGN(m12.totalMRR * fx);
+  el('kpi-venues12').textContent = m12.payingVenues + ' paying';
+  el('kpi-totalvenues12').textContent = 'of ' + m12.totalVenues + ' onboarded';
+
+  // Runway = current cash / avg burn (first 12 months)
+  const avgBurn12 = months.slice(0,12).reduce((s,x)=>s+x.totalBurn,0)/12;
+  const finalCash = months[months.length-1].cash;
+  const runwayMonths = Math.round(finalCash > 0 ? cash/avgBurn12 : 0);
+  el('kpi-runway').textContent = runwayMonths > 0 ? runwayMonths+'m' : 'N/A';
+
+  el('kpi-breakeven').textContent = breakEvenMonth ? 'Month ' + breakEvenMonth : '36m+';
+  el('kpi-arr24').textContent = fmtK(m24.totalMRR * 12);
+  el('kpi-arr24-sub').textContent = 'ARR at Month 24';
+
+  // ── REVENUE BREAKDOWN (Month 12) ──
+  const streams = [
+    { id:'sub',    usd: m12.subRevUSD },
+    { id:'pulse',  usd: m12.pulseRevUSD },
+    { id:'aura',   usd: m12.auraRevUSD },
+    { id:'brand',  usd: m12.brandRevUSD },
+    { id:'data',   usd: m12.dataRevUSD },
+    { id:'ticket', usd: m12.ticketRevUSD },
+  ];
+  const totalM12 = m12.totalMRR;
+  streams.forEach(s => {
+    const p = pct(s.usd, totalM12);
+    el('bar-'+s.id).style.width = p + '%';
+    el('pct-'+s.id).textContent = p + '%';
+    el('amt-'+s.id).textContent = fmt(Math.round(s.usd));
+  });
+
+  // ── UNIT ECONOMICS ──
+  // LTV = avg monthly sub / churn
+  const avgMonthlySubUSD = subNGN / fx;
+  const avgTenureMonths = churnPct > 0 ? 1/churnPct : 24;
+  const ltv = avgMonthlySubUSD * Math.min(avgTenureMonths, 24);
+  el('ue-ltv').textContent = fmt(Math.round(ltv));
+  const ltvCac = merchantCAC > 0 ? (ltv / merchantCAC).toFixed(1) : '∞';
+  el('ue-ltvcac').textContent = ltvCac + '×';
+
+  // ── TABLE ──
+  renderTable(months, fx);
+
+  // ── CHART ──
+  renderChart(mrrChartData, months);
+}
+
+function renderTable(months, fx) {
+  const tbody = el('projBody');
+  tbody.innerHTML = '';
+  const milestones = [3,6,9,12,18,24,30,36];
+
+  months.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    const show = milestones.includes(r.m) || r.m <= 6;
+    if (!show) tr.classList.add('hidden-row');
+    if (r.milestone) tr.classList.add('milestone-row');
+
+    const inAppNGN = r.pulseRevNGN + r.auraRevNGN;
+    tr.innerHTML = `
+      <td>Month ${r.m}</td>
+      <td>${r.totalVenues}</td>
+      <td>${r.payingVenues}</td>
+      <td style="color:#CCC">${r.subRevNGN > 0 ? fmtNGN(r.subRevNGN) : '—'}</td>
+      <td style="color:#CCC">${inAppNGN > 0 ? fmtNGN(inAppNGN) : '—'}</td>
+      <td style="color:#CCC">${r.brandRevUSD + r.dataRevUSD > 0 ? fmt(Math.round(r.brandRevUSD+r.dataRevUSD)) : '—'}</td>
+      <td style="color:var(--pink);font-weight:700">${r.totalMRR > 0 ? fmt(Math.round(r.totalMRR)) : '—'}</td>
+      <td style="color:var(--muted)">${fmt(Math.round(r.totalBurn))}</td>
+      <td class="${r.net >= 0 ? 'positive' : 'negative'}">${r.net >= 0 ? '+' : ''}${fmt(Math.round(r.net))}</td>
+      <td class="${r.cash >= 0 ? '' : 'negative'}">${fmt(Math.round(r.cash))}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Re-apply hidden state
+  if (!showAll) {
+    tbody.querySelectorAll('.hidden-row').forEach(r => r.style.display = 'none');
+  }
+}
+
+function renderChart(data, months) {
+  const svg = el('chartSvg');
+  const W = svg.parentElement.clientWidth - 48;
+  const H = 260;
+  const PAD = { t:10, r:16, b:40, l:64 };
+  const chartW = W - PAD.l - PAD.r;
+  const chartH = H - PAD.t - PAD.b;
+
+  const maxVal = Math.max(...data, 1);
+  const n = data.length;
+  const barW = (chartW / n) * 0.6;
+  const gap  = chartW / n;
+
+  // Grid lines (5 lines)
+  let gridLines = '';
+  for (let i = 0; i <= 4; i++) {
+    const y = PAD.t + chartH * (1 - i/4);
+    const v = maxVal * i/4;
+    const label = v >= 1000 ? '$' + (v/1000).toFixed(1) + 'K' : '$' + Math.round(v);
+    gridLines += `<line x1="${PAD.l}" y1="${y}" x2="${PAD.l+chartW}" y2="${y}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`;
+    gridLines += `<text x="${PAD.l - 6}" y="${y+4}" text-anchor="end" fill="#555" font-size="10">${label}</text>`;
+  }
+
+  // Milestone labels on X axis
+  const milestones = [3,6,9,12,18,24,30,36];
+  let xLabels = '';
+  milestones.forEach(m => {
+    const x = PAD.l + (m - 0.5) * gap;
+    xLabels += `<text x="${x}" y="${H - 6}" text-anchor="middle" fill="#555" font-size="9">M${m}</text>`;
+  });
+
+  // Bars — color by zone
+  let bars = '';
+  data.forEach((v, i) => {
+    const m = i + 1;
+    const x = PAD.l + i * gap + gap * 0.2;
+    const barH = Math.max(v / maxVal * chartH, v > 0 ? 2 : 0);
+    const y = PAD.t + chartH - barH;
+    const color = m < 9 ? 'rgba(255,51,102,0.7)' : m < 24 ? 'rgba(255,215,0,0.8)' : 'rgba(0,230,118,0.85)';
+    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="3" fill="${color}"/>`;
+  });
+
+  // Break-even line
+  const beM = months.findIndex(r => r.net >= 0 && r.m >= 3);
+  let beLine = '';
+  if (beM >= 0) {
+    const bx = PAD.l + beM * gap;
+    beLine = `<line x1="${bx}" y1="${PAD.t}" x2="${bx}" y2="${PAD.t+chartH}" stroke="rgba(0,230,118,0.4)" stroke-width="1.5" stroke-dasharray="4,4"/>
+              <text x="${bx+4}" y="${PAD.t+14}" fill="#00E676" font-size="9">Break-even</text>`;
+  }
+
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.innerHTML = gridLines + bars + beLine + xLabels;
+
+  // Legend
+  el('chartLegend').innerHTML = `
+    <span style="color:rgba(255,51,102,0.9)">■</span> Pre-seed phase (M1–8)
+    &nbsp;&nbsp;<span style="color:rgba(255,215,0,0.9)">■</span> Growth phase (M9–23)
+    &nbsp;&nbsp;<span style="color:rgba(0,230,118,0.9)">■</span> Scale phase (M24+)
+    &nbsp;&nbsp;<span style="color:#00E676">|</span> Break-even point
+  `;
+}
+
+// ── INIT ──
+window.addEventListener('load', recalc);
+window.addEventListener('resize', recalc);
+</script>
+</body>
+</html>
