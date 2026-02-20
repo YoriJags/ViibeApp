@@ -253,9 +253,10 @@ export default function VenueDetailScreen() {
   };
 
   const handleSubmitRating = async (data: {
-    energy: 'chill' | 'good_vibes' | 'popping' | 'electric';
+    energy: 'chill' | 'buzzing' | 'popping' | 'electric';
     capacity: 'sparse' | 'vibrant' | 'full';
     gate: 'clear' | 'slow' | 'blocked';
+    venueSpecific?: string;
     photoBase64?: string;
   }) => {
     if (!user || !venue) return;
@@ -282,9 +283,9 @@ export default function VenueDetailScreen() {
             energy: data.energy,
             capacity: data.capacity,
             gate: data.gate,
+            venue_specific: data.venueSpecific,
             photo_base64: data.photoBase64,
-            latitude: userLocation?.lat || 0,
-            longitude: userLocation?.lng || 0,
+            coordinates: { lat: userLocation?.lat || 0, lng: userLocation?.lng || 0 },
           }),
         });
         if (!response.ok) {
@@ -833,6 +834,7 @@ export default function VenueDetailScreen() {
         onClose={() => setShowRateModal(false)}
         onSubmit={handleSubmitRating}
         venueName={venue?.name || ''}
+        venueType={venue?.venue_type as any}
         isGpsVerified={isWithinGeofence || isDemoMode}
         geofenceRadius={venue?.geofence_radius_m || 100}
         cooldownRemainingSeconds={ratingStatus?.cooldown_remaining_seconds || 0}
