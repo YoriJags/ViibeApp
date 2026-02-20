@@ -150,7 +150,7 @@
 VIBEZ
 Where's the energy?
 Pre-Seed · $150–300K · Lagos 2026
-[your@email.com]
+Yoriajagun08@gmail.com
 ```
 
 ---

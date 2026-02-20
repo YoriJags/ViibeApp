@@ -195,7 +195,7 @@
 
 # Built by someone who lives the problem
 
-### [Founder Name] — CEO & CTO
+### Oluwaseun Oluyori Ajagun — CEO & CTO
 - Full-stack engineer. Built the entire platform — backend, mobile, AI layer — from scratch.
 - Deeply embedded in Lagos nightlife culture.
 - Stack: React Native · Python/FastAPI · MongoDB · Socket.IO · Paystack
@@ -268,7 +268,7 @@
 
 **Built with conviction. Launching from Lagos. Scaling across Africa.**
 
-*[your@email.com] · [phone] · github.com/[handle]*
+*Yoriajagun08@gmail.com · github.com/YoriJags*
 
 ---
 *VibeApp · Confidential · February 2026*
