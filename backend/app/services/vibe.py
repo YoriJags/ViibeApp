@@ -9,12 +9,19 @@ from app.models import Coordinates
 
 
 def calculate_vibe_score(energy: str, capacity: str, gate: str) -> float:
-    """Calculate a 0-100 vibe score from the three rating dimensions."""
-    energy_scores = {"chill": 1, "popping": 2, "electric": 3}
+    """Calculate a 0-100 vibe score from the three rating dimensions.
+    Energy: chill(1) < buzzing(1.5) < popping(2) < electric(3)
+    Capacity: sparse(1) < vibrant(2) < full(3)
+    Gate: blocked(1) < slow(2) < clear(3)
+    """
+    energy_scores = {"chill": 1, "good_vibes": 1.5, "buzzing": 1.5, "popping": 2, "electric": 3}
     capacity_scores = {"sparse": 1, "vibrant": 2, "full": 3}
     gate_scores = {"clear": 3, "slow": 2, "blocked": 1}
-    total = energy_scores[energy] + capacity_scores[capacity] + gate_scores[gate]
-    return (total / 9) * 100
+    e = energy_scores.get(energy, 1)
+    c = capacity_scores.get(capacity, 1)
+    g = gate_scores.get(gate, 1)
+    total = e + c + g
+    return round((total / 9) * 100, 1)
 
 
 def calculate_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:

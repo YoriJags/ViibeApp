@@ -57,7 +57,7 @@ class Venue(BaseModel):
     venue_type: Literal["club", "lounge", "restaurant", "bar", "church", "concert", "rave", "block_party", "festival", "event", "other"] = "club"
     coordinates: Coordinates
     current_vibe_score: float = 0.0
-    energy_level: Literal["chill", "popping", "electric"] = "chill"
+    energy_level: Literal["chill", "buzzing", "popping", "electric"] = "chill"
     capacity_level: Literal["sparse", "vibrant", "full"] = "sparse"
     gate_level: Literal["clear", "slow", "blocked"] = "clear"
     vibe_velocity: Literal["heating_up", "cooling_down", "stable"] = "stable"
@@ -96,9 +96,10 @@ class Rating(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     venue_id: str
-    energy: Literal["chill", "popping", "electric"]
+    energy: Literal["chill", "buzzing", "popping", "electric"]
     capacity: Literal["sparse", "vibrant", "full"]
     gate: Literal["clear", "slow", "blocked"]
+    venue_specific: Optional[str] = None  # venue-type dimension (dj, service, ambience, etc.)
     photo_base64: Optional[str] = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_correction: bool = False
@@ -109,9 +110,10 @@ class Rating(BaseModel):
 class RatingCreate(BaseModel):
     user_id: str
     venue_id: str
-    energy: Literal["chill", "popping", "electric"]
+    energy: Literal["chill", "buzzing", "popping", "electric"]
     capacity: Literal["sparse", "vibrant", "full"]
     gate: Literal["clear", "slow", "blocked"]
+    venue_specific: Optional[str] = None  # venue-type dimension value
     photo_base64: Optional[str] = None
     coordinates: Coordinates
     offline_id: Optional[str] = None

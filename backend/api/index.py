@@ -404,15 +404,24 @@ def handle_create_rating(body):
     if dist > venue_radius:
         return 400, {"detail": f"Must be within {int(venue_radius)}m of venue"}
 
-    vibe_score = calculate_vibe_score(body["energy"], body["capacity"], body["gate"])
+    # Validate energy — accept both old 'good_vibes' (legacy) and new 'buzzing'
+    energy = body.get("energy", "chill")
+    if energy == "good_vibes":
+        energy = "buzzing"
+    valid_energies = {"chill", "buzzing", "popping", "electric"}
+    if energy not in valid_energies:
+        return 400, {"detail": f"Invalid energy value '{energy}'. Must be one of: {sorted(valid_energies)}"}
+
+    vibe_score = calculate_vibe_score(energy, body["capacity"], body["gate"])
     rating_id = str(uuid.uuid4())
     rating = {
         "id": rating_id,
         "user_id": body["user_id"],
         "venue_id": body["venue_id"],
-        "energy": body["energy"],
+        "energy": energy,
         "capacity": body["capacity"],
         "gate": body["gate"],
+        "venue_specific": body.get("venue_specific"),  # optional 4th dimension
         "vibe_score": vibe_score,
         "coordinates": coords,
         "timestamp": datetime.now(timezone.utc),
