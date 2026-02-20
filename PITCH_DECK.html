@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VibeApp — Investor Pitch Deck</title>
+<title>Vibez — Investor Pitch Deck</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -218,42 +218,64 @@
     </div>
 
     <h1 class="gradient-text" style="font-size:80px;">Where's the<br>energy?</h1>
-    <p class="tagline">Real-time nightlife intelligence for Africa</p>
-    <p class="sub">Pre-Seed · February 2026 · Lagos, Nigeria</p>
+    <p class="tagline">Real-time social venue intelligence for Africa</p>
+    <p class="sub" style="max-width:540px;margin:12px auto 0;">Clubs. Restaurants. Concerts. Brunch spots. Rooftops. Events.<br>Any venue. Any hour. Live.</p>
+    <p class="sub" style="margin-top:16px;letter-spacing:1px;">Pre-Seed · February 2026 · Lagos, Nigeria</p>
 
-    <div style="display:flex;gap:12px;margin-top:40px;flex-wrap:wrap;justify-content:center;">
+    <div style="display:flex;gap:12px;margin-top:32px;flex-wrap:wrap;justify-content:center;">
       <span class="chip pink">🌍 Africa-First</span>
       <span class="chip gold">⚡ Real-Time</span>
       <span class="chip green">🧬 AI-Powered</span>
+      <span class="chip cyan">🍽️ Beyond Nightlife</span>
     </div>
   </div>
 
   <!-- ── SLIDE 2 — PROBLEM ── -->
   <div class="slide" id="s2">
     <div class="eyebrow">The Problem</div>
-    <h2 style="max-width:700px;text-align:center;">You never know where the energy is <span style="color:var(--pink)">until it's over</span></h2>
-    <div class="divider" style="margin:24px auto;"></div>
+    <h2 style="max-width:760px;text-align:center;">You can never tell where the energy is — <span style="color:var(--pink)">at any venue, at any hour</span></h2>
+    <div class="divider" style="margin:20px auto;"></div>
 
-    <div class="grid3" style="max-width:860px;margin-top:8px;">
+    <div class="grid3" style="max-width:860px;margin-top:4px;">
       <div class="card pink-glow" style="text-align:center;">
         <div style="font-size:36px;margin-bottom:12px;">😩</div>
         <div style="font-weight:700;margin-bottom:8px;">Google Maps</div>
-        <div style="font-size:13px;color:var(--muted);">"Popular Times" shows historical data from 3 months ago. Not tonight.</div>
+        <div style="font-size:13px;color:var(--muted);">"Popular Times" = historical averages from months ago. Not right now — for clubs, restaurants, or anywhere.</div>
       </div>
       <div class="card pink-glow" style="text-align:center;">
         <div style="font-size:36px;margin-bottom:12px;">😞</div>
         <div style="font-weight:700;margin-bottom:8px;">Yelp / TripAdvisor</div>
-        <div style="font-size:13px;color:var(--muted);">Static reviews written last Thursday. Dead by the time you read them.</div>
+        <div style="font-size:13px;color:var(--muted);">Static reviews from last Thursday. Useless for telling you whether it's buzzing right now.</div>
       </div>
       <div class="card pink-glow" style="text-align:center;">
         <div style="font-size:36px;margin-bottom:12px;">🤷</div>
         <div style="font-weight:700;margin-bottom:8px;">WhatsApp Groups</div>
-        <div style="font-size:13px;color:var(--muted);">Unreliable, unstructured, and only your 12 closest friends are in it.</div>
+        <div style="font-size:13px;color:var(--muted);">Unstructured. Unreliable. Doesn't scale beyond your 12 closest friends.</div>
       </div>
     </div>
 
-    <div class="card" style="max-width:860px;margin-top:24px;text-align:center;border-color:rgba(255,215,0,0.2);">
-      <p style="font-size:17px;">Nigeria's nightlife economy is worth <strong style="color:var(--gold);">$2.5B+</strong> annually.<br>
+    <div class="card" style="max-width:860px;margin-top:20px;border-color:rgba(255,215,0,0.2);">
+      <div class="grid3" style="gap:0;">
+        <div style="text-align:center;padding:12px 16px;border-right:1px solid var(--border);">
+          <div style="font-size:28px;margin-bottom:6px;">🌙</div>
+          <div style="font-weight:700;font-size:13px;">Is the club popping tonight?</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">Nobody knows until you get there</div>
+        </div>
+        <div style="text-align:center;padding:12px 16px;border-right:1px solid var(--border);">
+          <div style="font-size:28px;margin-bottom:6px;">🍽️</div>
+          <div style="font-weight:700;font-size:13px;">Is there a wait at that restaurant?</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">Google Maps says "usually busy"</div>
+        </div>
+        <div style="text-align:center;padding:12px 16px;">
+          <div style="font-size:28px;margin-bottom:6px;">🎤</div>
+          <div style="font-weight:700;font-size:13px;">Is the event venue live yet?</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">Instagram stories from 2 hours ago</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:860px;margin-top:14px;text-align:center;background:rgba(255,215,0,0.03);border-color:rgba(255,215,0,0.2);padding:14px 24px;">
+      <p style="font-size:16px;">Nigeria's social experience economy — clubs, restaurants, events, lounges — is worth <strong style="color:var(--gold);">$5B+</strong>.<br>
       Not a single platform tells you <strong style="color:var(--text);">where the energy is right now.</strong></p>
     </div>
   </div>
@@ -261,35 +283,47 @@
   <!-- ── SLIDE 3 — SOLUTION ── -->
   <div class="slide" id="s3">
     <div class="eyebrow">The Solution</div>
-    <h2 style="text-align:center;max-width:640px;">Live vibe scores from scouts on the ground</h2>
-    <div class="divider" style="margin:24px auto;"></div>
+    <h2 style="text-align:center;max-width:720px;">Live vibe scores for any venue, any hour — from scouts on the ground</h2>
+    <div class="divider" style="margin:20px auto;"></div>
 
-    <div class="quote" style="max-width:680px;margin:0 auto 28px;">
-      "Quilox will be electric by 12:30am tonight — 87% confidence.<br>Best time to arrive: 11:45pm."
+    <div class="grid2" style="max-width:920px;gap:20px;align-items:start;">
+      <div>
+        <div class="quote" style="font-size:18px;margin-bottom:16px;">
+          "Quilox will be electric by 12:30am — 87% confidence. Best time to arrive: 11:45pm."
+        </div>
+        <div class="quote" style="font-size:18px;border-color:var(--gold);margin-bottom:16px;">
+          "Chicken Republic VI has a 20-min wait right now. The Place Lekki is chill — walk right in."
+        </div>
+        <div class="quote" style="font-size:18px;border-color:var(--green);">
+          "Burna's afterparty crowd just flooded Sky Bar. Vibe score jumped from 60 to 89 in 15 minutes."
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="card" style="text-align:center;">
+          <div style="font-size:28px;margin-bottom:8px;">📡</div>
+          <div style="font-weight:700;margin-bottom:4px;">Live Scouts</div>
+          <div style="font-size:13px;color:var(--muted);">On-the-ground users rate Energy, Capacity & Gate from inside any venue — clubs, restaurants, events</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:28px;margin-bottom:8px;">⚡</div>
+          <div style="font-weight:700;margin-bottom:4px;">Vibe Score</div>
+          <div style="font-size:13px;color:var(--muted);">Live composite score (0-100) updated every few minutes. Time-decay weighted — freshest data wins.</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:28px;margin-bottom:8px;">🧬</div>
+          <div style="font-weight:700;margin-bottom:4px;">AI Intelligence</div>
+          <div style="font-size:13px;color:var(--muted);">Oracle predicts peaks. DNA learns your taste. Planner recommends across all venue types.</div>
+        </div>
+      </div>
     </div>
 
-    <div class="grid3" style="max-width:900px;">
-      <div class="card" style="text-align:center;">
-        <div style="font-size:32px;margin-bottom:10px;">📡</div>
-        <div style="font-weight:700;margin-bottom:6px;">Live Scouts</div>
-        <div style="font-size:13px;color:var(--muted);">On-the-ground users rate Energy, Capacity & Gate in real time from inside venues</div>
-      </div>
-      <div class="card" style="text-align:center;">
-        <div style="font-size:32px;margin-bottom:10px;">⚡</div>
-        <div style="font-weight:700;margin-bottom:6px;">Vibe Score</div>
-        <div style="font-size:13px;color:var(--muted);">Live composite score (0-100) updated every few minutes with time-decay weighting</div>
-      </div>
-      <div class="card" style="text-align:center;">
-        <div style="font-size:32px;margin-bottom:10px;">🧬</div>
-        <div style="font-weight:700;margin-bottom:6px;">AI Intelligence</div>
-        <div style="font-size:13px;color:var(--muted);">Oracle predicts peaks. DNA learns your taste. Night Planner plans your night.</div>
-      </div>
-    </div>
-
-    <div style="margin-top:24px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
-      <span class="chip pink">3-Storey Platform</span>
-      <span class="chip gold">Scouts · Merchants · Admins</span>
-      <span class="chip green">iOS + Android</span>
+    <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+      <span class="chip pink">🌙 Clubs & Lounges</span>
+      <span class="chip gold">🍽️ Restaurants</span>
+      <span class="chip green">🎤 Concerts & Events</span>
+      <span class="chip cyan">☀️ Brunch & Day Parties</span>
+      <span class="chip purple">⛪ Church Programs</span>
     </div>
   </div>
 
@@ -335,50 +369,62 @@
   <!-- ── SLIDE 5 — MARKET ── -->
   <div class="slide" id="s5">
     <div class="eyebrow">Market Size</div>
-    <h2 style="text-align:center;margin-bottom:8px;">A category nobody owns yet</h2>
-    <p style="text-align:center;max-width:560px;margin-bottom:36px;">Real-time nightlife intelligence doesn't exist at scale anywhere in Africa. We're building the category from scratch.</p>
+    <h2 style="text-align:center;margin-bottom:8px;">A category nobody owns — across every venue type</h2>
+    <p style="text-align:center;max-width:600px;margin-bottom:28px;">We start with nightlife because it's the hardest proof-of-concept. If we can tell you where the energy is at 1am, we can tell you at 1pm for brunch too.</p>
 
-    <div class="grid2" style="max-width:900px;gap:24px;">
+    <div class="grid2" style="max-width:940px;gap:24px;">
       <div>
-        <div style="margin-bottom:20px;">
-          <div class="market-bar">
-            <div class="bar-label" style="color:var(--text);font-weight:600;">Lagos nightlife</div>
-            <div class="bar-fill" style="width:180px;background:var(--pink);"></div>
-            <div class="bar-val" style="color:var(--pink);">$1B+</div>
-          </div>
-          <div class="market-bar">
-            <div class="bar-label">Nigeria total</div>
-            <div class="bar-fill" style="width:260px;background:linear-gradient(90deg,var(--pink),var(--gold));"></div>
-            <div class="bar-val" style="color:var(--gold);">$2.5B</div>
-          </div>
-          <div class="market-bar">
-            <div class="bar-label">Africa nightlife</div>
-            <div class="bar-fill" style="width:340px;background:linear-gradient(90deg,var(--gold),var(--green));"></div>
-            <div class="bar-val" style="color:var(--green);">$10B+</div>
-          </div>
-          <div class="market-bar">
-            <div class="bar-label">Global experiences</div>
-            <div class="bar-fill" style="width:440px;background:linear-gradient(90deg,var(--green),var(--cyan));"></div>
-            <div class="bar-val" style="color:var(--cyan);">$50B+</div>
-          </div>
+        <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:12px;">NIGERIA SOCIAL EXPERIENCE ECONOMY</div>
+        <div class="market-bar">
+          <div class="bar-label" style="color:var(--text);font-weight:600;">Nightlife (clubs/bars)</div>
+          <div class="bar-fill" style="width:160px;background:var(--pink);"></div>
+          <div class="bar-val" style="color:var(--pink);">$1B+</div>
+        </div>
+        <div class="market-bar">
+          <div class="bar-label">Restaurant & dining</div>
+          <div class="bar-fill" style="width:200px;background:linear-gradient(90deg,var(--gold),#FFA500);"></div>
+          <div class="bar-val" style="color:var(--gold);">$1.5B+</div>
+        </div>
+        <div class="market-bar">
+          <div class="bar-label">Events & concerts</div>
+          <div class="bar-fill" style="width:140px;background:var(--purple);"></div>
+          <div class="bar-val" style="color:var(--purple);">$800M+</div>
+        </div>
+        <div class="market-bar">
+          <div class="bar-label">Nigeria combined</div>
+          <div class="bar-fill" style="width:280px;background:linear-gradient(90deg,var(--pink),var(--gold));"></div>
+          <div class="bar-val" style="color:var(--gold);">$5B+</div>
+        </div>
+        <div class="market-bar">
+          <div class="bar-label">Africa total</div>
+          <div class="bar-fill" style="width:360px;background:linear-gradient(90deg,var(--gold),var(--green));"></div>
+          <div class="bar-val" style="color:var(--green);">$20B+</div>
+        </div>
+        <div class="market-bar">
+          <div class="bar-label">Global experiences</div>
+          <div class="bar-fill" style="width:440px;background:linear-gradient(90deg,var(--green),var(--cyan));"></div>
+          <div class="bar-val" style="color:var(--cyan);">$50B+</div>
         </div>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:14px;">
-        <div class="card" style="padding:18px 20px;">
-          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">SERVICEABLE MARKET (5-YR)</div>
-          <div style="font-size:28px;font-weight:800;color:var(--gold);">$500M</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;">5 countries × SaaS + marketplace + data</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="card" style="padding:16px 20px;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">PHASE 1 BEACHHEAD · LAGOS</div>
+          <div style="font-size:26px;font-weight:800;color:var(--pink);">Nightlife venues</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">Highest data density · most underserved · fastest scout adoption</div>
         </div>
-        <div class="card" style="padding:18px 20px;">
-          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">BEACHHEAD — LAGOS YEAR 1</div>
-          <div style="font-size:28px;font-weight:800;color:var(--pink);">₦60M</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;">50 venues × ₦100K avg subscription</div>
+        <div class="card" style="padding:16px 20px;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">PHASE 2 EXPANSION · LAGOS + ABUJA</div>
+          <div style="font-size:26px;font-weight:800;color:var(--gold);">+ Restaurants & Brunch</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">Same scout network · same vibe score system · new category</div>
         </div>
-        <div class="card" style="padding:18px 20px;">
-          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">NIGERIA ALONE · 200M PEOPLE</div>
-          <div style="font-size:28px;font-weight:800;color:var(--green);">0 competitors</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;">with real-time nightlife data</div>
+        <div class="card" style="padding:16px 20px;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">PHASE 3 · PAN-AFRICA</div>
+          <div style="font-size:26px;font-weight:800;color:var(--green);">+ Events, Retail, Tourism</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">Any place people gather. Any hour. Africa-wide.</div>
+        </div>
+        <div class="card" style="padding:14px 20px;background:rgba(255,51,102,0.04);border-color:rgba(255,51,102,0.2);text-align:center;">
+          <div style="font-size:13px;color:#CCC;"><strong style="color:var(--text);">0 competitors</strong> with real-time venue intelligence in Africa</div>
         </div>
       </div>
     </div>
@@ -491,7 +537,7 @@
   <div class="slide" id="s8">
     <div class="eyebrow gold">AI Strategy — The Real Moat</div>
     <h2 style="text-align:center;max-width:680px;margin-bottom:8px;">The app is the data collection device.<br><span class="gradient-text">The AI is the actual product.</span></h2>
-    <p style="text-align:center;max-width:580px;margin-bottom:28px;">After 12 months in Lagos we'll have a dataset nobody else on earth has collected.</p>
+    <p style="text-align:center;max-width:620px;margin-bottom:28px;">After 12 months in Lagos we'll own a real-world behavior dataset — across nightlife, restaurants, events, and more — that doesn't exist anywhere else on earth.</p>
 
     <div class="grid2" style="max-width:960px;gap:20px;">
       <div class="card gold-glow" style="padding:20px 24px;">
@@ -515,7 +561,7 @@
           <div class="ai-icon">✨</div>
           <div>
             <div class="ai-name">Night Planner</div>
-            <div class="ai-desc">Natural language nightlife concierge with real-time venue data. Vertical AI agent nobody else has.</div>
+            <div class="ai-desc">Natural language venue concierge with real-time data. Ask it where to go for clubs, brunch, concerts, events — it knows the live vibe.</div>
             <div class="ai-status" style="color:var(--gold);">🔑 CLAUDE API READY — activates on key set</div>
           </div>
         </div>
@@ -526,7 +572,7 @@
           <div style="font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:10px;">DATA ASSETS WE'LL OWN</div>
           <div class="build-item"><div class="build-check">→</div><div class="build-text" style="font-size:13px;">Real-time crowd behavior (nobody else in Africa)</div></div>
           <div class="build-item"><div class="build-check">→</div><div class="build-text" style="font-size:13px;">Hour-by-hour venue performance patterns</div></div>
-          <div class="build-item"><div class="build-check">→</div><div class="build-text" style="font-size:13px;">Social graph of nightlife — who goes where, with whom</div></div>
+          <div class="build-item"><div class="build-check">→</div><div class="build-text" style="font-size:13px;">Social graph of Lagos venues — who goes where, with whom, at every hour</div></div>
           <div class="build-item"><div class="build-check">→</div><div class="build-text" style="font-size:13px;">Real-world taste profiles of 100K Nigerians</div></div>
           <div class="build-item"><div class="build-check">→</div><div class="build-text" style="font-size:13px;">Location movement patterns between venues</div></div>
         </div>
@@ -591,8 +637,8 @@
       </table>
 
       <div class="card" style="margin-top:24px;border-color:rgba(255,51,102,0.2);padding:20px 24px;text-align:center;">
-        <p style="font-size:16px;">First-mover advantage in real-time nightlife data is nearly <strong>impossible to replicate</strong>.<br>
-        The data moat compounds every night we operate.</p>
+        <p style="font-size:16px;">First-mover advantage in real-time venue intelligence is nearly <strong>impossible to replicate</strong>.<br>
+        The data moat compounds every night — and every brunch, every concert, every event — we operate.</p>
       </div>
     </div>
   </div>
@@ -608,7 +654,7 @@
         <div style="font-size:20px;font-weight:800;margin-bottom:4px;">Oluwaseun Oluyori Ajagun</div>
         <div style="font-size:13px;color:var(--pink);margin-bottom:12px;font-weight:600;">CEO & CTO · Lagos</div>
         <div style="font-size:13px;color:var(--muted);line-height:1.7;">
-          Full-stack engineer. Built the entire platform — backend, mobile, AI layer — from scratch. Deeply embedded in Lagos nightlife culture.
+          Full-stack engineer. Built the entire platform — backend, mobile, AI layer — from scratch. Deeply embedded in Lagos social culture: clubs, restaurants, events, and everything in between.
         </div>
         <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
           <span class="chip pink">React Native</span>
@@ -701,7 +747,7 @@
   <div class="slide" id="s12">
     <div class="eyebrow gold">The Ask</div>
     <h2 style="text-align:center;max-width:700px;margin-bottom:8px;">We're raising <span class="gradient-text">$150–300K pre-seed</span><br>at a $2–3M valuation</h2>
-    <p style="text-align:center;max-width:560px;margin-bottom:36px;">To dominate Lagos nightlife before anyone else moves.</p>
+    <p style="text-align:center;max-width:560px;margin-bottom:36px;">To plant our flag in Lagos — clubs, restaurants, events, brunch spots — before anyone else moves.</p>
 
     <div class="grid3" style="max-width:900px;gap:16px;">
       <div class="card" style="text-align:center;border-color:rgba(255,51,102,0.3);">
@@ -733,7 +779,7 @@
         </div>
         <div style="text-align:center;">
           <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">WHAT YOU'RE BUYING</div>
-          <div style="font-size:14px;color:#CCC;line-height:1.8;">Category creation<br>First-mover data moat<br>AI intelligence layer<br>Africa nightlife graph</div>
+          <div style="font-size:14px;color:#CCC;line-height:1.8;">Category creation<br>First-mover data moat<br>AI intelligence layer<br>Africa's venue graph — every type</div>
         </div>
       </div>
     </div>
