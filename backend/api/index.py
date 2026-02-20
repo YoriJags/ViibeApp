@@ -632,6 +632,99 @@ def handle_ratings_sync(body, headers):
 # Router
 # ========================
 
+# ========================
+# Admin Handlers
+# ========================
+
+def handle_admin_create_venue(body):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    venue_id = str(uuid.uuid4())
+    venue = {
+        "id": venue_id,
+        "name": body.get("name", "").strip(),
+        "address": body.get("address", "").strip(),
+        "area": body.get("area", "").strip(),
+        "city": body.get("city", "lagos").lower(),
+        "venue_type": body.get("venue_type", "club"),
+        "coordinates": body.get("coordinates", {"lat": 6.4281, "lng": 3.4219}),
+        "geofence_radius_m": body.get("geofence_radius_m", 100),
+        "entry_fee": body.get("entry_fee", "Free"),
+        "music_genre": body.get("music_genre", "Mixed"),
+        "current_vibe_score": 50,
+        "energy_level": "chill",
+        "capacity_level": "sparse",
+        "gate_level": "clear",
+        "vibe_velocity": "stable",
+        "is_featured": False,
+        "total_ratings_24h": 0,
+        "description": body.get("description", ""),
+        "created_at": datetime.now(timezone.utc),
+    }
+    if not venue["name"] or not venue["address"] or not venue["area"]:
+        return 400, {"detail": "name, address, and area are required"}
+    db.venues.insert_one(venue)
+    venue.pop("_id", None)
+    return 201, venue
+
+def handle_admin_update_venue(venue_id, body):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    existing = db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not existing:
+        return 404, {"detail": "Venue not found"}
+    updates = {}
+    for field in ["name", "address", "area", "city", "venue_type", "entry_fee", "music_genre", "description", "geofence_radius_m", "is_featured"]:
+        if field in body:
+            updates[field] = body[field]
+    if "coordinates" in body:
+        updates["coordinates"] = body["coordinates"]
+    updates["updated_at"] = datetime.now(timezone.utc)
+    db.venues.update_one({"id": venue_id}, {"$set": updates})
+    updated = db.venues.find_one({"id": venue_id}, {"_id": 0})
+    return 200, updated
+
+def handle_admin_delete_venue(venue_id):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    result = db.venues.delete_one({"id": venue_id})
+    if result.deleted_count == 0:
+        return 404, {"detail": "Venue not found"}
+    return 200, {"success": True, "deleted_id": venue_id}
+
+def handle_admin_get_config():
+    db = get_db()
+    defaults = {
+        "clout_per_rating": 10,
+        "clout_per_checkin": 2,
+        "cooldown_minutes": 30,
+        "daily_rating_limit": 3,
+        "cooldown_clout_cost": 50,
+    }
+    if not db:
+        return 200, defaults
+    config = db.platform_config.find_one({"key": "global"}, {"_id": 0})
+    return 200, config or defaults
+
+def handle_admin_update_config(body):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    config = {
+        "key": "global",
+        "clout_per_rating": int(body.get("clout_per_rating", 10)),
+        "clout_per_checkin": int(body.get("clout_per_checkin", 2)),
+        "cooldown_minutes": int(body.get("cooldown_minutes", 30)),
+        "daily_rating_limit": int(body.get("daily_rating_limit", 3)),
+        "cooldown_clout_cost": int(body.get("cooldown_clout_cost", 50)),
+        "updated_at": datetime.now(timezone.utc),
+    }
+    db.platform_config.update_one({"key": "global"}, {"$set": config}, upsert=True)
+    return 200, {"success": True, "config": config}
+
 def route_get(path, query_params, headers):
     """Route GET requests."""
     if path == "/" or path == "":
@@ -666,7 +759,25 @@ def route_get(path, query_params, headers):
     m = re.match(r'^/api/crews/([^/]+)/locations$', path)
     if m:
         return handle_crew_locations(m.group(1), headers)
+    if path == "/api/admin/config":
+        return handle_admin_get_config()
 
+    return 404, {"detail": "Not found"}
+
+def route_put(path, body, headers):
+    """Route PUT requests."""
+    if path == "/api/admin/config":
+        return handle_admin_update_config(body)
+    m = re.match(r'^/api/admin/venues/([^/]+)$', path)
+    if m:
+        return handle_admin_update_venue(m.group(1), body)
+    return 404, {"detail": "Not found"}
+
+def route_delete(path, headers):
+    """Route DELETE requests."""
+    m = re.match(r'^/api/admin/venues/([^/]+)$', path)
+    if m:
+        return handle_admin_delete_venue(m.group(1))
     return 404, {"detail": "Not found"}
 
 def route_post(path, body, headers):
@@ -687,6 +798,8 @@ def route_post(path, body, headers):
         return handle_seed()
     if path == "/api/checkins":
         return handle_checkins_create(body, headers)
+    if path == "/api/admin/venues":
+        return handle_admin_create_venue(body)
 
     # Dynamic routes
     m = re.match(r'^/api/venues/([^/]+)/direction-click$', path)
@@ -745,6 +858,27 @@ class handler(BaseHTTPRequestHandler):
             self._send_json(status, data)
         except Exception as e:
             logger.error(f"POST {path} error: {e}")
+            self._send_json(500, {"detail": str(e)})
+
+    def do_PUT(self):
+        parsed = urlparse(self.path)
+        path = parsed.path.rstrip('/')
+        body = self._read_body()
+        try:
+            status, data = route_put(path, body, self._get_headers())
+            self._send_json(status, data)
+        except Exception as e:
+            logger.error(f"PUT {path} error: {e}")
+            self._send_json(500, {"detail": str(e)})
+
+    def do_DELETE(self):
+        parsed = urlparse(self.path)
+        path = parsed.path.rstrip('/')
+        try:
+            status, data = route_delete(path, self._get_headers())
+            self._send_json(status, data)
+        except Exception as e:
+            logger.error(f"DELETE {path} error: {e}")
             self._send_json(500, {"detail": str(e)})
 
     def do_OPTIONS(self):

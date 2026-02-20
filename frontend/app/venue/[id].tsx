@@ -70,6 +70,7 @@ export default function VenueDetailScreen() {
     timelinePeakHour,
     venueCheckinCount,
     isDemoMode,
+    cooldownSkip,
   } = useVibeStore();
   const [venue, setVenue] = useState<any>(null);
   const [ratingStatus, setRatingStatus] = useState<any>(null);
@@ -250,54 +251,60 @@ export default function VenueDetailScreen() {
   };
 
   const handleSubmitRating = async (data: {
-    energy: 'chill' | 'popping' | 'electric';
+    energy: 'chill' | 'good_vibes' | 'popping' | 'electric';
     capacity: 'sparse' | 'vibrant' | 'full';
     gate: 'clear' | 'slow' | 'blocked';
     photoBase64?: string;
   }) => {
-    if (!user || !venue || !userLocation) {
-      return;
-    }
+    if (!user || !venue) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/ratings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: user.id,
-          venue_id: venue.id,
-          energy: data.energy,
-          capacity: data.capacity,
-          gate: data.gate,
-          photo_base64: data.photoBase64,
-          latitude: userLocation.lat,
-          longitude: userLocation.lng,
-        }),
-      });
+      let cloutEarned = 10;
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to submit rating');
+      if (isDemoMode) {
+        // Use store's submitRating so demo cooldown is tracked
+        const { submitRating } = useVibeStore.getState();
+        const result = await submitRating(
+          venue.id, data.energy as any, data.capacity, data.gate,
+          { lat: userLocation?.lat || 0, lng: userLocation?.lng || 0 },
+          data.photoBase64
+        );
+        cloutEarned = result.clout_earned || 15;
+      } else {
+        const response = await fetch(`${API_URL}/api/ratings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: user.id,
+            venue_id: venue.id,
+            energy: data.energy,
+            capacity: data.capacity,
+            gate: data.gate,
+            photo_base64: data.photoBase64,
+            latitude: userLocation?.lat || 0,
+            longitude: userLocation?.lng || 0,
+          }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Failed to submit rating');
+        }
+        const result = await response.json();
+        cloutEarned = result.clout_earned || 10;
       }
 
-      const result = await response.json();
-      const cloutEarned = result.clout_earned || 10;
       const hasPhoto = !!data.photoBase64;
-      
-      // Update local user clout immediately
       updateUserClout(hasPhoto ? cloutEarned + 5 : cloutEarned);
-      
-      // Set the last rated venue for map glow effect
       setLastRatedVenueId(venue.id);
-      
-      // Store values for success animation
       setLastCloutEarned(cloutEarned);
       setLastHadPhoto(hasPhoto);
-      
-      // Close modal and show success animation
       setShowRateModal(false);
       setShowSuccessAnimation(true);
-      
+
+      // Refresh rating status so modal shows cooldown next open
+      const updatedStatus = await getUserRatingStatus(venue.id);
+      setRatingStatus(updatedStatus);
+
     } catch (error: any) {
       console.error('Rating error:', error);
       throw error;
@@ -772,10 +779,11 @@ export default function VenueDetailScreen() {
               onPress={() => {
                 if (!user) {
                   router.push('/profile');
-                } else if (!isWithinGeofence) {
+                } else if (!isWithinGeofence && !isDemoMode) {
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
                   checkUserLocation();
-                } else if (ratingStatus?.can_rate) {
+                } else {
+                  // Always open modal — it shows cooldown screen if on cooldown
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setShowRateModal(true);
                 }
@@ -817,8 +825,18 @@ export default function VenueDetailScreen() {
         onClose={() => setShowRateModal(false)}
         onSubmit={handleSubmitRating}
         venueName={venue?.name || ''}
-        isGpsVerified={isWithinGeofence}
+        isGpsVerified={isWithinGeofence || isDemoMode}
         geofenceRadius={venue?.geofence_radius_m || 100}
+        cooldownRemainingSeconds={ratingStatus?.cooldown_remaining_seconds || 0}
+        userClout={user?.clout_points || 0}
+        onSkipCooldown={async (method) => {
+          const result = await cooldownSkip(venue?.id || '', method);
+          if (result.success) {
+            const updatedStatus = await getUserRatingStatus(venue?.id || '');
+            setRatingStatus(updatedStatus);
+          }
+          return result;
+        }}
       />
 
       {/* Story Viewer Modal */}

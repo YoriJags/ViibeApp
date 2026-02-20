@@ -28,7 +28,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.78;
 const DISMISS_THRESHOLD = 120;
 
-type EnergyLevel = 'chill' | 'popping' | 'electric';
+type EnergyLevel = 'chill' | 'good_vibes' | 'popping' | 'electric';
 type CapacityLevel = 'sparse' | 'vibrant' | 'full';
 type GateLevel = 'clear' | 'slow' | 'blocked';
 
@@ -53,6 +53,7 @@ interface RateVibeModalProps {
 // ─── Option Configs ───────────────────────────────────────────
 const ENERGY_OPTIONS: { value: EnergyLevel; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { value: 'chill', label: 'CHILL', icon: 'moon' },
+  { value: 'good_vibes', label: 'GOOD VIBES', icon: 'happy' },
   { value: 'popping', label: 'POPPING', icon: 'musical-notes' },
   { value: 'electric', label: 'ELECTRIC', icon: 'flash' },
 ];
@@ -102,7 +103,7 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
   const submitScale = useRef(new Animated.Value(1)).current;
   const submitGlow = useRef(new Animated.Value(0)).current;
   const optionScales = useRef(
-    Array.from({ length: 9 }, () => new Animated.Value(1))
+    Array.from({ length: 10 }, () => new Animated.Value(1))
   ).current;
 
   const filledCount = [energy, capacity, gate].filter(Boolean).length;
@@ -524,8 +525,8 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
 
                 {/* Sections */}
                 {renderSection('ENERGY', 'flash', ENERGY_OPTIONS, energy, setEnergy, SECTION_COLORS.energy, 0)}
-                {renderSection('CAPACITY', 'people', CAPACITY_OPTIONS, capacity, setCapacity, SECTION_COLORS.capacity, 3)}
-                {renderSection('GATE / QUEUE', 'ellipse-outline', GATE_OPTIONS, gate, setGate, SECTION_COLORS.gate, 6)}
+                {renderSection('CAPACITY', 'people', CAPACITY_OPTIONS, capacity, setCapacity, SECTION_COLORS.capacity, 4)}
+                {renderSection('GATE / QUEUE', 'ellipse-outline', GATE_OPTIONS, gate, setGate, SECTION_COLORS.gate, 7)}
               </>
             )}
 

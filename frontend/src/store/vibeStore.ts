@@ -203,6 +203,7 @@ interface PersistedState {
   hasSeenDemoTutorial: boolean;
   avatarConfig: { emoji: string; bgColor: string; accentColor: string } | null;
   locationSharingEnabled: boolean;
+  vibePersona: 'turn_up' | 'grown_sexy' | 'culture' | 'chill_set' | null;
 }
 
 interface LobbyVenue extends Venue {
@@ -247,6 +248,7 @@ interface TransientState {
   activeCampaigns: ActiveCampaign[];
   crewLocations: CrewMemberLocation[];
   ghostMode: boolean;
+  demoRatedVenues: Record<string, number>; // venueId → timestamp of last demo rating
 }
 
 interface VibeStoreActions {
@@ -325,6 +327,7 @@ interface VibeStoreActions {
   // Avatar & Privacy
   updateAvatar: (config: { emoji: string; bgColor: string; accentColor: string }) => void;
   toggleLocationSharing: () => void;
+  setVibePersona: (persona: 'turn_up' | 'grown_sexy' | 'culture' | 'chill_set') => void;
   // Cooldown
   cooldownSkip: (venueId: string, method: 'clout' | 'payment') => Promise<{ success: boolean; clout_remaining?: number; error?: string }>;
   // Crew Tracker
@@ -349,6 +352,7 @@ export const useVibeStore = create<VibeStore>()(
       hasSeenDemoTutorial: false,
       avatarConfig: null,
       locationSharingEnabled: true,
+      vibePersona: null,
 
       // Transient state (not persisted)
       venues: [],
@@ -376,6 +380,7 @@ export const useVibeStore = create<VibeStore>()(
       activeCampaigns: [],
       crewLocations: [],
       ghostMode: false,
+      demoRatedVenues: {},
 
       // Hydration tracker
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
@@ -608,8 +613,11 @@ export const useVibeStore = create<VibeStore>()(
           throw new Error('User not logged in');
         }
 
-        // Demo mode: simulate successful rating
+        // Demo mode: simulate successful rating + start cooldown
         if (isDemoMode) {
+          set((state) => ({
+            demoRatedVenues: { ...state.demoRatedVenues, [venueId]: Date.now() },
+          }));
           return {
             success: true,
             clout_earned: 15,
@@ -669,13 +677,21 @@ export const useVibeStore = create<VibeStore>()(
 
       // Get user's rating status for a venue
       getUserRatingStatus: async (venueId) => {
-        const { user, isDemoMode } = get();
+        const { user, isDemoMode, demoRatedVenues } = get();
         if (!user) {
           return { can_rate: false, ratings_count: 0, cooldown_remaining_seconds: 0 };
         }
-        // Demo mode: always allow rating
+        // Demo mode: simulate cooldown after first rating
         if (isDemoMode) {
-          return { can_rate: true, ratings_count: 3, cooldown_remaining_seconds: 0 };
+          const lastRated = demoRatedVenues[venueId];
+          if (lastRated) {
+            const elapsed = (Date.now() - lastRated) / 1000;
+            const remaining = Math.max(0, 1800 - elapsed);
+            if (remaining > 0) {
+              return { can_rate: false, ratings_count: 1, cooldown_remaining_seconds: Math.floor(remaining), can_skip: true, clout_cost: 50 };
+            }
+          }
+          return { can_rate: true, ratings_count: 0, cooldown_remaining_seconds: 0 };
         }
 
         try {
@@ -693,7 +709,15 @@ export const useVibeStore = create<VibeStore>()(
       cooldownSkip: async (venueId, method) => {
         const { user, getAuthHeaders, isDemoMode } = get();
         if (!user) return { success: false, error: 'Not authenticated' };
-        if (isDemoMode) return { success: true, clout_remaining: user.clout_points };
+        if (isDemoMode) {
+          // Clear demo cooldown for this venue
+          set((state) => {
+            const updated = { ...state.demoRatedVenues };
+            delete updated[venueId];
+            return { demoRatedVenues: updated };
+          });
+          return { success: true, clout_remaining: user.clout_points - (method === 'clout' ? 50 : 0) };
+        }
         try {
           const response = await fetch(`${API_URL}/api/ratings/skip-cooldown`, {
             method: 'POST',
@@ -1254,6 +1278,7 @@ export const useVibeStore = create<VibeStore>()(
       toggleLocationSharing: () => {
         set({ locationSharingEnabled: !get().locationSharingEnabled });
       },
+      setVibePersona: (persona) => set({ vibePersona: persona }),
 
       // ===== Campaign Actions =====
       fetchActiveCampaigns: async (city?: string) => {
@@ -1329,6 +1354,7 @@ export const useVibeStore = create<VibeStore>()(
         hasSeenDemoTutorial: state.hasSeenDemoTutorial,
         avatarConfig: state.avatarConfig,
         locationSharingEnabled: state.locationSharingEnabled,
+        vibePersona: state.vibePersona,
       }),
       onRehydrateStorage: () => (state) => {
         // Called when store is rehydrated from storage

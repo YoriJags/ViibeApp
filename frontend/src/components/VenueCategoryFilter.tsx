@@ -28,12 +28,12 @@ interface VenueCategoryFilterProps {
 const CATEGORIES: CategoryOption[] = [
   { key: 'all', label: 'All', icon: 'grid', gradient: ['#FF3366', '#FF6B35'] },
   { key: 'club', label: 'Clubs', icon: 'musical-notes', gradient: ['#FF3366', '#9933FF'] },
-  { key: 'lounge', label: 'Lounges', icon: 'wine', gradient: ['#9933FF', '#6B1FCC'] },
   { key: 'restaurant', label: 'Restaurants', icon: 'restaurant', gradient: ['#FF9933', '#FFD700'] },
+  { key: 'lounge', label: 'Lounges', icon: 'wine', gradient: ['#9933FF', '#6B1FCC'] },
   { key: 'bar', label: 'Bars', icon: 'beer', gradient: ['#FF6B35', '#FF9933'] },
-  { key: 'church', label: 'Churches', icon: 'heart', gradient: ['#00D4FF', '#9933FF'] },
   { key: 'concert', label: 'Concerts', icon: 'mic', gradient: ['#FF3366', '#FF69B4'] },
   { key: 'block_party', label: 'Events', icon: 'people', gradient: ['#00E676', '#00D4FF'] },
+  { key: 'church', label: 'Churches', icon: 'heart', gradient: ['#00D4FF', '#9933FF'] },
 ];
 
 export default function VenueCategoryFilter({ selected, onSelect, counts }: VenueCategoryFilterProps) {
