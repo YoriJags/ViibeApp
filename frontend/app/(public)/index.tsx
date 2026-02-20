@@ -37,6 +37,14 @@ import { calculateDistance } from '../../src/utils/geo';
 
 const { width } = Dimensions.get('window');
 
+// Persona → preferred venue types for feed boosting
+const PERSONA_BOOST: Record<string, string[]> = {
+  turn_up: ['club', 'bar', 'concert'],
+  grown_sexy: ['lounge', 'restaurant'],
+  culture: ['concert', 'event', 'block_party'],
+  chill_set: ['restaurant', 'lounge', 'cafe'],
+};
+
 const CITIES = [
   { code: 'lagos', name: 'Lagos', emoji: '\u{1F3D9}\u{FE0F}' },
   { code: 'abuja', name: 'Abuja', emoji: '\u{1F306}' },
@@ -47,7 +55,7 @@ const CITIES = [
 export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string }>();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
@@ -193,11 +201,25 @@ export default function MapScreen() {
     return counts;
   }, [venues]);
 
-  // Filter venues by selected category
+  // Filter venues by selected category, then sort by persona preference + vibe score
   const filteredVenues = useMemo(() => {
-    if (selectedCategory === 'all') return venues;
-    return venues.filter((v: any) => v.venue_type === selectedCategory);
-  }, [venues, selectedCategory]);
+    const base = selectedCategory === 'all'
+      ? [...venues]
+      : venues.filter((v: any) => v.venue_type === selectedCategory);
+
+    if (!vibePersona || selectedCategory !== 'all') {
+      // No persona or specific category selected → sort by vibe score only
+      return base.sort((a: any, b: any) => (b.vibe_score ?? 0) - (a.vibe_score ?? 0));
+    }
+
+    const preferred = PERSONA_BOOST[vibePersona] ?? [];
+    return base.sort((a: any, b: any) => {
+      const aMatch = preferred.includes(a.venue_type) ? 1 : 0;
+      const bMatch = preferred.includes(b.venue_type) ? 1 : 0;
+      if (bMatch !== aMatch) return bMatch - aMatch; // preferred types first
+      return (b.vibe_score ?? 0) - (a.vibe_score ?? 0); // then by vibe score
+    });
+  }, [venues, selectedCategory, vibePersona]);
 
   // Night phase detection
   const nightPhase = useMemo(() =>
@@ -410,9 +432,16 @@ export default function MapScreen() {
             counts={categoryCounts}
           />
 
-          {filteredVenues
-            .sort((a, b) => b.current_vibe_score - a.current_vibe_score)
-            .map((venue, index) => (
+          {vibePersona && selectedCategory === 'all' && (
+            <View style={styles.personaChip}>
+              <Text style={styles.personaChipText}>
+                {vibePersona === 'turn_up' ? '🎉' : vibePersona === 'grown_sexy' ? '🍸' : vibePersona === 'culture' ? '🎵' : '🌙'}{' '}
+                Sorted for your vibe
+              </Text>
+            </View>
+          )}
+
+          {filteredVenues.map((venue, index) => (
               <Animated.View
                 key={venue.id}
                 style={{
@@ -610,6 +639,24 @@ const styles = StyleSheet.create({
   },
   cityNameActive: {
     color: '#FFF',
+  },
+  personaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,51,102,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,51,102,0.3)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    marginBottom: 8,
+    marginLeft: 16,
+  },
+  personaChipText: {
+    color: '#FF3366',
+    fontSize: 12,
+    fontWeight: '600',
   },
   legendOverlay: {
     position: 'absolute',
