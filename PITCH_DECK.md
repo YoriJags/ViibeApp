@@ -49,7 +49,7 @@ Clubs. Restaurants. Concerts. Brunch spots. Rooftops. Events. Any venue. Any hou
 
 - **📡 Live Scouts** — On-the-ground users rate Energy, Capacity & Gate from inside any venue in real time
 - **⚡ Vibe Score** — Live composite score (0-100) updated every few minutes with time-decay weighting
-- **🧬 AI Intelligence** — Oracle predicts peaks. DNA learns your taste. Night Planner plans your night.
+- **🧬 AI Intelligence** — Oracle predicts peaks. DNA learns your taste. Ask Vibe plans your night.
 
 `Clubs & Lounges` · `Restaurants` · `Concerts & Events` · `Brunch & Day Parties` · `Church Programs`
 
@@ -66,7 +66,7 @@ Clubs. Restaurants. Concerts. Brunch spots. Rooftops. Events. Any venue. Any hou
 - 3-dimension rating: Energy / Capacity / Gate
 - Clout system + scout rankings (Newbie → Elite)
 - Crew & Cartel — squad social features
-- Vibe Oracle + DNA + Night Planner AI
+- Vibe Oracle + DNA + Ask Vibe AI
 - Streaks, badges, leaderboards, personas
 
 ### 🟡 Merchant Floor — Venue Owners
@@ -147,7 +147,7 @@ Clubs. Restaurants. Concerts. Brunch spots. Rooftops. Events. Any venue. Any hou
 - **15 custom algorithms** — vibe scoring, time-decay, trending, geofence, forecast accuracy
 - **Vibe Oracle** — peak-time predictions (pipes ready for ML upgrade at 20K users)
 - **Vibe DNA** — behavioral taste fingerprint from rating history
-- **Night Planner** — AI concierge (Claude API activates on key set — zero code change)
+- **Ask Vibe** — AI concierge (Claude API activates on key set — zero code change)
 
 ### Platform Depth ✅
 - **3 full user tiers** — Scouts, Merchants, Admins with separate complete experiences
@@ -176,7 +176,7 @@ Clubs. Restaurants. Concerts. Brunch spots. Rooftops. Events. Any venue. Any hou
 |---------|-------------|--------|
 | 🔮 **Vibe Oracle** | "Quilox will be electric by 12:30am — 87% confidence" | ✅ PIPES BUILT |
 | 🧬 **Vibe DNA** | Behavioral taste fingerprint from real rating history | ✅ PIPES BUILT |
-| ✨ **Night Planner** | Natural language venue concierge — clubs, brunch, concerts, events | 🔑 CLAUDE API READY |
+| ✨ **Ask Vibe** | Natural language venue concierge — clubs, brunch, concerts, events | 🔑 CLAUDE API READY |
 | 📸 Crowd Intelligence | Computer vision auto-fills ratings from scout photos | Planned Month 12 |
 | 🤖 Vibe Autopilot | AI runs merchant marketing automatically | Planned Month 18 |
 
@@ -269,7 +269,7 @@ Clubs. Restaurants. Concerts. Brunch spots. Rooftops. Events. Any venue. Any hou
 | Allocation | Amount | For |
 |------------|--------|-----|
 | 🏙️ Lagos Operations | 40% | City Lead hire · scout recruitment · 20 venue onboardings (all types) · launch night |
-| 📱 Product & Tech | 35% | App Store/Play Store · Claude API (Night Planner live) · infrastructure |
+| 📱 Product & Tech | 35% | App Store/Play Store · Claude API (Ask Vibe live) · infrastructure |
 | 📣 Growth & Brand | 25% | PR (TechCabal, Techpoint) · influencer scouts · social blitz · launch events |
 
 ### 6-Month Milestones

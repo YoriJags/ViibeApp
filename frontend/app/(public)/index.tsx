@@ -586,7 +586,7 @@ export default function MapScreen() {
 
       <FloorSwitcher currentFloor="public" />
 
-      {/* Night Planner Modal */}
+      {/* Ask Vibe Modal */}
       <NightPlannerModal
         visible={showPlanner}
         onClose={() => setShowPlanner(false)}

@@ -1,6 +1,6 @@
 /**
- * NightPlannerModal — AI nightlife concierge chat interface.
- * "Where should my squad go tonight? Afrobeats, Lekki, budget-friendly"
+ * AskVibeModal — AI venue concierge chat interface.
+ * "Where should my squad go? Afrobeats, Lekki, budget-friendly"
  *
  * Demo mode: scripted 2-turn conversation with pre-loaded venue cards.
  * Live mode: POST /api/planner/chat with rule-based matching (Claude when API key is set).
@@ -32,8 +32,8 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 const SUGGESTED_PROMPTS = [
   "Best clubs in VI tonight",
   "Afrobeats, Lekki, squad of 6",
+  "Good brunch spots this weekend",
   "Chill spots with good food",
-  "Free entry options near me",
 ];
 
 // ── Typing Indicator ──────────────────────────────────────────────────────
@@ -240,7 +240,7 @@ export default function NightPlannerModal({ visible, onClose, city }: NightPlann
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>NIGHT PLANNER</Text>
+            <Text style={styles.headerTitle}>ASK VIBE</Text>
             <Text style={styles.headerSparkle}>✨</Text>
           </View>
           <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
@@ -257,7 +257,7 @@ export default function NightPlannerModal({ visible, onClose, city }: NightPlann
           {isEmpty && (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>Ask me anything</Text>
-              <Text style={styles.emptySub}>I'll find the best spots in {city.charAt(0).toUpperCase() + city.slice(1)} for you tonight</Text>
+              <Text style={styles.emptySub}>I'll find the right scene in {city.charAt(0).toUpperCase() + city.slice(1)} — clubs, restaurants, events, brunch</Text>
               <View style={styles.suggestionsGrid}>
                 {SUGGESTED_PROMPTS.map((p, i) => (
                   <TouchableOpacity key={i} style={styles.suggestionChip} onPress={() => handleSend(p)} activeOpacity={0.7}>

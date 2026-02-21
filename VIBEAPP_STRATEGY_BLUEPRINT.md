@@ -84,7 +84,7 @@ A full-stack mobile platform with three user layers:
 - **Top Scouts per venue** — ranked leaderboard of most active raters per location
 - **Vibe Oracle** — heuristic peak-time prediction ("Quilox will be electric by 12:30am · 87% confidence")
 - **Vibe DNA** — behavioral affinity fingerprint from rating history (affinity bars per venue type, dominant scene, night style)
-- **Night Planner** — natural language nightlife concierge (rule-based now; Claude API activates when ANTHROPIC_API_KEY is set)
+- **Ask Vibe** — natural language scene concierge (rule-based now; Claude API activates when ANTHROPIC_API_KEY is set)
 - **VibeMatch** — "Tonight's Match" card powered by DNA affinity (40%) + live vibe score (60%)
 
 **UI & Experience Layer:**
@@ -378,7 +378,7 @@ You need ONE of these paths:
 | Factor | Estimate |
 |--------|----------|
 | Codebase (10-14 months equivalent dev work, 3 full user tiers) | $100-180K |
-| AI-tier feature pipes (Oracle, DNA, Night Planner — instantly upgradeable) | $30-60K |
+| AI-tier feature pipes (Oracle, DNA, Ask Vibe — instantly upgradeable) | $30-60K |
 | Product design & UX (premium glass UI, animated borders, persona system) | $20-35K |
 | Demo-ready state with full demo mode + scripted investor walkthrough | $15-25K |
 | Domain/concept originality for Africa | $10-30K |
@@ -436,11 +436,11 @@ What's already built in the backend:
 | Vibe Intelligence | Hourly energy curves, peak detection, vibe killers | ✅ Built |
 | **Vibe Oracle** | PEAK_WINDOWS heuristic tables per venue_type × weekday/weekend; confidence = base + velocity delta + activity delta; signal chips (day / velocity / genre / certified) | ✅ Built (pipes ready) |
 | **Vibe DNA** | Aggregates user ratings by venue_type → affinity scores 0-100; dominant scene by frequency; night style from avg timestamp hour | ✅ Built (pipes ready) |
-| **Night Planner** | Keyword scoring on live venues (area +20, genre +15, budget +20, type +15, group +10); Claude API path activates automatically when `ANTHROPIC_API_KEY` env var is set | ✅ Built (rule-based active; Claude path ready) |
+| **Ask Vibe** | Keyword scoring on live venues (area +20, genre +15, budget +20, type +15, group +10); Claude API path activates automatically when `ANTHROPIC_API_KEY` env var is set | ✅ Built (rule-based active; Claude path ready) |
 | **Top Scouts** | MongoDB aggregation pipeline — top 5 raters per venue by rating count + accuracy | ✅ Built |
 | **Vibe Persona Feed** | Persona-to-venue-type boost mapping sorts the home feed to surface preferred venue types first | ✅ Built |
 
-**Verdict:** We now have 15 custom algorithms plus AI-tier feature pipes (Oracle, DNA, Night Planner). The intelligence layer is scaffolded and demo-ready — switching from heuristics to real ML is a model swap, not a rebuild.
+**Verdict:** We now have 15 custom algorithms plus AI-tier feature pipes (Oracle, DNA, Ask Vibe). The intelligence layer is scaffolded and demo-ready — switching from heuristics to real ML is a model swap, not a rebuild.
 
 ---
 
@@ -508,9 +508,9 @@ What's already built in the backend:
 
 **Technical Approach:** Fine-tuned image classification model (MobileNet or custom CNN) trained on crowd images labeled with vibe scores.
 
-### Feature 4: "NIGHT PLANNER" — AI Concierge ✅ PIPES BUILT
+### Feature 4: "ASK VIBE" — AI Concierge ✅ PIPES BUILT
 
-**What it does:** Natural language interface for planning your night out.
+**What it does:** Natural language interface for finding the right scene — clubs, restaurants, concerts, brunch spots, events.
 
 **Example Conversation:**
 > **User:** "Where should my squad of 6 go tonight? We want Afrobeats, not too expensive, and we're in Lekki"
@@ -566,8 +566,8 @@ What's already built in the backend:
 
 | Phase | What | When | Requirement | Status |
 |-------|------|------|-------------|--------|
-| **Pre-launch** | Rule-based algorithms (15 custom heuristics). Oracle + DNA + Night Planner pipes scaffolded. Ship the app. | Now | — | ✅ Done |
-| **Claude API** | Set `ANTHROPIC_API_KEY` in Vercel → Night Planner switches from keyword rules to Claude haiku instantly | When key available | API key | 🔑 Ready to activate |
+| **Pre-launch** | Rule-based algorithms (15 custom heuristics). Oracle + DNA + Ask Vibe pipes scaffolded. Ship the app. | Now | — | ✅ Done |
+| **Claude API** | Set `ANTHROPIC_API_KEY` in Vercel → Ask Vibe switches from keyword rules to Claude haiku instantly | When key available | API key | 🔑 Ready to activate |
 | **5K users** | Start logging EVERYTHING — every rating, check-in, search, tap. Build data pipeline. | Month 3 | Data infrastructure | ⬜ Planned |
 | **20K users** | Upgrade Vibe DNA from affinity bars to collaborative filtering recommendations | Month 6 | 6+ months of user behavior data | ⬜ Planned |
 | **50K users** | Upgrade Vibe Oracle from PEAK_WINDOWS tables to Prophet/LSTM time-series model | Month 9 | Sufficient venue history data | ⬜ Planned |
@@ -598,7 +598,7 @@ Every AI company has access to internet data (text, images, code). Almost none h
 
 **OpenAI / Anthropic:**
 - Want: Vertical AI agents with proprietary data
-- Our value: Night Planner agent + real-time venue database
+- Our value: Ask Vibe agent + real-time venue database
 - Their gap: Foundation models can't answer "where should I go tonight in Lagos?" with real-time accuracy
 
 **Google (Maps + DeepMind):**
@@ -738,6 +738,6 @@ Every AI company has access to internet data (text, images, code). Almost none h
 ---
 
 **v1.0 — February 2026:** Initial blueprint
-**v2.0 — February 2026:** Updated to reflect current build — 3 AI-tier feature pipes (Vibe Oracle, Vibe DNA, Night Planner), 15 backend algorithms, Vibe Persona feed, Top Scouts, Rating Cooldown, Cartel Radar, full demo mode, Night Planner Claude API path ready to activate
+**v2.0 — February 2026:** Updated to reflect current build — 3 AI-tier feature pipes (Vibe Oracle, Vibe DNA, Ask Vibe), 15 backend algorithms, Vibe Persona feed, Top Scouts, Rating Cooldown, Cartel Radar, full demo mode, Ask Vibe Claude API path ready to activate
 
 **Document prepared by the VibeApp founding team, February 2026.**
