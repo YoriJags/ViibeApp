@@ -65,13 +65,13 @@
 
 ---
 
-## SCENE 4 — NIGHT PLANNER (0:52 — 1:15)
+## SCENE 4 — ASK VIBE (0:52 — 1:15)
 **Screen:** Back on home screen — tap the ✨ sparkles button in the header
 
-**Action:** Night Planner modal slides up — show the empty state with suggested prompts
+**Action:** Ask Vibe modal slides up — show the empty state with suggested prompts
 
 > *(Voiceover)*
-> "The Night Planner is our AI concierge."
+> "The Ask Vibe is our AI concierge."
 
 **Action:** Tap the suggested prompt: *"Where should my squad of 6 go? Afrobeats, Lekki, budget-friendly"*
 
@@ -134,7 +134,7 @@
 **Screen:** Return to home screen — slow pan across glowing venue cards
 
 > *(Voiceover)*
-> "Vibe Oracle. Vibe DNA. Night Planner. Live scout ratings. Merchant analytics.
+> "Vibe Oracle. Vibe DNA. Ask Vibe. Live scout ratings. Merchant analytics.
 >
 > We're not building a review app.
 > We're building the real-time intelligence layer for human social behavior in Africa.
@@ -200,7 +200,7 @@ Best time to arrive: 11:45pm.
 [0:40] Scouts rate venues in three dimensions — Energy, Capacity, and Gate.
 Each rating updates the live score instantly, weighted by how recent it is.
 
-[0:53] The Night Planner is our AI concierge.
+[0:53] The Ask Vibe is our AI concierge.
 Ask it anything. It knows the live vibe of every venue in the city.
 One API key and it upgrades to Claude instantly.
 
@@ -213,7 +213,7 @@ This is what they pay for.
 
 [1:46] Scouts form crews and cartels. The social graph keeps them in the app.
 
-[1:56] Vibe Oracle. Vibe DNA. Night Planner. Live scout ratings. Merchant analytics.
+[1:56] Vibe Oracle. Vibe DNA. Ask Vibe. Live scout ratings. Merchant analytics.
 
 We're building the real-time intelligence layer for human social behavior in Africa.
 We started with nightlife. Next: restaurants, events, retail, tourism.

@@ -1,0 +1,21 @@
+{
+  "name": "vibez-investor-video",
+  "version": "1.0.0",
+  "description": "Vibez investor demo video — built with Remotion",
+  "scripts": {
+    "start": "remotion studio",
+    "render": "remotion render src/index.tsx VibezDemo out/vibez-demo.mp4 --codec h264",
+    "render:short": "remotion render src/index.tsx VibezShort out/vibez-60s.mp4 --codec h264 --props '{\"short\":true}'"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "remotion": "^4.0.0",
+    "@remotion/cli": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.0.0"
+  }
+}
