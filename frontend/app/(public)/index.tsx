@@ -34,6 +34,7 @@ import VibePrompt from '../../src/components/VibePrompt';
 import { DEMO_ACTIVITY_FEED, DEMO_TONIGHT, DEMO_PROMPTS, DEMO_VIBE_MATCH } from '../../src/data/demoData';
 import VibeMatch from '../../src/components/VibeMatch';
 import NightPlannerModal from '../../src/components/NightPlannerModal';
+import CityPulseHero from '../../src/components/CityPulseHero';
 import { getNightPhase } from '../../src/store/vibeStore';
 import { calculateDistance } from '../../src/utils/geo';
 
@@ -57,7 +58,7 @@ const CITIES = [
 export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string }>();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
@@ -125,6 +126,10 @@ export default function MapScreen() {
   useEffect(() => {
     initializeApp();
   }, []);
+
+  useEffect(() => {
+    fetchCityPulse(selectedCity);
+  }, [selectedCity]);
 
   const initializeApp = async () => {
     // In demo mode, use a fixed location (Victoria Island, Lagos) and skip API
@@ -435,6 +440,12 @@ export default function MapScreen() {
             totalCloutEarned={isDemoMode ? 120 : 0}
             newBadgesCount={isDemoMode ? 1 : 0}
             bestMomentText="Quilox hit 87% while you were there"
+          />
+
+          {/* CityPulseHero — Live city heartbeat */}
+          <CityPulseHero
+            data={cityPulse}
+            cityName={cityName}
           />
 
           {/* CartelPulse — Cartel activity card */}

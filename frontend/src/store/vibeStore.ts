@@ -249,7 +249,22 @@ interface TransientState {
   crewLocations: CrewMemberLocation[];
   ghostMode: boolean;
   demoRatedVenues: Record<string, number>; // venueId → timestamp of last demo rating
+  demoPulsedVenues: Record<string, number>; // venueId → timestamp of last quick pulse (demo)
   vibeDNA: VibeDNA | null;
+  cityPulse: CityPulseData | null;
+}
+
+export type CityPulseLabel = 'DEAD' | 'QUIET' | 'BUZZING' | 'POPPING' | 'ELECTRIC';
+
+export interface CityPulseData {
+  city: string;
+  pulse_score: number;
+  pulse_label: CityPulseLabel;
+  active_scouts: number;
+  live_venues: number;
+  pulses_tonight: number;
+  trending_venue?: { name: string; score: number };
+  updated_at?: string;
 }
 
 export interface VenueAffinity { venue_type: string; score: number; rating_count: number; label: string; }
@@ -348,6 +363,9 @@ interface VibeStoreActions {
   toggleGhostMode: () => void;
   // Vibe DNA
   fetchVibeDNA: (userId: string) => Promise<void>;
+  // City Pulse
+  fetchCityPulse: (city: string) => Promise<void>;
+  dropQuickPulse: (venueId: string, lat: number, lng: number) => Promise<{ success: boolean; clout_earned?: number }>;
 }
 
 type VibeStore = PersistedState & TransientState & VibeStoreActions;
@@ -396,7 +414,9 @@ export const useVibeStore = create<VibeStore>()(
       crewLocations: [],
       ghostMode: false,
       demoRatedVenues: {},
+      demoPulsedVenues: {},
       vibeDNA: null,
+      cityPulse: null,
 
       // Hydration tracker
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
@@ -1013,6 +1033,74 @@ export const useVibeStore = create<VibeStore>()(
         }
       },
 
+      // ===== City Pulse =====
+      fetchCityPulse: async (city: string) => {
+        const { isDemoMode } = get();
+        if (isDemoMode) {
+          const { DEMO_CITY_PULSE } = require('../data/demoData');
+          set({ cityPulse: { ...DEMO_CITY_PULSE, city } });
+          return;
+        }
+        try {
+          const res = await fetch(`${API_URL}/api/city-pulse/${city}`);
+          if (res.ok) {
+            const data = await res.json();
+            set({ cityPulse: data });
+          }
+        } catch (e) {
+          console.error('fetchCityPulse error:', e);
+        }
+      },
+
+      dropQuickPulse: async (venueId: string, lat: number, lng: number) => {
+        const { user, getAuthHeaders, isDemoMode, demoPulsedVenues } = get();
+        if (!user) return { success: false };
+
+        if (isDemoMode) {
+          const lastPulsed = demoPulsedVenues[venueId];
+          if (lastPulsed && Date.now() - lastPulsed < 15 * 60 * 1000) {
+            return { success: false };
+          }
+          set((state) => ({
+            demoPulsedVenues: { ...state.demoPulsedVenues, [venueId]: Date.now() },
+            user: state.user
+              ? { ...state.user, clout_points: (state.user.clout_points || 0) + 3 }
+              : state.user,
+          }));
+          // Also refresh city pulse to simulate updated count
+          const { DEMO_CITY_PULSE } = require('../data/demoData');
+          set((state) => ({
+            cityPulse: state.cityPulse
+              ? { ...state.cityPulse, pulses_tonight: state.cityPulse.pulses_tonight + 1 }
+              : { ...DEMO_CITY_PULSE, pulses_tonight: DEMO_CITY_PULSE.pulses_tonight + 1 },
+          }));
+          return { success: true, clout_earned: 3 };
+        }
+
+        try {
+          const res = await fetch(`${API_URL}/api/pulse`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ user_id: user.id, venue_id: venueId, lat, lng }),
+          });
+          const data = await res.json();
+          if (!res.ok) return { success: false };
+          if (data.clout_earned) {
+            set((state) => ({
+              user: state.user
+                ? { ...state.user, clout_points: (state.user.clout_points || 0) + data.clout_earned }
+                : state.user,
+            }));
+          }
+          // Refresh city pulse after drop
+          get().fetchCityPulse(get().selectedCity);
+          return { success: true, clout_earned: data.clout_earned };
+        } catch (e) {
+          console.error('dropQuickPulse error:', e);
+          return { success: false };
+        }
+      },
+
       // ===== Streak Actions =====
       fetchStreak: async () => {
         const { getAuthHeaders, isAuthenticated } = get();
@@ -1358,6 +1446,10 @@ export const useVibeStore = create<VibeStore>()(
 
         newSocket.on('pulse_drop', (data: any) => {
           console.log('Pulse drop received:', data);
+        });
+
+        newSocket.on('city_pulse_update', (data: CityPulseData) => {
+          set({ cityPulse: data });
         });
 
         newSocket.on('disconnect', () => {

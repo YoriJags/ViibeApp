@@ -1055,6 +1055,116 @@ def handle_admin_update_config(body):
     db.platform_config.update_one({"key": "global"}, {"$set": config}, upsert=True)
     return 200, {"success": True, "config": config}
 
+
+QUICK_PULSE_CLOUT    = 3
+QUICK_PULSE_COOLDOWN = 15 * 60  # 15 minutes
+
+
+def _get_pulse_label(score: float) -> str:
+    if score >= 86: return "ELECTRIC"
+    if score >= 71: return "POPPING"
+    if score >= 51: return "BUZZING"
+    if score >= 26: return "QUIET"
+    return "DEAD"
+
+
+def handle_get_city_pulse(city: str):
+    """GET /api/city-pulse/{city} — live aggregate city heartbeat."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+
+    now      = datetime.now(timezone.utc)
+    hour_ago = now - timedelta(hours=1)
+    midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    active_venues = list(db.venues.find(
+        {"city": city, "last_rating_at": {"$gte": hour_ago}},
+        {"_id": 0, "name": 1, "current_vibe_score": 1}
+    ))
+
+    if active_venues:
+        avg_score   = sum(v["current_vibe_score"] for v in active_venues) / len(active_venues)
+        pulse_score = round(avg_score)
+        top_venue   = max(active_venues, key=lambda v: v["current_vibe_score"])
+        trending    = {"name": top_venue["name"], "score": int(top_venue["current_vibe_score"])}
+    else:
+        pulse_score = 0
+        trending    = None
+
+    active_scout_ids = db.ratings.distinct("user_id", {"timestamp": {"$gte": hour_ago}})
+    pulses_tonight   = db.quick_pulses.count_documents({"city": city, "timestamp": {"$gte": midnight}})
+
+    return 200, {
+        "city":           city,
+        "pulse_score":    pulse_score,
+        "pulse_label":    _get_pulse_label(pulse_score),
+        "active_scouts":  len(active_scout_ids),
+        "live_venues":    len(active_venues),
+        "pulses_tonight": pulses_tonight,
+        "trending_venue": trending,
+        "updated_at":     now.isoformat(),
+    }
+
+
+def handle_drop_quick_pulse(body):
+    """POST /api/pulse — scout drops a quick pulse. Awards 3 clout."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+
+    user_id  = body.get("user_id")
+    venue_id = body.get("venue_id")
+    coords   = body.get("coordinates", {})
+
+    user  = db.users.find_one({"id": user_id},  {"_id": 0})
+    venue = db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not user:  return 404, {"detail": "User not found"}
+    if not venue: return 404, {"detail": "Venue not found"}
+
+    # Geofence — events/festivals get 500m radius
+    event_types = {"event", "festival", "concert", "block_party"}
+    geofence_m  = venue.get("geofence_radius_m", 100)
+    if venue.get("venue_type") in event_types:
+        geofence_m = max(geofence_m, 500)
+
+    dist = calculate_distance(
+        coords.get("lat", 0), coords.get("lng", 0),
+        venue["coordinates"]["lat"], venue["coordinates"]["lng"]
+    )
+    if dist > geofence_m:
+        return 400, {"detail": f"Must be within {int(geofence_m)}m of venue to pulse"}
+
+    # 15-min cooldown per user-venue pair
+    now    = datetime.now(timezone.utc)
+    cutoff = now - timedelta(seconds=QUICK_PULSE_COOLDOWN)
+    recent = db.quick_pulses.find_one(
+        {"user_id": user_id, "venue_id": venue_id, "timestamp": {"$gte": cutoff}},
+        {"_id": 0, "timestamp": 1}
+    )
+    if recent:
+        last_ts = recent["timestamp"]
+        if isinstance(last_ts, str): last_ts = datetime.fromisoformat(last_ts)
+        if last_ts.tzinfo is None:   last_ts = last_ts.replace(tzinfo=timezone.utc)
+        remaining = int(QUICK_PULSE_COOLDOWN - (now - last_ts).total_seconds())
+        return 429, {"detail": "Pulse cooldown active", "cooldown_remaining_seconds": remaining}
+
+    # Record + award clout
+    db.quick_pulses.insert_one({
+        "id": str(uuid.uuid4()), "user_id": user_id,
+        "venue_id": venue_id, "city": venue.get("city", "lagos"),
+        "timestamp": now,
+    })
+    db.users.update_one({"id": user_id}, {"$inc": {"clout_points": QUICK_PULSE_CLOUT}})
+
+    return 200, {
+        "success":      True,
+        "clout_earned": QUICK_PULSE_CLOUT,
+        "new_clout":    user.get("clout_points", 0) + QUICK_PULSE_CLOUT,
+        "venue_id":     venue_id,
+    }
+
+
 def route_get(path, query_params, headers):
     """Route GET requests."""
     if path == "/" or path == "":
@@ -1095,6 +1205,9 @@ def route_get(path, query_params, headers):
     m = re.match(r'^/api/ratings/status/([^/]+)/([^/]+)$', path)
     if m:
         return handle_get_rating_status(m.group(1), m.group(2))
+    m = re.match(r'^/api/city-pulse/([^/]+)$', path)
+    if m:
+        return handle_get_city_pulse(m.group(1))
     m = re.match(r'^/api/crews/([^/]+)/locations$', path)
     if m:
         return handle_crew_locations(m.group(1), headers)
@@ -1141,6 +1254,8 @@ def route_post(path, body, headers):
         return handle_admin_create_venue(body)
     if path == "/api/planner/chat":
         return handle_planner_chat(body)
+    if path == "/api/pulse":
+        return handle_drop_quick_pulse(body)
 
     # Dynamic routes
     m = re.match(r'^/api/venues/([^/]+)/direction-click$', path)

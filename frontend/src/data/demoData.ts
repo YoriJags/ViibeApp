@@ -970,3 +970,15 @@ export const DEMO_PLANNER_CONVERSATION: PlannerMessage[] = [
     follow_up_prompts: ["Navigate to Escape", "Book a table at House 70"],
   },
 ];
+
+// ===== CITY PULSE — Live city heartbeat demo data =====
+export const DEMO_CITY_PULSE = {
+  city: 'lagos',
+  pulse_score: 82,
+  pulse_label: 'POPPING' as const,
+  active_scouts: 247,
+  live_venues: 34,
+  pulses_tonight: 1143,
+  trending_venue: { name: 'Quilox', score: 96 },
+  updated_at: new Date().toISOString(),
+};

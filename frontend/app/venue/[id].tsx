@@ -32,6 +32,7 @@ import CheckInCelebration from '../../src/components/CheckInCelebration';
 import CertifiedBadge from '../../src/components/CertifiedBadge';
 import TopScoutsCard from '../../src/components/TopScoutsCard';
 import VibeOracle from '../../src/components/VibeOracle';
+import PulseButton from '../../src/components/PulseButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -73,6 +74,8 @@ export default function VenueDetailScreen() {
     venueCheckinCount,
     isDemoMode,
     cooldownSkip,
+    dropQuickPulse,
+    demoPulsedVenues,
   } = useVibeStore();
   const [venue, setVenue] = useState<any>(null);
   const [ratingStatus, setRatingStatus] = useState<any>(null);
@@ -90,6 +93,7 @@ export default function VenueDetailScreen() {
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [pulsedAt, setPulsedAt] = useState<number | null>(null);
 
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -782,48 +786,64 @@ export default function VenueDetailScreen() {
             colors={['rgba(15,15,25,0.92)', 'rgba(10,10,18,0.98)']}
             style={styles.stickyGradient}
           >
-            <TouchableOpacity
-              style={styles.stickyRateBtn}
-              activeOpacity={0.8}
-              onPress={() => {
-                if (!user) {
-                  router.push('/profile');
-                } else if (!isWithinGeofence && !isDemoMode) {
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                  checkUserLocation();
-                } else {
-                  // Always open modal — it shows cooldown screen if on cooldown
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setShowRateModal(true);
-                }
-              }}
-            >
-              <LinearGradient
-                colors={
-                  user && isWithinGeofence && ratingStatus?.can_rate
-                    ? ['#FF3366', '#FF6B35']
-                    : ['#2A2A3E', '#1A1A2E']
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.stickyRateGradient}
+            <View style={styles.stickyFooterRow}>
+              <TouchableOpacity
+                style={styles.stickyRateBtn}
+                activeOpacity={0.8}
+                onPress={() => {
+                  if (!user) {
+                    router.push('/profile');
+                  } else if (!isWithinGeofence && !isDemoMode) {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                    checkUserLocation();
+                  } else {
+                    // Always open modal — it shows cooldown screen if on cooldown
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    setShowRateModal(true);
+                  }
+                }}
               >
-                <Ionicons
-                  name={!user ? 'person' : !isWithinGeofence ? 'location-outline' : 'star'}
-                  size={20}
-                  color="#FFF"
-                />
-                <Text style={styles.stickyRateText}>
-                  {!user
-                    ? 'Sign in to Rate'
-                    : !isWithinGeofence
-                    ? 'Get Closer to Rate'
-                    : ratingStatus?.can_rate
-                    ? 'Rate the Vibe'
-                    : 'Limit Reached'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={
+                    user && isWithinGeofence && ratingStatus?.can_rate
+                      ? ['#FF3366', '#FF6B35']
+                      : ['#2A2A3E', '#1A1A2E']
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.stickyRateGradient}
+                >
+                  <Ionicons
+                    name={!user ? 'person' : !isWithinGeofence ? 'location-outline' : 'star'}
+                    size={20}
+                    color="#FFF"
+                  />
+                  <Text style={styles.stickyRateText}>
+                    {!user
+                      ? 'Sign in to Rate'
+                      : !isWithinGeofence
+                      ? 'Get Closer to Rate'
+                      : ratingStatus?.can_rate
+                      ? 'Rate the Vibe'
+                      : 'Limit Reached'}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <PulseButton
+                pulsedAt={pulsedAt}
+                disabled={!user || (!isWithinGeofence && !isDemoMode)}
+                onPress={async () => {
+                  if (!venue || !user) return { success: false };
+                  const lat = userLocation?.lat ?? 0;
+                  const lng = userLocation?.lng ?? 0;
+                  const result = await dropQuickPulse(venue.id, lat, lng);
+                  if (result.success) setPulsedAt(Date.now());
+                  return result;
+                }}
+                style={styles.pulseBtn}
+              />
+            </View>
           </LinearGradient>
         </BlurView>
       </View>
@@ -1341,9 +1361,18 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 28 : 16,
   },
+  stickyFooterRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'stretch',
+  },
   stickyRateBtn: {
+    flex: 1,
     borderRadius: 16,
     overflow: 'hidden',
+  },
+  pulseBtn: {
+    width: 130,
   },
   stickyRateGradient: {
     flexDirection: 'row',
