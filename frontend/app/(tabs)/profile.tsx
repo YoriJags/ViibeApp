@@ -8,7 +8,6 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
-  Linking,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,13 +15,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, logout, loading, processGoogleAuth } = useVibeStore();
-  const [showSignup, setShowSignup] = useState(false);
+  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, processGoogleAuth } = useVibeStore();
+  const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
@@ -40,8 +40,8 @@ export default function ProfileScreen() {
   const handleGoogleSignIn = async () => {
     setAuthLoading(true);
     try {
-      // Build redirect URL dynamically from current location
-      const redirectUrl = `${API_URL}/profile`;
+      // Build redirect URL using Expo Linking for proper deep linking support
+      const redirectUrl = Linking.createURL('/profile');
       const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
       
       // Open browser for auth
@@ -78,9 +78,23 @@ export default function ProfileScreen() {
 
     const success = await createUser(username.trim(), phone.trim());
     if (success) {
-      setShowSignup(false);
+      setAuthMode('welcome');
     } else {
       Alert.alert('Error', 'Username might already exist. Try another.');
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!phone.trim()) {
+      Alert.alert('Error', 'Please enter your phone number');
+      return;
+    }
+
+    const result = await loginUser(phone.trim());
+    if (result.success) {
+      setAuthMode('welcome');
+    } else {
+      Alert.alert('Login Failed', result.error || 'User not found. Please sign up first.');
     }
   };
 
