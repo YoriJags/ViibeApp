@@ -139,7 +139,7 @@ export default function ProfileScreen() {
   }
 
   // Welcome / Sign-in Screen
-  if (!user && !showSignup) {
+  if (!user && authMode === 'welcome') {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.welcomeContainer}>
@@ -168,13 +168,22 @@ export default function ProfileScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Local Signup */}
+          {/* Login with Phone */}
           <TouchableOpacity
             style={styles.localButton}
-            onPress={() => setShowSignup(true)}
+            onPress={() => setAuthMode('login')}
           >
-            <Ionicons name="phone-portrait" size={20} color="#FF3366" />
-            <Text style={styles.localButtonText}>Sign up with Phone</Text>
+            <Ionicons name="log-in-outline" size={20} color="#FF3366" />
+            <Text style={styles.localButtonText}>Login with Phone</Text>
+          </TouchableOpacity>
+
+          {/* Sign up with Phone */}
+          <TouchableOpacity
+            style={[styles.localButton, { marginTop: 12, backgroundColor: 'transparent', borderColor: '#333' }]}
+            onPress={() => setAuthMode('signup')}
+          >
+            <Ionicons name="person-add-outline" size={20} color="#888" />
+            <Text style={[styles.localButtonText, { color: '#888' }]}>Create New Account</Text>
           </TouchableOpacity>
 
           <Text style={styles.termsText}>
@@ -185,14 +194,69 @@ export default function ProfileScreen() {
     );
   }
 
-  // Local Signup Form
-  if (showSignup && !user) {
+  // Login Form
+  if (authMode === 'login' && !user) {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.signupContainer}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => setShowSignup(false)}
+            onPress={() => { setAuthMode('welcome'); setPhone(''); }}
+          >
+            <Ionicons name="arrow-back" size={24} color="#FFF" />
+          </TouchableOpacity>
+
+          <Text style={styles.signupTitle}>Login</Text>
+          <Text style={styles.signupSubtitle}>
+            Enter your phone number to continue
+          </Text>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Phone Number</Text>
+            <TextInput
+              style={styles.input}
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="+2341234567890"
+              placeholderTextColor="#666"
+              keyboardType="phone-pad"
+              autoFocus
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.signupButton}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.signupButtonText}>Login</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{ marginTop: 20, alignItems: 'center' }}
+            onPress={() => { setAuthMode('signup'); setPhone(''); }}
+          >
+            <Text style={{ color: '#888' }}>
+              Don't have an account? <Text style={{ color: '#FF3366' }}>Sign up</Text>
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // Local Signup Form
+  if (authMode === 'signup' && !user) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.signupContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => { setAuthMode('welcome'); setUsername(''); setPhone(''); }}
           >
             <Ionicons name="arrow-back" size={24} color="#FFF" />
           </TouchableOpacity>
