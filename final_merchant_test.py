@@ -9,7 +9,7 @@ import json
 import uuid
 from datetime import datetime
 
-BACKEND_URL = "https://vibe-scout.preview.emergentagent.com/api"
+BACKEND_URL = "https://venue-pulse-13.preview.emergentagent.com/api"
 
 def test_merchant_dashboard_full_functionality():
     """Test merchant dashboard with actual merchant user authentication"""

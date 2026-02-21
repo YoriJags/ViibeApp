@@ -94,4 +94,4 @@ Demo mode showcases the platform potential with sample data:
 ## Credentials for Testing
 - Admin User ID: `b4903974-2ed8-4c15-8273-cc7f2a2dab4f`
 - Test User ID: `01752f93-e11a-4753-8a26-8a9b03efdb77`
-- Backend URL: `https://vibe-scout.preview.emergentagent.com`
+- Backend URL: `https://venue-pulse-13.preview.emergentagent.com`

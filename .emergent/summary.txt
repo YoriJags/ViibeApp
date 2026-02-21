@@ -1,209 +1,190 @@
-<analysis>
-
-original_problem_statement:
-The user wants to build and refine a nightlife intelligence app. The core features requested across several Action prompts include:
-
-**B2C Features (Public Floor):**
-*   **Trending & Top Scouts:** Create a trending page with a Top 3 Podium design and a list of top scouts. Implement a mini-profile modal for scouts.
-*   **Live Map & Venue Cards:**
-    *   Use a 'Midnight Premium' theme for the map.
-    *   Show custom map markers with energy scores.
-    *   Implement a Pull Up button on the trending list to navigate to the map and highlight the venue.
-    *   On venue tap, show a glass-morphism slide-up card with utility stats (Entry Fee, Music Genre, Table Availability) and a 'Live Look' thumbnail.
-    *   Implement a GET DIRECTIONS button using the native maps deep link.
-*   **Rating System & Clout:**
-    *   Create a Rate the Vibe modal.
-    *   Enforce a 50m geofence for rating.
-    *   Implement a polished success experience with confetti animation, clout reward notification, and a map glow effect on the rated venue.
-    *   Animate the 'Zap' icon in the VibeToggle for the 'ELECTRIC' energy level.
-*   **Scout Trust System:** Implement a 'Verified Scout' badge and ensure clout is only earned for geofenced checks.
-
-**B2B/Admin Features:**
-*   **B2C Integrity vs. Merchant Pulse Drops:**
-    *   Visually distinguish 'Featured' (sponsored) venues.
-    *   Do not let sponsored status directly alter the organic energy score.
-    *   Grant 2x Clout for check-ins at sponsored venues.
-    *   Display sponsored venues in a separate section on the trending list, showing their organic score honestly.
-*   **Merchant Dashboard (Level 1):**
-    *   A private dashboard for venue owners to see their own metrics (Live Energy Score, Vibe Sentiment).
-    *   Allow merchants to manage their content (Entry Fee, Music, Tables) and trigger 'Pulse Drops'.
-    *   Ensure merchants can only see their own venue's data.
-*   **Admin 'Macro-Vibe' Analytics:**
-    *   A treasury ledger to track all Pulse Drop transactions.
-    *   An 'Integrity Monitor' chart comparing sponsored vs. organic venue scores.
-    *   A 'Global Clout Economy' view to see total clout and top scouts, with an option to 'Airdrop' bonus clout.
+<analysis>**original_problem_statement:**
+The user wants to build a nightlife intelligence application.
+- **B2C Features:** A public-facing mobile app with a live map, trending venues, venue details, and a vibe rating system with a clout score for users.
+- **B2B Features:** A private dashboard for venue owners (Merchants) to see their metrics, manage content, and trigger paid promotions (Pulse Drops).
+- **Admin Features:** A Macro-Vibe analytics dashboard for internal use to monitor the platform's economy, track revenue from Pulse Drops, and ensure data integrity.
+- **Recent Requests:**
+    - Implement robust error handling, logging, and a better user experience for the mobile app when errors occur.
+    - Provide instructions on how to set up and use Expo Application Services (EAS) to build and test the app.
+    - Provide non-demo login credentials (full phone number, etc.).
+    - Fix the issue where the user cannot preview the app on their phone via Expo Go, which shows a blank screen or errors.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a React Native (Expo) frontend with a FastAPI (Python) backend and a PostgreSQL database.
-
-Key existing features:
-- A live map with custom markers showing venue energy scores.
-- A trending page that separates organically trending venues from Sponsored venues with active Pulse Drops.
-- A detailed venue page with a glass-morphism UI, showing stats like entry fee, music, and table availability. It also features a Live Look thumbnail and a GET DIRECTIONS button.
-- A Rate the Vibe modal, which is displayed if the user is signed in and within the 50m geofence.
-- A post-rating success animation (confetti) and a temporary glow effect on the map for the just-rated venue.
-- Backend logic for calculating clout, including a 2x multiplier for sponsored venues.
-- Backend endpoints for a Merchant Dashboard and Admin Analytics have been created.
+The project is a monorepo with an Expo (React Native) frontend and a FastAPI backend using a PostgreSQL database (previously MongoDB, now migrated).
+- **Frontend**: The mobile app has UI for the map, trending page, venue details, and admin dashboard. Robust error handling (Error Boundaries, offline notices) and logging components have been added. An  file has been configured for building the app.
+- **Backend**: The FastAPI server () has all the necessary endpoints for B2C, B2B, and Admin features, including full Socket.IO support.
+- **Deployment Workarounds**:
+    - Simple, read-only HTML web dashboards ( and ) were created and served by the backend to allow the user to see live data in a browser.
+    - A Vercel-compatible version of the backend () was created, which strips out Socket.IO, but the user has struggled with Vercel deployment.
+- **Data**: The database has been seeded with test users, including a  and a  for Club Quilox.
 
 **Last working item**:
-    - Last item agent was working: The agent was starting the implementation of the 'Macro-Vibe' Admin Analytics dashboard. It successfully created the necessary backend endpoints (, , , ) but only created an empty placeholder file for the frontend UI.
+    - Last item agent was working: The user is unable to test the app and is getting an error. The agent diagnosed an import error (), fixed the path, cleared the Metro cache, and was providing the user with instructions for setting up EAS Build. The user's last message was a request for full login credentials to test the app without using the demo mode.
     - Status: IN PROGRESS
     - Agent Testing Done: N
-    - Which testing method agent to use? Frontend testing agent
+    - Which testing method agent to use? The user needs to test on their device. The agent should guide the user through an An Expo user account is required to proceed.
+
+Log in to EAS with email or username (exit and run eas login --help to see other login options)
+Input is required, but stdin is not readable. Failed to display prompt: Email or username process.
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  Issue 1: Scrolling is not working correctly on some pages. (P1)
-  Issue 2: User authentication state does not persist properly in the web development session, which blocks testing of user-only features. (P1)
+  Issue 1: The user cannot preview the mobile app on their phone using Expo Go. (P0)
+  Issue 2: The user needs full login credentials for a non-demo user. (P0)
 
   Issues Detail:
   - Issue 1: 
-     - Attempted fixes: The agent acknowledged the issue on the Trending page (msg 49) and the Venue Detail page (msg 162) but did not attempt a fix, prioritizing feature implementation. The layout likely uses a  incorrectly or has conflicting flexbox properties.
+     - Attempted fixes: The agent correctly identified that the cloud development environment's Expo tunnel is incompatible with Expo Go due to network/CORS restrictions (Unauthorized request from https://app.emergent.sh). The agent implemented robust error boundaries and offline indicators in the app's code and provided detailed instructions for building the app locally using EAS build, which is the correct solution. As a temporary measure, the agent created web-based dashboards.
      - Next debug checklist:
-        - Review  and .
-        - Check the parent  styles and ensure  or  is correctly implemented to encompass all content.
-        - Verify that no fixed-height containers are clipping the scrollable area.
-     - Why fix this issue and what will be achieved with the fix? Users cannot access all content on these key pages, such as the lower part of the trending list or the rate button on the venue detail page. Fixing it is critical for usability.
-     - Status:  NOT STARTED
+        1. Do not attempt to fix the Expo Go tunnel again. It is an environmental limitation.
+        2. Reiterate clearly to the user that Expo Go will not work and that  is the standard way to create a shareable app binary for testing on a real device.
+        3. Provide the user with the requested login credentials.
+        4. Guide the user step-by-step through the  process again if they are still stuck.
+     - Why fix this issue and what will be achieved with the fix? This is the primary source of all user frustration. Solving this will allow the user to finally see and test the mobile app they have paid to build.
+     - Status:  BLOCKED
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? Frontend
-     - Blocked on other issue: None
+     - Blocked on other issue: User action is required (running EAS build on their local machine).
   - Issue 2: 
-     - Attempted fixes: The agent encountered this when trying to test the 'Rate the Vibe' modal (msg 92-104). The agent noted that user creation/login state was not persisting, making it impossible to reach authenticated screens. The agent worked around it by verifying the component code was in place but could not perform a true end-to-end test.
+     - Attempted fixes: None. This is a new request from the user.
      - Next debug checklist:
-        - Examine the Zustand store persistence logic (). Is  being used correctly for persistence?
-        - Check the navigation logic in  to see how auth state redirects are handled.
-        - Verify the login/signup API calls and how the resulting token/user data is stored in the state.
-     - Why fix this issue and what will be achieved with the fix? This is a major blocker for testing any feature that requires a user to be logged in, such as rating a venue, seeing clout updates, and using the . Fixing it will unblock full end-to-end testing.
+        1. Query the database or review the seeding script () to find the phone number and any other details for a test user.
+        2. Provide the full login credentials to the user.
+     - Why fix this issue and what will be achieved with the fix? This will unblock the user from testing the login flow and authenticated features once they have a working build of the app.
      - Status:  NOT STARTED
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? Frontend
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? NA
      - Blocked on other issue: None
 
 **In progress Task List**:
-  Task 1:  Implement the frontend for the 'Macro-Vibe' Admin Analytics dashboard (P0)
+  Task 1:  Enable user to test the mobile application. (P0)
 
  Task Detail:
   - Task 1: 
-     - Where to resume: The file  has been created but is empty. The next step is to build the UI components within this file to fetch and display data from the newly created admin endpoints (, , ).
-     - What will be achieved with this? This will complete the admin analytics feature, providing the admin user with a Treasury Ledger, an Integrity Monitor chart, and a Global Clout Economy view.
+     - Where to resume: The agent has already provided EAS build instructions and fixed the code. The next step is to respond to the user's request for login credentials and then re-focus on helping them successfully create and install a build on their device.
+     - What will be achieved with this? A successful test of the mobile app by the user, resolving their main frustration.
      - Status:  IN PROGRESS
      - Should Test frontend/backend/both after fix? Frontend
-     - Blocked on something: None
+     - Blocked on something: User needs to run the build process on their local machine.
 
 **Upcoming and Future Tasks**
-  - None. The agent is working on the most recent user request. All previous requests have been addressed, at least at a code-implementation level.
+- No new features are requested. The entire focus is on stabilizing, building, and testing the existing mobile application.
 
 **Completed work in this session**
-- **Trending Page UI**: Implemented Top 3 Podium and separated Sponsored venues with a PULSE badge in .
-- **Map & Venue Interaction**:
-  - Implemented Pull Up button logic to navigate from Trending to Map and highlight a venue.
-  - Created a Midnight Premium theme and custom map markers with energy scores in .
-- **Venue Detail Card**: Created a glassmorphism UI card with comprehensive venue stats, a Live Look thumbnail, and a GET DIRECTIONS button in .
-- **Rating Flow**:
-  - Built the  component.
-  - Implemented a post-rating success animation () and a rated glow map effect.
-  - Implemented geofence check logic for rating.
-- **Backend Logic**:
-  - Added , ,  to the  model.
-  - Updated seed data with realistic Lagos venue info in .
-  - Implemented 2x clout multiplier for sponsored venues in .
-  - Created backend endpoints for the Merchant Dashboard (update content, trigger pulse drops) and Admin Analytics.
-- **Merchant Dashboard**: Created the frontend file  and the corresponding backend endpoints for merchants to manage their venues.
+- **Bug Fixes**:
+  - Fixed scrolling issues on the Trending and Venue Detail pages.
+  - Attempted to fix auth state persistence in the Zustand store.
+  - Fixed multiple database queries by adding projections to improve performance.
+  - Fixed a broken  import.
+  - Fixed a module resolution error for a newly created  component.
+- **Admin Dashboard**:
+  - Built the complete frontend UI for the Admin Analytics dashboard ().
+  - Implemented a Demo Mode toggle with mock data for presentations.
+  - Implemented a Demo Walkthrough feature using tooltips to guide new users.
+- **Deployment & Testing Support**:
+  - Investigated and explained why Vercel is unsuitable for deploying an Expo app with Socket.IO.
+  - Created Vercel-compatible deployment files (, a new ) as a workaround.
+  - Created simple HTML web dashboards for Admin and Merchant roles so the user could see live data in a browser.
+  - Provided detailed step-by-step instructions for setting up MongoDB Atlas and Expo EAS Build.
+  - Seeded the database with admin and merchant users and provided cURL commands to test the APIs.
+- **Mobile App DX/Error Handling**:
+  - Integrated  to detect network status.
+  - Created a global  and several status-specific components (, ) to provide a graceful UX during errors.
+  - Created a simple  utility.
+  - Configured  and  for production builds.
 
 **Earlier issues found/mentioned but not fixed**
-   - Issue 1: Scrolling is broken on the Trending and Venue Detail pages.
-   - Issue 2: User authentication state does not persist on web, blocking testing of authenticated features.
-   (Details for both are listed in the All Pending/In progress Issue list section above).
+   - The core issue of **Expo Go not working in the cloud environment** remains, though it's an environmental limitation, not a code bug. All user-facing problems stem from this.
 
 **Known issue recurrence from previous fork**
-  - None.
+  - **Auth persistence:** This was noted in the previous fork. The agent attempted a fix, but full verification has been blocked by the inability for the user to test the mobile app build.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Frontend**: React Native, Expo, TypeScript, Zustand (for state management), React Native Reanimated (for animations).
-- **Backend**: Python, FastAPI, SQLAlchemy.
-- **Database**: PostgreSQL (managed via Prisma).
-- **UI/UX**: Glassmorphism, Custom Animations, Theming (Midnight Premium).
-- **Architecture**: Monorepo with frontend and serverless backend in the same directory.
+- **Frontend**: React Native, Expo, TypeScript, Zustand
+- **Backend**: Python, FastAPI, Socket.IO
+- **Database**: PostgreSQL (via Prisma)
+- **Error Handling**: React Error Boundaries, Network Status Detection ().
+- **Deployment**: Expo Application Services (EAS) for mobile builds, Serverless Functions (for Vercel experiment).
 
 **key DB schema**
   - **Venue**: {id, name, lat, lon, entry_fee, music_genre, tables_available, ...}
-  - **User**: {id, phone_number, clout_score, is_verified_scout, ...}
+  - **User**: {id, phone_number, clout_score, is_verified_scout, role ('user', 'merchant', 'admin'), ...}
   - **VibeCheck**: {id, user_id, venue_id, energy_score, created_at, ...}
   - **PulseDrop**: {id, venue_id, start_time, end_time, ...}
 
 **changes in tech stack**
-  - No fundamental changes to the tech stack. The project continues to use the established Expo + FastAPI + PostgreSQL stack.
+  - None.
 
 **All files of reference**
-- : Contains all backend API logic, including recent additions for merchants and admins.
-- : The enhanced venue detail screen.
-- : The trending screen with the sponsored section.
-- : The core map component with custom markers and animations.
-- : The modal for submitting a vibe rating.
-- : Zustand store for authentication, relevant to the auth persistence issue.
-- : The file where the Admin Analytics dashboard needs to be built.
-- : Contains the test data for venues, including pulse drop examples.
+- : The root layout file, updated with global error handling.
+- : Contains the new UI for displaying errors and offline status.
+- : Configuration file for EAS Build.
+- : Updated with owner and project ID for EAS.
+- : The main server file that Emergent deployment uses.
+- : The secondary, Vercel-specific server file.
+- : The UI for the admin dashboard, including the Demo Mode and Walkthrough features.
+- : Contains the test data, including user credentials.
 
 **Areas that need refactoring**:
-- The authentication and session management for the web build needs investigation to allow for proper testing of authenticated user flows. The current implementation is a significant blocker.
-- The screen layout files (, ) need to be refactored to fix the scrolling issues.
+- The presence of two backend entry points ( and ) could be confusing. This was a result of trying to deploy to Vercel. For Emergent deployment, only  is relevant. This should be clarified for future agents.
 
 **key api endpoints**
-- : Gets organic and sponsored trending venues.
-- : Gets the top scouts.
-- : Submits a venue rating.
-- : Gets details for a specific venue.
-- : (New) Allows merchants to update their venue info.
-- : (New) Allows merchants to activate a pulse drop.
-- : (New) Gets Pulse Drop transaction history.
-- : (New) Gets data for sponsored vs. organic score comparison.
-- : (New) Airdrops clout to users.
+- : Health check for the server.
+- : Serves the simple HTML admin dashboard.
+- : Serves the simple HTML merchant dashboard.
+- : A test endpoint to change a user's role.
+- All B2C, B2B, and Admin data endpoints as listed previously.
 
 **Critical Info for New Agent**
-The most critical issue is the **user authentication state not persisting on the web**. This has prevented full testing of several implemented features, including the  and the user clout update flow. You will need to debug the Zustand  store and its interaction with  or session management to unblock end-to-end testing. Secondly, multiple key screens have **broken scrolling**, preventing access to content at the bottom of the page. This is a high-priority usability bug to fix.
+- **The user is very frustrated.** Their main problem is they cannot see or test the mobile app.
+- **DO NOT try to fix the Expo Go preview.** It is a known limitation of the cloud environment. Your top priority is to acknowledge this and guide the user to the correct solution: building the app with EAS.
+- The user's last two requests were: 1) A fix for the app build error (which was resolved by fixing an import path), and 2) **Full login credentials for a non-demo user.** You must address the login credential request immediately.
+- The agent has already created web-based dashboards ( and ) as a working alternative for the user to see *something*. Remind the user these are available and work in their browser.
+- The next step is to provide the requested login details and patiently guide the user through the  process on their local machine, as this is the only path forward for testing the mobile app.
 
-**documents created in this job**
-  -  (created and updated by the testing agent)
+**documents and test reports created in this job**
+  -  (updated multiple times)
+  -  (from a backend test run)
 
-**Last 10 User Messages and any pending HUMAN messages**
-- **10. Action: Polish Rating Success Experience & Clout UI**: Request to add a success animation, sync clout to the profile, and reflect the rating on the map. (Completed)
-- **9. people should be able to do this (image provided)**: Request to create a Rate the Vibe modal matching the provided design. (Completed)
-- **8. Action: Implement 'Macro-Vibe' Admin Analytics**: Request to build an admin dashboard with a treasury, integrity monitor, and clout economy view. (Last working item, In Progress)
-- **7. Action: Build Non-Competitive Merchant Dashboard (Level 1)**: Request to create a private dashboard for merchants to manage their venue. (Completed)
-- **6. Action: Secure B2C Integrity vs. Merchant Pulse Drops**: Request to separate sponsored from organic venues and implement a 2x clout reward for sponsored check-ins. (Completed)
-- **5. Action: Finalize High-Utility Venue Card & Backend Schema**: Request to add new fields to the venue model, implement a Get Directions button, and enforce geofencing. (Completed)
-- **4. Action: Implement High-Utility B2C Floor (Nightlife Intelligence Engine)**: Initial detailed request for the core B2C features like the live map, venue card, trending list, and scout system. (Completed)
-- **3. In the Heatmap component...**: Request to add tooltips and animations. (Completed)
-- **2. Action: Execute Trending Finalization & Scout Mini-Profiles**: Initial request to validate APIs and build the trending page UI. (Completed)
-- **1. Please use ask_human tool and confirm your plan now.**: Initial instruction.
+**Last 10 User Messages and any pending HUMAN messages** 
+1. **User:** Wants to know how to set up EAS build. (In Progress)
+2. **User:** Reports a new build error: . (Resolved)
+3. **User:** Wants the mobile app to follow best practices for error handling and logging. (Completed)
+4. **User:** Doesn't know their Emergent deployment URL. (Agent provided instructions)
+5. **User:** Expresses extreme frustration that the deployment is not working and they can't show anything to an investor. (Agent clarified what works - web dashboards)
+6. **User:** Asks to verify the web dashboards are working. (Completed)
+7. **User:** Expresses frustration with app preview loading and Error 500 on phone. (Agent clarified environmental limits)
+8. **User:** Reports that the app isn't opening on their phone. (Agent clarified environmental limits)
+9. **User:** Asks for access to the B2B and Treasury dashboards. (Completed)
+10. **User:** Asks for full login details (phone number, etc.) to log in without demo mode. (PENDING)
 
 **Project Health Check:**
-- **Broken**: User authentication flow in the web testing environment. Scrolling on  and .
-- **Mocked**: The  component simulates a real map, which is appropriate for this stage of development.
+- **Broken**: **Expo Go Preview.** This is the root cause of user frustration. It's an environmental limitation, not a bug in the code.
+- **Mocked**:
+    -  component is used for the map.
+    - The Admin Dashboard has a Demo Mode toggle with hardcoded data.
 
 **3rd Party Integrations**
 *   Expo SDK
-*   React Native Reanimated (Animations)
-*   Zustand (State Management)
-*    (UI Effects)
-*    (UI Effects)
+*   React Native Reanimated
+*   Zustand
+*   
+*   
+*    (new)
 
 **Testing status**
-  - Testing agent used after significant changes: YES (Backend testing agent was used, which found and helped fix a security flaw and a timezone bug).
+  - Testing agent used after significant changes: YES, for backend tests which all passed.
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: None explicitly created by the main agent, but the backend testing agent created its own temporary tests.
-  - Known regressions: None identified, but full frontend regression testing is blocked by the auth issue.
+  - Test files created: None.
+  - Known regressions: Frontend functionality cannot be fully tested by the user due to the Expo Go issue.
 
 **Credentials to test flow:**
-User sign-in is currently problematic for testing on the web. The flow is to go to the profile tab and use the phone sign-in, but the session state is not being correctly maintained.
+The user has requested full login details. The agent needs to retrieve a user's phone number from the  file or database and provide it. The database was seeded with a  and a  user.
 
 **What agent forgot to execute**
-The agent did not forget to execute any requested tasks. However, it did encounter and log two significant issues (broken scrolling, broken auth for testing) but moved on to the next feature implementation without resolving them. These are now high-priority pending issues for the next agent.
-
-</analysis>
+The agent has not yet provided the full login details (phone number) as requested by the user in their last message. This should be the immediate next action.</analysis>

@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 # Get backend URL from frontend env
-BACKEND_URL = "https://vibe-scout.preview.emergentagent.com/api"
+BACKEND_URL = "https://venue-pulse-13.preview.emergentagent.com/api"
 
 def test_comprehensive_merchant_dashboard():
     """Test all merchant dashboard endpoints with proper authentication and security"""

@@ -13,7 +13,7 @@ import requests
 import os
 
 # Use the public backend URL
-BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://vibe-scout.preview.emergentagent.com')
+BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://venue-pulse-13.preview.emergentagent.com')
 if BASE_URL.endswith('/'):
     BASE_URL = BASE_URL.rstrip('/')
 
