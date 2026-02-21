@@ -118,6 +118,7 @@ interface VibeStoreActions {
   fetchUser: () => Promise<void>;
   fetchAuthUser: () => Promise<User | null>;
   createUser: (username: string, phone: string) => Promise<boolean>;
+  loginUser: (phone: string) => Promise<{ success: boolean; error?: string }>;
   processGoogleAuth: (sessionId: string) => Promise<boolean>;
   logout: () => Promise<void>;
   fetchVenues: (city?: string) => Promise<void>;
