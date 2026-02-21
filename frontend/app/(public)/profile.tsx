@@ -78,9 +78,23 @@ export default function ProfileScreen() {
 
     const success = await createUser(username.trim(), phone.trim());
     if (success) {
-      setShowSignup(false);
+      setAuthMode('welcome');
     } else {
       Alert.alert('Error', 'Username might already exist. Try another.');
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!phone.trim()) {
+      Alert.alert('Error', 'Please enter your phone number');
+      return;
+    }
+
+    const result = await loginUser(phone.trim());
+    if (result.success) {
+      setAuthMode('welcome');
+    } else {
+      Alert.alert('Login Failed', result.error || 'User not found. Please sign up first.');
     }
   };
 
