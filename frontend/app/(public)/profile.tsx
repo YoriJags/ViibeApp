@@ -21,8 +21,8 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, logout, loading, processGoogleAuth } = useVibeStore();
-  const [showSignup, setShowSignup] = useState(false);
+  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, processGoogleAuth } = useVibeStore();
+  const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
