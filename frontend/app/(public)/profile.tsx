@@ -250,13 +250,13 @@ export default function ProfileScreen() {
   }
 
   // Local Signup Form
-  if (showSignup && !user) {
+  if (authMode === 'signup' && !user) {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.signupContainer}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => setShowSignup(false)}
+            onPress={() => { setAuthMode('welcome'); setUsername(''); setPhone(''); }}
           >
             <Ionicons name="arrow-back" size={24} color="#FFF" />
           </TouchableOpacity>
@@ -300,6 +300,15 @@ export default function ProfileScreen() {
             ) : (
               <Text style={styles.signupButtonText}>Create Profile</Text>
             )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{ marginTop: 20, alignItems: 'center' }}
+            onPress={() => { setAuthMode('login'); setUsername(''); setPhone(''); }}
+          >
+            <Text style={{ color: '#888' }}>
+              Already have an account? <Text style={{ color: '#FF3366' }}>Login</Text>
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
