@@ -279,6 +279,32 @@ export const useVibeStore = create<VibeStore>()(
         }
       },
 
+      // Login existing user by phone
+      loginUser: async (phone) => {
+        set({ loading: true });
+        try {
+          const response = await fetch(`${API_URL}/api/users/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone }),
+          });
+
+          if (response.ok) {
+            const user = await response.json();
+            set({ user, loading: false, isAuthenticated: true });
+            return { success: true };
+          }
+          
+          const errorData = await response.json().catch(() => ({}));
+          set({ loading: false });
+          return { success: false, error: errorData.detail || 'User not found' };
+        } catch (error) {
+          console.error('Error logging in:', error);
+          set({ loading: false });
+          return { success: false, error: 'Connection error' };
+        }
+      },
+
       // Process Google OAuth callback
       processGoogleAuth: async (sessionId) => {
         set({ loading: true });
