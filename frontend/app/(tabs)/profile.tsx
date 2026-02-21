@@ -8,7 +8,6 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
-  Linking,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,13 +15,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, logout, loading, processGoogleAuth } = useVibeStore();
-  const [showSignup, setShowSignup] = useState(false);
+  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, processGoogleAuth } = useVibeStore();
+  const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
@@ -40,8 +40,8 @@ export default function ProfileScreen() {
   const handleGoogleSignIn = async () => {
     setAuthLoading(true);
     try {
-      // Build redirect URL dynamically from current location
-      const redirectUrl = `${API_URL}/profile`;
+      // Build redirect URL using Expo Linking for proper deep linking support
+      const redirectUrl = Linking.createURL('/profile');
       const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
       
       // Open browser for auth
@@ -78,9 +78,23 @@ export default function ProfileScreen() {
 
     const success = await createUser(username.trim(), phone.trim());
     if (success) {
-      setShowSignup(false);
+      setAuthMode('welcome');
     } else {
       Alert.alert('Error', 'Username might already exist. Try another.');
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!phone.trim()) {
+      Alert.alert('Error', 'Please enter your phone number');
+      return;
+    }
+
+    const result = await loginUser(phone.trim());
+    if (result.success) {
+      setAuthMode('welcome');
+    } else {
+      Alert.alert('Login Failed', result.error || 'User not found. Please sign up first.');
     }
   };
 
@@ -125,7 +139,7 @@ export default function ProfileScreen() {
   }
 
   // Welcome / Sign-in Screen
-  if (!user && !showSignup) {
+  if (!user && authMode === 'welcome') {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.welcomeContainer}>
@@ -154,13 +168,22 @@ export default function ProfileScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Local Signup */}
+          {/* Login with Phone */}
           <TouchableOpacity
             style={styles.localButton}
-            onPress={() => setShowSignup(true)}
+            onPress={() => setAuthMode('login')}
           >
-            <Ionicons name="phone-portrait" size={20} color="#FF3366" />
-            <Text style={styles.localButtonText}>Sign up with Phone</Text>
+            <Ionicons name="log-in-outline" size={20} color="#FF3366" />
+            <Text style={styles.localButtonText}>Login with Phone</Text>
+          </TouchableOpacity>
+
+          {/* Sign up with Phone */}
+          <TouchableOpacity
+            style={[styles.localButton, { marginTop: 12, backgroundColor: 'transparent', borderColor: '#333' }]}
+            onPress={() => setAuthMode('signup')}
+          >
+            <Ionicons name="person-add-outline" size={20} color="#888" />
+            <Text style={[styles.localButtonText, { color: '#888' }]}>Create New Account</Text>
           </TouchableOpacity>
 
           <Text style={styles.termsText}>
@@ -171,14 +194,69 @@ export default function ProfileScreen() {
     );
   }
 
-  // Local Signup Form
-  if (showSignup && !user) {
+  // Login Form
+  if (authMode === 'login' && !user) {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.signupContainer}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => setShowSignup(false)}
+            onPress={() => { setAuthMode('welcome'); setPhone(''); }}
+          >
+            <Ionicons name="arrow-back" size={24} color="#FFF" />
+          </TouchableOpacity>
+
+          <Text style={styles.signupTitle}>Login</Text>
+          <Text style={styles.signupSubtitle}>
+            Enter your phone number to continue
+          </Text>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Phone Number</Text>
+            <TextInput
+              style={styles.input}
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="+2341234567890"
+              placeholderTextColor="#666"
+              keyboardType="phone-pad"
+              autoFocus
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.signupButton}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.signupButtonText}>Login</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{ marginTop: 20, alignItems: 'center' }}
+            onPress={() => { setAuthMode('signup'); setPhone(''); }}
+          >
+            <Text style={{ color: '#888' }}>
+              Don't have an account? <Text style={{ color: '#FF3366' }}>Sign up</Text>
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // Local Signup Form
+  if (authMode === 'signup' && !user) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.signupContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => { setAuthMode('welcome'); setUsername(''); setPhone(''); }}
           >
             <Ionicons name="arrow-back" size={24} color="#FFF" />
           </TouchableOpacity>
@@ -222,6 +300,15 @@ export default function ProfileScreen() {
             ) : (
               <Text style={styles.signupButtonText}>Create Profile</Text>
             )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{ marginTop: 20, alignItems: 'center' }}
+            onPress={() => { setAuthMode('login'); setUsername(''); setPhone(''); }}
+          >
+            <Text style={{ color: '#888' }}>
+              Already have an account? <Text style={{ color: '#FF3366' }}>Login</Text>
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
