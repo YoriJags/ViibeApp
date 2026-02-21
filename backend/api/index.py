@@ -1056,6 +1056,57 @@ def handle_admin_update_config(body):
     return 200, {"success": True, "config": config}
 
 
+_DEFAULT_ECONOMY_CONFIG = {
+    "pulse_drops": {
+        "spark": {"price": 5000, "duration_hours": 2, "radius_km": 2, "glow_boost": 20},
+        "flare": {"price": 15000, "duration_hours": 4, "radius_km": 5, "glow_boost": 40},
+        "supernova": {"price": 50000, "duration_hours": 8, "radius_km": 50, "glow_boost": 100},
+    },
+    "campaigns": {
+        "2x_2h": 3000, "2x_4h": 5000, "2x_8h": 8000,
+        "3x_2h": 7000, "3x_4h": 12000, "3x_8h": 20000,
+    },
+    "wallet": {"min_topup": 1000, "platform_fee_percent": 10},
+    "clout": {"rating_base": 10, "checkin": 2, "pulse_drop": 3, "cooldown_skip_cost": 50},
+    "streaks": {"milestone_3d": 5, "milestone_7d": 15, "milestone_14d": 30, "milestone_30d": 50},
+}
+
+
+def handle_get_economy_config():
+    """GET /api/admin/economy-config"""
+    db = get_db()
+    if not db:
+        return 200, {"config": _DEFAULT_ECONOMY_CONFIG, "is_default": True}
+    doc = db.config.find_one({"key": "economy_config"})
+    if doc:
+        return 200, {"config": doc["value"], "is_default": False,
+                     "last_updated": doc.get("updated_at", "").isoformat() if hasattr(doc.get("updated_at", ""), "isoformat") else None}
+    return 200, {"config": _DEFAULT_ECONOMY_CONFIG, "is_default": True}
+
+
+def handle_update_economy_config(body):
+    """PUT /api/admin/economy-config"""
+    import copy
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    section = body.get("section")
+    updates = body.get("updates")
+    if not section or updates is None:
+        return 400, {"detail": "'section' and 'updates' are required"}
+    if section not in _DEFAULT_ECONOMY_CONFIG:
+        return 400, {"detail": f"Unknown section: '{section}'"}
+    doc = db.config.find_one({"key": "economy_config"})
+    config = copy.deepcopy(doc["value"]) if doc else copy.deepcopy(_DEFAULT_ECONOMY_CONFIG)
+    if isinstance(config[section], dict) and isinstance(updates, dict):
+        config[section].update(updates)
+    else:
+        config[section] = updates
+    now = datetime.now(timezone.utc)
+    db.config.update_one({"key": "economy_config"}, {"$set": {"value": config, "updated_at": now}}, upsert=True)
+    return 200, {"message": f"'{section}' updated", "config": config}
+
+
 QUICK_PULSE_CLOUT    = 3
 QUICK_PULSE_COOLDOWN = 15 * 60  # 15 minutes
 
@@ -1213,6 +1264,8 @@ def route_get(path, query_params, headers):
         return handle_crew_locations(m.group(1), headers)
     if path == "/api/admin/config":
         return handle_admin_get_config()
+    if path == "/api/admin/economy-config":
+        return handle_get_economy_config()
 
     return 404, {"detail": "Not found"}
 
@@ -1220,6 +1273,8 @@ def route_put(path, body, headers):
     """Route PUT requests."""
     if path == "/api/admin/config":
         return handle_admin_update_config(body)
+    if path == "/api/admin/economy-config":
+        return handle_update_economy_config(body)
     m = re.match(r'^/api/admin/venues/([^/]+)$', path)
     if m:
         return handle_admin_update_venue(m.group(1), body)

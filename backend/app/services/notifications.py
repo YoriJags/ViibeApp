@@ -125,6 +125,63 @@ async def notify_merchant_vibe_alert(venue_id: str, current_score: float, reason
     )
 
 
+async def notify_achievement_unlocked(user_id: str, badge_name: str, badge_description: str, badge_emoji: str = "🏆"):
+    """Push + email when a scout unlocks an achievement badge."""
+    # Push notification
+    await send_push_notification(
+        user_id=user_id,
+        title=f"{badge_emoji} Badge Unlocked: {badge_name}",
+        body=badge_description,
+        data={"type": "achievement_unlocked", "badge": badge_name},
+    )
+
+    # Email notification (fire-and-forget)
+    user = await db.users.find_one({"id": user_id})
+    if user and user.get("email"):
+        from app.services.email import send_achievement_email
+        await send_achievement_email(
+            user_email=user["email"],
+            user_name=user.get("username", "Scout"),
+            badge_name=badge_name,
+            badge_description=badge_description,
+            badge_emoji=badge_emoji,
+        )
+
+
+async def notify_vibe_spike(venue_id: str, new_score: float, vibe_label: str):
+    """Notify scouts whose Vibe DNA matches a venue type when that venue score spikes."""
+    venue = await db.venues.find_one({"id": venue_id})
+    if not venue:
+        return
+
+    venue_name = venue.get("name", "A venue")
+    venue_type = venue.get("category", "club")  # e.g. 'club', 'lounge', 'restaurant'
+
+    # Find users whose top DNA affinity matches this venue type + have nearby_alerts on
+    # Using a simple heuristic: users who have rated this venue type most
+    prefs_with_token = await db.alert_preferences.find(
+        {"expo_push_token": {"$exists": True, "$ne": ""}, "nearby_alerts": True}
+    ).to_list(500)
+
+    for pref in prefs_with_token:
+        user_id = pref["user_id"]
+
+        # Check if user has rated this venue type before (simple proxy for affinity)
+        rating_count = await db.ratings.count_documents({
+            "user_id": user_id,
+            "venue_type": venue_type,
+        })
+        if rating_count < 2:
+            continue  # Not enough affinity signal
+
+        await send_push_notification(
+            user_id=user_id,
+            title=f"{venue_name} is {vibe_label}!",
+            body=f"Your kind of vibe is live right now.",
+            data={"type": "vibe_spike", "venue_id": venue_id, "score": new_score},
+        )
+
+
 async def notify_campaign_active(venue_id: str, city: str, multiplier: int):
     """Notify users who have this venue in their lobby about an active campaign."""
     venue = await db.venues.find_one({"id": venue_id})

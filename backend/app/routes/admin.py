@@ -386,6 +386,108 @@ async def airdrop_clout(airdrop: AirdropRequest, request: Request):
     }
 
 
+DEFAULT_ECONOMY_CONFIG = {
+    "pulse_drops": {
+        "spark": {"price": 5000, "duration_hours": 2, "radius_km": 2, "glow_boost": 20},
+        "flare": {"price": 15000, "duration_hours": 4, "radius_km": 5, "glow_boost": 40},
+        "supernova": {"price": 50000, "duration_hours": 8, "radius_km": 50, "glow_boost": 100},
+    },
+    "campaigns": {
+        "2x_2h": 3000, "2x_4h": 5000, "2x_8h": 8000,
+        "3x_2h": 7000, "3x_4h": 12000, "3x_8h": 20000,
+    },
+    "wallet": {
+        "min_topup": 1000,
+        "platform_fee_percent": 10,
+    },
+    "clout": {
+        "rating_base": 10,
+        "checkin": 2,
+        "pulse_drop": 3,
+        "cooldown_skip_cost": 50,
+    },
+    "streaks": {
+        "milestone_3d": 5,
+        "milestone_7d": 15,
+        "milestone_14d": 30,
+        "milestone_30d": 50,
+    },
+}
+
+
+@router.get("/admin/economy-config")
+async def get_economy_config(request: Request):
+    """Get the full platform economy config (prices, rates, fees)."""
+    user = await get_current_user(request)
+    if not user or not user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="Super admin access required")
+
+    config_doc = await db.config.find_one({"key": "economy_config"})
+    if config_doc:
+        config = config_doc["value"]
+        is_default = False
+        last_updated = config_doc.get("updated_at")
+        updated_by = config_doc.get("updated_by")
+    else:
+        config = DEFAULT_ECONOMY_CONFIG
+        is_default = True
+        last_updated = None
+        updated_by = None
+
+    return {
+        "config": config,
+        "is_default": is_default,
+        "last_updated": last_updated.isoformat() if last_updated else None,
+        "updated_by": updated_by,
+    }
+
+
+@router.put("/admin/economy-config")
+async def update_economy_config(request: Request):
+    """Update a section of the platform economy config. Logs audit trail."""
+    user = await get_current_user(request)
+    if not user or not user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="Super admin access required")
+
+    body = await request.json()
+    section = body.get("section")
+    updates = body.get("updates")
+
+    if not section or updates is None:
+        raise HTTPException(status_code=400, detail="'section' and 'updates' are required")
+
+    if section not in DEFAULT_ECONOMY_CONFIG:
+        raise HTTPException(status_code=400, detail=f"Unknown section: '{section}'. Valid sections: {list(DEFAULT_ECONOMY_CONFIG.keys())}")
+
+    # Load current config or start from defaults
+    config_doc = await db.config.find_one({"key": "economy_config"})
+    import copy
+    config = copy.deepcopy(config_doc["value"]) if config_doc else copy.deepcopy(DEFAULT_ECONOMY_CONFIG)
+
+    # Deep merge updates into the section
+    if isinstance(config[section], dict) and isinstance(updates, dict):
+        config[section].update(updates)
+    else:
+        config[section] = updates
+
+    now = datetime.now(timezone.utc)
+    await db.config.update_one(
+        {"key": "economy_config"},
+        {"$set": {"value": config, "updated_at": now, "updated_by": user["id"]}},
+        upsert=True,
+    )
+
+    await db.admin_overrides.insert_one({
+        "id": str(uuid.uuid4()),
+        "admin_id": user["id"],
+        "override_type": "economy_config_update",
+        "reason": f"Updated {section}: {updates}",
+        "timestamp": now,
+    })
+
+    return {"message": f"'{section}' updated successfully", "config": config}
+
+
 @router.get("/admin/airdrop-history")
 async def get_airdrop_history(request: Request, limit: int = 20):
     """Get history of clout airdrops."""
