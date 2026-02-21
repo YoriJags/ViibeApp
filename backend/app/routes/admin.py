@@ -485,6 +485,10 @@ async def update_economy_config(request: Request):
         "timestamp": now,
     })
 
+    # Bust cache so all routes immediately use the new values
+    from app.services.economy import invalidate_economy_cache
+    invalidate_economy_cache()
+
     return {"message": f"'{section}' updated successfully", "config": config}
 
 

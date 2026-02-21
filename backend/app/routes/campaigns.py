@@ -13,18 +13,9 @@ from app.config import db, logger
 from app.services.auth import get_current_user
 from app.services.notifications import send_push_notification
 from app.services.realtime import emit_campaign_update
+from app.services.economy import get_economy_config
 
 router = APIRouter(tags=["campaigns"])
-
-# Campaign pricing: multiplier + duration -> Naira
-CAMPAIGN_PRICING = {
-    (2, 2): 3000,
-    (2, 4): 5000,
-    (2, 8): 8000,
-    (3, 2): 7000,
-    (3, 4): 12000,
-    (3, 8): 20000,
-}
 
 
 class CampaignCreate(BaseModel):
@@ -44,8 +35,9 @@ async def create_campaign(venue_id: str, body: CampaignCreate, request: Request)
     if body.duration_hours not in (2, 4, 8):
         raise HTTPException(status_code=400, detail="Duration must be 2, 4, or 8 hours")
 
-    price_key = (body.multiplier, body.duration_hours)
-    price = CAMPAIGN_PRICING.get(price_key)
+    economy = await get_economy_config()
+    pricing_key = f"{body.multiplier}x_{body.duration_hours}h"
+    price = economy["campaigns"].get(pricing_key)
     if not price:
         raise HTTPException(status_code=400, detail="Invalid campaign configuration")
 

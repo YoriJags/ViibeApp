@@ -8,9 +8,10 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Request
 import httpx
 
-from app.config import db, logger, PAYSTACK_SECRET_KEY, PULSE_DROP_TIERS
+from app.config import db, logger, PAYSTACK_SECRET_KEY
 from app.models import MerchantWallet, WalletTransaction, VenueUpdateRequest
 from app.services.auth import get_current_user
+from app.services.economy import get_economy_config
 
 router = APIRouter(tags=["merchant"])
 
@@ -43,8 +44,10 @@ async def initialize_wallet_topup(venue_id: str, request: Request):
     email = body.get("email", "")
     idempotency_key = body.get("idempotency_key", "")
 
-    if amount < 1000:
-        raise HTTPException(status_code=400, detail="Minimum top-up is ₦1,000")
+    economy = await get_economy_config()
+    min_topup = economy["wallet"]["min_topup"]
+    if amount < min_topup:
+        raise HTTPException(status_code=400, detail=f"Minimum top-up is ₦{min_topup:,}")
 
     # Idempotency: if client sends same key, return existing pending topup
     if idempotency_key:
@@ -324,7 +327,7 @@ async def get_merchant_venue_stats(venue_id: str, request: Request):
         "hourly_trend": hourly_scores,
         "competitors": competitors,
         "wallet_balance": wallet.get("balance", 0) if wallet else 0,
-        "pulse_drop_tiers": PULSE_DROP_TIERS,
+        "pulse_drop_tiers": (await get_economy_config())["pulse_drops"],
     }
 
 
@@ -434,10 +437,12 @@ async def trigger_pulse_drop(venue_id: str, tier: str, request: Request):
     if user.get("merchant_venue_id") != venue_id:
         raise HTTPException(status_code=403, detail="You can only boost your own venue")
 
-    if tier not in PULSE_DROP_TIERS:
-        raise HTTPException(status_code=400, detail=f"Invalid tier. Choose from: {list(PULSE_DROP_TIERS.keys())}")
+    economy = await get_economy_config()
+    pulse_tiers = economy["pulse_drops"]
+    if tier not in pulse_tiers:
+        raise HTTPException(status_code=400, detail=f"Invalid tier. Choose from: {list(pulse_tiers.keys())}")
 
-    tier_config = PULSE_DROP_TIERS[tier]
+    tier_config = pulse_tiers[tier]
     price = tier_config["price"]
 
     venue = await db.venues.find_one({"id": venue_id})
@@ -491,8 +496,9 @@ async def trigger_pulse_drop(venue_id: str, tier: str, request: Request):
         }},
     )
 
-    # Record platform revenue (10% fee)
-    platform_fee = int(price * 0.10)
+    # Record platform revenue (fee % from live economy config)
+    fee_pct = economy["wallet"]["platform_fee_percent"] / 100
+    platform_fee = int(price * fee_pct)
     await db.platform_revenue.insert_one({
         "id": str(uuid.uuid4()),
         "type": "pulse_drop",
@@ -563,5 +569,5 @@ async def get_pulse_status(venue_id: str, request: Request):
         "time_remaining": time_remaining,
         "glow_boost": venue.get("glow_boost", 0) if pulse_active else 0,
         "recent_drops": recent_drops,
-        "available_tiers": PULSE_DROP_TIERS,
+        "available_tiers": (await get_economy_config())["pulse_drops"],
     }
