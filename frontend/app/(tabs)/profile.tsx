@@ -301,6 +301,15 @@ export default function ProfileScreen() {
               <Text style={styles.signupButtonText}>Create Profile</Text>
             )}
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{ marginTop: 20, alignItems: 'center' }}
+            onPress={() => { setAuthMode('login'); setUsername(''); setPhone(''); }}
+          >
+            <Text style={{ color: '#888' }}>
+              Already have an account? <Text style={{ color: '#FF3366' }}>Login</Text>
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
     );
