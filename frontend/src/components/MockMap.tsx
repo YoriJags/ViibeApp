@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,59 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+
+// ─── Seismic Ring ────────────────────────────────────────────────────────────
+// Silent expanding ring that pulses outward from spiking venue pins.
+// Three rings with staggered delays create a continuous sonar-wave effect.
+// No text, no narration — the map just tells the truth.
+const SeismicRing: React.FC<{ color: string; delay: number; baseSize: number }> = ({
+  color,
+  delay,
+  baseSize,
+}) => {
+  const scale = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const mounted = useRef(true);
+
+  const run = useCallback(() => {
+    scale.setValue(1);
+    opacity.setValue(0.65);
+    Animated.parallel([
+      Animated.timing(scale, { toValue: 4.2, duration: 2400, useNativeDriver: true }),
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.65, duration: 80, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0, duration: 2320, useNativeDriver: true }),
+      ]),
+    ]).start(({ finished }) => {
+      if (finished && mounted.current) run();
+    });
+  }, []);
+
+  useEffect(() => {
+    mounted.current = true;
+    const t = setTimeout(run, delay);
+    return () => {
+      mounted.current = false;
+      clearTimeout(t);
+    };
+  }, []);
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        width: baseSize,
+        height: baseSize,
+        borderRadius: baseSize / 2,
+        borderWidth: 1,
+        borderColor: color,
+        transform: [{ scale }],
+        opacity,
+      }}
+    />
+  );
+};
 
 interface Coordinates {
   lat: number;
@@ -32,6 +85,7 @@ interface Venue {
   active_pulse_tier?: 'spark' | 'flare' | 'supernova' | null;
   entry_fee?: string;
   music_genre?: string;
+  ratings_last_30m?: number;
 }
 
 interface CrewPin {
@@ -286,6 +340,8 @@ export const MockMap: React.FC<MockMapProps> = ({
           const color = getVibeColor(venue.current_vibe_score);
           const hasPulseDrop = venue.active_pulse_tier !== null && venue.active_pulse_tier !== undefined;
           const markerSize = isRatedGlow ? 60 : hasPulseDrop ? 56 : isHighlighted ? 52 : 44;
+          // Seismic rings: silent signal that something real is happening
+          const isSpiking = venue.energy_level === 'electric' && venue.vibe_velocity === 'heating_up';
 
           return (
             <TouchableOpacity
@@ -306,6 +362,15 @@ export const MockMap: React.FC<MockMapProps> = ({
               onMouseEnter={() => handleMouseEnter(venue, position)}
               onMouseLeave={handleMouseLeave}
             >
+              {/* ── Seismic Rings ── silent sonar waves on spiking venues */}
+              {isSpiking && !isRatedGlow && (
+                <>
+                  <SeismicRing color={color} delay={0}    baseSize={markerSize} />
+                  <SeismicRing color={color} delay={800}  baseSize={markerSize} />
+                  <SeismicRing color={color} delay={1600} baseSize={markerSize} />
+                </>
+              )}
+
               {/* Rated Glow Effect - Green pulsing ring */}
               {isRatedGlow && (
                 <>
@@ -516,6 +581,16 @@ export const MockMap: React.FC<MockMapProps> = ({
                   {getVibeLabel(hoveredVenue.current_vibe_score).toUpperCase()}
                 </Text>
               </View>
+
+              {/* Raw spike data — only shown when spiking */}
+              {hoveredVenue.energy_level === 'electric' && hoveredVenue.vibe_velocity === 'heating_up' && hoveredVenue.ratings_last_30m && (
+                <View style={styles.tooltipSpikeRow}>
+                  <View style={styles.tooltipSpikeDot} />
+                  <Text style={styles.tooltipSpikeText}>
+                    {hoveredVenue.ratings_last_30m} ratings · 30 mins
+                  </Text>
+                </View>
+              )}
             </View>
             <View style={styles.tooltipArrow} />
           </Animated.View>
@@ -839,6 +914,27 @@ const styles = StyleSheet.create({
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
     borderTopColor: '#1A1F2AEE',
+  },
+  tooltipSpikeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  tooltipSpikeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FF3366',
+  },
+  tooltipSpikeText: {
+    fontSize: 10,
+    color: '#FF3366',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 
   highlightedCard: {

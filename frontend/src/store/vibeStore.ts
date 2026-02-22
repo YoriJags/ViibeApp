@@ -39,6 +39,7 @@ interface Venue {
   active_pulse_tier?: string;
   glow_boost: number;
   custom_icon?: string;
+  ratings_last_30m?: number;
   geofence_radius_m?: number;
   vibe_certified?: boolean;
   certified_since?: string;

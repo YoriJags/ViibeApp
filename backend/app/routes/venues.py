@@ -3,6 +3,7 @@ Vibe App - Venue Routes
 Venue listing, details, direction clicks, and city data.
 """
 from typing import Optional
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter
 
 from app.config import db, CITIES
@@ -18,9 +19,20 @@ async def get_cities():
 
 @router.get("/venues")
 async def get_venues(city: Optional[str] = None):
-    """Get all venues, optionally filtered by city."""
+    """Get all venues, optionally filtered by city. Attaches ratings_last_30m for spike detection."""
     query = {"city": city} if city else {}
     venues = await db.venues.find(query, {"_id": 0}).to_list(100)
+
+    # Attach 30-min rating counts for seismic ring display
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+    pipeline = [
+        {"$match": {"timestamp": {"$gte": cutoff}}},
+        {"$group": {"_id": "$venue_id", "count": {"$sum": 1}}},
+    ]
+    spike_data = {r["_id"]: r["count"] async for r in db.ratings.aggregate(pipeline)}
+    for venue in venues:
+        venue["ratings_last_30m"] = spike_data.get(venue.get("id"), 0)
+
     return venues
 
 
