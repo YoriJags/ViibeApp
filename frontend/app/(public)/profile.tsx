@@ -14,14 +14,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, processGoogleAuth, toggleDemoMode } = useVibeStore();
+  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode } = useVibeStore();
   const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
@@ -35,40 +33,6 @@ export default function ProfileScreen() {
       }
     });
   }, []);
-
-  // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-  const handleGoogleSignIn = async () => {
-    setAuthLoading(true);
-    try {
-      // Build redirect URL using Expo Linking for proper deep linking support
-      const redirectUrl = Linking.createURL('/profile');
-      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-      
-      // Open browser for auth
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
-      
-      if (result.type === 'success' && result.url) {
-        // Extract session_id from URL fragment
-        const urlParts = result.url.split('#');
-        if (urlParts.length > 1) {
-          const params = new URLSearchParams(urlParts[1]);
-          const sessionId = params.get('session_id');
-          
-          if (sessionId) {
-            const success = await processGoogleAuth(sessionId);
-            if (!success) {
-              Alert.alert('Error', 'Failed to complete sign in');
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Google sign in error:', error);
-      Alert.alert('Error', 'Failed to sign in with Google');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
 
   const handleLocalSignup = async () => {
     if (!username.trim() || !phone.trim()) {
@@ -150,23 +114,6 @@ export default function ProfileScreen() {
           <Text style={styles.welcomeSubtitle}>
             Nigeria's real-time nightlife pulse
           </Text>
-
-          {/* Google Sign In Button */}
-          <TouchableOpacity
-            style={styles.googleButton}
-            onPress={handleGoogleSignIn}
-            disabled={authLoading}
-          >
-            <Ionicons name="logo-google" size={20} color="#FFF" />
-            <Text style={styles.googleButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
 
           {/* Login with Phone */}
           <TouchableOpacity
