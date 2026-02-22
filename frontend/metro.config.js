@@ -22,4 +22,7 @@ config.cacheStores = [
 // Reduce the number of workers to decrease resource usage
 config.maxWorkers = 2;
 
+// Force CJS builds of packages to avoid import.meta ESM syntax errors on web
+config.resolver.unstable_enablePackageExports = false;
+
 module.exports = config;
