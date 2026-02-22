@@ -19,7 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { merchantTheme, spacing, borderRadius, typography } from '../../src/theme/floors';
 import { useVibeStore } from '../../src/store/vibeStore';
-import { API_URL } from '../../src/config/api';
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 const { colors } = merchantTheme;
 
