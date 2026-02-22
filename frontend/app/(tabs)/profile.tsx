@@ -21,7 +21,7 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, processGoogleAuth } = useVibeStore();
+  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, processGoogleAuth, toggleDemoMode } = useVibeStore();
   const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
@@ -184,6 +184,15 @@ export default function ProfileScreen() {
           >
             <Ionicons name="person-add-outline" size={20} color="#888" />
             <Text style={[styles.localButtonText, { color: '#888' }]}>Create New Account</Text>
+          </TouchableOpacity>
+
+          {/* Demo Mode */}
+          <TouchableOpacity
+            style={styles.demoButton}
+            onPress={toggleDemoMode}
+          >
+            <Ionicons name="sparkles" size={16} color="#888" />
+            <Text style={styles.demoButtonText}>Try Demo Mode</Text>
           </TouchableOpacity>
 
           <Text style={styles.termsText}>
@@ -609,10 +618,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF3366',
   },
+  demoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 24,
+    paddingVertical: 10,
+  },
+  demoButtonText: {
+    fontSize: 14,
+    color: '#888',
+  },
   termsText: {
     fontSize: 12,
     color: '#666',
-    marginTop: 24,
+    marginTop: 8,
     textAlign: 'center',
   },
   signupContainer: {
