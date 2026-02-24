@@ -15,7 +15,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // App Initializer Component — manages splash → content transition
 function AppInitializer({ children }: { children: React.ReactNode }) {
-  const { hasHydrated, fetchVenues, fetchCities, connectSocket, hasSeenOnboarding, completeOnboarding } = useVibeStore();
+  const { hasHydrated, fetchCities, connectSocket, hasSeenOnboarding, completeOnboarding } = useVibeStore();
   const [isReady, setIsReady] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
@@ -33,11 +33,8 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
       try {
         if (!hasHydrated) return;
 
-        await Promise.all([
-          fetchVenues('lagos'),
-          fetchCities(),
-        ]);
-
+        // fetchVenues is handled by the home screen (respects selectedCity)
+        await fetchCities();
         connectSocket();
         setIsReady(true);
       } catch (error) {

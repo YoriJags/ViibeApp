@@ -11,6 +11,24 @@ from app.config import db, CITIES
 router = APIRouter(tags=["venues"])
 
 
+def compute_pulse(venue: dict) -> dict:
+    """Derive Source-of-Pulse data from a venue's total_ratings_24h count."""
+    count = min(int(venue.get("total_ratings_24h", 0)), 100)
+    if count >= 100:
+        tier, next_at = "source", 0
+    elif count >= 80:
+        tier, next_at = "max_pulse", 100
+    elif count >= 60:
+        tier, next_at = "electric", 80
+    elif count >= 40:
+        tier, next_at = "charged", 60
+    elif count >= 20:
+        tier, next_at = "stirring", 40
+    else:
+        tier, next_at = "dormant", 20
+    return {"count": count, "total": 100, "tier": tier, "next_tier_at": next_at}
+
+
 @router.get("/cities")
 async def get_cities():
     """Get all supported cities."""
@@ -32,6 +50,7 @@ async def get_venues(city: Optional[str] = None):
     spike_data = {r["_id"]: r["count"] async for r in db.ratings.aggregate(pipeline)}
     for venue in venues:
         venue["ratings_last_30m"] = spike_data.get(venue.get("id"), 0)
+        venue["pulse"] = compute_pulse(venue)
 
     return venues
 
@@ -46,6 +65,7 @@ async def get_venue(venue_id: str):
 
     # Increment profile views
     await db.venues.update_one({"id": venue_id}, {"$inc": {"profile_views": 1}})
+    venue["pulse"] = compute_pulse(venue)
 
     return venue
 

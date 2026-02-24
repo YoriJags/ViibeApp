@@ -123,6 +123,23 @@ def handle_get_cities():
         {"name": "Ibadan", "code": "ibadan", "center": {"lat": 7.3775, "lng": 3.9470}, "radius_km": 35}
     ]
 
+def compute_pulse(venue):
+    """Derive Source-of-Pulse data from a venue's total_ratings_24h count."""
+    count = min(int(venue.get("total_ratings_24h", 0)), 100)
+    if count >= 100:
+        tier, next_at = "source", 0
+    elif count >= 80:
+        tier, next_at = "max_pulse", 100
+    elif count >= 60:
+        tier, next_at = "electric", 80
+    elif count >= 40:
+        tier, next_at = "charged", 60
+    elif count >= 20:
+        tier, next_at = "stirring", 40
+    else:
+        tier, next_at = "dormant", 20
+    return {"count": count, "total": 100, "tier": tier, "next_tier_at": next_at}
+
 def handle_get_venues(query_params):
     db = get_db()
     if not db:
@@ -132,6 +149,8 @@ def handle_get_venues(query_params):
     if city:
         query["city"] = city.lower()
     venues = list(db.venues.find(query, {"_id": 0}).limit(100))
+    for v in venues:
+        v["pulse"] = compute_pulse(v)
     return 200, venues
 
 def handle_get_venue(venue_id):
@@ -141,6 +160,7 @@ def handle_get_venue(venue_id):
     venue = db.venues.find_one({"id": venue_id}, {"_id": 0})
     if not venue:
         return 404, {"detail": "Venue not found"}
+    venue["pulse"] = compute_pulse(venue)
     return 200, venue
 
 def handle_get_user(user_id):

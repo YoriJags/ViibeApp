@@ -40,19 +40,24 @@ const VIBE_GRADIENTS: Record<string, [string, string, string]> = {
 
 export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostBadge = true, isNearby, onRatePress }) => {
   const isPulseBoosted = venue.active_pulse_tier !== null && venue.active_pulse_tier !== undefined;
-  const borderGlow = useRef(new Animated.Value(0)).current;
+  // Native-driver opacity for gradient border — runs on GPU, not JS thread
+  const maxOpacity = venue.current_vibe_score >= 80 ? 0.7 : venue.current_vibe_score >= 60 ? 0.45 : 0.25;
+  const borderOpacity = useRef(new Animated.Value(0.1)).current;
   const scoreScale = useRef(new Animated.Value(1)).current;
   const [showPulseSheet, setShowPulseSheet] = useState(false);
 
-  // Animated border glow — faster pulse for higher scores
+  // Animated border glow — native driver only (GPU thread, not JS thread)
   useEffect(() => {
     const duration = venue.current_vibe_score >= 80 ? 1200 : venue.current_vibe_score >= 60 ? 2000 : 3000;
-    Animated.loop(
+    const anim = Animated.loop(
       Animated.sequence([
-        Animated.timing(borderGlow, { toValue: 1, duration, useNativeDriver: false }),
-        Animated.timing(borderGlow, { toValue: 0, duration, useNativeDriver: false }),
+        Animated.timing(borderOpacity, { toValue: maxOpacity, duration, useNativeDriver: true }),
+        Animated.timing(borderOpacity, { toValue: 0.1, duration, useNativeDriver: true }),
       ])
-    ).start();
+    );
+    anim.start();
+    // Stop when component unmounts or score changes (prevents off-screen leaks)
+    return () => anim.stop();
   }, [venue.current_vibe_score]);
 
   // Score pop animation on mount
@@ -103,31 +108,24 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
   const gradientKey = getVibeGradientKey(venue.current_vibe_score);
   const gradientColors = VIBE_GRADIENTS[gradientKey];
 
-  // Animated border opacity — stronger glow for hotter venues
-  const maxOpacity = venue.current_vibe_score >= 80 ? 0.7 : venue.current_vibe_score >= 60 ? 0.45 : 0.25;
-  const borderOpacity = borderGlow.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.1, maxOpacity],
-  });
-  const glowShadowRadius = borderGlow.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, venue.current_vibe_score >= 80 ? 16 : 8],
-  });
+  // Static shadow values — no JS-thread animation needed for shadows
+  const staticShadowOpacity = venue.current_vibe_score >= 80 ? 0.4 : venue.current_vibe_score >= 60 ? 0.25 : 0.1;
+  const staticShadowRadius = venue.current_vibe_score >= 80 ? 12 : 6;
 
   return (
-    <Animated.View
+    <View
       style={[
         styles.cardOuter,
         {
           shadowColor: vibeColor,
-          shadowOpacity: borderOpacity,
-          shadowRadius: glowShadowRadius,
+          shadowOpacity: staticShadowOpacity,
+          shadowRadius: staticShadowRadius,
           shadowOffset: { width: 0, height: 0 },
           elevation: venue.current_vibe_score >= 60 ? 6 : 2,
         },
       ]}
     >
-      {/* Live gradient border */}
+      {/* Live gradient border — opacity pulses via native driver */}
       <Animated.View style={[styles.gradientBorderWrap, { opacity: borderOpacity }]}>
         <LinearGradient
           colors={gradientColors as any}
@@ -281,7 +279,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
           }}
         />
       )}
-    </Animated.View>
+    </View>
   );
 };
 

@@ -128,7 +128,11 @@ export default function MapScreen() {
     initializeApp();
   }, []);
 
+  // Single source of truth for venue fetching — handles initial load + city changes
   useEffect(() => {
+    if (!isDemoMode) {
+      fetchVenues(selectedCity);
+    }
     fetchCityPulse(selectedCity);
   }, [selectedCity]);
 
@@ -153,8 +157,7 @@ export default function MapScreen() {
     } else {
       setUserLocation({ lat: 6.4281, lng: 3.4219 });
     }
-
-    await fetchVenues();
+    // Venue fetch handled by the selectedCity useEffect above
   };
 
   const onRefresh = useCallback(async () => {
