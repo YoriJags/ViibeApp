@@ -1,22 +1,37 @@
 /**
- * VenueCategoryFilter - Horizontal scrollable category pills
- *
- * Filters venues by type: All, Clubs, Lounges, Restaurants, Bars, Churches, Events
- * Each pill has icon + label. Selected = gradient fill.
- * Also shows trending count per category.
+ * VenueCategoryFilter — Horizontal scrollable category tabs.
+ * Active tab: icon + label + colored underline bar.
+ * Inactive: muted icon + label, no underline.
+ * Shows live count badge per category.
  */
-import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
+import React, { useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Animated,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
-export type VenueCategory = 'all' | 'club' | 'lounge' | 'restaurant' | 'bar' | 'church' | 'concert' | 'block_party' | 'rave' | 'festival';
+export type VenueCategory =
+  | 'all'
+  | 'club'
+  | 'lounge'
+  | 'restaurant'
+  | 'bar'
+  | 'church'
+  | 'concert'
+  | 'block_party'
+  | 'rave'
+  | 'festival';
 
 interface CategoryOption {
   key: VenueCategory;
   label: string;
   icon: string;
-  gradient: [string, string];
+  color: string;
 }
 
 interface VenueCategoryFilterProps {
@@ -26,17 +41,95 @@ interface VenueCategoryFilterProps {
 }
 
 const CATEGORIES: CategoryOption[] = [
-  { key: 'all', label: 'All', icon: 'grid', gradient: ['#FF3366', '#FF6B35'] },
-  { key: 'club', label: 'Clubs', icon: 'musical-notes', gradient: ['#FF3366', '#9933FF'] },
-  { key: 'restaurant', label: 'Restaurants', icon: 'restaurant', gradient: ['#FF9933', '#FFD700'] },
-  { key: 'lounge', label: 'Lounges', icon: 'wine', gradient: ['#9933FF', '#6B1FCC'] },
-  { key: 'bar', label: 'Bars', icon: 'beer', gradient: ['#FF6B35', '#FF9933'] },
-  { key: 'concert', label: 'Concerts', icon: 'mic', gradient: ['#FF3366', '#FF69B4'] },
-  { key: 'block_party', label: 'Events', icon: 'people', gradient: ['#00E676', '#00D4FF'] },
-  { key: 'church', label: 'Churches', icon: 'heart', gradient: ['#00D4FF', '#9933FF'] },
+  { key: 'all',         label: 'All',        icon: 'apps',           color: '#FF3366' },
+  { key: 'club',        label: 'Clubs',      icon: 'musical-notes',  color: '#FF3366' },
+  { key: 'restaurant',  label: 'Eats',       icon: 'restaurant',     color: '#FF9933' },
+  { key: 'lounge',      label: 'Lounges',    icon: 'wine',           color: '#9933FF' },
+  { key: 'bar',         label: 'Bars',       icon: 'beer',           color: '#FF6B35' },
+  { key: 'concert',     label: 'Concerts',   icon: 'mic',            color: '#FF3366' },
+  { key: 'block_party', label: 'Events',     icon: 'people',         color: '#00E676' },
+  { key: 'church',      label: 'Worship',    icon: 'heart',          color: '#00D4FF' },
 ];
 
-export default function VenueCategoryFilter({ selected, onSelect, counts }: VenueCategoryFilterProps) {
+function CategoryTab({
+  cat,
+  isActive,
+  count,
+  onPress,
+}: {
+  cat: CategoryOption;
+  isActive: boolean;
+  count: number;
+  onPress: () => void;
+}) {
+  const underlineScale = useRef(new Animated.Value(isActive ? 1 : 0)).current;
+
+  const handlePress = () => {
+    if (!isActive) {
+      Animated.spring(underlineScale, {
+        toValue: 1,
+        tension: 180,
+        friction: 12,
+        useNativeDriver: true,
+      }).start();
+    }
+    onPress();
+  };
+
+  return (
+    <TouchableOpacity
+      style={styles.tab}
+      onPress={handlePress}
+      activeOpacity={0.65}
+    >
+      {/* Icon */}
+      <Ionicons
+        name={cat.icon as any}
+        size={15}
+        color={isActive ? cat.color : '#444'}
+      />
+
+      {/* Label + count badge */}
+      <View style={styles.labelRow}>
+        <Text style={[styles.label, isActive && { color: '#FFF' }]}>
+          {cat.label}
+        </Text>
+        {count > 0 && cat.key !== 'all' && (
+          <View
+            style={[
+              styles.badge,
+              isActive
+                ? { backgroundColor: cat.color + '30', borderColor: cat.color + '60' }
+                : { backgroundColor: '#1A1A28', borderColor: '#252530' },
+            ]}
+          >
+            <Text style={[styles.badgeText, isActive && { color: cat.color }]}>
+              {count}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Underline indicator */}
+      <Animated.View
+        style={[
+          styles.underline,
+          {
+            backgroundColor: cat.color,
+            transform: [{ scaleX: isActive ? 1 : 0 }],
+            opacity: isActive ? 1 : 0,
+          },
+        ]}
+      />
+    </TouchableOpacity>
+  );
+}
+
+export default function VenueCategoryFilter({
+  selected,
+  onSelect,
+  counts,
+}: VenueCategoryFilterProps) {
   return (
     <ScrollView
       horizontal
@@ -44,95 +137,66 @@ export default function VenueCategoryFilter({ selected, onSelect, counts }: Venu
       contentContainerStyle={styles.scrollContent}
       style={styles.container}
     >
-      {CATEGORIES.map((cat) => {
-        const isActive = selected === cat.key;
-        const count = counts?.[cat.key] || 0;
-
-        return (
-          <TouchableOpacity
-            key={cat.key}
-            onPress={() => onSelect(cat.key)}
-            activeOpacity={0.7}
-          >
-            {isActive ? (
-              <LinearGradient
-                colors={cat.gradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.pill}
-              >
-                <Ionicons name={cat.icon as any} size={14} color="#FFF" />
-                <Text style={styles.pillTextActive}>{cat.label}</Text>
-                {count > 0 && cat.key !== 'all' && (
-                  <View style={styles.countBadge}>
-                    <Text style={styles.countText}>{count}</Text>
-                  </View>
-                )}
-              </LinearGradient>
-            ) : (
-              <View style={styles.pill}>
-                <Ionicons name={cat.icon as any} size={14} color="#888" />
-                <Text style={styles.pillText}>{cat.label}</Text>
-                {count > 0 && cat.key !== 'all' && (
-                  <View style={[styles.countBadge, styles.countBadgeInactive]}>
-                    <Text style={[styles.countText, styles.countTextInactive]}>{count}</Text>
-                  </View>
-                )}
-              </View>
-            )}
-          </TouchableOpacity>
-        );
-      })}
+      {CATEGORIES.map((cat) => (
+        <CategoryTab
+          key={cat.key}
+          cat={cat}
+          isActive={selected === cat.key}
+          count={counts?.[cat.key] ?? 0}
+          onPress={() => onSelect(cat.key)}
+        />
+      ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 12,
+    marginBottom: 4,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    gap: 8,
+    gap: 0,
   },
-  pill: {
-    flexDirection: 'row',
+  tab: {
     alignItems: 'center',
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#1A1A28',
-    borderWidth: 1,
-    borderColor: '#252530',
-    gap: 6,
+    paddingTop: 6,
+    paddingBottom: 0,
+    gap: 4,
+    position: 'relative',
   },
-  pillText: {
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 6,
+  },
+  label: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#888',
+    color: '#444',
   },
-  pillTextActive: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFF',
-  },
-  countBadge: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 6,
+  badge: {
+    paddingHorizontal: 5,
     paddingVertical: 1,
-    borderRadius: 8,
-    minWidth: 20,
+    borderRadius: 6,
+    borderWidth: 1,
+    minWidth: 18,
     alignItems: 'center',
   },
-  countBadgeInactive: {
-    backgroundColor: '#252530',
-  },
-  countText: {
-    fontSize: 10,
+  badgeText: {
+    fontSize: 9,
     fontWeight: '700',
-    color: '#FFF',
+    color: '#555',
   },
-  countTextInactive: {
-    color: '#666',
+  underline: {
+    height: 2,
+    borderRadius: 1,
+    width: '100%',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
 });

@@ -91,6 +91,15 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
     }
   };
 
+  const getGateLabel = (gate: string) => {
+    switch (gate) {
+      case 'clear':   return 'No queue';
+      case 'slow':    return 'Short wait';
+      case 'blocked': return 'Long line';
+      default:        return 'Unknown';
+    }
+  };
+
   const getVelocityIcon = (velocity: string) => {
     switch (velocity) {
       case 'heating_up':
@@ -196,12 +205,8 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
           {/* Status chips */}
           <View style={styles.chips}>
             <View style={styles.chip}>
-              <Ionicons name="people" size={12} color="#888" />
-              <Text style={styles.chipText}>{venue.capacity_level}</Text>
-            </View>
-            <View style={styles.chip}>
               <Ionicons name="enter" size={12} color="#888" />
-              <Text style={styles.chipText}>{venue.gate_level}</Text>
+              <Text style={styles.chipText}>{getGateLabel(venue.gate_level)}</Text>
             </View>
             {venue.entry_fee && (
               <View style={styles.chip}>

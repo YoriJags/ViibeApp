@@ -25,17 +25,18 @@ import { neonGlow } from '../../src/theme';
 import DemoModeBanner from '../../src/components/DemoModeBanner';
 import FloorSwitcher from '../../src/components/FloorSwitcher';
 import RatePromptFAB from '../../src/components/RatePromptFAB';
-import ActivityPulse from '../../src/components/ActivityPulse';
 import VenueCategoryFilter, { VenueCategory } from '../../src/components/VenueCategoryFilter';
 import ElectricTransition from '../../src/components/ElectricTransition';
 import TonightHero from '../../src/components/TonightHero';
 import CartelPulse from '../../src/components/CartelPulse';
-import VibePrompt from '../../src/components/VibePrompt';
-import { DEMO_ACTIVITY_FEED, DEMO_TONIGHT, DEMO_PROMPTS, DEMO_VIBE_MATCH } from '../../src/data/demoData';
+import { DEMO_ACTIVITY_FEED, DEMO_TONIGHT, DEMO_VIBE_MATCH, DEMO_VENUES } from '../../src/data/demoData';
 import VibeMatch from '../../src/components/VibeMatch';
 import NightPlannerModal from '../../src/components/NightPlannerModal';
-import CityPulseHero from '../../src/components/CityPulseHero';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
+import TheWave from '../../src/components/TheWave';
+import AfterDarkRankings, { RankedVenue } from '../../src/components/AfterDarkRankings';
+import NoDulling from '../../src/components/NoDulling';
+import ActivityTicker from '../../src/components/ActivityTicker';
 import { getNightPhase } from '../../src/store/vibeStore';
 import { calculateDistance } from '../../src/utils/geo';
 
@@ -50,16 +51,16 @@ const PERSONA_BOOST: Record<string, string[]> = {
 };
 
 const CITIES = [
-  { code: 'lagos', name: 'Lagos', emoji: '\u{1F3D9}\u{FE0F}' },
-  { code: 'abuja', name: 'Abuja', emoji: '\u{1F306}' },
-  { code: 'port_harcourt', name: 'Port Harcourt', emoji: '\u{1F334}' },
-  { code: 'ibadan', name: 'Ibadan', emoji: '\u{1F3DB}\u{FE0F}' },
+  { code: 'lagos', name: 'Lagos', emoji: '\u{1F3D9}\u{FE0F}', tagline: 'Island & Mainland Scene' },
+  { code: 'abuja', name: 'Abuja', emoji: '\u{1F306}', tagline: 'Capital City Scene' },
+  { code: 'port_harcourt', name: 'Port Harcourt', emoji: '\u{1F334}', tagline: 'Garden City Scene' },
+  { code: 'ibadan', name: 'Ibadan', emoji: '\u{1F3DB}\u{FE0F}', tagline: 'Ancient City Scene' },
 ];
 
 export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string }>();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
@@ -70,7 +71,6 @@ export default function MapScreen() {
   const [ratedGlowVenueId, setRatedGlowVenueId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<VenueCategory>('all');
   const [showTransition, setShowTransition] = useState(false);
-  const [dismissedPrompts, setDismissedPrompts] = useState<Set<string>>(new Set());
   const [showPlanner, setShowPlanner] = useState(false);
 
   // Animations
@@ -262,17 +262,35 @@ export default function MapScreen() {
     [selectedCity]
   );
 
-  // Connective prompts (show up to 2 undismissed)
-  const activePrompts = useMemo(() => {
-    if (!isDemoMode) return [];
-    return DEMO_PROMPTS
-      .filter(p => !dismissedPrompts.has(p.id))
-      .slice(0, 2);
-  }, [isDemoMode, dismissedPrompts]);
+  // Venues with score ≥ 60 = "live" for TheWave spotsLive count
+  const spotsLive = useMemo(() =>
+    venues.filter((v: any) => (v.current_vibe_score ?? 0) >= 60).length,
+    [venues]
+  );
 
-  const handleDismissPrompt = useCallback((id: string) => {
-    setDismissedPrompts(prev => new Set(prev).add(id));
-  }, []);
+  // Top 3 venues by pulse count for AfterDarkRankings
+  const rankedVenues = useMemo((): RankedVenue[] => {
+    const base: any[] = isDemoMode ? DEMO_VENUES : venues;
+    return base
+      .filter((v: any) => (v.pulse?.count ?? 0) > 0)
+      .sort((a: any, b: any) => (b.pulse?.count ?? 0) - (a.pulse?.count ?? 0))
+      .slice(0, 3)
+      .map((v: any) => ({
+        id: v.id,
+        name: v.name,
+        area: v.area,
+        current_vibe_score: v.current_vibe_score ?? 0,
+        pulse_count: v.pulse?.count ?? 0,
+        pulse_tier: v.pulse?.tier ?? 'dormant',
+      }));
+  }, [isDemoMode, venues]);
+
+  // Full data for nearby venue (for NoDulling pulse tier)
+  const nearbyVenueFullData = useMemo(() => {
+    if (!nearbyVenue) return null;
+    const base: any[] = isDemoMode ? DEMO_VENUES : venues;
+    return base.find((v: any) => v.id === nearbyVenue.id) ?? null;
+  }, [nearbyVenue, isDemoMode, venues]);
 
   // Handle category change with electric transition
   const handleCategoryChange = (cat: VenueCategory) => {
@@ -322,7 +340,7 @@ export default function MapScreen() {
             onPress={() => setShowCityPicker(true)}
           >
             <Text style={styles.headerSubtitle}>
-              {CITIES.find(c => c.code === selectedCity)?.emoji} {CITIES.find(c => c.code === selectedCity)?.name} Nightlife
+              {CITIES.find(c => c.code === selectedCity)?.emoji} {CITIES.find(c => c.code === selectedCity)?.tagline}
             </Text>
             <Animated.View style={{ transform: [{ rotate: chevronSpin }] }}>
               <Ionicons name="chevron-down" size={14} color="#FF3366" />
@@ -330,6 +348,12 @@ export default function MapScreen() {
           </TouchableOpacity>
         </View>
         <View style={styles.headerActions}>
+          {/* TheWave — live city energy visualizer */}
+          <TheWave
+            energy={cityPulse?.pulse_score ?? 40}
+            spotsLive={spotsLive}
+            cityName={cityName}
+          />
           <TouchableOpacity
             style={styles.plannerButton}
             onPress={() => setShowPlanner(true)}
@@ -409,6 +433,11 @@ export default function MapScreen() {
           }
           contentContainerStyle={{ paddingBottom: 120 }}
         >
+          {/* ActivityTicker — Live scrolling activity strip */}
+          <ActivityTicker
+            items={isDemoMode ? DEMO_ACTIVITY_FEED : []}
+          />
+
           {/* TonightHero — Adaptive journey card */}
           <TonightHero
             phase={nightPhase}
@@ -445,11 +474,13 @@ export default function MapScreen() {
             bestMomentText="Quilox hit 87% while you were there"
           />
 
-          {/* CityPulseHero — Live city heartbeat */}
-          <CityPulseHero
-            data={cityPulse}
-            cityName={cityName}
-          />
+          {/* AfterDarkRankings — Tonight's top 3 venues by pulse */}
+          {rankedVenues.length > 0 && (
+            <AfterDarkRankings
+              venues={rankedVenues}
+              onVenuePress={(id) => router.push(`/venue/${id}`)}
+            />
+          )}
 
           {/* CartelPulse — Cartel activity card */}
           {crew && isDemoMode && (
@@ -459,15 +490,6 @@ export default function MapScreen() {
               onPress={() => router.push('/(public)/crew')}
             />
           )}
-
-          {/* VibePrompts — Connective contextual prompts */}
-          {activePrompts.map(prompt => (
-            <VibePrompt
-              key={prompt.id}
-              prompt={prompt}
-              onDismiss={handleDismissPrompt}
-            />
-          ))}
 
           {/* VibeMatch — DNA-powered recommendation */}
           {vibeMatchVenue && (
@@ -479,6 +501,24 @@ export default function MapScreen() {
               energyLevel={vibeMatchVenue.energyLevel}
               reason={vibeMatchVenue.reason}
               onPress={() => router.push(`/venue/${vibeMatchVenue.venueId}`)}
+            />
+          )}
+
+          {/* NoDulling — Quick pulse drop when near a venue */}
+          {nearbyVenue && nearbyVenueFullData && (
+            <NoDulling
+              venueName={nearbyVenue.name}
+              venueId={nearbyVenue.id}
+              pulseTier={nearbyVenueFullData.pulse?.tier ?? 'stirring'}
+              onDrop={async (id) => {
+                const loc = userLocation ?? { lat: 6.4316, lng: 3.4223 };
+                await dropQuickPulse(id, loc.lat, loc.lng);
+              }}
+              onFullRate={() => router.push({
+                pathname: '/venue/[id]',
+                params: { id: nearbyVenue.id, openRateModal: 'true' },
+              })}
+              disabled={!!demoPulsedVenues?.[nearbyVenue.id]}
             />
           )}
 
@@ -520,10 +560,6 @@ export default function MapScreen() {
               </Animated.View>
             ))}
 
-          {/* The Pulse — Live Activity Feed (secondary) */}
-          {isDemoMode && filteredVenues.length > 0 && (
-            <ActivityPulse activities={DEMO_ACTIVITY_FEED} />
-          )}
         </ScrollView>
       ) : (
         <View style={styles.mapContainer}>
