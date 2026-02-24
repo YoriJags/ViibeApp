@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useVibeStore } from '../../src/store/vibeStore';
 import { MockMap } from '../../src/components/MockMap';
 import { VenueCard } from '../../src/components/VenueCard';
@@ -42,6 +43,194 @@ import { calculateDistance } from '../../src/utils/geo';
 
 const { width } = Dimensions.get('window');
 
+// ─── City Welcome Card ────────────────────────────────────────────────────────
+// Shown to new users (no check-in, no persona) as the first impression hook.
+// City energy score + live stats + invite into the night.
+
+interface CityWelcomeProps {
+  cityPulse: { pulse_score: number; pulse_label: string; active_scouts: number; live_venues: number } | null;
+  cityName: string;
+  onPlannerPress: () => void;
+}
+
+function CityWelcomeCard({ cityPulse, cityName, onPlannerPress }: CityWelcomeProps) {
+  const score = cityPulse?.pulse_score ?? 42;
+  const label = (cityPulse?.pulse_label ?? 'BUZZING').toUpperCase();
+  const scouts = cityPulse?.active_scouts ?? 0;
+  const liveSpots = cityPulse?.live_venues ?? 0;
+
+  const color =
+    score >= 80 ? '#FF3366' :
+    score >= 60 ? '#FF9933' :
+    score >= 30 ? '#9933FF' :
+    '#3399FF';
+
+  const headline =
+    label === 'ELECTRIC' ? `🔥 ${cityName} is going absolutely OFF` :
+    label === 'POPPING'  ? `🎉 ${cityName} is popping right now` :
+    label === 'BUZZING'  ? `✨ The ${cityName} scene is building` :
+    `🌙 ${cityName} is quiet — early spots available`;
+
+  const subline =
+    label === 'ELECTRIC' ? 'Don\'t sleep — the best spots are filling fast' :
+    label === 'POPPING'  ? 'Good timing. Pick your spot before it maxes out' :
+    label === 'BUZZING'  ? 'Night is young. Get in early, earn more clout' :
+    'Quiet night — ideal to explore without the queue';
+
+  return (
+    <View style={wcStyles.wrap}>
+      <LinearGradient
+        colors={[color + '22', '#0A0A0F']}
+        style={[wcStyles.card, { borderColor: color + '35' }]}
+      >
+        {/* Energy badge */}
+        <View style={[wcStyles.energyBadge, { backgroundColor: color + '20', borderColor: color + '50' }]}>
+          <View style={[wcStyles.energyDot, { backgroundColor: color }]} />
+          <Text style={[wcStyles.energyLabel, { color }]}>{label}</Text>
+        </View>
+
+        {/* Headline */}
+        <Text style={wcStyles.headline}>{headline}</Text>
+        <Text style={wcStyles.subline}>{subline}</Text>
+
+        {/* Live stats row */}
+        <View style={wcStyles.statsRow}>
+          <View style={wcStyles.stat}>
+            <Text style={[wcStyles.statNum, { color }]}>
+              {liveSpots > 0 ? liveSpots : '10+'}
+            </Text>
+            <Text style={wcStyles.statLabel}>spots live</Text>
+          </View>
+          <View style={wcStyles.statDivider} />
+          <View style={wcStyles.stat}>
+            <Text style={[wcStyles.statNum, { color }]}>
+              {scouts > 0 ? scouts : '200+'}
+            </Text>
+            <Text style={wcStyles.statLabel}>scouts out</Text>
+          </View>
+          <View style={wcStyles.statDivider} />
+          <View style={wcStyles.stat}>
+            <Text style={[wcStyles.statNum, { color }]}>{score}%</Text>
+            <Text style={wcStyles.statLabel}>city energy</Text>
+          </View>
+        </View>
+
+        {/* CTA row */}
+        <View style={wcStyles.ctaRow}>
+          <Text style={wcStyles.ctaHint}>↓ Tonight's top spots below</Text>
+          <TouchableOpacity
+            style={[wcStyles.plannerBtn, { borderColor: color + '50' }]}
+            onPress={onPlannerPress}
+            activeOpacity={0.75}
+          >
+            <Ionicons name="sparkles" size={12} color={color} />
+            <Text style={[wcStyles.plannerBtnText, { color }]}>Plan my night</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    </View>
+  );
+}
+
+const wcStyles = StyleSheet.create({
+  wrap: {
+    paddingHorizontal: 0,
+    marginBottom: 12,
+  },
+  card: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 18,
+  },
+  energyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  energyDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  energyLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 2,
+  },
+  headline: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFF',
+    lineHeight: 26,
+    marginBottom: 6,
+  },
+  subline: {
+    fontSize: 13,
+    color: '#888',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0D0D14',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    marginBottom: 14,
+  },
+  stat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statNum: {
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  statLabel: {
+    fontSize: 10,
+    color: '#555',
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  statDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: '#252530',
+  },
+  ctaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  ctaHint: {
+    fontSize: 12,
+    color: '#555',
+  },
+  plannerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  plannerBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Persona → preferred venue types for feed boosting
 const PERSONA_BOOST: Record<string, string[]> = {
   turn_up: ['club', 'bar', 'concert'],
@@ -64,7 +253,7 @@ export default function MapScreen() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
-  const [showList, setShowList] = useState(false);
+  const [showList, setShowList] = useState(true); // List-first: content before map
   const [showCityPicker, setShowCityPicker] = useState(false);
   const [showCloutReward, setShowCloutReward] = useState(false);
   const [highlightedVenueId, setHighlightedVenueId] = useState<string | null>(null);
@@ -268,12 +457,17 @@ export default function MapScreen() {
     [venues]
   );
 
-  // Top 3 venues by pulse count for AfterDarkRankings
+  // Top 3 venues — pulse count first, vibe score as fallback (always shows)
   const rankedVenues = useMemo((): RankedVenue[] => {
     const base: any[] = isDemoMode ? DEMO_VENUES : venues;
-    return base
-      .filter((v: any) => (v.pulse?.count ?? 0) > 0)
-      .sort((a: any, b: any) => (b.pulse?.count ?? 0) - (a.pulse?.count ?? 0))
+    if (base.length === 0) return [];
+    return [...base]
+      .sort((a: any, b: any) => {
+        // Primary: pulse count (more = higher). Secondary: vibe score
+        const pulseDiff = (b.pulse?.count ?? 0) - (a.pulse?.count ?? 0);
+        if (pulseDiff !== 0) return pulseDiff;
+        return (b.current_vibe_score ?? 0) - (a.current_vibe_score ?? 0);
+      })
       .slice(0, 3)
       .map((v: any) => ({
         id: v.id,
@@ -284,6 +478,10 @@ export default function MapScreen() {
         pulse_tier: v.pulse?.tier ?? 'dormant',
       }));
   }, [isDemoMode, venues]);
+
+  // New user = no check-in and no persona set yet
+  // These users see CityWelcomeCard instead of TonightHero
+  const isNewUser = !activeCheckin && !vibePersona;
 
   // Full data for nearby venue (for NoDulling pulse tier)
   const nearbyVenueFullData = useMemo(() => {
@@ -433,48 +631,57 @@ export default function MapScreen() {
           }
           contentContainerStyle={{ paddingBottom: 120 }}
         >
-          {/* ActivityTicker — Live scrolling activity strip */}
-          <ActivityTicker
-            items={isDemoMode ? DEMO_ACTIVITY_FEED : []}
-          />
+          {/* ActivityTicker — always visible; demo data seeds the feed until real activity flows */}
+          <ActivityTicker items={DEMO_ACTIVITY_FEED} />
 
-          {/* TonightHero — Adaptive journey card */}
-          <TonightHero
-            phase={nightPhase}
-            currentHour={isDemoMode ? DEMO_TONIGHT.currentHour : new Date().toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })}
-            cityName={cityName}
-            cityEnergy={isDemoMode ? DEMO_TONIGHT.cityEnergy : 'popping'}
-            cityEnergyScore={isDemoMode ? DEMO_TONIGHT.cityEnergyScore : 70}
-            matchVenue={isDemoMode ? DEMO_TONIGHT.matchVenue : undefined}
-            matchPercent={isDemoMode ? DEMO_TONIGHT.matchPercent : undefined}
-            matchArea={isDemoMode ? DEMO_TONIGHT.matchArea : undefined}
-            cartelOutCount={crew ? ((crew as any).member_details?.filter((m: any) => m.checked_in).length || 0) : 0}
-            cartelTotal={crew ? ((crew as any).member_details?.length || 0) : 0}
-            onSeePicksPress={() => {}}
-            onMatchVenuePress={() => {
-              if (isDemoMode && DEMO_TONIGHT.matchVenueId) {
-                router.push(`/venue/${DEMO_TONIGHT.matchVenueId}`);
-              }
-            }}
-            venueName={activeCheckin?.venue_name}
-            vibeScore={isDemoMode ? 87 : undefined}
-            cloutEarnedTonight={isDemoMode ? 40 : undefined}
-            badgeProximityText={isDemoMode ? '2 away from Night Owl' : undefined}
-            onRateVibePress={() => {
-              if (activeCheckin) {
-                router.push({
-                  pathname: '/venue/[id]',
-                  params: { id: activeCheckin.venue_id, openRateModal: 'true' },
-                });
-              }
-            }}
-            venuesVisitedCount={isDemoMode ? 3 : 0}
-            totalCloutEarned={isDemoMode ? 120 : 0}
-            newBadgesCount={isDemoMode ? 1 : 0}
-            bestMomentText="Quilox hit 87% while you were there"
-          />
+          {/* CityWelcomeCard — first-impression hook for new users */}
+          {isNewUser && (
+            <CityWelcomeCard
+              cityPulse={cityPulse}
+              cityName={cityName}
+              onPlannerPress={() => setShowPlanner(true)}
+            />
+          )}
 
-          {/* AfterDarkRankings — Tonight's top 3 venues by pulse */}
+          {/* TonightHero — Adaptive journey card (returning users only) */}
+          {!isNewUser && (
+            <TonightHero
+              phase={nightPhase}
+              currentHour={isDemoMode ? DEMO_TONIGHT.currentHour : new Date().toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })}
+              cityName={cityName}
+              cityEnergy={isDemoMode ? DEMO_TONIGHT.cityEnergy : 'popping'}
+              cityEnergyScore={isDemoMode ? DEMO_TONIGHT.cityEnergyScore : 70}
+              matchVenue={isDemoMode ? DEMO_TONIGHT.matchVenue : undefined}
+              matchPercent={isDemoMode ? DEMO_TONIGHT.matchPercent : undefined}
+              matchArea={isDemoMode ? DEMO_TONIGHT.matchArea : undefined}
+              cartelOutCount={crew ? ((crew as any).member_details?.filter((m: any) => m.checked_in).length || 0) : 0}
+              cartelTotal={crew ? ((crew as any).member_details?.length || 0) : 0}
+              onSeePicksPress={() => {}}
+              onMatchVenuePress={() => {
+                if (isDemoMode && DEMO_TONIGHT.matchVenueId) {
+                  router.push(`/venue/${DEMO_TONIGHT.matchVenueId}`);
+                }
+              }}
+              venueName={activeCheckin?.venue_name}
+              vibeScore={isDemoMode ? 87 : undefined}
+              cloutEarnedTonight={isDemoMode ? 40 : undefined}
+              badgeProximityText={isDemoMode ? '2 away from Night Owl' : undefined}
+              onRateVibePress={() => {
+                if (activeCheckin) {
+                  router.push({
+                    pathname: '/venue/[id]',
+                    params: { id: activeCheckin.venue_id, openRateModal: 'true' },
+                  });
+                }
+              }}
+              venuesVisitedCount={isDemoMode ? 3 : 0}
+              totalCloutEarned={isDemoMode ? 120 : 0}
+              newBadgesCount={isDemoMode ? 1 : 0}
+              bestMomentText="Quilox hit 87% while you were there"
+            />
+          )}
+
+          {/* AfterDarkRankings — Tonight's top 3 (always shown once venues load) */}
           {rankedVenues.length > 0 && (
             <AfterDarkRankings
               venues={rankedVenues}
