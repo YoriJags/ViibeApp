@@ -36,6 +36,8 @@ from app.routes.vibe_intel import router as vibe_intel_router
 from app.routes.forecast import router as forecast_router
 from app.routes.campaigns import router as campaigns_router
 from app.routes.certifications import router as certifications_router
+from app.routes.planner import router as planner_router
+from app.routes.oracle import router as oracle_router
 
 # ===== Create FastAPI App =====
 app = FastAPI(title="Vibe App API", version="3.0.0")
@@ -68,6 +70,8 @@ api_router.include_router(vibe_intel_router)
 api_router.include_router(forecast_router)
 api_router.include_router(campaigns_router)
 api_router.include_router(certifications_router)
+api_router.include_router(planner_router)
+api_router.include_router(oracle_router)
 
 # Include the API router in the main app
 app.include_router(api_router)
