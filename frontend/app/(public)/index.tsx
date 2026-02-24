@@ -36,6 +36,7 @@ import NightPlannerModal from '../../src/components/NightPlannerModal';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
 import TheWave from '../../src/components/TheWave';
 import AfterDarkRankings, { RankedVenue } from '../../src/components/AfterDarkRankings';
+import VibeMarket, { VibeMarketVenue } from '../../src/components/VibeMarket';
 import NoDulling from '../../src/components/NoDulling';
 import ActivityTicker from '../../src/components/ActivityTicker';
 import { getNightPhase } from '../../src/store/vibeStore';
@@ -457,23 +458,23 @@ export default function MapScreen() {
     [venues]
   );
 
-  // Top 3 venues — pulse count first, vibe score as fallback (always shows)
-  const rankedVenues = useMemo((): RankedVenue[] => {
+  // VibeMarket venues — all venues sorted by score, mapped to market format
+  const vibeMarketVenues = useMemo((): VibeMarketVenue[] => {
     const base: any[] = isDemoMode ? DEMO_VENUES : venues;
     if (base.length === 0) return [];
     return [...base]
       .sort((a: any, b: any) => {
-        // Primary: pulse count (more = higher). Secondary: vibe score
         const pulseDiff = (b.pulse?.count ?? 0) - (a.pulse?.count ?? 0);
         if (pulseDiff !== 0) return pulseDiff;
         return (b.current_vibe_score ?? 0) - (a.current_vibe_score ?? 0);
       })
-      .slice(0, 3)
       .map((v: any) => ({
         id: v.id,
         name: v.name,
         area: v.area,
         current_vibe_score: v.current_vibe_score ?? 0,
+        vibe_velocity: v.vibe_velocity ?? 'stable',
+        energy_level: v.energy_level,
         pulse_count: v.pulse?.count ?? 0,
         pulse_tier: v.pulse?.tier ?? 'dormant',
       }));
@@ -681,10 +682,13 @@ export default function MapScreen() {
             />
           )}
 
-          {/* AfterDarkRankings — Tonight's top 3 (always shown once venues load) */}
-          {rankedVenues.length > 0 && (
-            <AfterDarkRankings
-              venues={rankedVenues}
+          {/* VibeMarket — Wall Street-style live leaderboard */}
+          {vibeMarketVenues.length > 0 && (
+            <VibeMarket
+              venues={vibeMarketVenues}
+              cityName={cityName}
+              cityScore={cityPulse?.pulse_score ?? 50}
+              cityLabel={cityPulse?.pulse_label ?? 'BUZZING'}
               onVenuePress={(id) => router.push(`/venue/${id}`)}
             />
           )}
