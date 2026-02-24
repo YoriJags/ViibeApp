@@ -35,12 +35,12 @@ import VibeMatch from '../../src/components/VibeMatch';
 import NightPlannerModal from '../../src/components/NightPlannerModal';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
 import TheWave from '../../src/components/TheWave';
-import AfterDarkRankings, { RankedVenue } from '../../src/components/AfterDarkRankings';
 import VibeMarket, { VibeMarketVenue } from '../../src/components/VibeMarket';
 import NoDulling from '../../src/components/NoDulling';
 import ActivityTicker from '../../src/components/ActivityTicker';
 import { getNightPhase } from '../../src/store/vibeStore';
 import { calculateDistance } from '../../src/utils/geo';
+import VibeBriefCard from '../../src/components/VibeBriefCard';
 
 const { width } = Dimensions.get('window');
 
@@ -230,6 +230,293 @@ const wcStyles = StyleSheet.create({
   },
 });
 
+// ─── Market Teaser ────────────────────────────────────────────────────────────
+// Compact top-3 preview on home. Full leaderboard lives on Trending.
+
+function MarketTeaser({
+  venues,
+  cityLabel,
+  onSeeMore,
+}: {
+  venues: VibeMarketVenue[];
+  cityLabel: string;
+  onSeeMore: () => void;
+}) {
+  const top3 = venues.slice(0, 3);
+  if (top3.length === 0) return null;
+
+  const badgeColor =
+    cityLabel === 'ELECTRIC' ? '#FF3366' :
+    cityLabel === 'POPPING'  ? '#FF9933' :
+    cityLabel === 'BUZZING'  ? '#9933FF' :
+    '#3399FF';
+
+  const scoreColor = (s: number) =>
+    s >= 80 ? '#FF3366' : s >= 60 ? '#FF9933' : s >= 40 ? '#9933FF' : '#3399FF';
+
+  return (
+    <View style={mtStyles.wrap}>
+      {/* Header */}
+      <View style={mtStyles.header}>
+        <View style={mtStyles.liveRow}>
+          <View style={mtStyles.liveDot} />
+          <Text style={mtStyles.liveText}>LIVE</Text>
+          <Text style={mtStyles.exchangeLabel}>VIBE EXCHANGE</Text>
+        </View>
+        <View style={[mtStyles.badge, { borderColor: badgeColor + '50' }]}>
+          <Text style={[mtStyles.badgeText, { color: badgeColor }]}>{cityLabel}</Text>
+        </View>
+      </View>
+
+      {/* Top 3 rows */}
+      {top3.map((v, i) => (
+        <View key={v.id} style={[mtStyles.row, i === 2 && { borderBottomWidth: 0 }]}>
+          <Text style={[mtStyles.rank, i === 0 && { color: '#FFD700' }]}>#{i + 1}</Text>
+          <Text style={mtStyles.name} numberOfLines={1}>{v.name}</Text>
+          <Text style={[mtStyles.score, { color: scoreColor(v.current_vibe_score) }]}>
+            {Math.round(v.current_vibe_score)}
+          </Text>
+        </View>
+      ))}
+
+      {/* CTA */}
+      <TouchableOpacity style={mtStyles.cta} onPress={onSeeMore} activeOpacity={0.7}>
+        <Text style={mtStyles.ctaText}>Full Market</Text>
+        <Ionicons name="arrow-forward" size={11} color="#555" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const mtStyles = StyleSheet.create({
+  wrap: {
+    marginBottom: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#1E1E2A',
+    backgroundColor: '#0B0B12',
+    overflow: 'hidden',
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1A1A24',
+  },
+  liveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  liveDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#00E676',
+  },
+  liveText: {
+    fontSize: 8,
+    fontWeight: '900',
+    color: '#00E676',
+    letterSpacing: 1.5,
+  },
+  exchangeLabel: {
+    fontSize: 8,
+    color: '#333',
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginLeft: 4,
+  },
+  badge: {
+    borderWidth: 1,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  badgeText: {
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#111118',
+  },
+  rank: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#444',
+    width: 22,
+  },
+  name: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#DDD',
+  },
+  score: {
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
+    paddingVertical: 8,
+  },
+  ctaText: {
+    fontSize: 11,
+    color: '#555',
+    fontWeight: '600',
+  },
+});
+
+// ─── Weekend Card ─────────────────────────────────────────────────────────────
+// Appears Friday 6PM onwards and all of Saturday. Dismissable per session.
+
+function WeekendCard({
+  onDismiss,
+  pulseScore,
+  onExplore,
+}: {
+  onDismiss: () => void;
+  pulseScore: number;
+  onExplore: () => void;
+}) {
+  const day = new Date().getDay(); // 5 = Friday, 6 = Saturday
+  const isFriday = day === 5;
+
+  const label    = isFriday ? 'TGIF 🔥' : 'WEEKEND 🎉';
+  const headline = isFriday
+    ? "It's Friday. No dulling tonight."
+    : "Saturday night. Lagos is yours.";
+  const subline  = isFriday
+    ? "Weekend starts NOW — find your spot before the queues build up."
+    : "Peak night. The city is at max energy. Go claim your moment.";
+
+  return (
+    <LinearGradient
+      colors={['#1C0A22', '#100A18']}
+      style={wkStyles.card}
+    >
+      {/* Dismiss */}
+      <TouchableOpacity style={wkStyles.closeBtn} onPress={onDismiss} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+        <Ionicons name="close" size={14} color="#444" />
+      </TouchableOpacity>
+
+      {/* Label row */}
+      <View style={wkStyles.topRow}>
+        <LinearGradient
+          colors={['#FF3366', '#FF9933']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={wkStyles.labelBadge}
+        >
+          <Text style={wkStyles.labelText}>{label}</Text>
+        </LinearGradient>
+        <View style={wkStyles.energyRow}>
+          <View style={wkStyles.energyDot} />
+          <Text style={wkStyles.energyText}>{pulseScore}% city energy</Text>
+        </View>
+      </View>
+
+      <Text style={wkStyles.headline}>{headline}</Text>
+      <Text style={wkStyles.subline}>{subline}</Text>
+
+      <TouchableOpacity style={wkStyles.cta} onPress={onExplore} activeOpacity={0.75}>
+        <Text style={wkStyles.ctaText}>See what's popping</Text>
+        <Ionicons name="arrow-forward" size={12} color="#FF9933" />
+      </TouchableOpacity>
+    </LinearGradient>
+  );
+}
+
+const wkStyles = StyleSheet.create({
+  card: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#FF336622',
+    padding: 16,
+    marginBottom: 12,
+    position: 'relative',
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 5,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  labelBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  labelText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#FFF',
+    letterSpacing: 0.5,
+  },
+  energyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  energyDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FF9933',
+  },
+  energyText: {
+    fontSize: 10,
+    color: '#FF993388',
+    fontWeight: '700',
+  },
+  headline: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFF',
+    letterSpacing: -0.3,
+    marginBottom: 6,
+  },
+  subline: {
+    fontSize: 12,
+    color: '#888',
+    lineHeight: 17,
+    marginBottom: 14,
+  },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    alignSelf: 'flex-start',
+  },
+  ctaText: {
+    fontSize: 12,
+    color: '#FF9933',
+    fontWeight: '700',
+  },
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Persona → preferred venue types for feed boosting
@@ -262,6 +549,15 @@ export default function MapScreen() {
   const [selectedCategory, setSelectedCategory] = useState<VenueCategory>('all');
   const [showTransition, setShowTransition] = useState(false);
   const [showPlanner, setShowPlanner] = useState(false);
+  const [weekendDismissed, setWeekendDismissed] = useState(false);
+
+  // Friday 6PM onwards or all of Saturday
+  const isWeekendActive = useMemo(() => {
+    const d = new Date();
+    const day = d.getDay();
+    const hour = d.getHours();
+    return (day === 5 && hour >= 18) || day === 6;
+  }, []);
 
   // Animations
   const headerGlowAnim = useRef(new Animated.Value(0.6)).current;
@@ -635,6 +931,15 @@ export default function MapScreen() {
           {/* ActivityTicker — always visible; demo data seeds the feed until real activity flows */}
           <ActivityTicker items={DEMO_ACTIVITY_FEED} />
 
+          {/* WeekendCard — Friday 6PM+ and Saturday only, dismissable */}
+          {isWeekendActive && !weekendDismissed && (
+            <WeekendCard
+              pulseScore={cityPulse?.pulse_score ?? 50}
+              onDismiss={() => setWeekendDismissed(true)}
+              onExplore={() => router.push('/(public)/trending')}
+            />
+          )}
+
           {/* CityWelcomeCard — first-impression hook for new users */}
           {isNewUser && (
             <CityWelcomeCard
@@ -682,14 +987,15 @@ export default function MapScreen() {
             />
           )}
 
-          {/* VibeMarket — Wall Street-style live leaderboard */}
+          {/* VibeBriefCard — Daily AI city briefing */}
+          <VibeBriefCard city={selectedCity} isDemoMode={isDemoMode} />
+
+          {/* MarketTeaser — top-3 preview, full leaderboard lives on Trending */}
           {vibeMarketVenues.length > 0 && (
-            <VibeMarket
+            <MarketTeaser
               venues={vibeMarketVenues}
-              cityName={cityName}
-              cityScore={cityPulse?.pulse_score ?? 50}
               cityLabel={cityPulse?.pulse_label ?? 'BUZZING'}
-              onVenuePress={(id) => router.push(`/venue/${id}`)}
+              onSeeMore={() => router.push('/(public)/trending')}
             />
           )}
 

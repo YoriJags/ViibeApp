@@ -83,6 +83,7 @@ export default function MerchantDashboard() {
   const [stats, setStats] = useState<VenueStats | null>(null);
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
   const [pulseStatus, setPulseStatus] = useState<PulseStatus | null>(null);
+  const [aiAdvisor, setAiAdvisor] = useState<{ summary: string; actions: string[]; priority: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -102,6 +103,14 @@ export default function MerchantDashboard() {
   // Campaign State
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [activeCampaign, setActiveCampaign] = useState<any>(null);
+
+  // Spotlight State
+  const [spotlightStatus, setSpotlightStatus] = useState<{
+    is_active: boolean;
+    time_remaining: { hours: number; minutes: number; total_seconds: number } | null;
+    available_tiers: Record<string, { price: number; duration_hours: number; name: string }>;
+  } | null>(null);
+  const [isActivatingSpotlight, setIsActivatingSpotlight] = useState(false);
 
   const fetchAllData = async () => {
     // In demo mode, use mock data instead of API calls
@@ -155,6 +164,15 @@ export default function MerchantDashboard() {
         setPulseStatus(await pulseRes.json());
       }
 
+      // Fetch spotlight status
+      const spotlightRes = await fetch(
+        `${API_URL}/api/merchant/venue/${user.merchant_venue_id}/spotlight-status`,
+        { headers }
+      );
+      if (spotlightRes.ok) {
+        setSpotlightStatus(await spotlightRes.json());
+      }
+
       // Fetch active campaign
       const campaignRes = await fetch(
         `${API_URL}/api/merchant/venue/${user.merchant_venue_id}/campaigns`,
@@ -165,6 +183,12 @@ export default function MerchantDashboard() {
         const active = (campaignData.campaigns || []).find((c: any) => c.status === 'active');
         setActiveCampaign(active || null);
       }
+
+      // Fetch AI Advisor (non-blocking)
+      fetch(`${API_URL}/api/merchant/venue/${user.merchant_venue_id}/ai-advisor`, { headers })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.summary) setAiAdvisor(d); })
+        .catch(() => {});
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -280,6 +304,41 @@ export default function MerchantDashboard() {
       Alert.alert('Error', 'Failed to activate Pulse Drop');
     } finally {
       setIsActivatingPulse(false);
+    }
+  };
+
+  const handleSpotlight = async (tier: string) => {
+    if (isDemoMode) {
+      const tiers: Record<string, { price: number; duration_hours: number; name: string }> = {
+        spotlight_24h: { price: 5000, duration_hours: 24, name: '24-Hour Spotlight' },
+        spotlight_48h: { price: 10000, duration_hours: 48, name: '48-Hour Spotlight' },
+      };
+      const t = tiers[tier];
+      Alert.alert('Demo Mode', `${t.name} simulated. Your venue would appear at the top of Vibe Exchange for ${t.duration_hours} hours.`);
+      return;
+    }
+    if (!user?.merchant_venue_id) return;
+    setIsActivatingSpotlight(true);
+    try {
+      const res = await fetch(
+        `${API_URL}/api/merchant/venue/${user.merchant_venue_id}/spotlight`,
+        {
+          method: 'POST',
+          headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tier }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        Alert.alert('Spotlighted!', data.message);
+        fetchAllData();
+      } else {
+        Alert.alert('Error', data.detail || 'Failed to activate spotlight');
+      }
+    } catch {
+      Alert.alert('Error', 'Could not reach server');
+    } finally {
+      setIsActivatingSpotlight(false);
     }
   };
 
@@ -672,6 +731,55 @@ export default function MerchantDashboard() {
           )}
         </View>
 
+        {/* ====== VIBE EXCHANGE SPOTLIGHT ====== */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>⭐ Vibe Exchange Spotlight</Text>
+          <Text style={styles.sectionSubtitle}>Pin your venue at the top of the leaderboard</Text>
+
+          {spotlightStatus?.is_active ? (
+            <LinearGradient
+              colors={['#1A1500', '#0D0D0A']}
+              style={[styles.scoreCard, { borderColor: '#FFD70050' }]}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <Ionicons name="star" size={22} color="#FFD700" />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFD700' }}>SPOTLIGHT ACTIVE</Text>
+                  <Text style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Your venue is pinned at #1 on Vibe Exchange</Text>
+                </View>
+              </View>
+              {spotlightStatus.time_remaining && (
+                <Text style={{ fontSize: 28, fontWeight: '900', color: '#FFD700', textAlign: 'center' }}>
+                  {spotlightStatus.time_remaining.hours}h {spotlightStatus.time_remaining.minutes}m left
+                </Text>
+              )}
+            </LinearGradient>
+          ) : (
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {Object.entries(spotlightStatus?.available_tiers || {
+                spotlight_24h: { price: 5000, duration_hours: 24, name: '24-Hour Spotlight' },
+                spotlight_48h: { price: 10000, duration_hours: 48, name: '48-Hour Spotlight' },
+              }).map(([tier, cfg]) => (
+                <TouchableOpacity
+                  key={tier}
+                  style={[styles.tierCard, { flex: 1, borderColor: '#FFD70030' }]}
+                  onPress={() => handleSpotlight(tier)}
+                  disabled={isActivatingSpotlight}
+                >
+                  <Ionicons name="star" size={20} color="#FFD700" />
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFD700', marginTop: 6 }}>
+                    {cfg.duration_hours}h
+                  </Text>
+                  <Text style={{ fontSize: 10, color: '#888', marginTop: 2 }}>Spotlight</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '900', color: colors.accent, marginTop: 8 }}>
+                    ₦{cfg.price.toLocaleString()}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
         {/* ====== ENERGY CAMPAIGNS ====== */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Energy Campaigns</Text>
@@ -718,6 +826,89 @@ export default function MerchantDashboard() {
             <VibeForecast venueId={user.merchant_venue_id} />
           </View>
         )}
+
+        {/* ====== AI ADVISOR ====== */}
+        {aiAdvisor && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🤖 AI Advisor</Text>
+            <Text style={styles.sectionSubtitle}>{aiAdvisor.summary}</Text>
+            <View style={{ gap: 8, marginTop: 8 }}>
+              {aiAdvisor.actions.map((action, i) => (
+                <View key={i} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: 'rgba(255,51,102,0.06)', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: 'rgba(255,51,102,0.15)' }}>
+                  <Text style={{ color: '#FF3366', fontWeight: '800', fontSize: 13 }}>{i + 1}</Text>
+                  <Text style={{ color: '#CCC', fontSize: 13, lineHeight: 19, flex: 1 }}>{action}</Text>
+                </View>
+              ))}
+            </View>
+            {aiAdvisor.priority && (
+              <Text style={{ color: '#FF9933', fontSize: 11, marginTop: 6, fontWeight: '600' }}>
+                Priority: {aiAdvisor.priority}
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* ====== ADVANCED ANALYTICS (PAY-GATED) ====== */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📈 Advanced Analytics</Text>
+          <Text style={styles.sectionSubtitle}>Deep insights to grow your venue</Text>
+
+          {/* Preview rows (blurred look) */}
+          <View style={[styles.scoreCard, { padding: 0, overflow: 'hidden' }]}>
+            {/* Faded preview data */}
+            {[
+              { label: 'Peak Hour Tonight', value: '11PM–1AM', icon: 'time' },
+              { label: 'Scout Retention Rate', value: '68%', icon: 'repeat' },
+              { label: 'Competitor Benchmark', value: '+12pts vs avg', icon: 'podium' },
+              { label: 'Revenue Forecast (7d)', value: '₦380,000', icon: 'trending-up' },
+            ].map((row, i) => (
+              <View
+                key={row.label}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingHorizontal: 14,
+                  paddingVertical: 12,
+                  borderBottomWidth: i < 3 ? 1 : 0,
+                  borderBottomColor: colors.border,
+                  opacity: 0.25,
+                }}
+              >
+                <Ionicons name={row.icon as any} size={16} color={colors.accent} />
+                <Text style={{ flex: 1, fontSize: 13, color: colors.text, marginLeft: 10 }}>{row.label}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{row.value}</Text>
+              </View>
+            ))}
+
+            {/* Lock overlay */}
+            <View style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: '#0D0D0A99',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 8,
+            }}>
+              <Ionicons name="lock-closed" size={28} color={colors.accent} />
+              <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text }}>Unlock Advanced Analytics</Text>
+              <Text style={{ fontSize: 12, color: colors.textMuted, textAlign: 'center', paddingHorizontal: 20 }}>
+                Hourly breakdowns, competitor analysis, peak-time predictions + revenue forecasts
+              </Text>
+              <TouchableOpacity
+                style={{
+                  marginTop: 6,
+                  backgroundColor: colors.accent,
+                  paddingHorizontal: 20,
+                  paddingVertical: 10,
+                  borderRadius: 10,
+                }}
+                onPress={() => Alert.alert('Coming Soon', 'Advanced Analytics plan launching soon. ₦15,000/month. Contact support to join the waitlist.')}
+              >
+                <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFF' }}>₦15,000/month · Join Waitlist</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
 
         {/* Privacy Notice */}
         <View style={styles.privacyNotice}>

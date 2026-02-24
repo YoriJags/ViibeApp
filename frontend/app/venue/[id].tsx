@@ -11,6 +11,7 @@ import {
   Platform,
   Image,
   Dimensions,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,6 +34,7 @@ import CheckInCelebration from '../../src/components/CheckInCelebration';
 import CertifiedBadge from '../../src/components/CertifiedBadge';
 import TopScoutsCard from '../../src/components/TopScoutsCard';
 import VibeOracle from '../../src/components/VibeOracle';
+import VenueRoastCard from '../../src/components/VenueRoastCard';
 import PulseButton from '../../src/components/PulseButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -129,6 +131,19 @@ export default function VenueDetailScreen() {
       setShowRateModal(true);
     }
   }, [openRateModal, venue, isWithinGeofence, ratingStatus, isDemoMode]);
+
+  const handleShare = async () => {
+    if (!venue) return;
+    const deepLink = `https://vibe-app-hc83.vercel.app/venue/${venue.id}`;
+    try {
+      await Share.share({
+        message: `${venue.name} is ${venue.energy_level?.toUpperCase() ?? 'LIVE'} right now 🔥 Check the vibe on Vibe App: ${deepLink}`,
+        url: deepLink,
+      });
+    } catch {
+      // user cancelled
+    }
+  };
 
   const handleToggleLobby = async () => {
     if (!isAuthenticated || !id) return;
@@ -437,6 +452,9 @@ export default function VenueDetailScreen() {
             )}
           </View>
         </View>
+        <TouchableOpacity style={styles.lobbyButton} onPress={handleShare}>
+          <Ionicons name="share-social-outline" size={22} color="#888" />
+        </TouchableOpacity>
         {isAuthenticated && (
           <TouchableOpacity style={styles.lobbyButton} onPress={handleToggleLobby}>
             <Ionicons
@@ -608,6 +626,9 @@ export default function VenueDetailScreen() {
             </View>
           </BlurView>
         </View>
+
+        {/* ====== AI TAKE (Roast & Toast) ====== */}
+        {id && venue && <VenueRoastCard venueId={id} venueName={venue.name} isDemoMode={isDemoMode} />}
 
         {/* ====== VIBE ORACLE ====== */}
         {id && <VibeOracle venueId={id} venueName={venue?.name} />}

@@ -17,12 +17,19 @@ import { useVibeStore } from '../../src/store/vibeStore';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
+const DEMO_DEBRIEF = {
+  debrief: "You hit 3 spots tonight and kept the energy electric the whole way through — that's certified scout behaviour right there.",
+  night_title: "Electric VI Run",
+  stats: { spots_visited: 3, ratings_dropped: 3, avg_vibe_given: 87 },
+};
+
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode } = useVibeStore();
+  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode } = useVibeStore();
   const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
+  const [debrief, setDebrief] = useState<{ debrief: string; night_title?: string; stats?: any } | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
@@ -33,6 +40,15 @@ export default function ProfileScreen() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (isDemoMode) { setDebrief(DEMO_DEBRIEF); return; }
+    if (!user?.id) return;
+    fetch(`${API_URL}/api/users/${user.id}/night-debrief`)
+      .then(r => r.json())
+      .then(d => { if (d.debrief) setDebrief(d); })
+      .catch(() => {});
+  }, [user?.id, isDemoMode]);
 
   const handleLocalSignup = async () => {
     if (!username.trim() || !phone.trim()) {
@@ -354,6 +370,24 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Status</Text>
           </View>
         </View>
+
+        {/* Night Debrief */}
+        {debrief && (
+          <View style={{ marginHorizontal: 16, marginBottom: 16, backgroundColor: 'rgba(255,153,51,0.08)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,153,51,0.2)', gap: 8 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ color: '#FF9933', fontSize: 10, fontWeight: '800', letterSpacing: 1 }}>NIGHT DEBRIEF</Text>
+              {debrief.night_title && <Text style={{ color: '#FF9933', fontSize: 11, fontWeight: '700' }}>{debrief.night_title}</Text>}
+            </View>
+            <Text style={{ color: '#EEE', fontSize: 14, lineHeight: 21, fontStyle: 'italic' }}>{debrief.debrief}</Text>
+            {debrief.stats && (
+              <View style={{ flexDirection: 'row', gap: 16, marginTop: 4 }}>
+                <Text style={{ color: '#888', fontSize: 11 }}>{debrief.stats.spots_visited} spots</Text>
+                <Text style={{ color: '#888', fontSize: 11 }}>{debrief.stats.ratings_dropped} ratings</Text>
+                {debrief.stats.avg_vibe_given > 0 && <Text style={{ color: '#888', fontSize: 11 }}>avg {debrief.stats.avg_vibe_given}/100</Text>}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Dashboard Access Section - Only show if user has permissions */}
         {(user?.is_merchant || user?.is_super_admin) && (

@@ -2,10 +2,12 @@
  * VibeDNACard — User's vibe fingerprint derived from rating history.
  * Shows on the profile screen between the Stats Grid and Streak Card.
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useVibeStore } from '../store/vibeStore';
+
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BAR_MAX_WIDTH = SCREEN_WIDTH - 140; // room for label + score
@@ -47,11 +49,24 @@ interface VibeDNACardProps {
 }
 
 export default function VibeDNACard({ userId }: VibeDNACardProps) {
-  const { vibeDNA, fetchVibeDNA } = useVibeStore();
+  const { vibeDNA, fetchVibeDNA, isDemoMode } = useVibeStore();
+  const [narrative, setNarrative] = useState<{ narrative: string; vibe_archetype: string } | null>(null);
 
   useEffect(() => {
     if (userId) fetchVibeDNA(userId);
   }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    if (isDemoMode) {
+      setNarrative({ narrative: "You are a late-night creature who peaks when Amapiano drops. You thrive in VIP energy but aren't precious about it — your scene is VI after midnight, always.", vibe_archetype: "The Club Connoisseur" });
+      return;
+    }
+    fetch(`${API_URL}/api/users/${userId}/dna-narrative`)
+      .then(r => r.json())
+      .then(d => { if (d.narrative) setNarrative(d); })
+      .catch(() => {});
+  }, [userId, isDemoMode]);
 
   if (!vibeDNA) {
     return (
@@ -119,6 +134,16 @@ export default function VibeDNACard({ userId }: VibeDNACardProps) {
           );
         })}
       </View>
+
+      {/* AI Narrative */}
+      {narrative && (
+        <View style={styles.narrativeBox}>
+          {narrative.vibe_archetype && (
+            <Text style={styles.archetypeLabel}>{narrative.vibe_archetype}</Text>
+          )}
+          <Text style={styles.narrativeText}>{narrative.narrative}</Text>
+        </View>
+      )}
 
       {/* Footer */}
       <Text style={styles.footer}>Based on {vibeDNA.total_ratings_analyzed} ratings</Text>
@@ -278,6 +303,27 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     width: 28,
     textAlign: 'right',
+  },
+  narrativeBox: {
+    backgroundColor: 'rgba(255,51,102,0.06)',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,51,102,0.12)',
+    gap: 4,
+  },
+  archetypeLabel: {
+    color: '#FF3366',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  narrativeText: {
+    color: '#CCC',
+    fontSize: 13,
+    lineHeight: 19,
+    fontStyle: 'italic',
   },
   footer: {
     color: '#555',
