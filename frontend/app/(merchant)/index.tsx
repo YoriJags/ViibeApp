@@ -79,7 +79,7 @@ interface PulseStatus {
 
 export default function MerchantDashboard() {
   const router = useRouter();
-  const { user, getAuthHeaders, hasSeenMerchantOnboarding, completeMerchantOnboarding, isDemoMode } = useVibeStore();
+  const { user, getAuthHeaders, hasSeenMerchantOnboarding, completeMerchantOnboarding, isDemoMode, isFeatureEnabled } = useVibeStore();
   const [stats, setStats] = useState<VenueStats | null>(null);
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
   const [pulseStatus, setPulseStatus] = useState<PulseStatus | null>(null);
@@ -828,7 +828,7 @@ export default function MerchantDashboard() {
         )}
 
         {/* ====== AI ADVISOR ====== */}
-        {aiAdvisor && (
+        {aiAdvisor && isFeatureEnabled('ai_advisor') && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🤖 AI Advisor</Text>
             <Text style={styles.sectionSubtitle}>{aiAdvisor.summary}</Text>

@@ -253,6 +253,7 @@ interface TransientState {
   demoPulsedVenues: Record<string, number>; // venueId → timestamp of last quick pulse (demo)
   vibeDNA: VibeDNA | null;
   cityPulse: CityPulseData | null;
+  featureFlags: Record<string, boolean>;
 }
 
 export type CityPulseLabel = 'DEAD' | 'QUIET' | 'BUZZING' | 'POPPING' | 'ELECTRIC';
@@ -368,6 +369,9 @@ interface VibeStoreActions {
   // City Pulse
   fetchCityPulse: (city: string) => Promise<void>;
   dropQuickPulse: (venueId: string, lat: number, lng: number) => Promise<{ success: boolean; clout_earned?: number }>;
+  // Feature Flags
+  fetchFeatureFlags: () => Promise<void>;
+  isFeatureEnabled: (flag: string) => boolean;
 }
 
 type VibeStore = PersistedState & TransientState & VibeStoreActions;
@@ -419,6 +423,7 @@ export const useVibeStore = create<VibeStore>()(
       demoPulsedVenues: {},
       vibeDNA: null,
       cityPulse: null,
+      featureFlags: {},
 
       // Hydration tracker
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
@@ -1131,6 +1136,28 @@ export const useVibeStore = create<VibeStore>()(
           console.error('dropQuickPulse error:', e);
           return { success: false };
         }
+      },
+
+      // ===== Feature Flags =====
+      fetchFeatureFlags: async () => {
+        try {
+          const res = await fetch(`${API_URL}/api/feature-flags`);
+          if (res.ok) {
+            const data = await res.json();
+            set({ featureFlags: data.flags || {} });
+          }
+        } catch (e) {
+          // silently fail — all features default to enabled
+        }
+      },
+
+      isFeatureEnabled: (flag: string) => {
+        const { featureFlags, isDemoMode } = get();
+        // Demo mode: all features on so demos look complete
+        if (isDemoMode) return true;
+        // If flags not loaded yet, default to enabled
+        if (Object.keys(featureFlags).length === 0) return true;
+        return featureFlags[flag] !== false;
       },
 
       // ===== Streak Actions =====

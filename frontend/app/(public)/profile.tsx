@@ -25,7 +25,7 @@ const DEMO_DEBRIEF = {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode } = useVibeStore();
+  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode, isFeatureEnabled } = useVibeStore();
   const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
@@ -372,7 +372,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Night Debrief */}
-        {debrief && (
+        {debrief && isFeatureEnabled('night_debrief') && (
           <View style={{ marginHorizontal: 16, marginBottom: 16, backgroundColor: 'rgba(255,153,51,0.08)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,153,51,0.2)', gap: 8 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ color: '#FF9933', fontSize: 10, fontWeight: '800', letterSpacing: 1 }}>NIGHT DEBRIEF</Text>

@@ -537,7 +537,7 @@ const CITIES = [
 export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string }>();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
@@ -849,13 +849,15 @@ export default function MapScreen() {
             spotsLive={spotsLive}
             cityName={cityName}
           />
-          <TouchableOpacity
-            style={styles.plannerButton}
-            onPress={() => setShowPlanner(true)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="sparkles" size={20} color="#FFD700" />
-          </TouchableOpacity>
+          {isFeatureEnabled('night_planner_btn') && (
+            <TouchableOpacity
+              style={styles.plannerButton}
+              onPress={() => setShowPlanner(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="sparkles" size={20} color="#FFD700" />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={styles.viewToggle}
             onPress={() => setShowList(!showList)}
@@ -988,7 +990,7 @@ export default function MapScreen() {
           )}
 
           {/* VibeBriefCard — Daily AI city briefing */}
-          <VibeBriefCard city={selectedCity} isDemoMode={isDemoMode} />
+          {isFeatureEnabled('vibe_brief') && <VibeBriefCard city={selectedCity} isDemoMode={isDemoMode} />}
 
           {/* MarketTeaser — top-3 preview, full leaderboard lives on Trending */}
           {vibeMarketVenues.length > 0 && (

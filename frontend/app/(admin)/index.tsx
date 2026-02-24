@@ -23,6 +23,7 @@ import {
   Dimensions,
   Animated,
   LayoutRectangle,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -131,7 +132,7 @@ interface UserAnalytics {
   };
 }
 
-type TabType = 'treasury' | 'venues' | 'users' | 'logs';
+type TabType = 'treasury' | 'venues' | 'users' | 'logs' | 'control';
 
 // ===== DEMO MODE DATA =====
 // Realistic mock data showcasing platform potential for merchant demos
@@ -306,6 +307,12 @@ export default function AdminAnalytics() {
   const [selectedScouts, setSelectedScouts] = useState<string[]>([]);
   const [isAirdropping, setIsAirdropping] = useState(false);
 
+  // Feature Flags / Control Tower
+  const [localFlags, setLocalFlags] = useState<Record<string, boolean>>({});
+  const [flagsMeta, setFlagsMeta] = useState<Record<string, any>>({});
+  const [flagsSaving, setFlagsSaving] = useState(false);
+  const [flagsLastSaved, setFlagsLastSaved] = useState<string | null>(null);
+
   const headers = getAuthHeaders();
   
   // Get data based on demo mode
@@ -353,11 +360,43 @@ export default function AdminAnalytics() {
         });
       }
       
+      // Feature Flags
+      const flagsRes = await fetch(`${API_URL}/api/feature-flags`);
+      if (flagsRes.ok) {
+        const flagsData = await flagsRes.json();
+        setLocalFlags(flagsData.flags || {});
+        setFlagsMeta(flagsData.meta || {});
+      }
+
     } catch (error) {
       console.error('Failed to fetch admin data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const saveFlags = async (updated: Record<string, boolean>) => {
+    setFlagsSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/feature-flags`, {
+        method: 'PUT',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ flags: updated }),
+      });
+      if (res.ok) {
+        setFlagsLastSaved(new Date().toLocaleTimeString());
+      }
+    } catch (e) {
+      console.error('Failed to save flags:', e);
+    } finally {
+      setFlagsSaving(false);
+    }
+  };
+
+  const toggleFlag = (key: string, value: boolean) => {
+    const updated = { ...localFlags, [key]: value };
+    setLocalFlags(updated);
+    saveFlags({ [key]: value });
   };
 
   useEffect(() => {
@@ -649,23 +688,24 @@ export default function AdminAnalytics() {
 
         {/* Tab Navigation - Royal Blue Style */}
         <View style={styles.tabNav}>
-          {(['treasury', 'venues', 'users', 'logs'] as TabType[]).map((tab) => (
+          {(['treasury', 'venues', 'users', 'logs', 'control'] as TabType[]).map((tab) => (
             <TouchableOpacity
               key={tab}
               style={[styles.tab, activeTab === tab && styles.tabActive]}
               onPress={() => setActiveTab(tab)}
             >
-              <Ionicons 
+              <Ionicons
                 name={
-                  tab === 'treasury' ? 'wallet' : 
-                  tab === 'venues' ? 'business' : 
-                  tab === 'users' ? 'people' : 'list'
-                } 
-                size={16} 
-                color={activeTab === tab ? adminColors.primary : adminColors.textMuted} 
+                  tab === 'treasury' ? 'wallet' :
+                  tab === 'venues' ? 'business' :
+                  tab === 'users' ? 'people' :
+                  tab === 'control' ? 'toggle' : 'list'
+                }
+                size={16}
+                color={activeTab === tab ? (tab === 'control' ? '#00E5FF' : adminColors.primary) : adminColors.textMuted}
               />
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive, activeTab === tab && tab === 'control' && { color: '#00E5FF' }]}>
+                {tab === 'control' ? 'Control' : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -996,6 +1036,141 @@ export default function AdminAnalytics() {
                   <Text style={styles.networkLabel}>Data Freshness</Text>
                   <Text style={styles.networkValue}>{displayTreasury?.data_freshness_percent || 0}%</Text>
                 </View>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* ====== CONTROL TOWER TAB ====== */}
+        {activeTab === 'control' && (
+          <View style={styles.section}>
+            {/* Header card */}
+            <View style={[styles.card, { borderColor: 'rgba(0,229,255,0.25)', borderWidth: 1 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <Ionicons name="toggle" size={22} color="#00E5FF" />
+                <Text style={[styles.cardTitle, { color: '#00E5FF' }]}>Feature Control Tower</Text>
+              </View>
+              <Text style={[styles.cardSubtitle, { color: adminColors.textSecondary }]}>
+                Toggle features on/off without a deployment. Changes take effect immediately across all users.
+              </Text>
+              {flagsLastSaved && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                  <Ionicons name="checkmark-circle" size={13} color={adminColors.success} />
+                  <Text style={{ color: adminColors.success, fontSize: 11 }}>Saved at {flagsLastSaved}</Text>
+                  {flagsSaving && <ActivityIndicator size="small" color={adminColors.success} style={{ marginLeft: 6 }} />}
+                </View>
+              )}
+              {flagsSaving && !flagsLastSaved && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                  <ActivityIndicator size="small" color={adminColors.accent} />
+                  <Text style={{ color: adminColors.textMuted, fontSize: 11 }}>Saving...</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Group flags by category */}
+            {['AI Features', 'Core Features', 'Engagement'].map((category) => {
+              const categoryFlags = Object.entries(flagsMeta).filter(([, meta]: [string, any]) => meta.category === category);
+              if (categoryFlags.length === 0) return null;
+              return (
+                <View key={category} style={[styles.card, { gap: 0 }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                    <Ionicons
+                      name={category === 'AI Features' ? 'sparkles' : category === 'Core Features' ? 'layers' : 'people-circle'}
+                      size={16}
+                      color={category === 'AI Features' ? '#FF3366' : category === 'Core Features' ? adminColors.primary : adminColors.gold}
+                    />
+                    <Text style={[styles.cardTitle, { fontSize: 13 }]}>{category}</Text>
+                    {category === 'AI Features' && (
+                      <View style={{ backgroundColor: 'rgba(255,51,102,0.15)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, marginLeft: 'auto' }}>
+                        <Text style={{ color: '#FF3366', fontSize: 9, fontWeight: '800', letterSpacing: 0.5 }}>NEEDS API KEY</Text>
+                      </View>
+                    )}
+                  </View>
+                  {categoryFlags.map(([key, meta]: [string, any], idx) => {
+                    const isOn = localFlags[key] !== false;
+                    const isLast = idx === categoryFlags.length - 1;
+                    return (
+                      <View
+                        key={key}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          paddingVertical: 12,
+                          borderTopWidth: idx === 0 ? 0 : 1,
+                          borderTopColor: 'rgba(255,255,255,0.05)',
+                          gap: 12,
+                        }}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Text style={{ color: isOn ? adminColors.text : adminColors.textMuted, fontSize: 14, fontWeight: '600' }}>
+                              {meta.label}
+                            </Text>
+                            {!isOn && (
+                              <View style={{ backgroundColor: 'rgba(239,68,68,0.15)', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 1 }}>
+                                <Text style={{ color: adminColors.error, fontSize: 9, fontWeight: '700' }}>OFF</Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text style={{ color: adminColors.textMuted, fontSize: 11, marginTop: 2, lineHeight: 16 }}>{meta.desc}</Text>
+                        </View>
+                        <Switch
+                          value={isOn}
+                          onValueChange={(val) => toggleFlag(key, val)}
+                          trackColor={{ false: 'rgba(255,255,255,0.08)', true: category === 'AI Features' ? 'rgba(255,51,102,0.4)' : 'rgba(65,105,225,0.4)' }}
+                          thumbColor={isOn ? (category === 'AI Features' ? '#FF3366' : adminColors.primary) : adminColors.textMuted}
+                          ios_backgroundColor="rgba(255,255,255,0.08)"
+                        />
+                      </View>
+                    );
+                  })}
+                </View>
+              );
+            })}
+
+            {/* Quick actions */}
+            <View style={[styles.card, { gap: 10 }]}>
+              <Text style={styles.cardTitle}>Quick Actions</Text>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: 'rgba(34,197,94,0.1)', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(34,197,94,0.2)' }}
+                  onPress={() => {
+                    const all = Object.fromEntries(Object.keys(flagsMeta).map(k => [k, true]));
+                    setLocalFlags(all);
+                    saveFlags(all);
+                  }}
+                >
+                  <Ionicons name="checkmark-done" size={18} color={adminColors.success} />
+                  <Text style={{ color: adminColors.success, fontSize: 11, fontWeight: '700', marginTop: 4 }}>Enable All</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)' }}
+                  onPress={() => {
+                    Alert.alert('Disable All Features?', 'This will hide all features from users immediately.', [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Disable All', style: 'destructive', onPress: () => {
+                        const allOff = Object.fromEntries(Object.keys(flagsMeta).map(k => [k, false]));
+                        setLocalFlags(allOff);
+                        saveFlags(allOff);
+                      }},
+                    ]);
+                  }}
+                >
+                  <Ionicons name="close-circle" size={18} color={adminColors.error} />
+                  <Text style={{ color: adminColors.error, fontSize: 11, fontWeight: '700', marginTop: 4 }}>Disable All</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: 'rgba(0,229,255,0.08)', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(0,229,255,0.15)' }}
+                  onPress={() => {
+                    const aiOnly = Object.fromEntries(Object.entries(flagsMeta).map(([k, m]: [string, any]) => [k, !m.ai]));
+                    setLocalFlags(prev => ({ ...prev, ...aiOnly }));
+                    saveFlags(aiOnly);
+                  }}
+                >
+                  <Ionicons name="sparkles" size={18} color="#00E5FF" />
+                  <Text style={{ color: '#00E5FF', fontSize: 11, fontWeight: '700', marginTop: 4 }}>AI Off Only</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>

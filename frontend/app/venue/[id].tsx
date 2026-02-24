@@ -79,6 +79,7 @@ export default function VenueDetailScreen() {
     cooldownSkip,
     dropQuickPulse,
     demoPulsedVenues,
+    isFeatureEnabled,
   } = useVibeStore();
   const [venue, setVenue] = useState<any>(null);
   const [ratingStatus, setRatingStatus] = useState<any>(null);
@@ -628,10 +629,10 @@ export default function VenueDetailScreen() {
         </View>
 
         {/* ====== AI TAKE (Roast & Toast) ====== */}
-        {id && venue && <VenueRoastCard venueId={id} venueName={venue.name} isDemoMode={isDemoMode} />}
+        {id && venue && isFeatureEnabled('roast_toast') && <VenueRoastCard venueId={id} venueName={venue.name} isDemoMode={isDemoMode} />}
 
         {/* ====== VIBE ORACLE ====== */}
-        {id && <VibeOracle venueId={id} venueName={venue?.name} />}
+        {id && isFeatureEnabled('vibe_oracle') && <VibeOracle venueId={id} venueName={venue?.name} />}
 
         {/* ====== VIBE TIMELINE ====== */}
         {venueTimeline.length > 0 && (
@@ -663,7 +664,7 @@ export default function VenueDetailScreen() {
         )}
 
         {/* ====== TOP SCOUTS ====== */}
-        {id && <TopScoutsCard venueId={id} />}
+        {id && isFeatureEnabled('top_scouts') && <TopScoutsCard venueId={id} />}
 
         {/* Location Card */}
         <View style={styles.locationCard}>
