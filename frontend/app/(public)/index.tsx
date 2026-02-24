@@ -35,6 +35,7 @@ import { DEMO_ACTIVITY_FEED, DEMO_TONIGHT, DEMO_PROMPTS, DEMO_VIBE_MATCH } from 
 import VibeMatch from '../../src/components/VibeMatch';
 import NightPlannerModal from '../../src/components/NightPlannerModal';
 import CityPulseHero from '../../src/components/CityPulseHero';
+import ErrorBoundary from '../../src/components/ErrorBoundary';
 import { getNightPhase } from '../../src/store/vibeStore';
 import { calculateDistance } from '../../src/utils/geo';
 
@@ -153,7 +154,6 @@ export default function MapScreen() {
       setUserLocation({ lat: 6.4281, lng: 3.4219 });
     }
 
-    connectSocket();
     await fetchVenues();
   };
 
@@ -524,13 +524,15 @@ export default function MapScreen() {
         </ScrollView>
       ) : (
         <View style={styles.mapContainer}>
-          <MockMap
-            venues={venues}
-            userLocation={userLocation}
-            onVenuePress={(venue) => router.push(`/venue/${venue.id}`)}
-            highlightedVenueId={highlightedVenueId}
-            ratedGlowVenueId={ratedGlowVenueId}
-          />
+          <ErrorBoundary label="Map">
+            <MockMap
+              venues={venues}
+              userLocation={userLocation}
+              onVenuePress={(venue) => router.push(`/venue/${venue.id}`)}
+              highlightedVenueId={highlightedVenueId}
+              ratedGlowVenueId={ratedGlowVenueId}
+            />
+          </ErrorBoundary>
           {/* Legend overlay on map */}
           <View style={styles.legendOverlay}>
             {[
@@ -587,11 +589,13 @@ export default function MapScreen() {
       <FloorSwitcher currentFloor="public" />
 
       {/* Ask Vibe Modal */}
-      <NightPlannerModal
-        visible={showPlanner}
-        onClose={() => setShowPlanner(false)}
-        city={selectedCity}
-      />
+      <ErrorBoundary label="Night Planner">
+        <NightPlannerModal
+          visible={showPlanner}
+          onClose={() => setShowPlanner(false)}
+          city={selectedCity}
+        />
+      </ErrorBoundary>
     </SafeAreaView>
   );
 }

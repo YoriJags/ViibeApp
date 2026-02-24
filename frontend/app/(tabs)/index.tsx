@@ -18,6 +18,7 @@ import * as Location from 'expo-location';
 import { useVibeStore } from '../../src/store/vibeStore';
 import { MockMap } from '../../src/components/MockMap';
 import { VenueCard } from '../../src/components/VenueCard';
+import ErrorBoundary from '../../src/components/ErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -206,11 +207,13 @@ export default function MapScreen() {
         </ScrollView>
       ) : (
         <View style={styles.mapContainer}>
-          <MockMap
-            venues={venues}
-            userLocation={userLocation}
-            onVenuePress={(venue) => router.push(`/venue/${venue.id}`)}
-          />
+          <ErrorBoundary label="Map">
+            <MockMap
+              venues={venues}
+              userLocation={userLocation}
+              onVenuePress={(venue) => router.push(`/venue/${venue.id}`)}
+            />
+          </ErrorBoundary>
         </View>
       )}
 

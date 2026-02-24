@@ -22,6 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useVibeStore } from '../../src/store/vibeStore';
 import { calculateDistance } from '../../src/utils/geo';
 import RateVibeModal from '../../src/components/RateVibeModal';
+import ErrorBoundary from '../../src/components/ErrorBoundary';
 import VibeSuccessAnimation from '../../src/components/VibeSuccessAnimation';
 import StoryBubble from '../../src/components/StoryBubble';
 import StoryViewer from '../../src/components/StoryViewer';
@@ -849,25 +850,27 @@ export default function VenueDetailScreen() {
       </View>
 
       {/* Rate Vibe Modal */}
-      <RateVibeModal
-        visible={showRateModal}
-        onClose={() => setShowRateModal(false)}
-        onSubmit={handleSubmitRating}
-        venueName={venue?.name || ''}
-        venueType={venue?.venue_type as any}
-        isGpsVerified={isWithinGeofence || isDemoMode}
-        geofenceRadius={venue?.geofence_radius_m || 100}
-        cooldownRemainingSeconds={ratingStatus?.cooldown_remaining_seconds || 0}
-        userClout={user?.clout_points || 0}
-        onSkipCooldown={async (method) => {
-          const result = await cooldownSkip(venue?.id || '', method);
-          if (result.success) {
-            const updatedStatus = await getUserRatingStatus(venue?.id || '');
-            setRatingStatus(updatedStatus);
-          }
-          return result;
-        }}
-      />
+      <ErrorBoundary label="Rating">
+        <RateVibeModal
+          visible={showRateModal}
+          onClose={() => setShowRateModal(false)}
+          onSubmit={handleSubmitRating}
+          venueName={venue?.name || ''}
+          venueType={venue?.venue_type as any}
+          isGpsVerified={isWithinGeofence || isDemoMode}
+          geofenceRadius={venue?.geofence_radius_m || 100}
+          cooldownRemainingSeconds={ratingStatus?.cooldown_remaining_seconds || 0}
+          userClout={user?.clout_points || 0}
+          onSkipCooldown={async (method) => {
+            const result = await cooldownSkip(venue?.id || '', method);
+            if (result.success) {
+              const updatedStatus = await getUserRatingStatus(venue?.id || '');
+              setRatingStatus(updatedStatus);
+            }
+            return result;
+          }}
+        />
+      </ErrorBoundary>
 
       {/* Story Viewer Modal */}
       {venueStories.length > 0 && (

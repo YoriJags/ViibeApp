@@ -1,7 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import PulseStrip, { PulseData } from './PulseStrip';
+import PulseBottomSheet from './PulseBottomSheet';
 
 interface Venue {
   id: string;
@@ -17,6 +19,7 @@ interface Venue {
   active_pulse_tier?: 'spark' | 'flare' | 'supernova' | null;
   entry_fee?: string;
   music_genre?: string;
+  pulse?: PulseData;
 }
 
 interface VenueCardProps {
@@ -39,6 +42,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
   const isPulseBoosted = venue.active_pulse_tier !== null && venue.active_pulse_tier !== undefined;
   const borderGlow = useRef(new Animated.Value(0)).current;
   const scoreScale = useRef(new Animated.Value(1)).current;
+  const [showPulseSheet, setShowPulseSheet] = useState(false);
 
   // Animated border glow — faster pulse for higher scores
   useEffect(() => {
@@ -209,6 +213,14 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
             )}
           </View>
 
+          {/* Source of Pulse strip */}
+          {venue.pulse && (
+            <PulseStrip
+              pulse={venue.pulse}
+              onPress={() => setShowPulseSheet(true)}
+            />
+          )}
+
           {/* Pulse Drop Badge */}
           {isPulseBoosted && showBoostBadge && (
             <View style={styles.pulseBadgeContainer}>
@@ -255,6 +267,20 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
           <Ionicons name="chevron-forward" size={20} color={isPulseBoosted ? '#FFD700' : '#444'} />
         )}
       </TouchableOpacity>
+
+      {/* Source of Pulse bottom sheet */}
+      {venue.pulse && (
+        <PulseBottomSheet
+          visible={showPulseSheet}
+          onClose={() => setShowPulseSheet(false)}
+          venueName={venue.name}
+          pulse={venue.pulse}
+          onRatePress={() => {
+            setShowPulseSheet(false);
+            onRatePress?.();
+          }}
+        />
+      )}
     </Animated.View>
   );
 };

@@ -53,6 +53,7 @@ export const DEMO_VENUES = [
     geofence_radius_m: 150,
     vibe_certified: true,
     certified_since: '2025-11-01T00:00:00Z',
+    pulse: { count: 82, total: 100, tier: 'max_pulse' as const, next_tier_at: 100 },
   },
   {
     id: 'demo_venue_hardrock',
@@ -75,6 +76,7 @@ export const DEMO_VENUES = [
     glow_boost: 0,
     geofence_radius_m: 100,
     vibe_certified: false,
+    pulse: { count: 43, total: 100, tier: 'charged' as const, next_tier_at: 60 },
   },
   {
     id: 'demo_venue_escape',
@@ -99,6 +101,7 @@ export const DEMO_VENUES = [
     geofence_radius_m: 100,
     vibe_certified: true,
     certified_since: '2025-10-15T00:00:00Z',
+    pulse: { count: 100, total: 100, tier: 'source' as const, next_tier_at: 0 },
   },
   {
     id: 'demo_venue_shiro',

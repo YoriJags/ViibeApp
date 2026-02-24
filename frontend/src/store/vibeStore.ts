@@ -602,22 +602,25 @@ export const useVibeStore = create<VibeStore>()(
 
       // Logout
       logout: async () => {
-        try {
-          const { sessionToken } = get();
-          const headers: Record<string, string> = {};
-          if (sessionToken) {
-            headers['Authorization'] = `Bearer ${sessionToken}`;
-          }
-          await fetch(`${API_URL}/api/auth/logout`, {
+        // Capture token before clearing state
+        const { sessionToken } = get();
+        // Clear state immediately — UI updates at once, no waiting for network
+        set({
+          user: null,
+          sessionToken: null,
+          isAuthenticated: false,
+          isDemoMode: false,
+          activeCheckin: null,
+          crew: null,
+          lobby: [],
+        });
+        // Fire-and-forget server-side session deletion
+        if (sessionToken) {
+          fetch(`${API_URL}/api/auth/logout`, {
             method: 'POST',
-            headers,
-            credentials: 'include',
-          });
-        } catch (error) {
-          console.error('Error logging out:', error);
+            headers: { Authorization: `Bearer ${sessionToken}` },
+          }).catch(() => {});
         }
-        // Clear persisted state including session token
-        set({ user: null, sessionToken: null, isAuthenticated: false });
       },
 
       // Fetch cities
