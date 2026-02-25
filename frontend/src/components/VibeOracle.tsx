@@ -157,8 +157,9 @@ export default function VibeOracle({ venueId }: VibeOracleProps) {
 
   if (!prediction) return null;
 
-  const tColor = TRAJECTORY_COLOR[prediction.current_trajectory] ?? '#FF9800';
-  const tIcon = TRAJECTORY_ICON[prediction.current_trajectory] ?? 'trending-up';
+  const trajectory = prediction.current_trajectory ?? 'rising';
+  const tColor = TRAJECTORY_COLOR[trajectory] ?? '#FF9800';
+  const tIcon = TRAJECTORY_ICON[trajectory] ?? 'trending-up';
 
   return (
     <>
@@ -197,7 +198,7 @@ export default function VibeOracle({ venueId }: VibeOracleProps) {
             <View style={[styles.trajectoryChip, { backgroundColor: tColor + '20', borderColor: tColor + '50' }]}>
               <Ionicons name={tIcon as any} size={11} color={tColor} />
               <Text style={[styles.trajectoryText, { color: tColor }]}>
-                {prediction.current_trajectory.charAt(0).toUpperCase() + prediction.current_trajectory.slice(1)}
+                {trajectory.charAt(0).toUpperCase() + trajectory.slice(1)}
               </Text>
             </View>
           </View>
