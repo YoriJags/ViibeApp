@@ -33,6 +33,7 @@ import CartelPulse from '../../src/components/CartelPulse';
 import { DEMO_ACTIVITY_FEED, DEMO_TONIGHT, DEMO_VIBE_MATCH, DEMO_VENUES } from '../../src/data/demoData';
 import VibeMatch from '../../src/components/VibeMatch';
 import NightPlannerModal from '../../src/components/NightPlannerModal';
+import VibePlusModal from '../../src/components/VibePlusModal';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
 import TheWave from '../../src/components/TheWave';
 import VibeMarket, { VibeMarketVenue } from '../../src/components/VibeMarket';
@@ -537,7 +538,7 @@ const CITIES = [
 export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string }>();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
@@ -549,6 +550,7 @@ export default function MapScreen() {
   const [selectedCategory, setSelectedCategory] = useState<VenueCategory>('all');
   const [showTransition, setShowTransition] = useState(false);
   const [showPlanner, setShowPlanner] = useState(false);
+  const [showVibePlus, setShowVibePlus] = useState(false);
   const [weekendDismissed, setWeekendDismissed] = useState(false);
 
   // Friday 6PM onwards or all of Saturday
@@ -852,7 +854,7 @@ export default function MapScreen() {
           {isFeatureEnabled('night_planner_btn') && (
             <TouchableOpacity
               style={styles.plannerButton}
-              onPress={() => setShowPlanner(true)}
+              onPress={() => isVibePlus() ? setShowPlanner(true) : setShowVibePlus(true)}
               activeOpacity={0.7}
             >
               <Ionicons name="sparkles" size={20} color="#FFD700" />
@@ -1154,6 +1156,12 @@ export default function MapScreen() {
           city={selectedCity}
         />
       </ErrorBoundary>
+
+      <VibePlusModal
+        visible={showVibePlus}
+        onClose={() => setShowVibePlus(false)}
+        onSuccess={() => { setShowVibePlus(false); setShowPlanner(true); }}
+      />
     </SafeAreaView>
   );
 }

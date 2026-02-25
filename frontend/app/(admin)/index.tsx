@@ -313,6 +313,13 @@ export default function AdminAnalytics() {
   const [flagsSaving, setFlagsSaving] = useState(false);
   const [flagsLastSaved, setFlagsLastSaved] = useState<string | null>(null);
 
+  // Platform Settings (prices)
+  const [localSettings, setLocalSettings] = useState<Record<string, number>>({});
+  const [settingsMeta, setSettingsMeta] = useState<Record<string, any>>({});
+  const [settingsInput, setSettingsInput] = useState<Record<string, string>>({}); // naira display strings
+  const [settingsSaving, setSettingsSaving] = useState<Record<string, boolean>>({});
+  const [settingsLastSaved, setSettingsLastSaved] = useState<string | null>(null);
+
   const headers = getAuthHeaders();
   
   // Get data based on demo mode
@@ -368,6 +375,21 @@ export default function AdminAnalytics() {
         setFlagsMeta(flagsData.meta || {});
       }
 
+      // Platform Settings
+      const settingsRes = await fetch(`${API_URL}/api/platform-settings`);
+      if (settingsRes.ok) {
+        const sd = await settingsRes.json();
+        const settings = sd.settings || {};
+        setLocalSettings(settings);
+        setSettingsMeta(sd.meta || {});
+        // Populate display strings (kobo → naira)
+        const display: Record<string, string> = {};
+        for (const k of Object.keys(settings)) {
+          display[k] = String(Math.round(settings[k] / 100));
+        }
+        setSettingsInput(display);
+      }
+
     } catch (error) {
       console.error('Failed to fetch admin data:', error);
     } finally {
@@ -390,6 +412,34 @@ export default function AdminAnalytics() {
       console.error('Failed to save flags:', e);
     } finally {
       setFlagsSaving(false);
+    }
+  };
+
+  const saveSetting = async (key: string) => {
+    const nairaStr = settingsInput[key] || '0';
+    const naira = parseFloat(nairaStr.replace(/,/g, ''));
+    if (isNaN(naira) || naira <= 0) {
+      Alert.alert('Invalid value', 'Please enter a positive number');
+      return;
+    }
+    const kobo = Math.round(naira * 100);
+    setSettingsSaving(prev => ({ ...prev, [key]: true }));
+    try {
+      const res = await fetch(`${API_URL}/api/admin/platform-settings`, {
+        method: 'PUT',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: { [key]: kobo } }),
+      });
+      if (res.ok) {
+        setLocalSettings(prev => ({ ...prev, [key]: kobo }));
+        setSettingsLastSaved(new Date().toLocaleTimeString());
+      } else {
+        Alert.alert('Error', 'Failed to save setting');
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Network error');
+    } finally {
+      setSettingsSaving(prev => ({ ...prev, [key]: false }));
     }
   };
 
@@ -1128,6 +1178,98 @@ export default function AdminAnalytics() {
                 </View>
               );
             })}
+
+            {/* Platform Settings */}
+            <View style={[styles.card, { borderColor: 'rgba(255,215,0,0.2)', borderWidth: 1, gap: 0 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <Ionicons name="settings" size={20} color={adminColors.gold} />
+                <Text style={[styles.cardTitle, { color: adminColors.gold }]}>Platform Settings</Text>
+              </View>
+              <Text style={[styles.cardSubtitle, { color: adminColors.textSecondary, marginBottom: 12 }]}>
+                Edit pricing without a deployment. All values in ₦ (Naira).
+              </Text>
+              {settingsLastSaved && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                  <Ionicons name="checkmark-circle" size={13} color={adminColors.success} />
+                  <Text style={{ color: adminColors.success, fontSize: 11 }}>Saved at {settingsLastSaved}</Text>
+                </View>
+              )}
+
+              {['Subscriptions', 'Pulse Drops', 'Spotlight'].map((category) => {
+                const catKeys = Object.entries(settingsMeta).filter(([, m]: [string, any]) => m.category === category);
+                if (catKeys.length === 0) return null;
+                return (
+                  <View key={category} style={{ marginTop: 14 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                      <Ionicons
+                        name={category === 'Subscriptions' ? 'star' : category === 'Pulse Drops' ? 'flash' : 'pin'}
+                        size={12}
+                        color={category === 'Subscriptions' ? adminColors.gold : category === 'Pulse Drops' ? '#FF3366' : adminColors.accent}
+                      />
+                      <Text style={{ color: adminColors.textSecondary, fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' }}>{category}</Text>
+                    </View>
+                    {catKeys.map(([key, meta]: [string, any], idx) => (
+                      <View
+                        key={key}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 10,
+                          paddingVertical: 10,
+                          borderTopWidth: idx === 0 ? 0 : 1,
+                          borderTopColor: 'rgba(255,255,255,0.04)',
+                        }}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: adminColors.text, fontSize: 13, fontWeight: '600' }}>{meta.label}</Text>
+                          <Text style={{ color: adminColors.textMuted, fontSize: 10, marginTop: 2 }}>{meta.desc}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={{ color: adminColors.textMuted, fontSize: 13 }}>₦</Text>
+                          <TextInput
+                            style={{
+                              backgroundColor: adminColors.inputBackground,
+                              borderRadius: 8,
+                              paddingHorizontal: 10,
+                              paddingVertical: 6,
+                              color: adminColors.text,
+                              fontSize: 14,
+                              fontWeight: '700',
+                              width: 90,
+                              borderWidth: 1,
+                              borderColor: 'rgba(255,215,0,0.15)',
+                              textAlign: 'right',
+                            }}
+                            value={settingsInput[key] ?? ''}
+                            onChangeText={(v) => setSettingsInput(prev => ({ ...prev, [key]: v }))}
+                            keyboardType="numeric"
+                            selectTextOnFocus
+                          />
+                          <TouchableOpacity
+                            style={{
+                              backgroundColor: settingsSaving[key] ? 'rgba(255,215,0,0.05)' : 'rgba(255,215,0,0.12)',
+                              borderRadius: 8,
+                              paddingHorizontal: 12,
+                              paddingVertical: 7,
+                              borderWidth: 1,
+                              borderColor: 'rgba(255,215,0,0.25)',
+                            }}
+                            onPress={() => saveSetting(key)}
+                            disabled={settingsSaving[key]}
+                          >
+                            {settingsSaving[key] ? (
+                              <ActivityIndicator size="small" color={adminColors.gold} />
+                            ) : (
+                              <Text style={{ color: adminColors.gold, fontSize: 12, fontWeight: '700' }}>Save</Text>
+                            )}
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                );
+              })}
+            </View>
 
             {/* Quick actions */}
             <View style={[styles.card, { gap: 10 }]}>

@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
+import VibePlusModal from '../../src/components/VibePlusModal';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -25,12 +26,13 @@ const DEMO_DEBRIEF = {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode, isFeatureEnabled } = useVibeStore();
+  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode, isFeatureEnabled, isVibePlus } = useVibeStore();
   const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [debrief, setDebrief] = useState<{ debrief: string; night_title?: string; stats?: any } | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
+  const [showVibePlus, setShowVibePlus] = useState(false);
 
   useEffect(() => {
     // Check for existing session
@@ -343,6 +345,19 @@ export default function ProfileScreen() {
           <Text style={styles.userStatus}>
             {user?.scout_status?.toUpperCase()} SCOUT
           </Text>
+
+          {/* Vibe+ badge or upgrade CTA */}
+          {isVibePlus() ? (
+            <View style={styles.vibePlusBadge}>
+              <Ionicons name="star" size={11} color="#FFD700" />
+              <Text style={styles.vibePlusBadgeText}>VIBE+</Text>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.vibePlusUpgrade} onPress={() => setShowVibePlus(true)} activeOpacity={0.8}>
+              <Ionicons name="lock-open-outline" size={13} color="#FFD700" />
+              <Text style={styles.vibePlusUpgradeText}>✦ Upgrade to Vibe+ — ₦1,500/mo</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Stats Grid */}
@@ -372,21 +387,40 @@ export default function ProfileScreen() {
         </View>
 
         {/* Night Debrief */}
-        {debrief && isFeatureEnabled('night_debrief') && (
-          <View style={{ marginHorizontal: 16, marginBottom: 16, backgroundColor: 'rgba(255,153,51,0.08)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,153,51,0.2)', gap: 8 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ color: '#FF9933', fontSize: 10, fontWeight: '800', letterSpacing: 1 }}>NIGHT DEBRIEF</Text>
-              {debrief.night_title && <Text style={{ color: '#FF9933', fontSize: 11, fontWeight: '700' }}>{debrief.night_title}</Text>}
-            </View>
-            <Text style={{ color: '#EEE', fontSize: 14, lineHeight: 21, fontStyle: 'italic' }}>{debrief.debrief}</Text>
-            {debrief.stats && (
-              <View style={{ flexDirection: 'row', gap: 16, marginTop: 4 }}>
-                <Text style={{ color: '#888', fontSize: 11 }}>{debrief.stats.spots_visited} spots</Text>
-                <Text style={{ color: '#888', fontSize: 11 }}>{debrief.stats.ratings_dropped} ratings</Text>
-                {debrief.stats.avg_vibe_given > 0 && <Text style={{ color: '#888', fontSize: 11 }}>avg {debrief.stats.avg_vibe_given}/100</Text>}
+        {isFeatureEnabled('night_debrief') && (
+          isVibePlus() ? (
+            debrief && (
+              <View style={{ marginHorizontal: 16, marginBottom: 16, backgroundColor: 'rgba(255,153,51,0.08)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,153,51,0.2)', gap: 8 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: '#FF9933', fontSize: 10, fontWeight: '800', letterSpacing: 1 }}>NIGHT DEBRIEF</Text>
+                  {debrief.night_title && <Text style={{ color: '#FF9933', fontSize: 11, fontWeight: '700' }}>{debrief.night_title}</Text>}
+                </View>
+                <Text style={{ color: '#EEE', fontSize: 14, lineHeight: 21, fontStyle: 'italic' }}>{debrief.debrief}</Text>
+                {debrief.stats && (
+                  <View style={{ flexDirection: 'row', gap: 16, marginTop: 4 }}>
+                    <Text style={{ color: '#888', fontSize: 11 }}>{debrief.stats.spots_visited} spots</Text>
+                    <Text style={{ color: '#888', fontSize: 11 }}>{debrief.stats.ratings_dropped} ratings</Text>
+                    {debrief.stats.avg_vibe_given > 0 && <Text style={{ color: '#888', fontSize: 11 }}>avg {debrief.stats.avg_vibe_given}/100</Text>}
+                  </View>
+                )}
               </View>
-            )}
-          </View>
+            )
+          ) : (
+            <TouchableOpacity
+              style={styles.debriefLocked}
+              onPress={() => setShowVibePlus(true)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.debriefLockedLeft}>
+                <Text style={styles.debriefLockedLabel}>NIGHT DEBRIEF</Text>
+                <Text style={styles.debriefLockedDesc}>Your AI-powered recap of the night — what you hit, how the vibes held up, and your scout read.</Text>
+              </View>
+              <View style={styles.debriefLockedRight}>
+                <Ionicons name="lock-closed" size={18} color="#FFD700" />
+                <Text style={styles.debriefLockedChip}>VIBE+</Text>
+              </View>
+            </TouchableOpacity>
+          )
         )}
 
         {/* Dashboard Access Section - Only show if user has permissions */}
@@ -502,6 +536,12 @@ export default function ProfileScreen() {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      <VibePlusModal
+        visible={showVibePlus}
+        onClose={() => setShowVibePlus(false)}
+        onSuccess={() => setShowVibePlus(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -952,5 +992,78 @@ const styles = StyleSheet.create({
   dashboardDesc: {
     fontSize: 13,
     color: '#888',
+  },
+  vibePlusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255,215,0,0.12)',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.3)',
+  },
+  vibePlusBadgeText: {
+    color: '#FFD700',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+  },
+  vibePlusUpgrade: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,215,0,0.07)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.22)',
+  },
+  vibePlusUpgradeText: {
+    color: '#FFD700',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  debriefLocked: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: 'rgba(255,153,51,0.05)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,153,51,0.15)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  debriefLockedLeft: {
+    flex: 1,
+    gap: 6,
+  },
+  debriefLockedLabel: {
+    color: '#FF9933',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  debriefLockedDesc: {
+    color: 'rgba(238,238,238,0.45)',
+    fontSize: 12,
+    lineHeight: 18,
+    fontStyle: 'italic',
+  },
+  debriefLockedRight: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  debriefLockedChip: {
+    color: '#FFD700',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.8,
   },
 });
