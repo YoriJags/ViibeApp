@@ -114,6 +114,10 @@ async def ensure_indexes():
     await db.pending_topups.create_index("reference", unique=True)
     await db.pending_topups.create_index("idempotency_key", sparse=True)
 
+    # pending_subscriptions: Vibe+ payment reference + user lookup
+    await db.pending_subscriptions.create_index("reference", unique=True)
+    await db.pending_subscriptions.create_index("user_id")
+
     # lobby: user shortlist lookups
     await db.lobby.create_index([("user_id", 1), ("venue_id", 1)], unique=True)
     await db.lobby.create_index([("user_id", 1), ("added_at", -1)])

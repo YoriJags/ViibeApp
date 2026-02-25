@@ -3,9 +3,10 @@
  * Shows on the profile screen between the Stats Grid and Streak Card.
  */
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useVibeStore } from '../store/vibeStore';
+import VibePlusModal from './VibePlusModal';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -49,8 +50,9 @@ interface VibeDNACardProps {
 }
 
 export default function VibeDNACard({ userId }: VibeDNACardProps) {
-  const { vibeDNA, fetchVibeDNA, isDemoMode } = useVibeStore();
+  const { vibeDNA, fetchVibeDNA, isDemoMode, isVibePlus } = useVibeStore();
   const [narrative, setNarrative] = useState<{ narrative: string; vibe_archetype: string } | null>(null);
+  const [showVibePlus, setShowVibePlus] = useState(false);
 
   useEffect(() => {
     if (userId) fetchVibeDNA(userId);
@@ -92,6 +94,7 @@ export default function VibeDNACard({ userId }: VibeDNACardProps) {
   const nightIcon = NIGHT_STYLE_ICONS[vibeDNA.night_style] ?? '🌙';
 
   return (
+    <>
     <View style={styles.card}>
       {/* Header */}
       <View style={styles.header}>
@@ -135,8 +138,8 @@ export default function VibeDNACard({ userId }: VibeDNACardProps) {
         })}
       </View>
 
-      {/* AI Narrative */}
-      {narrative && (
+      {/* AI Narrative — Vibe+ gated */}
+      {narrative && isVibePlus() && (
         <View style={styles.narrativeBox}>
           {narrative.vibe_archetype && (
             <Text style={styles.archetypeLabel}>{narrative.vibe_archetype}</Text>
@@ -145,9 +148,27 @@ export default function VibeDNACard({ userId }: VibeDNACardProps) {
         </View>
       )}
 
+      {!isVibePlus() && (
+        <TouchableOpacity style={styles.narrativeLocked} onPress={() => setShowVibePlus(true)} activeOpacity={0.8}>
+          <Ionicons name="lock-closed" size={13} color="#FFD700" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.narrativeLockedTitle}>AI Narrative · Vibe+</Text>
+            <Text style={styles.narrativeLockedDesc}>Your full AI personality story unlocks at ₦1,500/mo</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={14} color="rgba(255,215,0,0.5)" />
+        </TouchableOpacity>
+      )}
+
       {/* Footer */}
       <Text style={styles.footer}>Based on {vibeDNA.total_ratings_analyzed} ratings</Text>
     </View>
+
+    <VibePlusModal
+      visible={showVibePlus}
+      onClose={() => setShowVibePlus(false)}
+      onSuccess={() => setShowVibePlus(false)}
+    />
+    </>
   );
 }
 
@@ -329,5 +350,25 @@ const styles = StyleSheet.create({
     color: '#555',
     fontSize: 11,
     textAlign: 'right',
+  },
+  narrativeLocked: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(255,215,0,0.06)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.2)',
+    padding: 12,
+  },
+  narrativeLockedTitle: {
+    color: '#FFD700',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  narrativeLockedDesc: {
+    color: 'rgba(255,255,255,0.45)',
+    fontSize: 11,
+    marginTop: 2,
   },
 });

@@ -43,6 +43,10 @@ class User(BaseModel):
     is_super_admin: bool = False
     is_merchant: bool = False
     merchant_venue_id: Optional[str] = None
+    # ===== Vibe+ Subscription =====
+    is_vibe_plus: bool = False
+    vibe_plus_expires_at: Optional[datetime] = None
+    vibe_plus_reference: Optional[str] = None   # most recent successful payment ref
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

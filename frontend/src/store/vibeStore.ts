@@ -63,6 +63,9 @@ interface User {
   is_merchant: boolean;
   merchant_venue_id?: string;
   wallet_balance?: number;
+  // Vibe+ subscription
+  is_vibe_plus: boolean;
+  vibe_plus_expires_at?: string;  // ISO date string
 }
 
 interface PendingRating {
@@ -372,6 +375,11 @@ interface VibeStoreActions {
   // Feature Flags
   fetchFeatureFlags: () => Promise<void>;
   isFeatureEnabled: (flag: string) => boolean;
+  // Vibe+ Subscription
+  isVibePlus: () => boolean;
+  initializeVibePlus: () => Promise<{ authorization_url: string; reference: string }>;
+  verifyVibePlus: (reference: string) => Promise<{ success: boolean; is_vibe_plus: boolean; expires_at?: string }>;
+  refreshSubscriptionStatus: () => Promise<void>;
 }
 
 type VibeStore = PersistedState & TransientState & VibeStoreActions;
@@ -1158,6 +1166,67 @@ export const useVibeStore = create<VibeStore>()(
         // If flags not loaded yet, default to enabled
         if (Object.keys(featureFlags).length === 0) return true;
         return featureFlags[flag] !== false;
+      },
+
+      // ===== Vibe+ Subscription =====
+      isVibePlus: () => {
+        const { user, isDemoMode } = get();
+        // Demo mode: always show premium features
+        if (isDemoMode) return true;
+        if (!user || !user.is_vibe_plus) return false;
+        // Client-side expiry check (backend is authoritative, this prevents stale UI)
+        if (user.vibe_plus_expires_at) {
+          const expires = new Date(user.vibe_plus_expires_at);
+          if (expires < new Date()) return false;
+        }
+        return true;
+      },
+
+      initializeVibePlus: async () => {
+        const { getAuthHeaders, user } = get();
+        const res = await fetch(`${API_URL}/api/subscription/initialize`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ email: user?.email }),
+        });
+        if (!res.ok) throw new Error('Failed to initialize subscription');
+        return await res.json();
+      },
+
+      verifyVibePlus: async (reference: string) => {
+        const { getAuthHeaders } = get();
+        const res = await fetch(`${API_URL}/api/subscription/verify/${reference}`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || 'Verification failed');
+        }
+        const data = await res.json();
+        if (data.success && data.is_vibe_plus) {
+          const { user } = get();
+          if (user) {
+            set({ user: { ...user, is_vibe_plus: true, vibe_plus_expires_at: data.expires_at } });
+          }
+        }
+        return data;
+      },
+
+      refreshSubscriptionStatus: async () => {
+        const { getAuthHeaders, user } = get();
+        if (!user) return;
+        try {
+          const res = await fetch(`${API_URL}/api/subscription/status`, {
+            headers: getAuthHeaders(),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            set({ user: { ...user, is_vibe_plus: data.is_vibe_plus, vibe_plus_expires_at: data.expires_at } });
+          }
+        } catch {
+          // Non-critical — fail silently
+        }
       },
 
       // ===== Streak Actions =====

@@ -7,9 +7,11 @@ Premium tier: Claude AI-powered prediction with narrative insight.
 import os
 import re
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.config import db, logger
+from app.services.auth import get_current_user
+from app.routes.subscriptions import _check_vibe_plus
 
 router = APIRouter(tags=["oracle"])
 
@@ -99,11 +101,21 @@ async def get_oracle(venue_id: str):
 
 
 @router.get("/venues/{venue_id}/oracle/premium")
-async def get_oracle_premium(venue_id: str):
+async def get_oracle_premium(venue_id: str, request: Request):
     """
     Premium Claude AI oracle — richer prediction with narrative insight.
-    Falls back to heuristic if ANTHROPIC_API_KEY is not set.
+    Requires: active Vibe+ subscription (401 if not logged in, 402 if not premium).
     """
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Login required for Oracle Premium")
+    if not await _check_vibe_plus(user):
+        raise HTTPException(
+            status_code=402,
+            detail="Vibe+ subscription required",
+            headers={"X-Vibe-Plus-Required": "true"},
+        )
+
     venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")

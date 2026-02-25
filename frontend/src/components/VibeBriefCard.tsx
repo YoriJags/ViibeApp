@@ -5,6 +5,9 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { useVibeStore } from '../store/vibeStore';
+import VibePlusModal from './VibePlusModal';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -30,9 +33,11 @@ const DEMO_BRIEF: VibeBrief = {
 };
 
 export default function VibeBriefCard({ city, isDemoMode }: Props) {
+  const { isVibePlus } = useVibeStore();
   const [brief, setBrief] = useState<VibeBrief | null>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
+  const [showVibePlus, setShowVibePlus] = useState(false);
 
   useEffect(() => {
     if (isDemoMode) {
@@ -58,6 +63,7 @@ export default function VibeBriefCard({ city, isDemoMode }: Props) {
   if (!brief) return null;
 
   return (
+    <>
     <TouchableOpacity activeOpacity={0.85} onPress={() => setExpanded(e => !e)}>
       <LinearGradient
         colors={['rgba(255,51,102,0.12)', 'rgba(153,51,255,0.08)']}
@@ -77,7 +83,7 @@ export default function VibeBriefCard({ city, isDemoMode }: Props) {
 
         <Text style={styles.headline}>{brief.headline}</Text>
 
-        {expanded && (
+        {expanded && isVibePlus() && (
           <>
             <Text style={styles.briefing}>{brief.briefing}</Text>
             <View style={styles.topPickRow}>
@@ -86,8 +92,33 @@ export default function VibeBriefCard({ city, isDemoMode }: Props) {
             </View>
           </>
         )}
+
+        {expanded && !isVibePlus() && (
+          <TouchableOpacity
+            style={styles.lockedSection}
+            onPress={() => setShowVibePlus(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="lock-closed" size={13} color="#FFD700" />
+            <Text style={styles.lockedText}>Vibe+ · Full brief for ₦1,500/mo</Text>
+          </TouchableOpacity>
+        )}
+
+        {!isVibePlus() && !expanded && (
+          <View style={styles.lockChip}>
+            <Ionicons name="lock-closed" size={10} color="#FFD700" />
+            <Text style={styles.lockChipText}>VIBE+</Text>
+          </View>
+        )}
       </LinearGradient>
     </TouchableOpacity>
+
+    <VibePlusModal
+      visible={showVibePlus}
+      onClose={() => setShowVibePlus(false)}
+      onSuccess={() => setShowVibePlus(false)}
+    />
+    </>
   );
 }
 
@@ -138,4 +169,30 @@ const styles = StyleSheet.create({
   },
   topPickLabel: { color: '#666', fontSize: 11 },
   topPickName: { color: '#FF3366', fontSize: 12, fontWeight: '700' },
+  lockedSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,215,0,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.2)',
+    marginTop: 4,
+  },
+  lockedText: { color: '#FFD700', fontSize: 12, fontWeight: '600' },
+  lockChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,215,0,0.08)',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.2)',
+  },
+  lockChipText: { color: '#FFD700', fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
 });

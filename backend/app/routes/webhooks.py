@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from app.config import logger
 from app.services.payments import verify_paystack_signature
 from app.routes.merchant import verify_wallet_topup
+from app.routes.subscriptions import verify_subscription_by_reference
 
 router = APIRouter(tags=["webhooks"])
 
@@ -30,5 +31,8 @@ async def paystack_webhook(request: Request):
 
         if reference.startswith("VIBE-TOPUP-"):
             await verify_wallet_topup(reference)
+
+        elif reference.startswith("VIBE-PLUS-"):
+            await verify_subscription_by_reference(reference)
 
     return JSONResponse(status_code=200, content={"status": "ok"})

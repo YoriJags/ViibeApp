@@ -7,8 +7,10 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useVibeStore } from '../store/vibeStore';
 import { DEMO_ORACLE_PREDICTIONS, DEMO_ORACLE_DEFAULT } from '../data/demoData';
+import VibePlusModal from './VibePlusModal';
 
 interface OracleSignal { icon: string; label: string; type: string; }
 
@@ -60,13 +62,15 @@ function confidenceColor(c: number) {
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
-export default function VibeOracle({ venueId, venueName }: VibeOracleProps) {
-  const { isDemoMode } = useVibeStore();
+export default function VibeOracle({ venueId }: VibeOracleProps) {
+  const { isDemoMode, isVibePlus, user } = useVibeStore();
+  const router = useRouter();
   const [prediction, setPrediction] = useState<OraclePrediction | null>(null);
   const [loading, setLoading] = useState(true);
   const [premiumUnlocked, setPremiumUnlocked] = useState(false);
   const [premiumLoading, setPremiumLoading] = useState(false);
   const [premiumData, setPremiumData] = useState<PremiumData | null>(null);
+  const [showVibePlus, setShowVibePlus] = useState(false);
 
   useEffect(() => {
     if (!venueId) return;
@@ -95,6 +99,18 @@ export default function VibeOracle({ venueId, venueName }: VibeOracleProps) {
       // Non-critical — fail silently
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePremiumTap = () => {
+    if (!user) {
+      router.push('/(public)/profile' as any);
+      return;
+    }
+    if (isVibePlus()) {
+      fetchPremium();
+    } else {
+      setShowVibePlus(true);
     }
   };
 
@@ -145,6 +161,7 @@ export default function VibeOracle({ venueId, venueName }: VibeOracleProps) {
   const tIcon = TRAJECTORY_ICON[prediction.current_trajectory] ?? 'trending-up';
 
   return (
+    <>
     <View style={styles.wrapper}>
       <LinearGradient
         colors={['#1A0A1A', '#0D0A1F']}
@@ -224,7 +241,7 @@ export default function VibeOracle({ venueId, venueName }: VibeOracleProps) {
           ) : (
             <TouchableOpacity
               style={styles.premiumCTA}
-              onPress={fetchPremium}
+              onPress={handlePremiumTap}
               activeOpacity={0.8}
             >
               {premiumLoading ? (
@@ -243,6 +260,16 @@ export default function VibeOracle({ venueId, venueName }: VibeOracleProps) {
         </View>
       </LinearGradient>
     </View>
+
+    <VibePlusModal
+      visible={showVibePlus}
+      onClose={() => setShowVibePlus(false)}
+      onSuccess={() => {
+        setShowVibePlus(false);
+        fetchPremium();
+      }}
+    />
+    </>
   );
 }
 
