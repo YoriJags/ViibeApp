@@ -449,7 +449,7 @@ export default function TrendingScreen() {
                   ) : (
                     <View style={[styles.avatarPlaceholder, { backgroundColor: scout.ring_color + '40' }]}>
                       <Text style={styles.avatarInitial}>
-                        {scout.username.charAt(0).toUpperCase()}
+                        {(scout.username ?? '?').charAt(0).toUpperCase()}
                       </Text>
                     </View>
                   )}
@@ -612,7 +612,7 @@ export default function TrendingScreen() {
                         <View style={styles.activityTime}>
                           <Text style={styles.activityTimeText}>{activity.time_ago}</Text>
                           <Text style={styles.activityEnergy}>
-                            {activity.energy.charAt(0).toUpperCase() + activity.energy.slice(1)}
+                            {(activity.energy ?? 'unknown').charAt(0).toUpperCase() + (activity.energy ?? 'unknown').slice(1)}
                           </Text>
                         </View>
                       </View>

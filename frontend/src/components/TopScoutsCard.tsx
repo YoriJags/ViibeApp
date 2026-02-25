@@ -102,7 +102,7 @@ export default function TopScoutsCard({ venueId }: TopScoutsCardProps) {
                 style={styles.avatar}
               >
                 <Text style={styles.avatarInitial}>
-                  {scout.username.charAt(0).toUpperCase()}
+                  {(scout.username ?? '?').charAt(0).toUpperCase()}
                 </Text>
               </LinearGradient>
 

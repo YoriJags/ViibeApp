@@ -17,7 +17,7 @@ interface StoryBubbleProps {
 }
 
 export default function StoryBubble({ username, onPress, isViewed = false, size = 56 }: StoryBubbleProps) {
-  const initial = username.charAt(0).toUpperCase();
+  const initial = (username ?? '?').charAt(0).toUpperCase();
   const gradientColors = isViewed
     ? ['#444', '#333'] as const
     : ['#FF3366', '#FF6B35', '#FFD700'] as const;

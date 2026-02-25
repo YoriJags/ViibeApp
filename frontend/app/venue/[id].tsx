@@ -599,14 +599,14 @@ export default function VenueDetailScreen() {
                 <View style={styles.vibeStat}>
                   <Ionicons name="people" size={16} color="#888" />
                   <Text style={styles.vibeStatText}>
-                    {venue.capacity_level.charAt(0).toUpperCase() + venue.capacity_level.slice(1)}
+                    {(venue.capacity_level ?? 'unknown').charAt(0).toUpperCase() + (venue.capacity_level ?? 'unknown').slice(1)}
                   </Text>
                 </View>
                 <View style={styles.vibeStatDivider} />
                 <View style={styles.vibeStat}>
                   <Ionicons name="enter" size={16} color="#888" />
                   <Text style={styles.vibeStatText}>
-                    Gate: {venue.gate_level.charAt(0).toUpperCase() + venue.gate_level.slice(1)}
+                    Gate: {(venue.gate_level ?? 'unknown').charAt(0).toUpperCase() + (venue.gate_level ?? 'unknown').slice(1)}
                   </Text>
                 </View>
                 <View style={styles.vibeStatDivider} />

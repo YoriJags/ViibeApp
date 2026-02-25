@@ -125,7 +125,7 @@ export default function StoryViewer({ visible, stories, initialIndex = 0, onClos
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{story.username.charAt(0).toUpperCase()}</Text>
+                <Text style={styles.avatarText}>{(story.username ?? '?').charAt(0).toUpperCase()}</Text>
               </View>
               <View>
                 <Text style={styles.username}>{story.username}</Text>

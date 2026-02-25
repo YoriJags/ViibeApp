@@ -81,7 +81,7 @@ function PlannerVenueCard({ venue, onPress }: { venue: PlannerVenueResult; onPre
         </View>
         {venue.music_genre ? (
           <View style={styles.metaChip}>
-            <Text style={styles.metaText}>🎵 {venue.music_genre.split('/')[0].trim()}</Text>
+            <Text style={styles.metaText}>🎵 {(venue.music_genre ?? '').split('/')[0].trim()}</Text>
           </View>
         ) : null}
       </View>
