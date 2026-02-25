@@ -571,3 +571,133 @@ async def get_pulse_status(venue_id: str, request: Request):
         "recent_drops": recent_drops,
         "available_tiers": (await get_economy_config())["pulse_drops"],
     }
+
+
+# ===== Venue Spotlight (Vibe Exchange pin) =====
+
+SPOTLIGHT_TIERS = {
+    "spotlight_24h": {"price": 5000,  "duration_hours": 24, "name": "24-Hour Spotlight"},
+    "spotlight_48h": {"price": 10000, "duration_hours": 48, "name": "48-Hour Spotlight"},
+}
+
+
+@router.post("/merchant/venue/{venue_id}/spotlight")
+async def activate_spotlight(venue_id: str, request: Request):
+    """Pin venue at top of Vibe Exchange leaderboard for 24h or 48h."""
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if user.get("merchant_venue_id") != venue_id:
+        raise HTTPException(status_code=403, detail="You can only spotlight your own venue")
+
+    body = await request.json()
+    tier = body.get("tier", "spotlight_24h")
+    tier_config = SPOTLIGHT_TIERS.get(tier)
+    if not tier_config:
+        raise HTTPException(status_code=400, detail=f"Invalid tier. Choose: {list(SPOTLIGHT_TIERS.keys())}")
+
+    price = tier_config["price"]
+    venue = await db.venues.find_one({"id": venue_id})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    now = datetime.now(timezone.utc)
+
+    # Check if already spotlighted
+    existing = venue.get("spotlight_until")
+    if existing:
+        exp = existing.replace(tzinfo=timezone.utc) if isinstance(existing, datetime) and existing.tzinfo is None else existing
+        if isinstance(existing, str):
+            exp = datetime.fromisoformat(existing.replace("Z", "+00:00"))
+        if exp > now:
+            remaining = exp - now
+            raise HTTPException(
+                status_code=409,
+                detail=f"Already spotlighted for {int(remaining.total_seconds()//3600)}h {int((remaining.total_seconds()%3600)//60)}m more",
+            )
+
+    # Atomic debit — only succeeds if balance is sufficient
+    debit = await db.merchant_wallets.update_one(
+        {"venue_id": venue_id, "balance": {"$gte": price}},
+        {"$inc": {"balance": -price, "total_spent": price}},
+    )
+    if debit.modified_count == 0:
+        raise HTTPException(status_code=402, detail=f"Insufficient balance. Need ₦{price:,}")
+
+    wallet = await db.merchant_wallets.find_one({"venue_id": venue_id})
+    new_balance = wallet.get("balance", 0)
+    expires_at = now + timedelta(hours=tier_config["duration_hours"])
+
+    # Set spotlight on venue
+    await db.venues.update_one(
+        {"id": venue_id},
+        {"$set": {"is_featured": True, "spotlight_until": expires_at}},
+    )
+
+    # Wallet transaction
+    tx = WalletTransaction(
+        wallet_id=wallet["id"],
+        type="spotlight_spend",
+        amount=price,
+        balance_before=new_balance + price,
+        balance_after=new_balance,
+        description=f"Vibe Exchange Spotlight: {tier_config['name']}",
+    )
+    await db.wallet_transactions.insert_one(tx.dict())
+
+    # Platform revenue
+    await db.platform_revenue.insert_one({
+        "id": str(uuid.uuid4()),
+        "type": "spotlight",
+        "amount": price,
+        "venue_id": venue_id,
+        "city": venue.get("city"),
+        "tier": tier,
+        "timestamp": now,
+    })
+
+    return {
+        "success": True,
+        "message": f"Your venue is now spotlighted for {tier_config['duration_hours']} hours!",
+        "spotlight_until": expires_at.isoformat(),
+        "wallet_balance": new_balance,
+    }
+
+
+@router.get("/merchant/venue/{venue_id}/spotlight-status")
+async def get_spotlight_status(venue_id: str, request: Request):
+    """Get current spotlight status and available tiers."""
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if user.get("merchant_venue_id") != venue_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    now = datetime.now(timezone.utc)
+    is_active = False
+    time_remaining = None
+
+    raw = venue.get("spotlight_until")
+    if raw:
+        exp = raw.replace(tzinfo=timezone.utc) if isinstance(raw, datetime) and raw.tzinfo is None else raw
+        if isinstance(raw, str):
+            exp = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if exp > now:
+            is_active = True
+            rem = exp - now
+            time_remaining = {
+                "hours": rem.seconds // 3600,
+                "minutes": (rem.seconds % 3600) // 60,
+                "total_seconds": int(rem.total_seconds()),
+            }
+
+    return {
+        "is_active": is_active,
+        "spotlight_until": venue.get("spotlight_until"),
+        "time_remaining": time_remaining,
+        "available_tiers": SPOTLIGHT_TIERS,
+    }

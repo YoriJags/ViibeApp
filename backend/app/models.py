@@ -80,6 +80,7 @@ class Venue(BaseModel):
     admin_override_score: Optional[float] = None
     is_suppressed: bool = False
     geofence_radius_m: float = 100
+    spotlight_until: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -134,7 +135,7 @@ class MerchantWallet(BaseModel):
 class WalletTransaction(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     wallet_id: str
-    type: Literal["deposit", "pulse_drop_spend", "refund"]
+    type: Literal["deposit", "pulse_drop_spend", "spotlight_spend", "refund"]
     amount: float
     balance_before: float
     balance_after: float

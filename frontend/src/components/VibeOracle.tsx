@@ -4,7 +4,7 @@
  * Appears above VibeForecast on the venue detail page.
  */
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useVibeStore } from '../store/vibeStore';
@@ -23,6 +23,14 @@ interface OraclePrediction {
   signals: OracleSignal[];
   generated_at: string;
   insufficient_data?: boolean;
+}
+
+interface PremiumData {
+  crowd_forecast: string;
+  insider_tip: string;
+  peak_window: string;
+  headline: string;
+  powered_by: string;
 }
 
 interface VibeOracleProps {
@@ -56,6 +64,9 @@ export default function VibeOracle({ venueId, venueName }: VibeOracleProps) {
   const { isDemoMode } = useVibeStore();
   const [prediction, setPrediction] = useState<OraclePrediction | null>(null);
   const [loading, setLoading] = useState(true);
+  const [premiumUnlocked, setPremiumUnlocked] = useState(false);
+  const [premiumLoading, setPremiumLoading] = useState(false);
+  const [premiumData, setPremiumData] = useState<PremiumData | null>(null);
 
   useEffect(() => {
     if (!venueId) return;
@@ -84,6 +95,39 @@ export default function VibeOracle({ venueId, venueName }: VibeOracleProps) {
       // Non-critical — fail silently
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPremium = async () => {
+    if (premiumLoading || premiumUnlocked) return;
+    setPremiumLoading(true);
+
+    if (isDemoMode) {
+      setTimeout(() => {
+        setPremiumData({
+          crowd_forecast: 'Packed by midnight, full by 1am',
+          insider_tip: 'Arrive before 12:30am to skip the VIP queue — energy hits different before it gets rowdy',
+          peak_window: '12:30am – 2:30am',
+          headline: prediction?.headline ?? '',
+          powered_by: 'claude',
+        });
+        setPremiumUnlocked(true);
+        setPremiumLoading(false);
+      }, 1200);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/venues/${venueId}/oracle/premium`);
+      if (res.ok) {
+        const data = await res.json();
+        setPremiumData(data);
+        setPremiumUnlocked(true);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setPremiumLoading(false);
     }
   };
 
@@ -150,6 +194,52 @@ export default function VibeOracle({ venueId, venueName }: VibeOracleProps) {
               </View>
             ))}
           </View>
+
+          {/* Premium section */}
+          {premiumUnlocked && premiumData ? (
+            <View style={styles.premiumUnlocked}>
+              <View style={styles.premiumDivider} />
+
+              {/* Crowd forecast */}
+              <View style={styles.premiumRow}>
+                <Ionicons name="people" size={13} color="#FFD700" />
+                <Text style={styles.premiumRowLabel}>Crowd forecast</Text>
+                <Text style={styles.premiumRowValue}>{premiumData.crowd_forecast}</Text>
+              </View>
+
+              {/* Insider tip */}
+              <View style={styles.insiderTipBox}>
+                <View style={styles.insiderTipHeader}>
+                  <Ionicons name="bulb" size={12} color="#9933FF" />
+                  <Text style={styles.insiderTipTitle}>Insider tip</Text>
+                </View>
+                <Text style={styles.insiderTipText}>{premiumData.insider_tip}</Text>
+              </View>
+
+              {/* Claude badge */}
+              <View style={styles.claudeBadge}>
+                <Text style={styles.claudeBadgeText}>✦ Powered by Claude AI</Text>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.premiumCTA}
+              onPress={fetchPremium}
+              activeOpacity={0.8}
+            >
+              {premiumLoading ? (
+                <ActivityIndicator size="small" color="#FFD700" />
+              ) : (
+                <>
+                  <Ionicons name="lock-closed" size={13} color="#FFD700" />
+                  <Text style={styles.premiumCTAText}>Unlock AI Prediction</Text>
+                  <View style={styles.premiumCTABadge}>
+                    <Text style={styles.premiumCTABadgeText}>✦ Claude</Text>
+                  </View>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       </LinearGradient>
     </View>
@@ -278,5 +368,101 @@ const styles = StyleSheet.create({
     color: '#CCC',
     fontSize: 11,
     fontWeight: '500',
+  },
+
+  // Premium CTA (locked state)
+  premiumCTA: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    marginTop: 4,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.25)',
+    backgroundColor: 'rgba(255,215,0,0.06)',
+  },
+  premiumCTAText: {
+    color: '#FFD700',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  premiumCTABadge: {
+    backgroundColor: 'rgba(153,51,255,0.25)',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  premiumCTABadgeText: {
+    color: '#CC88FF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
+  // Premium unlocked state
+  premiumUnlocked: {
+    gap: 8,
+  },
+  premiumDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,215,0,0.15)',
+    marginVertical: 2,
+  },
+  premiumRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  premiumRowLabel: {
+    color: '#FFD700',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  premiumRowValue: {
+    color: '#CCC',
+    fontSize: 12,
+    flex: 1,
+    textAlign: 'right',
+  },
+  insiderTipBox: {
+    backgroundColor: 'rgba(153,51,255,0.1)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(153,51,255,0.25)',
+    padding: 10,
+    gap: 5,
+  },
+  insiderTipHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  insiderTipTitle: {
+    color: '#CC88FF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  insiderTipText: {
+    color: '#DDD',
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  claudeBadge: {
+    alignSelf: 'flex-end',
+    backgroundColor: 'rgba(153,51,255,0.18)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(153,51,255,0.3)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  claudeBadgeText: {
+    color: '#BB88FF',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

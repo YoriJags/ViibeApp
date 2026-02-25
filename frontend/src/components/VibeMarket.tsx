@@ -7,7 +7,7 @@
  *
  * Layout:
  *   [VIBE INDEX header — composite city score + market status]
- *   [Column labels: VENUE · CHART · PRICE · CHG · VOL]
+ *   [Column labels: VENUE · TREND · SCORE · CHG · PULSE]
  *   [Venue rows x N — animated on mount, flash on change]
  */
 import React, { useRef, useEffect, useState } from 'react';
@@ -33,6 +33,7 @@ export interface VibeMarketVenue {
   energy_level?: string;
   pulse_count: number;
   pulse_tier: string;
+  is_featured?: boolean;
 }
 
 interface Props {
@@ -84,11 +85,22 @@ function changeColor(change: number): string {
   return '#888';
 }
 
-function marketStatus(score: number): { label: string; color: string; icon: string } {
-  if (score >= 80) return { label: 'BULL RUN',  color: '#00E676', icon: 'trending-up'   };
-  if (score >= 60) return { label: 'ACTIVE',    color: '#69F0AE', icon: 'trending-up'   };
-  if (score >= 30) return { label: 'BUILDING',  color: '#FFD700', icon: 'remove'        };
-  return              { label: 'QUIET',     color: '#888',    icon: 'trending-down' };
+/** Maps city/venue vibe label → display config. Consistent with app-wide vibe vocabulary. */
+function vibeStatus(label: string): { label: string; color: string; icon: string } {
+  switch (label.toUpperCase()) {
+    case 'ELECTRIC':  return { label: 'ELECTRIC',   color: '#FF3366', icon: 'trending-up'   };
+    case 'POPPING':   return { label: 'POPPING',     color: '#FF9933', icon: 'trending-up'   };
+    case 'BUZZING':   return { label: 'BUZZING',     color: '#9933FF', icon: 'remove'        };
+    default:          return { label: 'SLOW BURN',   color: '#3399FF', icon: 'trending-down' };
+  }
+}
+
+/** Energy label for a single venue based on its score */
+function venueVibeLabel(score: number): { label: string; color: string } {
+  if (score >= 80) return { label: 'ELECTRIC',  color: '#FF3366' };
+  if (score >= 60) return { label: 'POPPING',   color: '#FF9933' };
+  if (score >= 40) return { label: 'BUZZING',   color: '#9933FF' };
+  return                   { label: 'SLOW BURN', color: '#3399FF' };
 }
 
 function liveTime(): string {
@@ -211,6 +223,7 @@ function VenueRow({
   const points     = generateSparkline(venue.id, venue.vibe_velocity, venue.current_vibe_score);
   const sColor     = scoreColor(venue.current_vibe_score);
   const cColor     = changeColor(change);
+  const vl         = venueVibeLabel(venue.current_vibe_score);
 
   // Slide-in on mount
   useEffect(() => {
@@ -281,10 +294,20 @@ function VenueRow({
           #{rank + 1}
         </Text>
 
-        {/* Venue name + area */}
+        {/* Venue name + area + energy label */}
         <View style={rowStyles.nameCol}>
-          <Text style={rowStyles.name} numberOfLines={1}>{venue.name}</Text>
-          <Text style={rowStyles.area}>{venue.area}</Text>
+          <View style={rowStyles.nameRow}>
+            <Text style={rowStyles.name} numberOfLines={1}>{venue.name}</Text>
+            {venue.is_featured && (
+              <View style={rowStyles.featuredBadge}>
+                <Text style={rowStyles.featuredText}>★ TOP</Text>
+              </View>
+            )}
+          </View>
+          <Text style={rowStyles.area} numberOfLines={1}>
+            {venue.area}
+            <Text style={{ color: vl.color, fontWeight: '800', fontSize: 8 }}> · {vl.label}</Text>
+          </Text>
         </View>
 
         {/* Sparkline */}
@@ -342,11 +365,31 @@ const rowStyles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
   name: {
     fontSize: 13,
     fontWeight: '700',
     color: '#EEE',
     marginBottom: 1,
+    flexShrink: 1,
+  },
+  featuredBadge: {
+    backgroundColor: '#FFD70020',
+    borderWidth: 1,
+    borderColor: '#FFD70055',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  featuredText: {
+    fontSize: 7,
+    fontWeight: '900',
+    color: '#FFD700',
+    letterSpacing: 0.5,
   },
   area: {
     fontSize: 10,
@@ -407,7 +450,12 @@ function IndexHeader({
 }) {
   const [time, setTime] = useState(liveTime());
   const dotAnim = useRef(new Animated.Value(1)).current;
-  const status  = marketStatus(cityScore);
+  const status  = vibeStatus(cityLabel);
+
+  const nowDay  = new Date().getDay();
+  const nowHour = new Date().getHours();
+  const isWeekend = (nowDay === 5 && nowHour >= 18) || nowDay === 6;
+  const weekendTag = nowDay === 5 ? 'FRI NIGHT' : 'WEEKEND';
 
   // Tick clock every 30s
   useEffect(() => {
@@ -444,6 +492,11 @@ function IndexHeader({
           <Animated.View style={[idxStyles.liveDot, { opacity: dotAnim }]} />
           <Text style={idxStyles.liveText}>LIVE</Text>
           <Text style={idxStyles.exchange}>VIBE EXCHANGE</Text>
+          {isWeekend && (
+            <View style={idxStyles.weekendChip}>
+              <Text style={idxStyles.weekendChipText}>🎉 {weekendTag}</Text>
+            </View>
+          )}
         </View>
         <View style={idxStyles.timeRow}>
           <Text style={idxStyles.timeText}>{time}</Text>
@@ -474,10 +527,10 @@ function IndexHeader({
       {/* Column headers */}
       <View style={idxStyles.colHeaders}>
         <Text style={[idxStyles.colLabel, { flex: 1, marginLeft: 32 }]}>VENUE</Text>
-        <Text style={[idxStyles.colLabel, { width: 40 }]}>CHART</Text>
-        <Text style={[idxStyles.colLabel, { width: 36, textAlign: 'right' }]}>PRICE</Text>
+        <Text style={[idxStyles.colLabel, { width: 40 }]}>TREND</Text>
+        <Text style={[idxStyles.colLabel, { width: 36, textAlign: 'right' }]}>SCORE</Text>
         <Text style={[idxStyles.colLabel, { width: 42, textAlign: 'center' }]}>CHG</Text>
-        <Text style={[idxStyles.colLabel, { width: 30, textAlign: 'center' }]}>VOL</Text>
+        <Text style={[idxStyles.colLabel, { width: 30, textAlign: 'center' }]}>PULSE</Text>
       </View>
     </LinearGradient>
   );
@@ -523,6 +576,21 @@ const idxStyles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     marginLeft: 4,
+  },
+  weekendChip: {
+    backgroundColor: '#FF336618',
+    borderWidth: 1,
+    borderColor: '#FF336640',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  weekendChipText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#FF9933',
+    letterSpacing: 0.5,
   },
   timeRow: {
     flexDirection: 'row',
@@ -607,6 +675,13 @@ const idxStyles = StyleSheet.create({
 export default function VibeMarket({ venues, cityName, cityScore = 50, cityLabel = 'BUZZING', onVenuePress }: Props) {
   if (!venues || venues.length === 0) return null;
 
+  // Featured venues float to top, then sorted by score
+  const sorted = [...venues].sort((a, b) => {
+    if (a.is_featured && !b.is_featured) return -1;
+    if (!a.is_featured && b.is_featured) return 1;
+    return b.current_vibe_score - a.current_vibe_score;
+  });
+
   return (
     <View style={styles.container}>
       {/* Market index header */}
@@ -619,7 +694,7 @@ export default function VibeMarket({ venues, cityName, cityScore = 50, cityLabel
 
       {/* Venue rows */}
       <View style={styles.board}>
-        {venues.map((venue, i) => (
+        {sorted.map((venue, i) => (
           <VenueRow
             key={venue.id}
             venue={venue}

@@ -13,7 +13,6 @@ import {
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
-  Animated,
   Image,
   Modal,
   Dimensions,
@@ -28,6 +27,7 @@ import { useVibeStore } from '../../src/store/vibeStore';
 import EnergyMeter, { getEnergyLevel } from '../../src/components/EnergyMeter';
 import VibeIntelCarousel from '../../src/components/VibeIntelCarousel';
 import EnergyLevelGuide from '../../src/components/EnergyLevelGuide';
+import VibeMarket, { VibeMarketVenue } from '../../src/components/VibeMarket';
 import { neonGlow } from '../../src/theme';
 
 const { colors } = publicTheme;
@@ -109,7 +109,7 @@ interface ScoutsData {
 
 export default function TrendingScreen() {
   const router = useRouter();
-  const { selectedCity, setSelectedCity, isDemoMode } = useVibeStore();
+  const { selectedCity, setSelectedCity, isDemoMode, cityPulse } = useVibeStore();
   const [trendingData, setTrendingData] = useState<TrendingData | null>(null);
   const [scoutsData, setScoutsData] = useState<ScoutsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -118,60 +118,6 @@ export default function TrendingScreen() {
   const [scoutProfile, setScoutProfile] = useState<ScoutProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
   
-  // Animation values
-  const pulseAnim = useState(new Animated.Value(1))[0];
-  const glowAnim = useState(new Animated.Value(0))[0];
-  const crownBounce = useState(new Animated.Value(0))[0];
-
-  // Premium pulse animation for #1 venue
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.15,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // Glow effect
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, {
-          toValue: 1,
-          duration: 1500,
-          useNativeDriver: false,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0,
-          duration: 1500,
-          useNativeDriver: false,
-        }),
-      ])
-    ).start();
-
-    // Crown bounce
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(crownBounce, {
-          toValue: -5,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.timing(crownBounce, {
-          toValue: 0,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, []);
 
   const fetchData = async () => {
     // Demo mode: use local mock data
@@ -300,10 +246,34 @@ export default function TrendingScreen() {
     return colors.vibe.chill;
   };
 
+  const venues = trendingData?.venues || [];
+  const scouts = scoutsData?.scouts || [];
+
   const isWeekend = useMemo(() => {
     const day = new Date().getDay();
     return day === 5 || day === 6;
   }, []);
+
+  // Map TrendingVenue[] → VibeMarketVenue[] for the leaderboard
+  const vibeMarketVenues = useMemo((): VibeMarketVenue[] => {
+    return venues.map((item) => ({
+      id: item.venue.id,
+      name: item.venue.name,
+      area: item.venue.area,
+      current_vibe_score: item.venue.current_vibe_score ?? item.energy_percent,
+      vibe_velocity:
+        item.trend === 'up'   ? 'heating_up'   :
+        item.trend === 'down' ? 'cooling_down'  :
+        'stable',
+      pulse_count: item.scout_count,
+      pulse_tier:
+        item.energy_percent >= 80 ? 'source'   :
+        item.energy_percent >= 60 ? 'electric' :
+        item.energy_percent >= 40 ? 'charged'  :
+        'stirring',
+      is_featured: !!(item.venue.spotlight_until && new Date(item.venue.spotlight_until) > new Date()),
+    }));
+  }, [venues]);
 
   if (loading) {
     return (
@@ -315,16 +285,6 @@ export default function TrendingScreen() {
       </SafeAreaView>
     );
   }
-
-  const venues = trendingData?.venues || [];
-  const topThree = venues.slice(0, 3);
-  const restOfList = venues.slice(3, 10);
-  const scouts = scoutsData?.scouts || [];
-
-  const glowInterpolate = glowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['rgba(255, 215, 0, 0.3)', 'rgba(255, 215, 0, 0.8)'],
-  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -367,138 +327,18 @@ export default function TrendingScreen() {
         {/* ====== ENERGY LEVEL GUIDE ====== */}
         <EnergyLevelGuide />
 
-        {/* ====== PREMIUM TOP 3 PODIUM ====== */}
-        <View style={styles.podiumSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🏆 Top Spots Tonight</Text>
-            <Text style={styles.sectionSubtitle}>The hottest vibes in the city</Text>
+        {/* ====== VIBE EXCHANGE LEADERBOARD ====== */}
+        {vibeMarketVenues.length > 0 && (
+          <View style={styles.marketSection}>
+            <VibeMarket
+              venues={vibeMarketVenues}
+              cityName={selectedCity.charAt(0).toUpperCase() + selectedCity.slice(1)}
+              cityScore={cityPulse?.pulse_score ?? 50}
+              cityLabel={cityPulse?.pulse_label ?? 'BUZZING'}
+              onVenuePress={(id) => router.push(`/venue/${id}`)}
+            />
           </View>
-          
-          <View style={styles.podiumContainer}>
-            {/* #2 Position (Left - Silver) */}
-            {topThree[1] && (
-              <TouchableOpacity 
-                style={styles.podiumItem}
-                onPress={() => handlePullUp(topThree[1].venue)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.silverBadge}>
-                  <Text style={styles.podiumRank}>2</Text>
-                </View>
-                <View style={[styles.podiumBar, styles.silverBar]}>
-                  <Text style={styles.podiumVenueName} numberOfLines={2}>
-                    {topThree[1].venue.name}
-                  </Text>
-                  <Text style={styles.podiumArea}>{topThree[1].venue.area}</Text>
-                  <View style={styles.podiumScoreContainer}>
-                    <View style={styles.podiumMeterWrap}>
-                      <EnergyMeter percent={topThree[1].energy_percent} size="sm" showLabel={false} />
-                    </View>
-                    <Text style={[styles.podiumScore, { color: '#C0C0C0' }]}>
-                      {topThree[1].energy_percent}%
-                    </Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            )}
-
-            {/* #1 Position (Center - GOLD CHAMPION) */}
-            {topThree[0] && (
-              <TouchableOpacity 
-                style={[styles.podiumItem, styles.goldPodiumItem]}
-                onPress={() => handlePullUp(topThree[0].venue)}
-                activeOpacity={0.8}
-              >
-                {/* Crown Animation */}
-                <Animated.View style={[
-                  styles.crownContainer,
-                  { transform: [{ translateY: crownBounce }] }
-                ]}>
-                  <Text style={styles.crownEmoji}>👑</Text>
-                </Animated.View>
-                
-                {/* HOT Badge with Pulse */}
-                <Animated.View style={[
-                  styles.hotBadge,
-                  { transform: [{ scale: pulseAnim }] }
-                ]}>
-                  <LinearGradient
-                    colors={['#FF3366', '#FF6B35']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.hotBadgeGradient}
-                  >
-                    <Text style={styles.hotBadgeText}>🔥 #1 HOT</Text>
-                  </LinearGradient>
-                </Animated.View>
-
-                <View style={styles.goldBadge}>
-                  <Ionicons name="trophy" size={24} color="#0A0A0F" />
-                </View>
-                
-                {/* Gold Podium with Gradient */}
-                <LinearGradient
-                  colors={['#FFD700', '#FFA500', '#FF8C00']}
-                  style={[styles.podiumBar, styles.goldBar]}
-                >
-                  {/* Sparkle effects */}
-                  <View style={styles.sparkleContainer}>
-                    <Text style={styles.sparkle}>✨</Text>
-                    <Text style={[styles.sparkle, { left: '70%', top: '20%' }]}>✨</Text>
-                    <Text style={[styles.sparkle, { left: '20%', top: '60%' }]}>✨</Text>
-                  </View>
-                  
-                  <Text style={styles.goldVenueName} numberOfLines={2}>
-                    {topThree[0].venue.name}
-                  </Text>
-                  <Text style={styles.goldArea}>{topThree[0].venue.area}</Text>
-                  
-                  <View style={styles.goldScoreContainer}>
-                    <View style={styles.podiumMeterWrap}>
-                      <EnergyMeter percent={topThree[0].energy_percent} size="sm" showLabel={false} />
-                    </View>
-                    <Text style={styles.goldScore}>{topThree[0].energy_percent}%</Text>
-                  </View>
-                  
-                  {/* Velocity Badge */}
-                  <View style={styles.velocityBadge}>
-                    <Ionicons name="flash" size={14} color="#FFD700" />
-                    <Text style={styles.velocityText}>
-                      {topThree[0].check_in_velocity || 0} checks/hr
-                    </Text>
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            )}
-
-            {/* #3 Position (Right - Bronze) */}
-            {topThree[2] && (
-              <TouchableOpacity 
-                style={styles.podiumItem}
-                onPress={() => handlePullUp(topThree[2].venue)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.bronzeBadge}>
-                  <Text style={styles.podiumRank}>3</Text>
-                </View>
-                <View style={[styles.podiumBar, styles.bronzeBar]}>
-                  <Text style={styles.podiumVenueName} numberOfLines={2}>
-                    {topThree[2].venue.name}
-                  </Text>
-                  <Text style={styles.podiumArea}>{topThree[2].venue.area}</Text>
-                  <View style={styles.podiumScoreContainer}>
-                    <View style={styles.podiumMeterWrap}>
-                      <EnergyMeter percent={topThree[2].energy_percent} size="sm" showLabel={false} />
-                    </View>
-                    <Text style={[styles.podiumScore, { color: '#CD7F32' }]}>
-                      {topThree[2].energy_percent}%
-                    </Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
+        )}
 
         {/* ====== SPONSORED SECTION (Pulse Drop Venues) ====== */}
         {trendingData?.sponsored && trendingData.sponsored.length > 0 && (
@@ -570,55 +410,6 @@ export default function TrendingScreen() {
           </View>
         )}
 
-        {/* Rest of Leaderboard (#4 - #10) */}
-        <View style={styles.listSection}>
-          <Text style={styles.sectionTitle}>📊 The Ranks</Text>
-          {restOfList.map((item) => (
-            <TouchableOpacity
-              key={item.venue.id}
-              style={styles.listItem}
-              onPress={() => handlePullUp(item.venue)}
-              activeOpacity={0.8}
-            >
-              {/* Rank + Trend */}
-              <View style={styles.rankContainer}>
-                <Text style={styles.rankNumber}>#{item.rank}</Text>
-                {getTrendIcon(item.trend)}
-              </View>
-
-              {/* Venue Info */}
-              <View style={styles.venueInfo}>
-                <Text style={styles.venueName}>{item.venue.name}</Text>
-                <Text style={styles.venueArea}>{item.venue.area}</Text>
-              </View>
-
-              {/* Energy Meter */}
-              <View style={styles.energyContainer}>
-                <EnergyMeter percent={item.energy_percent} size="sm" />
-              </View>
-
-              {/* Rate Button */}
-              <TouchableOpacity
-                style={styles.rateChip}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  router.push(`/venue/${item.venue.id}?openRateModal=true`);
-                }}
-                activeOpacity={0.7}
-              >
-                <LinearGradient
-                  colors={['#FF3366', '#FF6B35']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.rateChipGradient}
-                >
-                  <Ionicons name="star" size={12} color="#FFF" />
-                  <Text style={styles.rateChipText}>RATE</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </TouchableOpacity>
-          ))}
-        </View>
 
         {/* ====== TOP SCOUTS SECTION ====== */}
         <View style={styles.scoutsSection}>
@@ -949,7 +740,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 
-  // ====== PREMIUM PODIUM STYLES ======
+  // ====== VIBE MARKET SECTION ======
+  marketSection: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+
+  // ====== PREMIUM PODIUM STYLES (kept for reference, no longer rendered) ======
   podiumSection: {
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.xl,
