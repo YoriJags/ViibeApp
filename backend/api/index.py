@@ -1132,49 +1132,196 @@ QUICK_PULSE_COOLDOWN = 15 * 60  # 15 minutes
 
 
 def _get_pulse_label(score: float) -> str:
-    if score >= 86: return "ELECTRIC"
-    if score >= 71: return "POPPING"
-    if score >= 51: return "BUZZING"
-    if score >= 26: return "QUIET"
-    return "DEAD"
+    if score >= 85: return "PEAK"
+    if score >= 65: return "LIT"
+    if score >= 45: return "WARMING"
+    if score >= 20: return "CHILL"
+    return "QUIET"
 
 
 def handle_get_city_pulse(city: str):
-    """GET /api/city-pulse/{city} — live aggregate city heartbeat."""
+    """GET /api/city-pulse/{city} — live city heartbeat with 30-min sparkline."""
     db = get_db()
     if not db:
         return 503, {"detail": "Database unavailable"}
 
-    now      = datetime.now(timezone.utc)
-    hour_ago = now - timedelta(hours=1)
-    midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    now             = datetime.now(timezone.utc)
+    hour_ago        = now - timedelta(hours=1)
+    thirty_min_ago  = now - timedelta(minutes=30)
+    midnight        = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # Venues with recent activity (ratings or reactions in last hour)
+    rating_venue_ids  = db.ratings.distinct("venue_id",  {"timestamp": {"$gte": hour_ago}})
+    reaction_venue_ids= db.reactions.distinct("venue_id", {"timestamp": {"$gte": hour_ago}})
+    active_ids = list(set(rating_venue_ids) | set(reaction_venue_ids))
 
     active_venues = list(db.venues.find(
-        {"city": city, "last_rating_at": {"$gte": hour_ago}},
-        {"_id": 0, "name": 1, "current_vibe_score": 1}
-    ))
+        {"city": city, "id": {"$in": active_ids}},
+        {"_id": 0, "id": 1, "name": 1, "current_vibe_score": 1, "total_ratings_24h": 1}
+    )) if active_ids else []
 
     if active_venues:
-        avg_score   = sum(v["current_vibe_score"] for v in active_venues) / len(active_venues)
-        pulse_score = round(avg_score)
-        top_venue   = max(active_venues, key=lambda v: v["current_vibe_score"])
+        total_weight = sum(max(v.get("total_ratings_24h", 1), 1) for v in active_venues)
+        weighted_sum = sum(
+            v.get("current_vibe_score", 0) * max(v.get("total_ratings_24h", 1), 1)
+            for v in active_venues
+        )
+        pulse_score = round(weighted_sum / total_weight, 1)
+        top_venue   = max(active_venues, key=lambda v: v.get("current_vibe_score", 0))
         trending    = {"name": top_venue["name"], "score": int(top_venue["current_vibe_score"])}
+        hot_venues  = sum(1 for v in active_venues if v.get("current_vibe_score", 0) >= 65)
     else:
         pulse_score = 0
         trending    = None
+        hot_venues  = 0
 
-    active_scout_ids = db.ratings.distinct("user_id", {"timestamp": {"$gte": hour_ago}})
-    pulses_tonight   = db.quick_pulses.count_documents({"city": city, "timestamp": {"$gte": midnight}})
+    # Active scouts: unique raters + reactors in last hour
+    rating_scouts   = set(db.ratings.distinct("user_id",  {"timestamp": {"$gte": hour_ago}}))
+    reaction_scouts = set(db.reactions.distinct("user_id", {"timestamp": {"$gte": hour_ago}}))
+    active_scouts   = len(rating_scouts | reaction_scouts)
+
+    pulses_tonight = db.quick_pulses.count_documents({"city": city, "timestamp": {"$gte": midnight}})
+
+    # 30-min sparkline: 6 data points × 5-min buckets
+    snapshots = list(db.vibe_snapshots.find(
+        {"timestamp": {"$gte": thirty_min_ago},
+         "venue_id": {"$in": active_ids} if active_ids else {"$exists": True}},
+        {"_id": 0, "timestamp": 1, "vibe_score": 1}
+    )) if active_ids else []
+
+    buckets = {}
+    for snap in snapshots:
+        snap_time = snap.get("timestamp", now)
+        if isinstance(snap_time, str):
+            snap_time = datetime.fromisoformat(snap_time.replace("Z", "+00:00"))
+        if snap_time.tzinfo is None:
+            snap_time = snap_time.replace(tzinfo=timezone.utc)
+        minutes_ago = (now - snap_time).total_seconds() / 60
+        bucket = min(5, int(minutes_ago / 5))
+        buckets.setdefault(bucket, []).append(snap.get("vibe_score", 0))
+
+    sparkline = []
+    last_val = pulse_score
+    for i in range(5, -1, -1):
+        if i in buckets and buckets[i]:
+            last_val = round(sum(buckets[i]) / len(buckets[i]), 1)
+        sparkline.append(last_val)
+
+    # Trend
+    if sparkline and sparkline[-1] > sparkline[0] + 5:
+        trend = "heating_up"
+    elif sparkline and sparkline[-1] < sparkline[0] - 5:
+        trend = "cooling_down"
+    else:
+        trend = "stable"
 
     return 200, {
         "city":           city,
         "pulse_score":    pulse_score,
         "pulse_label":    _get_pulse_label(pulse_score),
-        "active_scouts":  len(active_scout_ids),
+        "trend":          trend,
+        "active_scouts":  active_scouts,
         "live_venues":    len(active_venues),
+        "hot_venues":     hot_venues,
         "pulses_tonight": pulses_tonight,
         "trending_venue": trending,
+        "sparkline":      sparkline,
         "updated_at":     now.isoformat(),
+    }
+
+
+def handle_react_to_venue(venue_id: str, body: dict):
+    """POST /api/venues/{venue_id}/react — live bolt reaction (Vibe+ only)."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+
+    user_id = body.get("user_id")
+    if not user_id:
+        return 400, {"detail": "user_id required"}
+
+    now = datetime.now(timezone.utc)
+    user = db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        return 404, {"detail": "User not found"}
+
+    is_vibe_plus = user.get("is_vibe_plus") and (
+        not user.get("vibe_plus_expires_at")
+        or user["vibe_plus_expires_at"] > now
+    )
+    if not is_vibe_plus:
+        return 403, {"detail": "Live reactions are a Vibe+ feature. Upgrade to react in real time."}
+
+    venue = db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        return 404, {"detail": "Venue not found"}
+
+    # Per-user rate cap: 60 taps/min
+    minute_ago = now - timedelta(minutes=1)
+    user_recent = db.reactions.count_documents({
+        "user_id": user_id,
+        "venue_id": venue_id,
+        "timestamp": {"$gte": minute_ago},
+    })
+    if user_recent >= 60:
+        return 429, {"detail": "Slow down — reaction cap reached"}
+
+    db.reactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "venue_id": venue_id,
+        "timestamp": now,
+    })
+
+    # Reaction rate: total taps in last 5 min
+    window_start = now - timedelta(minutes=5)
+    total_reactions = db.reactions.count_documents({
+        "venue_id": venue_id,
+        "timestamp": {"$gte": window_start},
+    })
+    reactions_per_min = round(total_reactions / 5, 1)
+
+    pipeline = [
+        {"$match": {"venue_id": venue_id, "timestamp": {"$gte": window_start}}},
+        {"$group": {"_id": "$user_id"}},
+        {"$count": "total"},
+    ]
+    scout_result = list(db.reactions.aggregate(pipeline))
+    active_scouts = scout_result[0]["total"] if scout_result else 1
+
+    return 200, {
+        "ok": True,
+        "reactions_per_min": reactions_per_min,
+        "active_scouts": active_scouts,
+    }
+
+
+def handle_get_reaction_rate(venue_id: str):
+    """GET /api/venues/{venue_id}/reactions/rate — current reaction rate."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+
+    now          = datetime.now(timezone.utc)
+    window_start = now - timedelta(minutes=5)
+
+    total_reactions = db.reactions.count_documents({
+        "venue_id": venue_id,
+        "timestamp": {"$gte": window_start},
+    })
+    reactions_per_min = round(total_reactions / 5, 1)
+
+    pipeline = [
+        {"$match": {"venue_id": venue_id, "timestamp": {"$gte": window_start}}},
+        {"$group": {"_id": "$user_id"}},
+        {"$count": "total"},
+    ]
+    scout_result = list(db.reactions.aggregate(pipeline))
+    active_scouts = scout_result[0]["total"] if scout_result else 0
+
+    return 200, {
+        "reactions_per_min": reactions_per_min,
+        "active_scouts": active_scouts,
     }
 
 
@@ -1279,6 +1426,9 @@ def route_get(path, query_params, headers):
     m = re.match(r'^/api/city-pulse/([^/]+)$', path)
     if m:
         return handle_get_city_pulse(m.group(1))
+    m = re.match(r'^/api/venues/([^/]+)/reactions/rate$', path)
+    if m:
+        return handle_get_reaction_rate(m.group(1))
     m = re.match(r'^/api/crews/([^/]+)/locations$', path)
     if m:
         return handle_crew_locations(m.group(1), headers)
@@ -1333,6 +1483,9 @@ def route_post(path, body, headers):
         return handle_drop_quick_pulse(body)
 
     # Dynamic routes
+    m = re.match(r'^/api/venues/([^/]+)/react$', path)
+    if m:
+        return handle_react_to_venue(m.group(1), body)
     m = re.match(r'^/api/venues/([^/]+)/direction-click$', path)
     if m:
         return handle_direction_click(m.group(1))
