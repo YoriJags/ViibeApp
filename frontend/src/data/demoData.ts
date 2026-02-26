@@ -980,10 +980,13 @@ export const DEMO_PLANNER_CONVERSATION: PlannerMessage[] = [
 export const DEMO_CITY_PULSE = {
   city: 'lagos',
   pulse_score: 82,
-  pulse_label: 'POPPING' as const,
+  pulse_label: 'LIT' as const,
+  trend: 'heating_up' as const,
   active_scouts: 247,
   live_venues: 34,
+  hot_venues: 9,
   pulses_tonight: 1143,
   trending_venue: { name: 'Quilox', score: 96 },
+  sparkline: [41, 53, 62, 70, 78, 82],
   updated_at: new Date().toISOString(),
 };

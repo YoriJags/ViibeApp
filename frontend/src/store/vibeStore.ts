@@ -259,16 +259,19 @@ interface TransientState {
   featureFlags: Record<string, boolean>;
 }
 
-export type CityPulseLabel = 'DEAD' | 'QUIET' | 'BUZZING' | 'POPPING' | 'ELECTRIC';
+export type CityPulseLabel = 'QUIET' | 'CHILL' | 'WARMING' | 'LIT' | 'PEAK';
 
 export interface CityPulseData {
   city: string;
   pulse_score: number;
   pulse_label: CityPulseLabel;
+  trend: 'heating_up' | 'cooling_down' | 'stable';
   active_scouts: number;
   live_venues: number;
+  hot_venues: number;
   pulses_tonight: number;
   trending_venue?: { name: string; score: number };
+  sparkline: number[];   // 6 values oldest→newest, 5-min buckets, 30-min window
   updated_at?: string;
 }
 

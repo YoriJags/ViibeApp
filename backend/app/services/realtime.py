@@ -112,6 +112,13 @@ async def broadcast_reaction(venue_id: str, data: dict):
     await sio.emit("reaction_pulse", data, room=f"venue_{venue_id}")
 
 
+async def broadcast_city_pulse(city: str):
+    """Broadcast updated city heartbeat to all city subscribers."""
+    from app.routes.city_pulse import compute_city_pulse
+    pulse = await compute_city_pulse(city)
+    await sio.emit("city_pulse_update", pulse, room=f"city_{city}")
+
+
 @sio.event
 async def join_crew_room(sid, data):
     """Join a crew's real-time room for vote updates."""

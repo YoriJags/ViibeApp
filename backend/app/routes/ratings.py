@@ -17,7 +17,7 @@ from app.services.vibe import (
 BURST_THRESHOLD = 4        # ratings triggering provisional hold
 BURST_WINDOW_MINUTES = 10  # window to detect burst
 BURST_HOLD_MINUTES = 15    # how long provisional ratings are held
-from app.services.realtime import broadcast_venue_update, broadcast_leaderboard
+from app.services.realtime import broadcast_venue_update, broadcast_leaderboard, broadcast_city_pulse
 from app.services.streaks import update_streak
 from app.services.vibe import save_vibe_snapshot
 
@@ -155,6 +155,7 @@ async def create_rating(rating_data: RatingCreate):
     await broadcast_venue_update(rating_data.venue_id)
     await broadcast_leaderboard(venue.get("city", "lagos"))
     await broadcast_leaderboard("all")
+    await broadcast_city_pulse(venue.get("city", "lagos"))
 
     return {
         "rating": rating.dict(),

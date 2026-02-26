@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException
 
 from app.config import db
-from app.services.realtime import broadcast_reaction
+from app.services.realtime import broadcast_reaction, broadcast_city_pulse
 
 router = APIRouter(tags=["reactions"])
 
@@ -91,6 +91,7 @@ async def react_to_venue(venue_id: str, body: dict):
         "active_scouts": active_scouts,
         "reactor_id": user_id,
     })
+    await broadcast_city_pulse(venue.get("city", "lagos"))
 
     return {
         "ok": True,

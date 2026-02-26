@@ -43,6 +43,7 @@ from app.routes.feature_flags import router as feature_flags_router
 from app.routes.platform_settings import router as platform_settings_router
 from app.routes.subscriptions import router as subscriptions_router
 from app.routes.reactions import router as reactions_router
+from app.routes.city_pulse import router as city_pulse_router
 
 # ===== Create FastAPI App =====
 app = FastAPI(title="Vibe App API", version="3.0.0")
@@ -82,6 +83,7 @@ api_router.include_router(feature_flags_router)
 api_router.include_router(platform_settings_router)
 api_router.include_router(subscriptions_router)
 api_router.include_router(reactions_router)
+api_router.include_router(city_pulse_router)
 
 # Include the API router in the main app
 app.include_router(api_router)

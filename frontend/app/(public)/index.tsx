@@ -38,6 +38,7 @@ import ErrorBoundary from '../../src/components/ErrorBoundary';
 import TheWave from '../../src/components/TheWave';
 import VibeMarket, { VibeMarketVenue } from '../../src/components/VibeMarket';
 import NoDulling from '../../src/components/NoDulling';
+import CityPulseBar from '../../src/components/CityPulseBar';
 import ActivityTicker from '../../src/components/ActivityTicker';
 import { getNightPhase } from '../../src/store/vibeStore';
 import { calculateDistance } from '../../src/utils/geo';
@@ -934,6 +935,14 @@ export default function MapScreen() {
         >
           {/* ActivityTicker — always visible; demo data seeds the feed until real activity flows */}
           <ActivityTicker items={DEMO_ACTIVITY_FEED} />
+
+          {/* City Pulse Bar — live city heartbeat with 30-min sparkline */}
+          {cityPulse && (
+            <CityPulseBar
+              pulse={cityPulse}
+              onPress={() => router.push('/(public)/trending')}
+            />
+          )}
 
           {/* WeekendCard — Friday 6PM+ and Saturday only, dismissable */}
           {isWeekendActive && !weekendDismissed && (
