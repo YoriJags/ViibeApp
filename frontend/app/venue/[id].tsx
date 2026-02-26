@@ -36,6 +36,8 @@ import TopScoutsCard from '../../src/components/TopScoutsCard';
 import VibeOracle from '../../src/components/VibeOracle';
 import VenueRoastCard from '../../src/components/VenueRoastCard';
 import PulseButton from '../../src/components/PulseButton';
+import ReactionTapArea from '../../src/components/ReactionTapArea';
+import VibePlusModal from '../../src/components/VibePlusModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -80,6 +82,7 @@ export default function VenueDetailScreen() {
     dropQuickPulse,
     demoPulsedVenues,
     isFeatureEnabled,
+    socket,
   } = useVibeStore();
   const [venue, setVenue] = useState<any>(null);
   const [ratingStatus, setRatingStatus] = useState<any>(null);
@@ -98,6 +101,10 @@ export default function VenueDetailScreen() {
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [pulsedAt, setPulsedAt] = useState<number | null>(null);
+  const [reactionsPerMin, setReactionsPerMin] = useState(0);
+  const [activeScouts, setActiveScouts] = useState(0);
+  const [incomingBoltCount, setIncomingBoltCount] = useState(0);
+  const [showVibePlusModal, setShowVibePlusModal] = useState(false);
 
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -210,6 +217,50 @@ export default function VenueDetailScreen() {
     }
 
     setLoading(false);
+  };
+
+  // Socket.IO — live reaction feed for this venue
+  useEffect(() => {
+    if (!socket || !venue?.id) return;
+    socket.emit('join_venue', { venue_id: venue.id });
+    socket.on('reaction_pulse', (data: any) => {
+      if (data.venue_id !== venue.id) return;
+      setReactionsPerMin(data.reactions_per_min ?? 0);
+      setActiveScouts(data.active_scouts ?? 0);
+      // Only spawn a bolt for reactions from other scouts
+      if (data.reactor_id && data.reactor_id !== user?.id) {
+        setIncomingBoltCount(prev => prev + 1);
+      }
+    });
+    return () => {
+      socket.off('reaction_pulse');
+    };
+  }, [socket, venue?.id, user?.id]);
+
+  // Fetch initial reaction rate when venue loads
+  useEffect(() => {
+    if (!venue?.id) return;
+    fetch(`${API_URL}/api/venues/${venue.id}/reactions/rate`)
+      .then(r => r.json())
+      .then(data => {
+        setReactionsPerMin(data.reactions_per_min ?? 0);
+        setActiveScouts(data.active_scouts ?? 0);
+      })
+      .catch(() => {});
+  }, [venue?.id]);
+
+  const handleReact = async () => {
+    if (!user || !venue) return;
+    const res = await fetch(`${API_URL}/api/venues/${venue.id}/react`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: user.id }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setReactionsPerMin(data.reactions_per_min ?? 0);
+      setActiveScouts(data.active_scouts ?? 0);
+    }
   };
 
   const checkUserLocation = async () => {
@@ -354,6 +405,18 @@ export default function VenueDetailScreen() {
     if (score >= 20) return 'CHILL';
     return 'QUIET';
   };
+
+  // Lowercase state key used by ReactionTapArea for colour mapping
+  const currentVibeStateKey = getVibeState(
+    venue?.current_vibe_score ?? 0,
+    venue?.capacity_level ?? 'sparse'
+  ).toLowerCase();
+
+  const now = new Date();
+  const isVibePlus = !!(
+    user?.is_vibe_plus &&
+    (!user?.vibe_plus_expires_at || new Date(user.vibe_plus_expires_at) > now)
+  );
 
   const getVibeColor = (score: number, capacity = 'sparse') => {
     if (score >= 85) return '#FF3366';
@@ -811,7 +874,7 @@ export default function VenueDetailScreen() {
           </TouchableOpacity>
         )}
 
-        <View style={{ height: 120 }} />
+        <View style={{ height: 200 }} />
       </ScrollView>
 
       {/* ═══ Sticky Rate Footer ═══ */}
@@ -821,6 +884,19 @@ export default function VenueDetailScreen() {
             colors={['rgba(15,15,25,0.92)', 'rgba(10,10,18,0.98)']}
             style={styles.stickyGradient}
           >
+            {/* Reaction Tap Area — Vibe+ live energy expression */}
+            <ReactionTapArea
+              venueId={venue?.id ?? ''}
+              userId={user?.id ?? ''}
+              vibeState={currentVibeStateKey}
+              isVibePlus={isVibePlus}
+              reactionsPerMin={reactionsPerMin}
+              activeScouts={activeScouts}
+              incomingBoltCount={incomingBoltCount}
+              onReact={handleReact}
+              onUpgradePress={() => setShowVibePlusModal(true)}
+            />
+
             <View style={styles.stickyFooterRow}>
               <TouchableOpacity
                 style={styles.stickyRateBtn}
@@ -882,6 +958,12 @@ export default function VenueDetailScreen() {
           </LinearGradient>
         </BlurView>
       </View>
+
+      {/* Vibe+ Upgrade Modal */}
+      <VibePlusModal
+        visible={showVibePlusModal}
+        onClose={() => setShowVibePlusModal(false)}
+      />
 
       {/* Rate Vibe Modal */}
       <ErrorBoundary label="Rating">

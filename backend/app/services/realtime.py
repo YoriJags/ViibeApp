@@ -107,6 +107,11 @@ async def emit_campaign_update(city: str, campaign_data: dict):
     )
 
 
+async def broadcast_reaction(venue_id: str, data: dict):
+    """Broadcast a live bolt reaction to all clients watching a venue."""
+    await sio.emit("reaction_pulse", data, room=f"venue_{venue_id}")
+
+
 @sio.event
 async def join_crew_room(sid, data):
     """Join a crew's real-time room for vote updates."""
