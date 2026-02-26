@@ -41,6 +41,7 @@ logger = logging.getLogger('vibe_app')
 # ===== Constants =====
 GEOFENCE_RADIUS_METERS = 100  # Default fallback; venues override via geofence_radius_m
 MAX_RATINGS_PER_VENUE_PER_DAY = 2
+RATING_COOLDOWN_MINUTES = 5       # Scouts can re-rate same venue every 5 minutes
 SESSION_EXPIRY_DAYS = 7
 VIBE_SCORE_WINDOW_HOURS = 1
 

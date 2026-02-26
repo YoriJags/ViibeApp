@@ -30,7 +30,7 @@ const SHEET_HEIGHT = SCREEN_HEIGHT * 0.85;
 const DISMISS_THRESHOLD = 120;
 
 // ─── Types ─────────────────────────────────────────────────────
-type EnergyLevel    = 'chill' | 'buzzing' | 'popping' | 'electric';
+type EnergyLevel    = 'quiet' | 'chill' | 'warming' | 'lit' | 'peak';
 type CapacityLevel  = 'sparse' | 'vibrant' | 'full';
 type GateLevel      = 'clear' | 'slow' | 'blocked';
 type VenueType      =
@@ -65,16 +65,17 @@ interface RateVibeModalProps {
 // ─── Option Configs ────────────────────────────────────────────
 
 const ENERGY_OPTIONS: EmojiOption[] = [
-  { value: 'chill',    emoji: '😌', label: 'CHILL'    },
-  { value: 'buzzing',  emoji: '😏', label: 'BUZZING'  },
-  { value: 'popping',  emoji: '🔥', label: 'POPPING'  },
-  { value: 'electric', emoji: '🤯', label: 'ELECTRIC' },
+  { value: 'quiet',   emoji: '🌙', label: 'QUIET'   },
+  { value: 'chill',   emoji: '😴', label: 'CHILL'   },
+  { value: 'warming', emoji: '🌡', label: 'WARMING' },
+  { value: 'lit',     emoji: '⚡', label: 'LIT'     },
+  { value: 'peak',    emoji: '🔥', label: 'PEAK'    },
 ];
 
 const CAPACITY_OPTIONS: EmojiOption[] = [
-  { value: 'sparse',  emoji: '😶', label: 'SPARSE'  },
-  { value: 'vibrant', emoji: '😁', label: 'VIBRANT' },
-  { value: 'full',    emoji: '😵', label: 'PACKED'  },
+  { value: 'sparse',  emoji: '😶', label: 'ALMOST EMPTY' },
+  { value: 'vibrant', emoji: '😁', label: 'FILLING UP'   },
+  { value: 'full',    emoji: '😵', label: 'PACKED'       },
 ];
 
 const GATE_OPTIONS: EmojiOption[] = [
@@ -83,55 +84,61 @@ const GATE_OPTIONS: EmojiOption[] = [
   { value: 'blocked', emoji: '🚫', label: 'LOCKED'   },
 ];
 
-// DJ/Music — for clubs, raves, block parties, and DJ events (Obi House, Dope Caesar, etc.)
+// DJ/Music — clubs, raves, block parties, festivals
 const DJ_OPTIONS: EmojiOption[] = [
-  { value: 'mellow',     emoji: '😑', label: 'MELLOW'     },
-  { value: 'good_set',   emoji: '😄', label: 'GOOD SET'   },
+  { value: 'mellow',     emoji: '😌', label: 'MELLOW'     },
+  { value: 'good_set',   emoji: '🎵', label: 'BUILDING'   },
   { value: 'killing_it', emoji: '🤯', label: 'KILLING IT' },
 ];
 
-// Live performance — concerts with artists/bands
-const PERFORMANCE_OPTIONS: EmojiOption[] = [
-  { value: 'not_started', emoji: '🎤', label: 'NOT YET'  },
-  { value: 'building',    emoji: '🔥', label: 'BUILDING' },
-  { value: 'lit',         emoji: '🤯', label: 'LIT'      },
+// Crowd response — concerts, events
+const CROWD_RESPONSE_OPTIONS: EmojiOption[] = [
+  { value: 'flat_crowd',     emoji: '😐', label: 'FLAT'       },
+  { value: 'building_crowd', emoji: '👏', label: 'BUILDING'   },
+  { value: 'going_off',      emoji: '🤯', label: 'GOING OFF'  },
 ];
 
-// Restaurant service speed
-const SERVICE_OPTIONS: EmojiOption[] = [
-  { value: 'slow',   emoji: '🐢', label: 'SLOW'   },
-  { value: 'decent', emoji: '👍', label: 'DECENT' },
-  { value: 'fast',   emoji: '⚡', label: 'FAST'   },
+// Crowd movement — block parties, festivals
+const MOVEMENT_OPTIONS: EmojiOption[] = [
+  { value: 'standing_around', emoji: '😐', label: 'STANDING' },
+  { value: 'mixed_movement',  emoji: '👀', label: 'MIXED'    },
+  { value: 'packed_dancing',  emoji: '💃', label: 'DANCING'  },
 ];
 
-// Bar / Lounge ambience
-const AMBIENCE_OPTIONS: EmojiOption[] = [
-  { value: 'dead',    emoji: '💀', label: 'DEAD'        },
-  { value: 'chill',   emoji: '😊', label: 'CHILL'       },
-  { value: 'loud',    emoji: '🔊', label: 'LOUD & FUN'  },
+// Bar atmosphere
+const BAR_ATMOSPHERE_OPTIONS: EmojiOption[] = [
+  { value: 'quiet_atm',   emoji: '🤫', label: 'QUIET'        },
+  { value: 'decent_atm',  emoji: '🙂', label: 'DECENT'       },
+  { value: 'loud_alive',  emoji: '📢', label: 'LOUD & ALIVE' },
+];
+
+// Lounge service vibe
+const LOUNGE_SERVICE_OPTIONS: EmojiOption[] = [
+  { value: 'slow_service',   emoji: '🐌', label: 'SLOW'     },
+  { value: 'decent_service', emoji: '👌', label: 'DECENT'   },
+  { value: 'on_point',       emoji: '✨', label: 'ON POINT' },
 ];
 
 // Church worship
 const WORSHIP_OPTIONS: EmojiOption[] = [
-  { value: 'okay', emoji: '🙏', label: 'OKAY' },
-  { value: 'good', emoji: '😊', label: 'GOOD' },
-  { value: 'deep', emoji: '🔥', label: 'DEEP' },
+  { value: 'flat_crowd',     emoji: '🙏', label: 'OKAY' },
+  { value: 'building_crowd', emoji: '😊', label: 'GOOD' },
+  { value: 'going_off',      emoji: '🔥', label: 'DEEP' },
 ];
 
-// ─── Venue type → 4th dimension mapping ───────────────────────
+// ─── Venue type → 2nd dimension mapping ───────────────────────
 type VenueDimConfig = { label: string; options: EmojiOption[] };
 
 const VENUE_DIMENSION: Record<string, VenueDimConfig> = {
-  club:        { label: '🎛️  DJ / MUSIC', options: DJ_OPTIONS },
-  rave:        { label: '🎛️  DJ / MUSIC', options: DJ_OPTIONS },
-  block_party: { label: '🎛️  DJ / MUSIC', options: DJ_OPTIONS },
-  event:       { label: '🎛️  DJ / MUSIC', options: DJ_OPTIONS },  // Obi House, Dope Caesar, etc.
-  festival:    { label: '🎛️  DJ / MUSIC', options: DJ_OPTIONS },
-  concert:     { label: '🎤  PERFORMANCE', options: PERFORMANCE_OPTIONS },
-  restaurant:  { label: '⏱️  SERVICE',    options: SERVICE_OPTIONS },
-  bar:         { label: '🎵  AMBIENCE',   options: AMBIENCE_OPTIONS },
-  lounge:      { label: '🎵  AMBIENCE',   options: AMBIENCE_OPTIONS },
-  church:      { label: '🙏  WORSHIP',    options: WORSHIP_OPTIONS },
+  club:        { label: '🎛️  THE SET',         options: DJ_OPTIONS              },
+  rave:        { label: '🎛️  THE SET',         options: DJ_OPTIONS              },
+  festival:    { label: '🎛️  THE SET',         options: DJ_OPTIONS              },
+  block_party: { label: '💃  THE CROWD',       options: MOVEMENT_OPTIONS        },
+  concert:     { label: '🎤  CROWD RESPONSE',  options: CROWD_RESPONSE_OPTIONS  },
+  event:       { label: '🎯  THE VIBE',        options: CROWD_RESPONSE_OPTIONS  },
+  bar:         { label: '🎵  ATMOSPHERE',      options: BAR_ATMOSPHERE_OPTIONS  },
+  lounge:      { label: '✨  SERVICE',         options: LOUNGE_SERVICE_OPTIONS  },
+  church:      { label: '🙏  WORSHIP',         options: WORSHIP_OPTIONS         },
 };
 
 // ─── Section colors ────────────────────────────────────────────
@@ -167,9 +174,10 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
   const isOnCooldown = countdown > 0;
 
   const venueDim = VENUE_DIMENSION[venueType] ?? null;
-  const hasFourDims = !!venueDim;
-  const filledCount = [energy, capacity, gate, hasFourDims ? venueSpec : 'skip'].filter(Boolean).length;
-  const canSubmit = !!(energy && capacity && gate && isGpsVerified && (!hasFourDims || venueSpec));
+  const hasVenueDim = !!venueDim;
+  // Capacity and gate are optional context — only energy + venue-specific (if applicable) are required
+  const filledCount = [energy, hasVenueDim ? venueSpec : 'skip'].filter(Boolean).length;
+  const canSubmit = !!(energy && isGpsVerified && (!hasVenueDim || venueSpec));
 
   // Animations
   const translateY   = useRef(new Animated.Value(SHEET_HEIGHT)).current;
@@ -383,8 +391,8 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
     </Animated.View>
   );
 
-  // ─── Render: 2×2 grid section (for Energy, 4 options) ───────
-  const render2x2Section = (
+  // ─── Render: 3+2 grid (for Energy — 5 options) ──────────────
+  const render3x2Section = (
     title: string,
     options: EmojiOption[],
     selected: string | null,
@@ -398,7 +406,7 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
       </View>
       <View style={styles.grid2x2}>
         <View style={styles.gridRow}>
-          {options.slice(0, 2).map((opt, i) =>
+          {options.slice(0, 3).map((opt, i) =>
             renderEmojiCard(
               opt,
               selected === opt.value,
@@ -409,13 +417,13 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
           )}
         </View>
         <View style={styles.gridRow}>
-          {options.slice(2, 4).map((opt, i) =>
+          {options.slice(3).map((opt, i) =>
             renderEmojiCard(
               opt,
               selected === opt.value,
-              () => handleSelect(baseIdx + 2 + i, setter, opt.value),
+              () => handleSelect(baseIdx + 3 + i, setter, opt.value),
               gradient,
-              baseIdx + 2 + i
+              baseIdx + 3 + i
             )
           )}
         </View>
@@ -452,13 +460,10 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
 
   // ─── Progress dots ──────────────────────────────────────────
   const renderProgressDots = () => {
-    const dims = hasFourDims
-      ? [energy, capacity, gate, venueSpec]
-      : [energy, capacity, gate];
+    // Only track required dims in the progress indicator
+    const dims = hasVenueDim ? [energy, venueSpec] : [energy];
     const dotColors = [
       SECTION_COLORS.energy[0],
-      SECTION_COLORS.capacity[0],
-      SECTION_COLORS.gate[0],
       SECTION_COLORS.venueSpecific[0],
     ];
     return (
@@ -477,6 +482,7 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
     );
   };
 
+  // ─── Context divider styles added inline
   // ─── Cooldown screen ────────────────────────────────────────
   const renderCooldownScreen = () => (
     <View style={styles.cooldownContainer}>
@@ -582,32 +588,39 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
               >
                 {renderProgressDots()}
 
-                {/* 1. ENERGY — 2×2 grid */}
-                {render2x2Section(
+                {/* 1. ENERGY — 3+2 grid (primary signal) */}
+                {render3x2Section(
                   '⚡  ENERGY',
                   ENERGY_OPTIONS, energy, setEnergy,
                   SECTION_COLORS.energy, 0
                 )}
 
-                {/* 2. CAPACITY */}
-                {renderRowSection(
-                  '👥  CAPACITY',
-                  CAPACITY_OPTIONS, capacity, setCapacity,
-                  SECTION_COLORS.capacity, 4
-                )}
-
-                {/* 3. GATE / QUEUE */}
-                {renderRowSection(
-                  '🚪  GATE / QUEUE',
-                  GATE_OPTIONS, gate, setGate,
-                  SECTION_COLORS.gate, 7
-                )}
-
-                {/* 4. VENUE-SPECIFIC (optional) */}
-                {hasFourDims && venueDim && renderRowSection(
+                {/* 2. VENUE-SPECIFIC (required for non-'other' types) */}
+                {hasVenueDim && venueDim && renderRowSection(
                   venueDim.label,
                   venueDim.options, venueSpec, setVenueSpec,
-                  SECTION_COLORS.venueSpecific, 10
+                  SECTION_COLORS.venueSpecific, 5
+                )}
+
+                {/* CONTEXT section — optional, helps scouts plan */}
+                <View style={styles.contextDivider}>
+                  <View style={styles.contextLine} />
+                  <Text style={styles.contextLabel}>CONTEXT — optional</Text>
+                  <View style={styles.contextLine} />
+                </View>
+
+                {/* 3. CROWD */}
+                {renderRowSection(
+                  '👥  CROWD',
+                  CAPACITY_OPTIONS, capacity, setCapacity,
+                  SECTION_COLORS.capacity, 8
+                )}
+
+                {/* 4. QUEUE */}
+                {renderRowSection(
+                  '🚪  QUEUE',
+                  GATE_OPTIONS, gate, setGate,
+                  SECTION_COLORS.gate, 11
                 )}
 
                 {/* Action row */}
@@ -664,7 +677,7 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
                       ) : (
                         <View style={styles.submitDisabled}>
                           <Text style={styles.submitTextDisabled}>
-                            {filledCount}/{hasFourDims ? 4 : 3} done
+                            {filledCount}/{hasVenueDim ? 2 : 1} done
                           </Text>
                         </View>
                       )}
@@ -829,6 +842,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.06)',
   },
   submitTextDisabled: { fontSize: 13, fontWeight: '700', color: '#555' },
+
+  // Context divider
+  contextDivider: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    marginVertical: 12,
+  },
+  contextLine: {
+    flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.07)',
+  },
+  contextLabel: {
+    fontSize: 9, fontWeight: '800', color: '#444', letterSpacing: 1.5,
+  },
 
   // Cooldown
   cooldownContainer: {

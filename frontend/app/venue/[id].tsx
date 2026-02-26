@@ -347,20 +347,20 @@ export default function VenueDetailScreen() {
     });
   };
 
-  const getEnergyLabel = (level: string) => {
-    switch (level) {
-      case 'electric': return 'ELECTRIC';
-      case 'popping': return 'VIBE';
-      case 'chill': return 'QUIET';
-      default: return 'QUIET';
-    }
+  const getVibeState = (score: number, capacity: string): string => {
+    if (score >= 85) return 'PEAK';
+    if (score >= 65) return 'LIT';
+    if (score >= 45) return (capacity === 'full' || capacity === 'vibrant') ? 'CHARGED' : 'WARMING';
+    if (score >= 20) return 'CHILL';
+    return 'QUIET';
   };
 
-  const getVibeColor = (score: number) => {
-    if (score >= 80) return '#FF3366';
-    if (score >= 60) return '#FF9933';
-    if (score >= 40) return '#9933FF';
-    return '#3399FF';
+  const getVibeColor = (score: number, capacity = 'sparse') => {
+    if (score >= 85) return '#FF3366';
+    if (score >= 65) return '#FF9933';
+    if (score >= 45) return (capacity === 'full' || capacity === 'vibrant') ? '#9B59B6' : '#9933FF';
+    if (score >= 20) return '#3399FF';
+    return '#555E6E';
   };
 
   const getSnapshotTimeAgo = () => {
@@ -425,7 +425,8 @@ export default function VenueDetailScreen() {
     );
   }
 
-  const vibeColor = getVibeColor(venue.current_vibe_score);
+  const vibeColor = getVibeColor(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
+  const vibeStateLabel = getVibeState(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
   const hasPulseDrop = venue.active_pulse_tier !== null;
 
   return (
@@ -540,11 +541,18 @@ export default function VenueDetailScreen() {
         <View style={styles.glassCardContainer}>
           <BlurView intensity={20} tint="dark" style={styles.glassCard}>
             <View style={styles.glassCardInner}>
+              {/* VIIBE CERTIFIED banner */}
+              {venue.viibe_certified && (
+                <View style={styles.viibeBar}>
+                  <Text style={styles.viibeBarText}>✦ VIIBE CERTIFIED — Peak Energy + Max Pulse</Text>
+                </View>
+              )}
+
               {/* Energy Level Headline */}
               <View style={styles.energyHeadline}>
                 <View style={[styles.energyDot, { backgroundColor: vibeColor }]} />
                 <Text style={[styles.energyLabel, { color: vibeColor }]}>
-                  {getEnergyLabel(venue.energy_level)}
+                  {vibeStateLabel}
                 </Text>
                 <View style={styles.energyScoreBadge}>
                   <Text style={[styles.energyScoreText, { color: vibeColor }]}>
@@ -594,33 +602,37 @@ export default function VenueDetailScreen() {
                 </View>
               </View>
 
-              {/* Current Vibe Stats */}
+              {/* Velocity */}
               <View style={styles.vibeStatsRow}>
                 <View style={styles.vibeStat}>
-                  <Ionicons name="people" size={16} color="#888" />
-                  <Text style={styles.vibeStatText}>
-                    {(venue.capacity_level ?? 'unknown').charAt(0).toUpperCase() + (venue.capacity_level ?? 'unknown').slice(1)}
-                  </Text>
-                </View>
-                <View style={styles.vibeStatDivider} />
-                <View style={styles.vibeStat}>
-                  <Ionicons name="enter" size={16} color="#888" />
-                  <Text style={styles.vibeStatText}>
-                    Gate: {(venue.gate_level ?? 'unknown').charAt(0).toUpperCase() + (venue.gate_level ?? 'unknown').slice(1)}
-                  </Text>
-                </View>
-                <View style={styles.vibeStatDivider} />
-                <View style={styles.vibeStat}>
-                  <Ionicons 
+                  <Ionicons
                     name={venue.vibe_velocity === 'heating_up' ? 'trending-up' : venue.vibe_velocity === 'cooling_down' ? 'trending-down' : 'remove'}
-                    size={16} 
-                    color={venue.vibe_velocity === 'heating_up' ? '#4CAF50' : venue.vibe_velocity === 'cooling_down' ? '#FF5252' : '#888'} 
+                    size={16}
+                    color={venue.vibe_velocity === 'heating_up' ? '#4CAF50' : venue.vibe_velocity === 'cooling_down' ? '#FF5252' : '#888'}
                   />
                   <Text style={[
                     styles.vibeStatText,
                     { color: venue.vibe_velocity === 'heating_up' ? '#4CAF50' : venue.vibe_velocity === 'cooling_down' ? '#FF5252' : '#888' }
                   ]}>
-                    {venue.vibe_velocity === 'heating_up' ? 'Rising' : venue.vibe_velocity === 'cooling_down' ? 'Falling' : 'Stable'}
+                    {venue.vibe_velocity === 'heating_up' ? 'Heating Up' : venue.vibe_velocity === 'cooling_down' ? 'Cooling Down' : 'Holding Steady'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Context row — crowd + queue (informational only) */}
+              <View style={styles.contextStatsRow}>
+                <Text style={styles.contextStatsLabel}>CONTEXT</Text>
+                <View style={styles.vibeStat}>
+                  <Ionicons name="people" size={14} color="#555" />
+                  <Text style={styles.contextStatText}>
+                    {venue.capacity_level === 'full' ? 'Packed' : venue.capacity_level === 'vibrant' ? 'Filling Up' : 'Almost Empty'}
+                  </Text>
+                </View>
+                <View style={styles.vibeStatDivider} />
+                <View style={styles.vibeStat}>
+                  <Ionicons name="enter" size={14} color="#555" />
+                  <Text style={styles.contextStatText}>
+                    {venue.gate_level === 'blocked' ? 'Long Queue' : venue.gate_level === 'slow' ? 'Short Wait' : 'Walk In'}
                   </Text>
                 </View>
               </View>
@@ -1154,6 +1166,43 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFF',
     textAlign: 'center',
+  },
+  viibeBar: {
+    backgroundColor: 'rgba(255,215,0,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.35)',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  viibeBarText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#FFD700',
+    letterSpacing: 1.2,
+  },
+  contextStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+  },
+  contextStatsLabel: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#444',
+    letterSpacing: 1.5,
+    marginRight: 4,
+  },
+  contextStatText: {
+    fontSize: 11,
+    color: '#555',
+    fontWeight: '500',
   },
   vibeStatsRow: {
     flexDirection: 'row',

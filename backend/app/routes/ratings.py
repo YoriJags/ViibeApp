@@ -5,7 +5,7 @@ Submit ratings, offline sync, and user-venue rating status.
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Request
 
-from app.config import db, MAX_RATINGS_PER_VENUE_PER_DAY
+from app.config import db, MAX_RATINGS_PER_VENUE_PER_DAY, RATING_COOLDOWN_MINUTES
 from app.models import Rating, RatingCreate, Coordinates
 from app.services.vibe import (
     calculate_vibe_score,
@@ -13,6 +13,10 @@ from app.services.vibe import (
     is_within_geofence,
     update_user_clout,
 )
+
+BURST_THRESHOLD = 4        # ratings triggering provisional hold
+BURST_WINDOW_MINUTES = 10  # window to detect burst
+BURST_HOLD_MINUTES = 15    # how long provisional ratings are held
 from app.services.realtime import broadcast_venue_update, broadcast_leaderboard
 from app.services.streaks import update_streak
 from app.services.vibe import save_vibe_snapshot
@@ -50,11 +54,38 @@ async def create_rating(rating_data: RatingCreate):
             detail="Rating limit reached. You can rate this venue again in 24 hours.",
         )
 
+    # 5-minute cooldown between ratings (Vibe+ users are exempt)
+    user_doc = await db.users.find_one({"id": rating_data.user_id})
+    is_vibe_plus = user_doc and user_doc.get("is_vibe_plus") and (
+        not user_doc.get("vibe_plus_expires_at")
+        or user_doc["vibe_plus_expires_at"] > now
+    )
+    if not is_vibe_plus and existing_ratings:
+        last_rating_time = existing_ratings[0].get("timestamp", now)
+        if isinstance(last_rating_time, str):
+            last_rating_time = datetime.fromisoformat(last_rating_time.replace("Z", "+00:00"))
+        if last_rating_time.tzinfo is None:
+            last_rating_time = last_rating_time.replace(tzinfo=timezone.utc)
+        seconds_since = (now - last_rating_time).total_seconds()
+        cooldown_seconds = RATING_COOLDOWN_MINUTES * 60
+        if seconds_since < cooldown_seconds:
+            remaining = int(cooldown_seconds - seconds_since)
+            raise HTTPException(
+                status_code=429,
+                detail=f"Vibe is still fresh — wait {remaining}s or upgrade to Vibe+ for unlimited ratings.",
+                headers={"X-Cooldown-Remaining": str(remaining)},
+            )
+
     vibe_score = calculate_vibe_score(
         rating_data.energy,
         rating_data.capacity,
         rating_data.gate,
+        rating_data.venue_specific,
     )
+
+    # Burst detection: hold rating provisionally if 4+ same-energy ratings in 10 min
+    is_provisional = await _check_burst(rating_data.venue_id, rating_data.energy, now)
+    provisional_until = (now + timedelta(minutes=BURST_HOLD_MINUTES)) if is_provisional else None
 
     is_correction = len(existing_ratings) == 1
     rating = Rating(
@@ -69,7 +100,10 @@ async def create_rating(rating_data: RatingCreate):
             {"$set": {"superseded": True}},
         )
 
-    await db.ratings.insert_one(rating.dict())
+    rating_doc = rating.dict()
+    rating_doc["provisional"] = is_provisional
+    rating_doc["provisional_until"] = provisional_until
+    await db.ratings.insert_one(rating_doc)
 
     aggregate = await calculate_venue_aggregate(rating_data.venue_id)
     await db.venues.update_one(
@@ -168,6 +202,23 @@ async def get_user_venue_ratings(user_id: str, venue_id: str):
         "is_correction_available": len(ratings) == 1,
         "ratings": ratings,
     }
+
+
+async def _check_burst(venue_id: str, energy: str, now: datetime) -> bool:
+    """Returns True if this rating is part of a coordinated burst.
+
+    Detects 4+ identical energy ratings arriving within 10 minutes for the same venue.
+    Burst ratings are held in a provisional queue for 15 minutes before being applied.
+    Legitimate flash-mobs pass through after the hold; coordinated gaming is diluted.
+    """
+    window_start = now - timedelta(minutes=BURST_WINDOW_MINUTES)
+    count = await db.ratings.count_documents({
+        "venue_id": venue_id,
+        "energy": energy,
+        "timestamp": {"$gte": window_start},
+        "provisional": {"$ne": True},
+    })
+    return count >= BURST_THRESHOLD
 
 
 SQUAD_BONUS_CLOUT = 10

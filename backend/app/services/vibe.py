@@ -8,20 +8,53 @@ from app.config import db, GEOFENCE_RADIUS_METERS
 from app.models import Coordinates
 
 
-def calculate_vibe_score(energy: str, capacity: str, gate: str) -> float:
-    """Calculate a 0-100 vibe score from the three rating dimensions.
-    Energy: chill(1) < buzzing(1.5) < popping(2) < electric(3)
-    Capacity: sparse(1) < vibrant(2) < full(3)
-    Gate: blocked(1) < slow(2) < clear(3)
+def calculate_vibe_score(energy: str, capacity: str, gate: str, venue_specific: str = None) -> float:
+    """Calculate a 0-100 vibe score.
+
+    Energy is the primary signal (80%). Venue-specific context is secondary (20%).
+    Capacity acts as a potential-energy multiplier — it amplifies real energy but
+    cannot create energy where none exists. Gate is stored for context only.
+
+    Energy:        quiet=0, chill=25, warming=50, lit=75, peak=100
+    Capacity mult: sparse=0.92x, vibrant=1.05x, full=1.15x
     """
-    energy_scores = {"chill": 1, "good_vibes": 1.5, "buzzing": 1.5, "popping": 2, "electric": 3}
-    capacity_scores = {"sparse": 1, "vibrant": 2, "full": 3}
-    gate_scores = {"clear": 3, "slow": 2, "blocked": 1}
-    e = energy_scores.get(energy, 1)
-    c = capacity_scores.get(capacity, 1)
-    g = gate_scores.get(gate, 1)
-    total = e + c + g
-    return round((total / 9) * 100, 1)
+    energy_scores = {"quiet": 0, "chill": 25, "warming": 50, "lit": 75, "peak": 100}
+    venue_specific_map = {
+        # Club / Rave — DJ set quality
+        "mellow": 0, "good_set": 50, "killing_it": 100,
+        # Bar — atmosphere
+        "quiet_atm": 0, "decent_atm": 50, "loud_alive": 100,
+        # Lounge — service vibe
+        "slow_service": 0, "decent_service": 50, "on_point": 100,
+        # Concert / Event — crowd response
+        "flat_crowd": 0, "building_crowd": 50, "going_off": 100,
+        # Block Party / Festival — movement
+        "standing_around": 0, "mixed_movement": 50, "packed_dancing": 100,
+    }
+    capacity_multipliers = {"sparse": 0.92, "vibrant": 1.05, "full": 1.15}
+
+    e = energy_scores.get(energy, 25)
+    vs = venue_specific_map.get(venue_specific, 50) if venue_specific else 50
+    base = (e * 0.80) + (vs * 0.20)
+    multiplier = capacity_multipliers.get(capacity, 1.0)
+    return round(min(100.0, base * multiplier), 1)
+
+
+def get_venue_state(score: float, capacity: str) -> str:
+    """Derive the display state label from score + capacity.
+
+    CHARGED is a special state: the score is in the warming range but the crowd
+    is large — potential energy that could convert to kinetic at any moment.
+    """
+    if score >= 85:
+        return "peak"
+    if score >= 65:
+        return "lit"
+    if score >= 45:
+        return "charged" if capacity in ("full", "vibrant") else "warming"
+    if score >= 20:
+        return "chill"
+    return "quiet"
 
 
 def calculate_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
@@ -62,16 +95,23 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
     if venue.get("is_suppressed"):
         return {
             "current_vibe_score": 0,
-            "energy_level": "chill",
+            "energy_level": "quiet",
+            "vibe_state": "quiet",
             "capacity_level": "sparse",
             "gate_level": "clear",
             "vibe_velocity": "stable",
             "total_ratings_24h": 0,
+            "viibe_certified": False,
         }
 
+    # Exclude ratings still in the provisional burst-detection hold
     ratings = await db.ratings.find({
         "venue_id": venue_id,
         "timestamp": {"$gte": hour_ago},
+        "$or": [
+            {"provisional": {"$ne": True}},
+            {"provisional_until": {"$lte": now}},
+        ],
     }).to_list(1000)
 
     if not ratings:
@@ -79,15 +119,17 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         glow_boost = venue.get("glow_boost", 0) or 0
         return {
             "current_vibe_score": min(100, base_score + glow_boost),
-            "energy_level": "chill",
+            "energy_level": "quiet",
+            "vibe_state": "quiet",
             "capacity_level": "sparse",
             "gate_level": "clear",
             "vibe_velocity": "stable",
             "total_ratings_24h": 0,
+            "viibe_certified": False,
         }
 
     weighted_scores = []
-    energy_counts = {"chill": 0, "popping": 0, "electric": 0}
+    energy_counts = {"quiet": 0, "chill": 0, "warming": 0, "lit": 0, "peak": 0}
     capacity_counts = {"sparse": 0, "vibrant": 0, "full": 0}
     gate_counts = {"clear": 0, "slow": 0, "blocked": 0}
 
@@ -108,7 +150,8 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
             weight = 1.0
 
         score = rating.get("vibe_score", calculate_vibe_score(
-            rating["energy"], rating["capacity"], rating["gate"]
+            rating["energy"], rating["capacity"], rating["gate"],
+            rating.get("venue_specific")
         ))
         weighted_scores.append((score, weight))
 
@@ -131,6 +174,9 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
     capacity_level = max(capacity_counts, key=capacity_counts.get)
     gate_level = max(gate_counts, key=gate_counts.get)
 
+    # Derive display state — CHARGED when warming energy meets a full crowd
+    vibe_state = get_venue_state(avg_score, capacity_level)
+
     # Calculate velocity
     recent_count = sum(
         1 for r in ratings
@@ -151,13 +197,27 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         "timestamp": {"$gte": day_ago},
     })
 
+    # VIIBE CERTIFIED: peak energy + max pulse active simultaneously
+    viibe_certified = avg_score >= 85 and ratings_24h >= 80
+    viibe_certified_at = now if viibe_certified else None
+
+    await db.venues.update_one(
+        {"id": venue_id},
+        {"$set": {
+            "viibe_certified": viibe_certified,
+            "viibe_certified_at": viibe_certified_at,
+        }},
+    )
+
     return {
         "current_vibe_score": round(avg_score, 1),
         "energy_level": energy_level,
+        "vibe_state": vibe_state,
         "capacity_level": capacity_level,
         "gate_level": gate_level,
         "vibe_velocity": velocity,
         "total_ratings_24h": ratings_24h,
+        "viibe_certified": viibe_certified,
     }
 
 

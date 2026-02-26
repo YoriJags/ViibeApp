@@ -11,7 +11,7 @@ interface Venue {
   address: string;
   area: string;
   current_vibe_score: number;
-  energy_level: 'chill' | 'popping' | 'electric';
+  energy_level: 'quiet' | 'chill' | 'warming' | 'charged' | 'lit' | 'peak';
   capacity_level: 'sparse' | 'vibrant' | 'full';
   gate_level: 'clear' | 'slow' | 'blocked';
   vibe_velocity: 'heating_up' | 'cooling_down' | 'stable';
@@ -20,6 +20,7 @@ interface Venue {
   entry_fee?: string;
   music_genre?: string;
   pulse?: PulseData;
+  viibe_certified?: boolean;
 }
 
 interface VenueCardProps {
@@ -30,12 +31,31 @@ interface VenueCardProps {
   onRatePress?: () => void;
 }
 
-// Gradient color pairs per vibe level
+// Gradient color pairs per vibe state
 const VIBE_GRADIENTS: Record<string, [string, string, string]> = {
-  electric: ['#FF3366', '#FF6B35', '#FF3366'],
-  popping: ['#FF9933', '#FFD700', '#FF9933'],
-  moderate: ['#9933FF', '#6B1FCC', '#9933FF'],
-  chill: ['#3399FF', '#00D4FF', '#3399FF'],
+  peak:    ['#FF3366', '#FF6B35', '#FF3366'],
+  lit:     ['#FF9933', '#FFD700', '#FF9933'],
+  charged: ['#9B59B6', '#8E44AD', '#9B59B6'],
+  warming: ['#9933FF', '#6B1FCC', '#9933FF'],
+  chill:   ['#3399FF', '#00D4FF', '#3399FF'],
+  quiet:   ['#555E6E', '#3D4450', '#555E6E'],
+};
+
+// Derive display state label from score + capacity (matches backend get_venue_state)
+const getVibeState = (score: number, capacity: string): string => {
+  if (score >= 85) return 'PEAK';
+  if (score >= 65) return 'LIT';
+  if (score >= 45) return (capacity === 'full' || capacity === 'vibrant') ? 'CHARGED' : 'WARMING';
+  if (score >= 20) return 'CHILL';
+  return 'QUIET';
+};
+
+const getVibeStateKey = (score: number, capacity: string): string => {
+  if (score >= 85) return 'peak';
+  if (score >= 65) return 'lit';
+  if (score >= 45) return (capacity === 'full' || capacity === 'vibrant') ? 'charged' : 'warming';
+  if (score >= 20) return 'chill';
+  return 'quiet';
 };
 
 export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostBadge = true, isNearby, onRatePress }) => {
@@ -68,27 +88,10 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
     ]).start();
   }, []);
 
-  const getVibeColor = (score: number) => {
-    if (score >= 80) return '#FF3366';
-    if (score >= 60) return '#FF9933';
-    if (score >= 40) return '#9933FF';
-    return '#3399FF';
-  };
-
-  const getVibeGradientKey = (score: number) => {
-    if (score >= 80) return 'electric';
-    if (score >= 60) return 'popping';
-    if (score >= 40) return 'moderate';
-    return 'chill';
-  };
-
-  const getEnergyLabel = (level: string) => {
-    switch (level) {
-      case 'electric': return 'Electric';
-      case 'popping': return 'Popping';
-      case 'chill': return 'Quiet';
-      default: return 'Quiet';
-    }
+  const getVibeColor = (score: number, capacity: string) => {
+    const key = getVibeStateKey(score, capacity);
+    const gradient = VIBE_GRADIENTS[key] ?? VIBE_GRADIENTS.quiet;
+    return gradient[0];
   };
 
   const getGateLabel = (gate: string) => {
@@ -112,10 +115,11 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
   };
 
   const velocityIcon = getVelocityIcon(venue.vibe_velocity);
-  const vibeColor = getVibeColor(venue.current_vibe_score);
-  const isLowEnergy = venue.current_vibe_score < 40;
-  const gradientKey = getVibeGradientKey(venue.current_vibe_score);
-  const gradientColors = VIBE_GRADIENTS[gradientKey];
+  const vibeColor = getVibeColor(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
+  const vibeStateLabel = getVibeState(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
+  const isLowEnergy = venue.current_vibe_score < 20;
+  const gradientKey = getVibeStateKey(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
+  const gradientColors = VIBE_GRADIENTS[gradientKey] ?? VIBE_GRADIENTS.quiet;
 
   // Static shadow values — no JS-thread animation needed for shadows
   const staticShadowOpacity = venue.current_vibe_score >= 80 ? 0.4 : venue.current_vibe_score >= 60 ? 0.25 : 0.1;
@@ -186,7 +190,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
             <Animated.View style={[styles.scoreContainer, { transform: [{ scale: scoreScale }] }]}>
               <View style={styles.scoreBox}>
                 <Text style={[styles.energyLabel, { color: vibeColor }]}>
-                  {getEnergyLabel(venue.energy_level)}
+                  {vibeStateLabel}
                 </Text>
                 <Text style={[styles.score, { color: vibeColor }]}>
                   {Math.round(venue.current_vibe_score)}%
@@ -202,12 +206,31 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
 
           <Text style={styles.area}>{venue.area}</Text>
 
-          {/* Status chips */}
-          <View style={styles.chips}>
-            <View style={styles.chip}>
-              <Ionicons name="enter" size={12} color="#888" />
-              <Text style={styles.chipText}>{getGateLabel(venue.gate_level)}</Text>
+          {/* VIIBE CERTIFIED badge */}
+          {venue.viibe_certified && (
+            <View style={styles.viibeStamp}>
+              <Text style={styles.viibeStampText}>✦ VIIBE CERTIFIED</Text>
             </View>
+          )}
+
+          {/* Context chips — crowd + queue */}
+          <View style={styles.chips}>
+            {venue.capacity_level && venue.capacity_level !== 'sparse' && (
+              <View style={styles.chip}>
+                <Ionicons name="people" size={12} color="#888" />
+                <Text style={styles.chipText}>
+                  {venue.capacity_level === 'full' ? 'Packed' : 'Filling Up'}
+                </Text>
+              </View>
+            )}
+            {venue.gate_level && venue.gate_level !== 'clear' && (
+              <View style={styles.chip}>
+                <Ionicons name="enter" size={12} color="#888" />
+                <Text style={styles.chipText}>
+                  {venue.gate_level === 'blocked' ? 'Long queue' : 'Short wait'}
+                </Text>
+              </View>
+            )}
             {venue.entry_fee && (
               <View style={styles.chip}>
                 <Ionicons name="ticket-outline" size={12} color="#888" />
@@ -390,6 +413,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#888',
     textTransform: 'capitalize',
+  },
+  viibeStamp: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,215,0,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.4)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 6,
+  },
+  viibeStampText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#FFD700',
+    letterSpacing: 1.5,
   },
   pulseBadgeContainer: {
     flexDirection: 'row',
