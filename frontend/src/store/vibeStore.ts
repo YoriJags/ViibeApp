@@ -27,7 +27,7 @@ interface Venue {
   venue_type: 'club' | 'lounge' | 'restaurant' | 'bar' | 'church' | 'concert' | 'rave' | 'block_party' | 'festival' | 'event' | 'other';
   coordinates: Coordinates;
   current_vibe_score: number;
-  energy_level: 'chill' | 'popping' | 'electric';
+  energy_level: 'quiet' | 'chill' | 'warming' | 'charged' | 'lit' | 'peak';
   capacity_level: 'sparse' | 'vibrant' | 'full';
   gate_level: 'clear' | 'slow' | 'blocked';
   vibe_velocity: 'heating_up' | 'cooling_down' | 'stable';
@@ -208,6 +208,7 @@ interface PersistedState {
   avatarConfig: { emoji: string; bgColor: string; accentColor: string } | null;
   locationSharingEnabled: boolean;
   vibePersona: 'turn_up' | 'grown_sexy' | 'culture' | 'chill_set' | null;
+  userMode: 'scout' | 'insider' | null;
 }
 
 interface LobbyVenue extends Venue {
@@ -257,6 +258,19 @@ interface TransientState {
   vibeDNA: VibeDNA | null;
   cityPulse: CityPulseData | null;
   featureFlags: Record<string, boolean>;
+  // Venue Live
+  followedVenues: any[];
+  livePushFeed: LivePush[];
+}
+
+export interface LivePush {
+  venue_id: string;
+  venue_name: string;
+  venue_category: string;
+  message: string;
+  push_id: string;
+  sent_at: string;
+  heading_count?: number;
 }
 
 export type CityPulseLabel = 'QUIET' | 'CHILL' | 'WARMING' | 'LIT' | 'PEAK';
@@ -365,6 +379,7 @@ interface VibeStoreActions {
   updateAvatar: (config: { emoji: string; bgColor: string; accentColor: string }) => void;
   toggleLocationSharing: () => void;
   setVibePersona: (persona: 'turn_up' | 'grown_sexy' | 'culture' | 'chill_set') => void;
+  setUserMode: (mode: 'scout' | 'insider') => void;
   // Cooldown
   cooldownSkip: (venueId: string, method: 'clout' | 'payment') => Promise<{ success: boolean; clout_remaining?: number; error?: string }>;
   // Crew Tracker
@@ -383,6 +398,14 @@ interface VibeStoreActions {
   initializeVibePlus: () => Promise<{ authorization_url: string; reference: string }>;
   verifyVibePlus: (reference: string) => Promise<{ success: boolean; is_vibe_plus: boolean; expires_at?: string }>;
   refreshSubscriptionStatus: () => Promise<void>;
+  // Venue Live — Follow, I Dey Road, Live Push
+  followVenue: (venueId: string) => Promise<boolean>;
+  unfollowVenue: (venueId: string) => Promise<void>;
+  fetchFollowing: () => Promise<void>;
+  fetchFollowingFeed: () => Promise<void>;
+  setDeyRoad: (venueId: string, status?: 'enroute' | 'maybe' | 'pass') => Promise<number>;
+  cancelDeyRoad: (venueId: string) => Promise<void>;
+  sendLivePush: (venueId: string, message: string) => Promise<{ success: boolean; notifications_sent: number }>;
 }
 
 type VibeStore = PersistedState & TransientState & VibeStoreActions;
@@ -403,6 +426,7 @@ export const useVibeStore = create<VibeStore>()(
       avatarConfig: null,
       locationSharingEnabled: true,
       vibePersona: null,
+      userMode: null,
 
       // Transient state (not persisted)
       venues: [],
@@ -435,6 +459,8 @@ export const useVibeStore = create<VibeStore>()(
       vibeDNA: null,
       cityPulse: null,
       featureFlags: {},
+      followedVenues: [],
+      livePushFeed: [],
 
       // Hydration tracker
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
@@ -1192,7 +1218,10 @@ export const useVibeStore = create<VibeStore>()(
           headers: getAuthHeaders(),
           body: JSON.stringify({ email: user?.email }),
         });
-        if (!res.ok) throw new Error('Failed to initialize subscription');
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || 'Could not start payment. Please try again.');
+        }
         return await res.json();
       },
 
@@ -1535,6 +1564,7 @@ export const useVibeStore = create<VibeStore>()(
         set({ locationSharingEnabled: !get().locationSharingEnabled });
       },
       setVibePersona: (persona) => set({ vibePersona: persona }),
+      setUserMode: (mode) => set({ userMode: mode }),
 
       // ===== Campaign Actions =====
       fetchActiveCampaigns: async (city?: string) => {
@@ -1583,11 +1613,117 @@ export const useVibeStore = create<VibeStore>()(
           set({ cityPulse: data });
         });
 
+        newSocket.on('venue_live_push', (push: LivePush) => {
+          set((state) => ({
+            livePushFeed: [push, ...state.livePushFeed].slice(0, 50),
+          }));
+        });
+
         newSocket.on('disconnect', () => {
           console.log('Socket disconnected');
         });
 
         set({ socket: newSocket });
+      },
+
+      // ── Venue Live ──────────────────────────────────────────────────────────
+
+      followVenue: async (venueId: string) => {
+        const { getAuthHeaders, isDemoMode } = get();
+        if (isDemoMode) return true;
+        try {
+          const res = await fetch(`${API_URL}/api/venues/${venueId}/follow`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+          });
+          if (!res.ok) return false;
+          await get().fetchFollowing();
+          return true;
+        } catch { return false; }
+      },
+
+      unfollowVenue: async (venueId: string) => {
+        const { getAuthHeaders, isDemoMode } = get();
+        if (isDemoMode) return;
+        try {
+          await fetch(`${API_URL}/api/venues/${venueId}/follow`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+          });
+          await get().fetchFollowing();
+        } catch { /* ignore */ }
+      },
+
+      fetchFollowing: async () => {
+        const { getAuthHeaders, isDemoMode, isAuthenticated } = get();
+        if (!isAuthenticated || isDemoMode) return;
+        try {
+          const res = await fetch(`${API_URL}/api/venues/me/following`, {
+            headers: getAuthHeaders(),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            set({ followedVenues: data.following || [] });
+          }
+        } catch { /* ignore */ }
+      },
+
+      fetchFollowingFeed: async () => {
+        const { getAuthHeaders, isDemoMode, isAuthenticated } = get();
+        if (!isAuthenticated || isDemoMode) return;
+        try {
+          const res = await fetch(`${API_URL}/api/venues/following/feed`, {
+            headers: getAuthHeaders(),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            set({ livePushFeed: data.pushes || [] });
+          }
+        } catch { /* ignore */ }
+      },
+
+      setDeyRoad: async (venueId: string, status: 'enroute' | 'maybe' | 'pass' = 'enroute') => {
+        const { getAuthHeaders, isDemoMode } = get();
+        if (isDemoMode) return 0;
+        try {
+          const res = await fetch(`${API_URL}/api/venues/${venueId}/heading`, {
+            method: 'POST',
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            return data.enroute ?? 0;
+          }
+          return 0;
+        } catch { return 0; }
+      },
+
+      cancelDeyRoad: async (venueId: string) => {
+        const { getAuthHeaders, isDemoMode } = get();
+        if (isDemoMode) return;
+        try {
+          await fetch(`${API_URL}/api/venues/${venueId}/heading`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+          });
+        } catch { /* ignore */ }
+      },
+
+      sendLivePush: async (venueId: string, message: string) => {
+        const { getAuthHeaders } = get();
+        try {
+          const res = await fetch(`${API_URL}/api/venues/${venueId}/live-push`, {
+            method: 'POST',
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'Failed to send');
+          return { success: true, notifications_sent: data.notifications_sent ?? 0 };
+        } catch (e: any) {
+          return { success: false, notifications_sent: 0, error: e.message };
+        }
       },
 
       disconnectSocket: () => {
@@ -1615,6 +1751,7 @@ export const useVibeStore = create<VibeStore>()(
         avatarConfig: state.avatarConfig,
         locationSharingEnabled: state.locationSharingEnabled,
         vibePersona: state.vibePersona,
+        userMode: state.userMode,
       }),
       onRehydrateStorage: () => (state) => {
         // Called when store is rehydrated from storage

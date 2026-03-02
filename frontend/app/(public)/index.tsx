@@ -39,10 +39,13 @@ import TheWave from '../../src/components/TheWave';
 import VibeMarket, { VibeMarketVenue } from '../../src/components/VibeMarket';
 import NoDulling from '../../src/components/NoDulling';
 import CityPulseBar from '../../src/components/CityPulseBar';
+import TopThreeStrip from '../../src/components/TopThreeStrip';
 import ActivityTicker from '../../src/components/ActivityTicker';
 import { getNightPhase } from '../../src/store/vibeStore';
 import { calculateDistance } from '../../src/utils/geo';
 import VibeBriefCard from '../../src/components/VibeBriefCard';
+import LivePushFeed from '../../src/components/LivePushFeed';
+import { getSceneIntelShort } from '../../src/utils/sceneIntel';
 
 const { width } = Dimensions.get('window');
 
@@ -536,10 +539,254 @@ const CITIES = [
   { code: 'ibadan', name: 'Ibadan', emoji: '\u{1F3DB}\u{FE0F}', tagline: 'Ancient City Scene' },
 ];
 
+// ─── Insider Mode Feed ────────────────────────────────────────────────────────
+// Scene intelligence view — no rating prompts, no clout. Just clean Intel.
+
+function InsiderFeed({
+  venues,
+  cityPulse,
+  cityName,
+  onVenuePress,
+  onSwitchMode,
+  refreshing,
+  onRefresh,
+}: {
+  venues: any[];
+  cityPulse: any;
+  cityName: string;
+  onVenuePress: (id: string) => void;
+  onSwitchMode: () => void;
+  refreshing: boolean;
+  onRefresh: () => void;
+}) {
+  const pulse_score = cityPulse?.pulse_score ?? 0;
+  const pulse_label = (cityPulse?.pulse_label ?? 'CHILL').toUpperCase();
+
+  const accentColor =
+    pulse_score >= 80 ? '#FF3366' :
+    pulse_score >= 60 ? '#FF9933' :
+    pulse_score >= 30 ? '#9933FF' :
+    '#3399FF';
+
+  // Top venues = score ≥ 40, sorted descending
+  const topVenues = [...venues]
+    .filter((v: any) => (v.current_vibe_score ?? 0) >= 40)
+    .sort((a: any, b: any) => (b.current_vibe_score ?? 0) - (a.current_vibe_score ?? 0))
+    .slice(0, 10);
+
+  const quietVenues = venues.filter((v: any) => (v.current_vibe_score ?? 0) < 40);
+
+  const scoreColor = (s: number) =>
+    s >= 80 ? '#FF3366' : s >= 60 ? '#FF9933' : s >= 40 ? '#9933FF' : '#3399FF';
+
+  return (
+    <ScrollView
+      style={{ flex: 1 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#9933FF" />}
+      contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 16 }}
+    >
+      {/* Intel Header */}
+      <View style={insiderStyles.header}>
+        <View>
+          <Text style={insiderStyles.headerTitle}>TONIGHT'S INTEL</Text>
+          <Text style={[insiderStyles.headerSub, { color: accentColor }]}>
+            {cityName} — {pulse_label} · {pulse_score}%
+          </Text>
+        </View>
+        <TouchableOpacity style={insiderStyles.switchBtn} onPress={onSwitchMode} activeOpacity={0.75}>
+          <Ionicons name="swap-horizontal" size={13} color="#888" />
+          <Text style={insiderStyles.switchBtnText}>Scout Mode</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Live Push Feed — merchant blasts */}
+      <ErrorBoundary label="Live Push Feed">
+        <LivePushFeed />
+      </ErrorBoundary>
+
+      {/* Scene separator */}
+      {topVenues.length > 0 && (
+        <View style={insiderStyles.sectionRow}>
+          <View style={[insiderStyles.sectionDot, { backgroundColor: accentColor }]} />
+          <Text style={insiderStyles.sectionLabel}>ACTIVE VENUES · SORTED BY ENERGY</Text>
+        </View>
+      )}
+
+      {/* Intel venue cards */}
+      {topVenues.map((venue: any) => {
+        const score = venue.current_vibe_score ?? 0;
+        const intel = getSceneIntelShort({
+          name: venue.name,
+          venue_type: venue.venue_type ?? 'bar',
+          current_vibe_score: score,
+          energy_level: venue.energy_level ?? 'chill',
+          capacity_level: venue.capacity_level ?? 'sparse',
+          gate_level: venue.gate_level ?? 'clear',
+          vibe_velocity: venue.vibe_velocity ?? 'stable',
+        });
+        const col = scoreColor(score);
+
+        return (
+          <TouchableOpacity
+            key={venue.id}
+            style={insiderStyles.venueCard}
+            onPress={() => onVenuePress(venue.id)}
+            activeOpacity={0.8}
+          >
+            <View style={insiderStyles.venueScoreBlock}>
+              <Text style={[insiderStyles.venueScore, { color: col }]}>{Math.round(score)}</Text>
+              <View style={[insiderStyles.scoreDot, { backgroundColor: col }]} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={insiderStyles.venueName} numberOfLines={1}>{venue.name}</Text>
+              <Text style={insiderStyles.venueArea} numberOfLines={1}>{venue.area || venue.district || ''}</Text>
+              <Text style={insiderStyles.venueIntel} numberOfLines={2}>{intel}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={14} color="#333" />
+          </TouchableOpacity>
+        );
+      })}
+
+      {/* Quiet venues divider */}
+      {quietVenues.length > 0 && (
+        <>
+          <View style={insiderStyles.sectionRow}>
+            <View style={[insiderStyles.sectionDot, { backgroundColor: '#333' }]} />
+            <Text style={insiderStyles.sectionLabel}>QUIET / NOT THE MOVE YET</Text>
+          </View>
+          {quietVenues.map((venue: any) => (
+            <TouchableOpacity
+              key={venue.id}
+              style={[insiderStyles.venueCard, { opacity: 0.55 }]}
+              onPress={() => onVenuePress(venue.id)}
+              activeOpacity={0.75}
+            >
+              <View style={insiderStyles.venueScoreBlock}>
+                <Text style={[insiderStyles.venueScore, { color: '#444', fontSize: 22 }]}>
+                  {Math.round(venue.current_vibe_score ?? 0)}
+                </Text>
+                <View style={[insiderStyles.scoreDot, { backgroundColor: '#333' }]} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[insiderStyles.venueName, { color: '#666' }]} numberOfLines={1}>{venue.name}</Text>
+                <Text style={insiderStyles.venueArea} numberOfLines={1}>{venue.area || ''}</Text>
+                <Text style={[insiderStyles.venueIntel, { color: '#444' }]}>Not the move right now.</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={14} color="#222" />
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
+
+      {venues.length === 0 && (
+        <View style={{ alignItems: 'center', paddingVertical: 60 }}>
+          <Text style={{ color: '#444', fontSize: 14 }}>No venues loaded yet. Pull to refresh.</Text>
+        </View>
+      )}
+    </ScrollView>
+  );
+}
+
+const insiderStyles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    marginBottom: 4,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#FFF',
+    letterSpacing: 2,
+  },
+  headerSub: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginTop: 2,
+  },
+  switchBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderColor: '#222',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  switchBtnText: {
+    fontSize: 11,
+    color: '#666',
+    fontWeight: '700',
+  },
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  sectionDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  sectionLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#444',
+    letterSpacing: 1.5,
+  },
+  venueCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#0F0F16',
+  },
+  venueScoreBlock: {
+    width: 48,
+    alignItems: 'center',
+    gap: 4,
+  },
+  venueScore: {
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: -1,
+    lineHeight: 30,
+  },
+  scoreDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+  },
+  venueName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#EEE',
+    marginBottom: 1,
+  },
+  venueArea: {
+    fontSize: 11,
+    color: '#444',
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  venueIntel: {
+    fontSize: 12,
+    color: '#777',
+    lineHeight: 17,
+  },
+});
+
 export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string }>();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
@@ -733,7 +980,7 @@ export default function MapScreen() {
         const reason = affinity
           ? `${dnaScore}% affinity for ${v.venue_type}s · Vibe score ${v.current_vibe_score ?? '?'}`
           : `Trending in ${v.area || selectedCity}`;
-        return { venueName: v.name, venueId: v.id, venueArea: v.area, matchPercent, vibeScore: v.current_vibe_score ?? 50, energyLevel: v.energy_level ?? 'popping', reason };
+        return { venueName: v.name, venueId: v.id, venueArea: v.area, matchPercent, vibeScore: v.current_vibe_score ?? 50, energyLevel: v.energy_level ?? 'lit', reason };
       })
       .sort((a, b) => b.matchPercent - a.matchPercent)[0];
     return top ?? null;
@@ -804,7 +1051,7 @@ export default function MapScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <View>
-            <Text style={[styles.headerTitle, styles.headerGlow]}>VIBE</Text>
+            <Text style={[styles.headerTitle, styles.headerGlow]}>VIIBE</Text>
             <Text style={styles.headerSubtitle}>Loading...</Text>
           </View>
         </View>
@@ -831,7 +1078,7 @@ export default function MapScreen() {
               { textShadowRadius: headerGlowAnim.interpolate({ inputRange: [0.6, 1], outputRange: [8, 20] }) },
             ]}
           >
-            VIBE
+            VIIBE
           </Animated.Text>
           <TouchableOpacity
             style={styles.citySelector}
@@ -852,6 +1099,16 @@ export default function MapScreen() {
             spotsLive={spotsLive}
             cityName={cityName}
           />
+          {/* Mode toggle — Scout ↔ Insider (always visible; null treated as scout) */}
+          <TouchableOpacity
+            style={[styles.modePill, userMode === 'insider' && styles.modePillInsider]}
+            onPress={() => setUserMode(userMode === 'insider' ? 'scout' : 'insider')}
+            activeOpacity={0.75}
+          >
+            <Text style={[styles.modePillText, userMode === 'insider' && { color: '#9933FF' }]}>
+              {userMode === 'insider' ? '🔭' : '📡'}
+            </Text>
+          </TouchableOpacity>
           {isFeatureEnabled('night_planner_btn') && (
             <TouchableOpacity
               style={styles.plannerButton}
@@ -925,7 +1182,17 @@ export default function MapScreen() {
         onAnimationComplete={() => setShowCloutReward(false)}
       />
 
-      {showList ? (
+      {showList && userMode === 'insider' ? (
+        <InsiderFeed
+          venues={filteredVenues}
+          cityPulse={cityPulse}
+          cityName={cityName}
+          onVenuePress={(id) => router.push(`/venue/${id}`)}
+          onSwitchMode={() => setUserMode('scout')}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
+      ) : showList ? (
         <ScrollView
           style={styles.listContainer}
           refreshControl={
@@ -941,6 +1208,20 @@ export default function MapScreen() {
             <CityPulseBar
               pulse={cityPulse}
               onPress={() => router.push('/(public)/trending')}
+            />
+          )}
+
+          {/* Live Push Feed — updates from followed venues */}
+          <ErrorBoundary label="Live Push Feed">
+            <LivePushFeed />
+          </ErrorBoundary>
+
+          {/* Top 3 Strip — tonight's hottest venues */}
+          {vibeMarketVenues.length > 0 && (
+            <TopThreeStrip
+              venues={vibeMarketVenues}
+              onVenuePress={(id) => router.push(`/venue/${id}`)}
+              onSeeMore={() => router.push('/(public)/trending')}
             />
           )}
 
@@ -997,27 +1278,6 @@ export default function MapScreen() {
               totalCloutEarned={isDemoMode ? 120 : 0}
               newBadgesCount={isDemoMode ? 1 : 0}
               bestMomentText="Quilox hit 87% while you were there"
-            />
-          )}
-
-          {/* VibeBriefCard — Daily AI city briefing */}
-          {isFeatureEnabled('vibe_brief') && <VibeBriefCard city={selectedCity} isDemoMode={isDemoMode} />}
-
-          {/* MarketTeaser — top-3 preview, full leaderboard lives on Trending */}
-          {vibeMarketVenues.length > 0 && (
-            <MarketTeaser
-              venues={vibeMarketVenues}
-              cityLabel={cityPulse?.pulse_label ?? 'BUZZING'}
-              onSeeMore={() => router.push('/(public)/trending')}
-            />
-          )}
-
-          {/* CartelPulse — Cartel activity card */}
-          {crew && isDemoMode && (
-            <CartelPulse
-              cartelName={(crew as any).name}
-              members={(crew as any).member_details || []}
-              onPress={() => router.push('/(public)/crew')}
             />
           )}
 
@@ -1232,6 +1492,23 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,215,0,0.25)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modePill: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: '#222',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modePillInsider: {
+    borderColor: '#9933FF44',
+    backgroundColor: 'rgba(153,51,255,0.08)',
+  },
+  modePillText: {
+    fontSize: 16,
   },
   viewToggle: {
     width: 44,

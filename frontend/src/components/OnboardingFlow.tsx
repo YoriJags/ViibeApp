@@ -38,7 +38,7 @@ const pages: OnboardingPage[] = [
     icon: 'map',
     iconColor: '#FF3366',
     headline: "Know exactly where\nto be tonight.",
-    body: "Clubs. Restaurants. Concerts. Lounges. Anywhere people gather, there's an atmosphere worth knowing about.\n\nVibez shows you the real-time energy of every venue and event in your city.",
+    body: "Clubs. Restaurants. Concerts. Lounges. Anywhere people gather, there's an atmosphere worth knowing about.\n\nViibez shows you the real-time energy of every venue and event in your city.",
     accent: '#FF3366',
   },
   {
@@ -76,15 +76,48 @@ const PERSONAS: { key: VibePersona; emoji: string; label: string; subtitle: stri
   { key: 'chill_set', emoji: '🌙', label: 'The Chill Set', subtitle: 'Restaurants · Cafes · Low-key spots', gradient: ['#00D4FF', '#00E676'] },
 ];
 
+type UserMode = 'scout' | 'insider';
+
+const MODES: {
+  key: UserMode;
+  emoji: string;
+  label: string;
+  subtitle: string;
+  description: string;
+  gradient: [string, string];
+  accentColor: string;
+}[] = [
+  {
+    key: 'scout',
+    emoji: '📡',
+    label: 'Scout',
+    subtitle: 'Rate. Earn. Lead.',
+    description: 'You step into venues and call the vibe. Build clout, earn multipliers, and rank among the city\'s most trusted voices.',
+    gradient: ['#FF3366', '#FF6B35'],
+    accentColor: '#FF3366',
+  },
+  {
+    key: 'insider',
+    emoji: '🔭',
+    label: 'Insider',
+    subtitle: 'Know before you go.',
+    description: 'You consume intel. Get scene reports, arrival windows, and demand signals — so you always pick the right move.',
+    gradient: ['#9933FF', '#4169E1'],
+    accentColor: '#9933FF',
+  },
+];
+
 export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showPersona, setShowPersona] = useState(false);
+  const [showModeSelect, setShowModeSelect] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState<VibePersona | null>(null);
+  const [selectedMode, setSelectedMode] = useState<UserMode | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
-  // Import store action lazily to avoid circular deps
-  const { setVibePersona } = require('../store/vibeStore').useVibeStore.getState();
+  // Import store actions lazily to avoid circular deps
+  const { setVibePersona, setUserMode } = require('../store/vibeStore').useVibeStore.getState();
 
   const handleNext = () => {
     if (currentIndex < pages.length - 1) {
@@ -104,6 +137,14 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     if (selectedPersona) {
       setVibePersona(selectedPersona);
     }
+    // After persona, show mode picker
+    setShowPersona(false);
+    setShowModeSelect(true);
+  };
+
+  const handleModeConfirm = () => {
+    const mode = selectedMode ?? 'scout';
+    setUserMode(mode);
     onComplete();
   };
 
@@ -178,6 +219,81 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
             >
               <Text style={styles.ctaText}>
                 {selectedPersona ? "Let's Go" : 'Skip for now'}
+              </Text>
+              <Ionicons name="arrow-forward" size={20} color="#FFF" />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // ── Mode Picker Screen ──────────────────────────────────────
+  if (showModeSelect) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.personaScreen}>
+          <Text style={styles.personaTitle}>How do you{'\n'}roll tonight?</Text>
+          <Text style={styles.personaSubtitle}>This shapes your home experience. You can switch anytime.</Text>
+
+          <View style={{ width: '100%', gap: 14, marginBottom: 8, flex: 1, justifyContent: 'center' }}>
+            {MODES.map((m) => {
+              const isSelected = selectedMode === m.key;
+              return (
+                <TouchableOpacity
+                  key={m.key}
+                  style={[modeStyles.card, isSelected && { borderColor: m.accentColor }]}
+                  onPress={() => setSelectedMode(m.key)}
+                  activeOpacity={0.8}
+                >
+                  {isSelected ? (
+                    <LinearGradient
+                      colors={m.gradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={modeStyles.cardInner}
+                    >
+                      <Text style={modeStyles.modeEmoji}>{m.emoji}</Text>
+                      <View style={{ flex: 1 }}>
+                        <View style={modeStyles.labelRow}>
+                          <Text style={modeStyles.modeLabel}>{m.label}</Text>
+                          <Text style={modeStyles.modeSub}>{m.subtitle}</Text>
+                        </View>
+                        <Text style={modeStyles.modeDesc}>{m.description}</Text>
+                      </View>
+                    </LinearGradient>
+                  ) : (
+                    <View style={[modeStyles.cardInner, modeStyles.cardInnerUnselected]}>
+                      <Text style={modeStyles.modeEmoji}>{m.emoji}</Text>
+                      <View style={{ flex: 1 }}>
+                        <View style={modeStyles.labelRow}>
+                          <Text style={[modeStyles.modeLabel, { color: '#CCC' }]}>{m.label}</Text>
+                          <Text style={modeStyles.modeSub}>{m.subtitle}</Text>
+                        </View>
+                        <Text style={modeStyles.modeDesc}>{m.description}</Text>
+                      </View>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <TouchableOpacity
+            onPress={handleModeConfirm}
+            activeOpacity={0.8}
+            style={{ width: '100%' }}
+          >
+            <LinearGradient
+              colors={selectedMode
+                ? (MODES.find(m => m.key === selectedMode)?.gradient ?? ['#FF3366', '#FF6B35'])
+                : ['#333', '#444']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.ctaButton}
+            >
+              <Text style={styles.ctaText}>
+                {selectedMode ? `Enter as ${MODES.find(m => m.key === selectedMode)?.label}` : 'Skip for now'}
               </Text>
               <Ionicons name="arrow-forward" size={20} color="#FFF" />
             </LinearGradient>
@@ -431,5 +547,49 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     textAlign: 'center',
     lineHeight: 14,
+  },
+});
+
+const modeStyles = StyleSheet.create({
+  card: {
+    width: '100%',
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  cardInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    gap: 16,
+  },
+  cardInnerUnselected: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  modeEmoji: {
+    fontSize: 38,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+    marginBottom: 6,
+  },
+  modeLabel: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFF',
+    letterSpacing: -0.3,
+  },
+  modeSub: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.65)',
+    fontWeight: '600',
+  },
+  modeDesc: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.55)',
+    lineHeight: 17,
   },
 });

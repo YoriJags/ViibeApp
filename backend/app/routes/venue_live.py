@@ -1,0 +1,353 @@
+"""
+Venue Live — Merchant push blasts, "Heading There" intent, Venue Follow.
+
+Routes:
+  POST   /api/venues/:id/live-push        merchant sends a live blast to followers + nearby
+  GET    /api/venues/:id/live-pushes      recent pushes for a venue (public feed)
+  POST   /api/venues/:id/heading          user taps "I'm heading there"
+  DELETE /api/venues/:id/heading          user cancels heading
+  GET    /api/venues/:id/heading-count    how many people are heading there right now
+  POST   /api/venues/:id/follow           follow a venue
+  DELETE /api/venues/:id/follow           unfollow a venue
+  GET    /api/venues/me/following         all venues the current user follows
+  GET    /api/venues/following/feed       live-push feed from followed venues
+"""
+from datetime import datetime, timezone, timedelta
+from fastapi import APIRouter, HTTPException, Header
+from pydantic import BaseModel
+from typing import Optional
+from app.config import db, logger, sio
+from app.services.notifications import send_push_notification
+
+router = APIRouter()
+
+# ─── helpers ──────────────────────────────────────────────────────────────────
+
+async def _require_user(authorization: str) -> dict:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = authorization.split(" ")[1]
+    user = await db.users.find_one({"token": token})
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return user
+
+async def _require_merchant_for_venue(user: dict, venue_id: str) -> dict:
+    venue = await db.venues.find_one({"id": venue_id})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    if venue.get("owner_id") != user["id"] and user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Not your venue")
+    return venue
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+# ─── schemas ──────────────────────────────────────────────────────────────────
+
+class LivePushRequest(BaseModel):
+    message: str          # "Floor is packed, DJ just dropped — free entry till 1am"
+    venue_type: Optional[str] = None  # optional override; defaults to venue.category
+
+# ─── MERCHANT: SEND LIVE PUSH ─────────────────────────────────────────────────
+
+@router.post("/venues/{venue_id}/live-push")
+async def send_live_push(
+    venue_id: str,
+    body: LivePushRequest,
+    authorization: str = Header(default=""),
+):
+    user = await _require_user(authorization)
+    venue = await _require_merchant_for_venue(user, venue_id)
+
+    if not body.message or not body.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    if len(body.message) > 500:
+        raise HTTPException(status_code=400, detail="Message too long (max 500 chars)")
+
+    # Rate-limit: max 1 push per 30 minutes per venue
+    recent = await db.venue_live_pushes.find_one({
+        "venue_id": venue_id,
+        "sent_at": {"$gte": _now() - timedelta(minutes=30)},
+    })
+    if recent:
+        raise HTTPException(
+            status_code=429,
+            detail="You can only send one live update every 30 minutes"
+        )
+
+    venue_name = venue.get("name", "A venue")
+    venue_category = body.venue_type or venue.get("category", "venue")
+
+    # Persist the push
+    push_doc = {
+        "venue_id": venue_id,
+        "venue_name": venue_name,
+        "venue_category": venue_category,
+        "merchant_id": user["id"],
+        "message": body.message.strip(),
+        "sent_at": _now(),
+        "heading_count": 0,  # will grow as users tap "heading there"
+    }
+    result = await db.venue_live_pushes.insert_one(push_doc)
+    push_id = str(result.inserted_id)
+
+    # ── notify followers ──────────────────────────────────────────────────────
+    followers = await db.venue_follows.find({"venue_id": venue_id}).to_list(2000)
+    follower_ids = {f["user_id"] for f in followers}
+
+    sent = 0
+    for fid in follower_ids:
+        ok = await send_push_notification(
+            user_id=fid,
+            title=f"🔥 {venue_name} is live",
+            body=body.message.strip(),
+            data={
+                "type": "venue_live_push",
+                "venue_id": venue_id,
+                "push_id": push_id,
+                "venue_name": venue_name,
+            },
+        )
+        if ok:
+            sent += 1
+
+    # ── Socket.IO real-time broadcast (in-app) ─────────────────────────────────
+    await sio.emit("venue_live_push", {
+        "venue_id": venue_id,
+        "venue_name": venue_name,
+        "venue_category": venue_category,
+        "message": body.message.strip(),
+        "push_id": push_id,
+        "sent_at": _now().isoformat(),
+    })
+
+    logger.info(f"Live push from venue {venue_id}: {sent} push notifications sent")
+
+    return {
+        "success": True,
+        "push_id": push_id,
+        "notifications_sent": sent,
+        "followers_reached": len(follower_ids),
+    }
+
+
+# ─── PUBLIC: GET RECENT LIVE PUSHES FOR A VENUE ───────────────────────────────
+
+@router.get("/venues/{venue_id}/live-pushes")
+async def get_venue_live_pushes(venue_id: str, limit: int = 5):
+    venue = await db.venues.find_one({"id": venue_id})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    cutoff = _now() - timedelta(hours=6)  # only show last 6 hours
+    pushes = await db.venue_live_pushes.find(
+        {"venue_id": venue_id, "sent_at": {"$gte": cutoff}},
+        {"_id": 0}
+    ).sort("sent_at", -1).limit(limit).to_list(limit)
+
+    for p in pushes:
+        if isinstance(p.get("sent_at"), datetime):
+            p["sent_at"] = p["sent_at"].isoformat()
+
+    return {"pushes": pushes}
+
+
+# ─── PUBLIC: FOLLOWING FEED ───────────────────────────────────────────────────
+
+@router.get("/venues/following/feed")
+async def get_following_feed(
+    limit: int = 20,
+    authorization: str = Header(default=""),
+):
+    user = await _require_user(authorization)
+
+    follows = await db.venue_follows.find({"user_id": user["id"]}).to_list(500)
+    venue_ids = [f["venue_id"] for f in follows]
+
+    if not venue_ids:
+        return {"pushes": [], "followed_count": 0}
+
+    cutoff = _now() - timedelta(hours=12)
+    pushes = await db.venue_live_pushes.find(
+        {"venue_id": {"$in": venue_ids}, "sent_at": {"$gte": cutoff}},
+        {"_id": 0}
+    ).sort("sent_at", -1).limit(limit).to_list(limit)
+
+    for p in pushes:
+        if isinstance(p.get("sent_at"), datetime):
+            p["sent_at"] = p["sent_at"].isoformat()
+
+    return {"pushes": pushes, "followed_count": len(venue_ids)}
+
+
+# ─── HEADING THERE ────────────────────────────────────────────────────────────
+
+class IntentRequest(BaseModel):
+    status: str  # "enroute" | "maybe" | "pass"
+
+VALID_INTENTS = {"enroute", "maybe", "pass"}
+
+async def _get_intent_counts(venue_id: str) -> dict:
+    now = _now()
+    pipeline = [
+        {"$match": {"venue_id": venue_id, "expires_at": {"$gt": now}}},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}},
+    ]
+    rows = await db.venue_headings.aggregate(pipeline).to_list(10)
+    counts = {"enroute": 0, "maybe": 0, "pass": 0}
+    for row in rows:
+        if row["_id"] in counts:
+            counts[row["_id"]] = row["count"]
+    return counts
+
+
+@router.post("/venues/{venue_id}/heading")
+async def set_heading(
+    venue_id: str,
+    body: IntentRequest,
+    authorization: str = Header(default=""),
+):
+    user = await _require_user(authorization)
+
+    if body.status not in VALID_INTENTS:
+        raise HTTPException(status_code=400, detail=f"status must be one of: {sorted(VALID_INTENTS)}")
+
+    venue = await db.venues.find_one({"id": venue_id})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    expires = _now() + timedelta(hours=3)
+
+    await db.venue_headings.update_one(
+        {"user_id": user["id"], "venue_id": venue_id},
+        {"$set": {
+            "user_id": user["id"],
+            "venue_id": venue_id,
+            "status": body.status,
+            "created_at": _now(),
+            "expires_at": expires,
+        }},
+        upsert=True,
+    )
+
+    counts = await _get_intent_counts(venue_id)
+    await sio.emit("heading_update", {"venue_id": venue_id, **counts})
+    return {"success": True, **counts}
+
+
+@router.delete("/venues/{venue_id}/heading")
+async def cancel_heading(
+    venue_id: str,
+    authorization: str = Header(default=""),
+):
+    user = await _require_user(authorization)
+    await db.venue_headings.delete_one({"user_id": user["id"], "venue_id": venue_id})
+    counts = await _get_intent_counts(venue_id)
+    await sio.emit("heading_update", {"venue_id": venue_id, **counts})
+    return {"success": True, **counts}
+
+
+@router.get("/venues/{venue_id}/heading-count")
+async def get_heading_count(venue_id: str):
+    counts = await _get_intent_counts(venue_id)
+    return {"venue_id": venue_id, **counts}
+
+
+# ─── FOLLOW / UNFOLLOW ────────────────────────────────────────────────────────
+
+@router.post("/venues/{venue_id}/follow")
+async def follow_venue(
+    venue_id: str,
+    authorization: str = Header(default=""),
+):
+    user = await _require_user(authorization)
+
+    venue = await db.venues.find_one({"id": venue_id})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    existing = await db.venue_follows.find_one({"user_id": user["id"], "venue_id": venue_id})
+    if existing:
+        return {"success": True, "following": True, "message": "Already following"}
+
+    await db.venue_follows.insert_one({
+        "user_id": user["id"],
+        "venue_id": venue_id,
+        "venue_name": venue.get("name", ""),
+        "venue_category": venue.get("category", ""),
+        "created_at": _now(),
+    })
+
+    count = await db.venue_follows.count_documents({"venue_id": venue_id})
+    return {"success": True, "following": True, "followers": count}
+
+
+@router.delete("/venues/{venue_id}/follow")
+async def unfollow_venue(
+    venue_id: str,
+    authorization: str = Header(default=""),
+):
+    user = await _require_user(authorization)
+    await db.venue_follows.delete_one({"user_id": user["id"], "venue_id": venue_id})
+    count = await db.venue_follows.count_documents({"venue_id": venue_id})
+    return {"success": True, "following": False, "followers": count}
+
+
+@router.get("/venues/me/following")
+async def get_following(authorization: str = Header(default="")):
+    user = await _require_user(authorization)
+
+    follows = await db.venue_follows.find(
+        {"user_id": user["id"]},
+        {"_id": 0, "venue_id": 1, "venue_name": 1, "venue_category": 1, "created_at": 1}
+    ).to_list(500)
+
+    venue_ids = [f["venue_id"] for f in follows]
+
+    # Enrich with live venue data
+    venues = []
+    if venue_ids:
+        raw = await db.venues.find({"id": {"$in": venue_ids}}).to_list(500)
+        venues = [
+            {
+                "id": v.get("id"),
+                "name": v.get("name"),
+                "category": v.get("category"),
+                "vibe_score": v.get("vibe_score", 0),
+                "energy_level": v.get("energy_level", "quiet"),
+                "district": v.get("district", ""),
+                "city": v.get("city", "Lagos"),
+            }
+            for v in raw
+        ]
+
+    return {"following": venues, "count": len(venues)}
+
+
+# ─── CHECK FOLLOW STATUS ──────────────────────────────────────────────────────
+
+@router.get("/venues/{venue_id}/follow-status")
+async def get_follow_status(
+    venue_id: str,
+    authorization: str = Header(default=""),
+):
+    if not authorization or not authorization.startswith("Bearer "):
+        return {"following": False}
+    token = authorization.split(" ")[1]
+    user = await db.users.find_one({"token": token})
+    if not user:
+        return {"following": False}
+
+    existing = await db.venue_follows.find_one({"user_id": user["id"], "venue_id": venue_id})
+    follower_count = await db.venue_follows.count_documents({"venue_id": venue_id})
+    heading_count = await db.venue_headings.count_documents({
+        "venue_id": venue_id,
+        "expires_at": {"$gt": _now()},
+    })
+    return {
+        "following": existing is not None,
+        "followers": follower_count,
+        "heading_count": heading_count,
+    }

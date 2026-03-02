@@ -49,22 +49,29 @@ def json_serial(obj):
         return obj.isoformat()
     raise TypeError(f"Type {type(obj)} not serializable")
 
-def calculate_vibe_score(energy, capacity, gate):
-    energy_scores = {"electric": 95, "popping": 75, "chill": 50, "dead": 20}
-    capacity_scores = {"packed": 90, "vibrant": 70, "sparse": 45, "empty": 15}
-    gate_scores = {"clear": 100, "slow": 60, "blocked": 30}
-    score = (
-        energy_scores.get(energy, 50) * 0.5 +
-        capacity_scores.get(capacity, 50) * 0.3 +
-        gate_scores.get(gate, 50) * 0.2
-    )
-    return int(score)
+def calculate_vibe_score(energy, capacity, gate, venue_specific=None):
+    """Mirror of server.py vibe.py: energy is 80%, venue_specific 20%, capacity is a multiplier. Gate stored only."""
+    energy_scores = {"quiet": 0, "chill": 25, "warming": 50, "lit": 75, "peak": 100}
+    venue_specific_map = {
+        "mellow": 0, "good_set": 50, "killing_it": 100,
+        "quiet_atm": 0, "decent_atm": 50, "loud_alive": 100,
+        "slow_service": 0, "decent_service": 50, "on_point": 100,
+        "flat_crowd": 0, "building_crowd": 50, "going_off": 100,
+        "standing_around": 0, "mixed_movement": 50, "packed_dancing": 100,
+    }
+    capacity_multipliers = {"sparse": 0.92, "vibrant": 1.05, "full": 1.15}
+    e = energy_scores.get(energy, 25)
+    vs = venue_specific_map.get(venue_specific, 50) if venue_specific else 50
+    base = (e * 0.80) + (vs * 0.20)
+    multiplier = capacity_multipliers.get(capacity, 1.0)
+    return int(min(100.0, base * multiplier))
 
 def get_energy_level(score):
-    if score >= 80: return "electric"
-    if score >= 60: return "popping"
-    if score >= 40: return "chill"
-    return "dead"
+    if score >= 85: return "peak"
+    if score >= 65: return "lit"
+    if score >= 45: return "warming"
+    if score >= 20: return "chill"
+    return "quiet"
 
 def calculate_distance(lat1, lng1, lat2, lng2):
     R = 6371000
@@ -104,7 +111,7 @@ def get_current_user(headers):
 # ========================
 
 def handle_root():
-    return 200, {"name": "Vibe Scout API", "version": "3.0.0", "status": "running"}
+    return 200, {"name": "Viibe Scout API", "version": "3.0.0", "status": "running"}
 
 def handle_health():
     db = get_db()
@@ -424,15 +431,15 @@ def handle_create_rating(body):
     if dist > venue_radius:
         return 400, {"detail": f"Must be within {int(venue_radius)}m of venue"}
 
-    # Validate energy — accept both old 'good_vibes' (legacy) and new 'buzzing'
+    # Validate energy — map legacy values from old clients to new 6-state model
     energy = body.get("energy", "chill")
-    if energy == "good_vibes":
-        energy = "buzzing"
-    valid_energies = {"chill", "buzzing", "popping", "electric"}
+    _legacy_energy = {"good_vibes": "lit", "buzzing": "lit", "electric": "peak", "popping": "lit", "dead": "quiet"}
+    energy = _legacy_energy.get(energy, energy)
+    valid_energies = {"quiet", "chill", "warming", "lit", "peak"}
     if energy not in valid_energies:
         return 400, {"detail": f"Invalid energy value '{energy}'. Must be one of: {sorted(valid_energies)}"}
 
-    vibe_score = calculate_vibe_score(energy, body["capacity"], body["gate"])
+    vibe_score = calculate_vibe_score(energy, body["capacity"], body["gate"], body.get("venue_specific"))
     rating_id = str(uuid.uuid4())
     rating = {
         "id": rating_id,
@@ -568,7 +575,7 @@ _ORACLE_PEAK_WINDOWS = {
     "church":      {"weekday": ("9:00am","11:30am"),  "weekend": ("9:00am","12:00pm")},
 }
 _ORACLE_BASE_CONF = {"club":82,"lounge":78,"bar":75,"restaurant":80,"concert":85,"rave":70,"block_party":88,"event":80,"church":90}
-_ORACLE_ENERGY_LABELS = {"club":"electric","lounge":"popping","bar":"popping","restaurant":"warm","concert":"electric","rave":"electric","block_party":"electric","event":"popping","church":"uplifting"}
+_ORACLE_ENERGY_LABELS = {"club":"peak","lounge":"lit","bar":"lit","restaurant":"warming","concert":"peak","rave":"peak","block_party":"peak","event":"lit","church":"uplifting"}
 
 def _oracle_best_arrival(peak_start_str):
     """Return '45 min before X' as a human string."""
@@ -615,7 +622,7 @@ def handle_get_oracle(venue_id):
     confidence = max(50, min(95, base_conf + velocity_delta + activity_delta))
 
     # Headline
-    energy_label = _ORACLE_ENERGY_LABELS.get(venue_type, "popping")
+    energy_label = _ORACLE_ENERGY_LABELS.get(venue_type, "lit")
     headline = f"{venue.get('name', 'This venue')} will be {energy_label} by {peak_start} tonight"
 
     # Signals
@@ -858,14 +865,14 @@ def handle_seed():
         {"id": str(uuid.uuid4()), "name": "Quilox Nightclub", "address": "28 Ozumba Mbadiwe Ave",
          "area": "Victoria Island", "city": "lagos", "venue_type": "club",
          "coordinates": {"lat": 6.4281, "lng": 3.4219}, "current_vibe_score": 85,
-         "energy_level": "electric", "capacity_level": "vibrant", "gate_level": "slow",
+         "energy_level": "peak", "capacity_level": "vibrant", "gate_level": "slow",
          "vibe_velocity": "heating_up", "total_ratings_24h": 45, "is_featured": True,
          "is_verified": True, "profile_views": 1250, "direction_clicks": 340,
          "entry_fee": "\u20a610,000", "music_genre": "Afrobeats/Hip-Hop", "tables_available": True},
         {"id": str(uuid.uuid4()), "name": "Hard Rock Cafe", "address": "Plot 1 Water Corporation Dr",
          "area": "Victoria Island", "city": "lagos", "venue_type": "bar",
          "coordinates": {"lat": 6.4301, "lng": 3.4245}, "current_vibe_score": 72,
-         "energy_level": "popping", "capacity_level": "vibrant", "gate_level": "clear",
+         "energy_level": "lit", "capacity_level": "vibrant", "gate_level": "clear",
          "vibe_velocity": "stable", "total_ratings_24h": 28, "is_featured": False,
          "is_verified": True, "profile_views": 890, "direction_clicks": 210,
          "entry_fee": "Free Entry", "music_genre": "Rock/Pop", "tables_available": True}
@@ -1230,27 +1237,18 @@ def handle_get_city_pulse(city: str):
     }
 
 
-def handle_react_to_venue(venue_id: str, body: dict):
-    """POST /api/venues/{venue_id}/react — live bolt reaction (Vibe+ only)."""
+def handle_react_to_venue(venue_id: str, headers: dict):
+    """POST /api/venues/{venue_id}/react — live bolt reaction. JWT-authenticated."""
     db = get_db()
     if not db:
         return 503, {"detail": "Database unavailable"}
 
-    user_id = body.get("user_id")
-    if not user_id:
-        return 400, {"detail": "user_id required"}
-
-    now = datetime.now(timezone.utc)
-    user = db.users.find_one({"id": user_id}, {"_id": 0})
+    user = get_current_user(headers)
     if not user:
-        return 404, {"detail": "User not found"}
+        return 401, {"detail": "Not authenticated"}
 
-    is_vibe_plus = user.get("is_vibe_plus") and (
-        not user.get("vibe_plus_expires_at")
-        or user["vibe_plus_expires_at"] > now
-    )
-    if not is_vibe_plus:
-        return 403, {"detail": "Live reactions are a Vibe+ feature. Upgrade to react in real time."}
+    user_id = user["id"]
+    now = datetime.now(timezone.utc)
 
     venue = db.venues.find_one({"id": venue_id}, {"_id": 0})
     if not venue:
@@ -1383,6 +1381,244 @@ def handle_drop_quick_pulse(body):
     }
 
 
+# ========================
+# Venue Live Handlers
+# ========================
+
+def _get_intent_counts_sync(db, venue_id):
+    """Sync aggregation: returns {enroute, maybe, pass} counts for active headings."""
+    now = datetime.now(timezone.utc)
+    pipeline = [
+        {"$match": {"venue_id": venue_id, "expires_at": {"$gt": now}}},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}},
+    ]
+    rows = list(db.venue_headings.aggregate(pipeline))
+    counts = {"enroute": 0, "maybe": 0, "pass": 0}
+    for row in rows:
+        if row["_id"] in counts:
+            counts[row["_id"]] = row["count"]
+    return counts
+
+
+def handle_get_following(headers):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+    follows = list(db.venue_follows.find(
+        {"user_id": user["id"]},
+        {"_id": 0, "venue_id": 1, "venue_name": 1, "venue_category": 1}
+    ).limit(500))
+    venue_ids = [f["venue_id"] for f in follows]
+    venues = []
+    if venue_ids:
+        raw = list(db.venues.find({"id": {"$in": venue_ids}}, {"_id": 0}))
+        venues = [
+            {
+                "id": v.get("id"),
+                "name": v.get("name"),
+                "category": v.get("venue_type"),
+                "vibe_score": v.get("current_vibe_score", 0),
+                "energy_level": v.get("energy_level", "quiet"),
+                "area": v.get("area", ""),
+                "city": v.get("city", "lagos"),
+            }
+            for v in raw
+        ]
+    return 200, {"following": venues, "count": len(venues)}
+
+
+def handle_get_following_feed(headers):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+    follows = list(db.venue_follows.find({"user_id": user["id"]}, {"venue_id": 1}).limit(500))
+    venue_ids = [f["venue_id"] for f in follows]
+    if not venue_ids:
+        return 200, {"pushes": [], "followed_count": 0}
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=12)
+    pushes = list(db.venue_live_pushes.find(
+        {"venue_id": {"$in": venue_ids}, "sent_at": {"$gte": cutoff}},
+        {"_id": 0}
+    ).sort("sent_at", -1).limit(20))
+    for p in pushes:
+        if isinstance(p.get("sent_at"), datetime):
+            p["sent_at"] = p["sent_at"].isoformat()
+    return 200, {"pushes": pushes, "followed_count": len(venue_ids)}
+
+
+def handle_get_heading_count(venue_id):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    counts = _get_intent_counts_sync(db, venue_id)
+    return 200, {"venue_id": venue_id, **counts}
+
+
+def handle_get_follow_status(venue_id, headers):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    existing = db.venue_follows.find_one({"user_id": user["id"], "venue_id": venue_id}) if user else None
+    follower_count = db.venue_follows.count_documents({"venue_id": venue_id})
+    now = datetime.now(timezone.utc)
+    heading_count = db.venue_headings.count_documents({
+        "venue_id": venue_id,
+        "expires_at": {"$gt": now},
+    })
+    return 200, {
+        "following": existing is not None,
+        "followers": follower_count,
+        "heading_count": heading_count,
+    }
+
+
+def handle_get_venue_live_pushes(venue_id):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=6)
+    pushes = list(db.venue_live_pushes.find(
+        {"venue_id": venue_id, "sent_at": {"$gte": cutoff}},
+        {"_id": 0}
+    ).sort("sent_at", -1).limit(5))
+    for p in pushes:
+        if isinstance(p.get("sent_at"), datetime):
+            p["sent_at"] = p["sent_at"].isoformat()
+    return 200, {"pushes": pushes}
+
+
+def handle_send_live_push(venue_id, body, headers):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+    venue = db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        return 404, {"detail": "Venue not found"}
+    if venue.get("owner_id") != user["id"] and not user.get("is_admin"):
+        return 403, {"detail": "Not your venue"}
+    message = (body.get("message") or "").strip()
+    if not message:
+        return 400, {"detail": "Message cannot be empty"}
+    if len(message) > 500:
+        return 400, {"detail": "Message too long (max 500 chars)"}
+    now = datetime.now(timezone.utc)
+    recent = db.venue_live_pushes.find_one({
+        "venue_id": venue_id,
+        "sent_at": {"$gte": now - timedelta(minutes=30)},
+    })
+    if recent:
+        return 429, {"detail": "You can only send one live update every 30 minutes"}
+    venue_name = venue.get("name", "A venue")
+    venue_category = body.get("venue_type") or venue.get("venue_type", "venue")
+    push_doc = {
+        "venue_id": venue_id,
+        "venue_name": venue_name,
+        "venue_category": venue_category,
+        "merchant_id": user["id"],
+        "message": message,
+        "sent_at": now,
+        "heading_count": 0,
+    }
+    result = db.venue_live_pushes.insert_one(push_doc)
+    push_id = str(result.inserted_id)
+    follower_count = db.venue_follows.count_documents({"venue_id": venue_id})
+    return 200, {
+        "success": True,
+        "push_id": push_id,
+        "notifications_sent": 0,
+        "followers_reached": follower_count,
+    }
+
+
+def handle_set_heading(venue_id, body, headers):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+    status = body.get("status", "")
+    if status not in {"enroute", "maybe", "pass"}:
+        return 400, {"detail": "status must be one of: enroute, maybe, pass"}
+    venue = db.venues.find_one({"id": venue_id})
+    if not venue:
+        return 404, {"detail": "Venue not found"}
+    now = datetime.now(timezone.utc)
+    expires = now + timedelta(hours=3)
+    db.venue_headings.update_one(
+        {"user_id": user["id"], "venue_id": venue_id},
+        {"$set": {
+            "user_id": user["id"],
+            "venue_id": venue_id,
+            "status": status,
+            "created_at": now,
+            "expires_at": expires,
+        }},
+        upsert=True,
+    )
+    counts = _get_intent_counts_sync(db, venue_id)
+    return 200, {"success": True, **counts}
+
+
+def handle_cancel_heading(venue_id, headers):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+    db.venue_headings.delete_one({"user_id": user["id"], "venue_id": venue_id})
+    counts = _get_intent_counts_sync(db, venue_id)
+    return 200, {"success": True, **counts}
+
+
+def handle_follow_venue(venue_id, headers):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+    venue = db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        return 404, {"detail": "Venue not found"}
+    existing = db.venue_follows.find_one({"user_id": user["id"], "venue_id": venue_id})
+    if existing:
+        count = db.venue_follows.count_documents({"venue_id": venue_id})
+        return 200, {"success": True, "following": True, "message": "Already following", "followers": count}
+    db.venue_follows.insert_one({
+        "user_id": user["id"],
+        "venue_id": venue_id,
+        "venue_name": venue.get("name", ""),
+        "venue_category": venue.get("venue_type", ""),
+        "created_at": datetime.now(timezone.utc),
+    })
+    count = db.venue_follows.count_documents({"venue_id": venue_id})
+    return 200, {"success": True, "following": True, "followers": count}
+
+
+def handle_unfollow_venue(venue_id, headers):
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+    db.venue_follows.delete_one({"user_id": user["id"], "venue_id": venue_id})
+    count = db.venue_follows.count_documents({"venue_id": venue_id})
+    return 200, {"success": True, "following": False, "followers": count}
+
+
 def route_get(path, query_params, headers):
     """Route GET requests."""
     if path == "/" or path == "":
@@ -1432,6 +1668,20 @@ def route_get(path, query_params, headers):
     m = re.match(r'^/api/crews/([^/]+)/locations$', path)
     if m:
         return handle_crew_locations(m.group(1), headers)
+    # Venue Live — Follow status, heading count, live pushes
+    if path == "/api/venues/me/following":
+        return handle_get_following(headers)
+    if path == "/api/venues/following/feed":
+        return handle_get_following_feed(headers)
+    m = re.match(r'^/api/venues/([^/]+)/heading-count$', path)
+    if m:
+        return handle_get_heading_count(m.group(1))
+    m = re.match(r'^/api/venues/([^/]+)/follow-status$', path)
+    if m:
+        return handle_get_follow_status(m.group(1), headers)
+    m = re.match(r'^/api/venues/([^/]+)/live-pushes$', path)
+    if m:
+        return handle_get_venue_live_pushes(m.group(1))
     if path == "/api/admin/config":
         return handle_admin_get_config()
     if path == "/api/admin/economy-config":
@@ -1455,6 +1705,13 @@ def route_delete(path, headers):
     m = re.match(r'^/api/admin/venues/([^/]+)$', path)
     if m:
         return handle_admin_delete_venue(m.group(1))
+    # Venue Live — DELETE routes
+    m = re.match(r'^/api/venues/([^/]+)/heading$', path)
+    if m:
+        return handle_cancel_heading(m.group(1), headers)
+    m = re.match(r'^/api/venues/([^/]+)/follow$', path)
+    if m:
+        return handle_unfollow_venue(m.group(1), headers)
     return 404, {"detail": "Not found"}
 
 def route_post(path, body, headers):
@@ -1485,10 +1742,20 @@ def route_post(path, body, headers):
     # Dynamic routes
     m = re.match(r'^/api/venues/([^/]+)/react$', path)
     if m:
-        return handle_react_to_venue(m.group(1), body)
+        return handle_react_to_venue(m.group(1), headers)
     m = re.match(r'^/api/venues/([^/]+)/direction-click$', path)
     if m:
         return handle_direction_click(m.group(1))
+    # Venue Live — POST routes
+    m = re.match(r'^/api/venues/([^/]+)/live-push$', path)
+    if m:
+        return handle_send_live_push(m.group(1), body, headers)
+    m = re.match(r'^/api/venues/([^/]+)/heading$', path)
+    if m:
+        return handle_set_heading(m.group(1), body, headers)
+    m = re.match(r'^/api/venues/([^/]+)/follow$', path)
+    if m:
+        return handle_follow_venue(m.group(1), headers)
 
     return 404, {"detail": "Not found"}
 
