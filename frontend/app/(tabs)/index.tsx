@@ -90,7 +90,7 @@ export default function MapScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FF3366" />
-          <Text style={styles.loadingText}>Loading Lagos Nightlife...</Text>
+          <Text style={styles.loadingText}>Loading the scene...</Text>
         </View>
       </SafeAreaView>
     );
@@ -107,7 +107,7 @@ export default function MapScreen() {
             onPress={() => setShowCityPicker(true)}
           >
             <Text style={styles.headerSubtitle}>
-              {CITIES.find(c => c.code === selectedCity)?.emoji} {CITIES.find(c => c.code === selectedCity)?.name} Nightlife
+              {CITIES.find(c => c.code === selectedCity)?.emoji} {CITIES.find(c => c.code === selectedCity)?.name} Scene
             </Text>
             <Ionicons name="chevron-down" size={14} color="#FF3366" />
           </TouchableOpacity>

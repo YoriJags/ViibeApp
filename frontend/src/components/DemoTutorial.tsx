@@ -35,7 +35,7 @@ const STEPS: TutorialStep[] = [
     id: 'welcome',
     title: 'Welcome to Viibez',
     description:
-      'The real-time nightlife intelligence platform. Scouts rate venues live — so you always know where the energy is. Let us show you around.',
+      'Real-time scene intelligence for Nigeria. Scouts rate venues live — so you always know where the energy is. Let us show you around.',
     icon: 'sparkles',
     targetRoute: '/(public)',
     position: 'center',
@@ -95,7 +95,7 @@ const STEPS: TutorialStep[] = [
     id: 'profile',
     title: 'Scout Profile',
     description:
-      'Track your Clout points, scout tier, streak multiplier, and achievement badges. Your nightlife reputation lives here.',
+      'Track your Clout points, scout tier, streak multiplier, and achievement badges. Your scene reputation lives here.',
     icon: 'person',
     targetRoute: '/(public)/profile',
     position: 'top',

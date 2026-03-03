@@ -146,7 +146,7 @@ export default function VibePlusModal({ visible, onClose, onSuccess }: VibePlusM
 
                 <Text style={styles.headline}>The Scout's Earning Toolkit</Text>
                 <Text style={styles.subheadline}>
-                  Rate venues, earn cashable coins, and get AI-powered nightlife intel — all in one.
+                  Rate venues, earn cashable coins, and get AI-powered scene intel — all in one.
                 </Text>
 
                 {/* Feature list */}

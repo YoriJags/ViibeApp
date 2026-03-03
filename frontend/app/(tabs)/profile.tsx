@@ -113,7 +113,7 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.welcomeTitle}>Welcome to Viibe</Text>
           <Text style={styles.welcomeSubtitle}>
-            Nigeria's real-time nightlife pulse
+            Nigeria's live scene intelligence
           </Text>
 
           {/* Login with Phone */}
@@ -220,7 +220,7 @@ export default function ProfileScreen() {
 
           <Text style={styles.signupTitle}>Create Profile</Text>
           <Text style={styles.signupSubtitle}>
-            Join Nigeria's nightlife community
+            Join Nigeria's live scene
           </Text>
 
           <View style={styles.inputContainer}>
