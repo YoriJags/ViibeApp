@@ -33,7 +33,7 @@ interface TutorialStep {
 const STEPS: TutorialStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to Vibez',
+    title: 'Welcome to Viibez',
     description:
       'The real-time nightlife intelligence platform. Scouts rate venues live — so you always know where the energy is. Let us show you around.',
     icon: 'sparkles',
@@ -83,7 +83,7 @@ const STEPS: TutorialStep[] = [
   },
   {
     id: 'crew',
-    title: 'Vibez Cartel',
+    title: 'Viibez Cartel',
     description:
       "Create or join a Cartel to coordinate your night. See who's checked in where, and start group venue votes.",
     icon: 'people',
@@ -105,7 +105,7 @@ const STEPS: TutorialStep[] = [
     id: 'floor-switcher',
     title: '3-Floor Architecture',
     description:
-      'Vibez has three floors: Public (scouts), Merchant (venue owners), and Admin (platform governance). The floating pill lets you switch.',
+      'Viibez has three floors: Public (scouts), Merchant (venue owners), and Admin (platform governance). The floating pill lets you switch.',
     icon: 'layers',
     targetRoute: '/(public)/profile',
     position: 'bottom',

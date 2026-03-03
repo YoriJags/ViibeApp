@@ -15,7 +15,7 @@ ROOT_DIR = Path(__file__).parent.parent.parent
 @router.get("/")
 async def root():
     """API root."""
-    return {"message": "Vibe App API", "version": "3.0.0"}
+    return {"message": "Viibe App API", "version": "3.0.0"}
 
 
 @router.get("/health")

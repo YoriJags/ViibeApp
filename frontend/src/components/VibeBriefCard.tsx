@@ -100,7 +100,7 @@ export default function VibeBriefCard({ city, isDemoMode }: Props) {
             activeOpacity={0.8}
           >
             <Ionicons name="lock-closed" size={13} color="#FFD700" />
-            <Text style={styles.lockedText}>Vibe+ · Full brief for ₦1,500/mo</Text>
+            <Text style={styles.lockedText}>Viibe+ · Full brief for ₦1,500/mo</Text>
           </TouchableOpacity>
         )}
 

@@ -537,7 +537,7 @@ export default function AdminVenues() {
                           <Text style={[styles.score, { color: getVibeColor(venue.current_vibe_score) }]}>
                             {venue.current_vibe_score || 0}%
                           </Text>
-                          <Text style={styles.scoreLabel}>VIBE</Text>
+                          <Text style={styles.scoreLabel}>VIIBE</Text>
                           <Text style={styles.ratingsCount}>{venue.total_ratings_24h || 0} ratings</Text>
                         </View>
                       </View>

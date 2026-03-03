@@ -1,13 +1,14 @@
 """
 Vibe App - Reaction Routes
-Live bolt reactions for Vibe+ users. Measures real-time energy intensity
-via tap rate rather than structured form input.
+Live bolt reactions. Measures real-time energy intensity via tap rate.
+Free for all scouts — tap rate is the core data signal.
 """
 import uuid
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
 from app.config import db
+from app.services.auth import require_auth
 from app.services.realtime import broadcast_reaction, broadcast_city_pulse
 
 router = APIRouter(tags=["reactions"])
@@ -19,30 +20,14 @@ RATE_WINDOW_MINUTES = 5
 
 
 @router.post("/venues/{venue_id}/react")
-async def react_to_venue(venue_id: str, body: dict):
+async def react_to_venue(venue_id: str, user: dict = Depends(require_auth)):
     """
-    Record a live bolt reaction from a Vibe+ user.
+    Record a live bolt reaction. JWT-authenticated.
     Tap rate over the last 5 min is the energy signal.
     """
-    user_id = body.get("user_id")
-    if not user_id:
-        raise HTTPException(status_code=400, detail="user_id required")
-
-    # Vibe+ gate
-    user = await db.users.find_one({"id": user_id})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    user_id = user["id"]
 
     now = datetime.now(timezone.utc)
-    is_vibe_plus = user.get("is_vibe_plus") and (
-        not user.get("vibe_plus_expires_at")
-        or user["vibe_plus_expires_at"] > now
-    )
-    if not is_vibe_plus:
-        raise HTTPException(
-            status_code=403,
-            detail="Live reactions are a Vibe+ feature. Upgrade to react in real time.",
-        )
 
     # Venue must exist
     venue = await db.venues.find_one({"id": venue_id})

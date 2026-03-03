@@ -24,6 +24,7 @@ import { useVibeStore } from '../../src/store/vibeStore';
 import { calculateDistance } from '../../src/utils/geo';
 import RateVibeModal from '../../src/components/RateVibeModal';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
+import { SkeletonLoader } from '../../src/components/SkeletonLoader';
 import VibeSuccessAnimation from '../../src/components/VibeSuccessAnimation';
 import StoryBubble from '../../src/components/StoryBubble';
 import StoryViewer from '../../src/components/StoryViewer';
@@ -38,6 +39,9 @@ import VenueRoastCard from '../../src/components/VenueRoastCard';
 import PulseButton from '../../src/components/PulseButton';
 import ReactionTapArea from '../../src/components/ReactionTapArea';
 import VibePlusModal from '../../src/components/VibePlusModal';
+import VenueAlertModal, { VenueAlert } from '../../src/components/VenueAlertModal';
+import EnergyMeter from '../../src/components/EnergyMeter';
+import VenueIntentBar from '../../src/components/VenueIntentBar';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -83,6 +87,7 @@ export default function VenueDetailScreen() {
     demoPulsedVenues,
     isFeatureEnabled,
     socket,
+    getAuthHeaders,
   } = useVibeStore();
   const [venue, setVenue] = useState<any>(null);
   const [ratingStatus, setRatingStatus] = useState<any>(null);
@@ -105,12 +110,53 @@ export default function VenueDetailScreen() {
   const [activeScouts, setActiveScouts] = useState(0);
   const [incomingBoltCount, setIncomingBoltCount] = useState(0);
   const [showVibePlusModal, setShowVibePlusModal] = useState(false);
+  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [venueAlerts, setVenueAlerts] = useState<VenueAlert[]>([]);
+  const [checkinEnteredAt, setCheckinEnteredAt] = useState<number | null>(null);
+  const [checkinMinutes, setCheckinMinutes] = useState(0);
 
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(100)).current;
   const tooltipAnim = useRef(new Animated.Value(0)).current;
+  const checkinBannerAnim = useRef(new Animated.Value(0)).current;
+  const checkinDotAnim = useRef(new Animated.Value(1)).current;
+
+  // ── Check-in mode: triggers when geofence confirmed ──────────────────────
+  useEffect(() => {
+    if (isWithinGeofence && checkinEnteredAt === null) {
+      const enteredAt = Date.now();
+      setCheckinEnteredAt(enteredAt);
+      // Slide banner down
+      Animated.spring(checkinBannerAnim, {
+        toValue: 1,
+        tension: 60,
+        friction: 10,
+        useNativeDriver: true,
+      }).start();
+      // Pulse the green dot continuously
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(checkinDotAnim, { toValue: 0.3, duration: 900, useNativeDriver: true }),
+          Animated.timing(checkinDotAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+        ])
+      ).start();
+    }
+    if (!isWithinGeofence && checkinEnteredAt !== null) {
+      setCheckinEnteredAt(null);
+      checkinBannerAnim.setValue(0);
+    }
+  }, [isWithinGeofence]);
+
+  // ── Live "time here" counter ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!checkinEnteredAt) return;
+    const interval = setInterval(() => {
+      setCheckinMinutes(Math.floor((Date.now() - checkinEnteredAt) / 60000));
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [checkinEnteredAt]);
 
   useEffect(() => {
     loadVenueData();
@@ -145,7 +191,7 @@ export default function VenueDetailScreen() {
     const deepLink = `https://vibe-app-hc83.vercel.app/venue/${venue.id}`;
     try {
       await Share.share({
-        message: `${venue.name} is ${venue.energy_level?.toUpperCase() ?? 'LIVE'} right now 🔥 Check the vibe on Vibe App: ${deepLink}`,
+        message: `${venue.name} is ${venue.energy_level?.toUpperCase() ?? 'LIVE'} right now 🔥 Check the viibe on Viibe: ${deepLink}`,
         url: deepLink,
       });
     } catch {
@@ -253,8 +299,7 @@ export default function VenueDetailScreen() {
     if (!user || !venue) return;
     const res = await fetch(`${API_URL}/api/venues/${venue.id}/react`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: user.id }),
+      headers: getAuthHeaders(),
     });
     if (res.ok) {
       const data = await res.json();
@@ -466,9 +511,26 @@ export default function VenueDetailScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FF3366" />
-          <Text style={styles.loadingText}>Loading venue...</Text>
+        {/* Back button row */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
+          <SkeletonLoader width={36} height={36} borderRadius={18} />
+        </View>
+        {/* Hero block */}
+        <SkeletonLoader width="100%" height={220} borderRadius={0} />
+        <View style={{ paddingHorizontal: 16, paddingTop: 16, gap: 10 }}>
+          {/* Venue name + score */}
+          <SkeletonLoader width="65%" height={22} borderRadius={6} />
+          <SkeletonLoader width="40%" height={14} borderRadius={4} />
+          {/* Action chips row */}
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+            <SkeletonLoader width={80} height={32} borderRadius={16} />
+            <SkeletonLoader width={80} height={32} borderRadius={16} />
+            <SkeletonLoader width={80} height={32} borderRadius={16} />
+          </View>
+          {/* Cards */}
+          <SkeletonLoader width="100%" height={110} borderRadius={14} style={{ marginTop: 8 }} />
+          <SkeletonLoader width="100%" height={90} borderRadius={14} />
+          <SkeletonLoader width="100%" height={90} borderRadius={14} />
         </View>
       </SafeAreaView>
     );
@@ -526,6 +588,18 @@ export default function VenueDetailScreen() {
               name={inLobby ? 'bookmark' : 'bookmark-outline'}
               size={22}
               color={inLobby ? '#FF3366' : '#888'}
+            />
+          </TouchableOpacity>
+        )}
+        {isAuthenticated && (
+          <TouchableOpacity
+            style={styles.lobbyButton}
+            onPress={() => setShowAlertModal(true)}
+          >
+            <Ionicons
+              name={venueAlerts.length > 0 ? 'notifications' : 'notifications-outline'}
+              size={22}
+              color={venueAlerts.length > 0 ? '#FF9933' : '#888'}
             />
           </TouchableOpacity>
         )}
@@ -602,8 +676,33 @@ export default function VenueDetailScreen() {
 
         {/* ====== GLASSMORPHISM VENUE PULSE CARD ====== */}
         <View style={styles.glassCardContainer}>
-          <BlurView intensity={20} tint="dark" style={styles.glassCard}>
+          <BlurView
+            intensity={20}
+            tint="dark"
+            style={[styles.glassCard, isWithinGeofence && styles.glassCardLockedIn]}
+          >
             <View style={styles.glassCardInner}>
+              {/* LOCKED IN banner — shows when scout is geofenced into venue */}
+              {isWithinGeofence && (
+                <Animated.View
+                  style={[
+                    styles.lockedInBanner,
+                    {
+                      opacity: checkinBannerAnim,
+                      transform: [{ translateY: checkinBannerAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }],
+                    },
+                  ]}
+                >
+                  <View style={styles.lockedInLeft}>
+                    <Animated.View style={[styles.lockedInDot, { opacity: checkinDotAnim }]} />
+                    <Text style={styles.lockedInLabel}>LOCKED IN</Text>
+                  </View>
+                  <Text style={styles.lockedInTime}>
+                    {checkinMinutes > 0 ? `${checkinMinutes}m here` : 'Just arrived'}
+                  </Text>
+                </Animated.View>
+              )}
+
               {/* VIIBE CERTIFIED banner */}
               {venue.viibe_certified && (
                 <View style={styles.viibeBar}>
@@ -622,6 +721,21 @@ export default function VenueDetailScreen() {
                     {Math.round(venue.current_vibe_score)}%
                   </Text>
                 </View>
+              </View>
+
+              {/* Scout signal notice — only when physically inside */}
+              {isWithinGeofence && (
+                <Text style={styles.yourSignalLabel}>⚡ Your reactions shape this score</Text>
+              )}
+
+              {/* Energy Meter Bar */}
+              <View style={{ marginBottom: 16 }}>
+                <EnergyMeter
+                  percent={venue.current_vibe_score}
+                  size="md"
+                  showLabel={false}
+                  animate={true}
+                />
               </View>
 
               {/* Utility Stats Row */}
@@ -704,14 +818,29 @@ export default function VenueDetailScreen() {
         </View>
 
         {/* ====== AI TAKE (Roast & Toast) ====== */}
-        {id && venue && isFeatureEnabled('roast_toast') && <VenueRoastCard venueId={id} venueName={venue.name} isDemoMode={isDemoMode} />}
+        {id && venue && isFeatureEnabled('roast_toast') && (
+          <ErrorBoundary label="AI Take">
+            <VenueRoastCard venueId={id} venueName={venue.name} isDemoMode={isDemoMode} />
+          </ErrorBoundary>
+        )}
+
+        {/* ====== INTENT BAR — Enroute / Maybe / Pass + Follow ====== */}
+        {id && (
+          <VenueIntentBar venueId={id} venueName={venue?.name} />
+        )}
 
         {/* ====== VIBE ORACLE ====== */}
-        {id && isFeatureEnabled('vibe_oracle') && <VibeOracle venueId={id} venueName={venue?.name} />}
+        {id && isFeatureEnabled('vibe_oracle') && (
+          <ErrorBoundary label="Vibe Oracle">
+            <VibeOracle venueId={id} venueName={venue?.name} />
+          </ErrorBoundary>
+        )}
 
         {/* ====== VIBE TIMELINE ====== */}
         {venueTimeline.length > 0 && (
-          <VibeTimeline timeline={venueTimeline} peakHour={timelinePeakHour} />
+          <ErrorBoundary label="Timeline">
+            <VibeTimeline timeline={venueTimeline} peakHour={timelinePeakHour} />
+          </ErrorBoundary>
         )}
 
         {/* ====== CAMPAIGN BADGE ====== */}
@@ -733,13 +862,19 @@ export default function VenueDetailScreen() {
 
         {/* ====== VIBE FORECAST ====== */}
         {id && (
-          <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
-            <VibeForecast venueId={id} />
-          </View>
+          <ErrorBoundary label="Forecast">
+            <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+              <VibeForecast venueId={id} />
+            </View>
+          </ErrorBoundary>
         )}
 
         {/* ====== TOP SCOUTS ====== */}
-        {id && isFeatureEnabled('top_scouts') && <TopScoutsCard venueId={id} />}
+        {id && isFeatureEnabled('top_scouts') && (
+          <ErrorBoundary label="Top Scouts">
+            <TopScoutsCard venueId={id} />
+          </ErrorBoundary>
+        )}
 
         {/* Location Card */}
         <View style={styles.locationCard}>
@@ -884,17 +1019,15 @@ export default function VenueDetailScreen() {
             colors={['rgba(15,15,25,0.92)', 'rgba(10,10,18,0.98)']}
             style={styles.stickyGradient}
           >
-            {/* Reaction Tap Area — Vibe+ live energy expression */}
+            {/* Reaction Tap Area — live energy expression, open to all scouts */}
             <ReactionTapArea
               venueId={venue?.id ?? ''}
               userId={user?.id ?? ''}
               vibeState={currentVibeStateKey}
-              isVibePlus={isVibePlus}
               reactionsPerMin={reactionsPerMin}
               activeScouts={activeScouts}
               incomingBoltCount={incomingBoltCount}
               onReact={handleReact}
-              onUpgradePress={() => setShowVibePlusModal(true)}
             />
 
             <View style={styles.stickyFooterRow}>
@@ -963,6 +1096,27 @@ export default function VenueDetailScreen() {
       <VibePlusModal
         visible={showVibePlusModal}
         onClose={() => setShowVibePlusModal(false)}
+      />
+
+      {/* Venue Energy Alert Modal */}
+      <VenueAlertModal
+        visible={showAlertModal}
+        venueId={venue?.id ?? ''}
+        venueName={venue?.name ?? ''}
+        existingAlerts={venueAlerts}
+        onClose={() => setShowAlertModal(false)}
+        onSaved={(alert) => {
+          setVenueAlerts(prev => {
+            const idx = prev.findIndex(a => a.id === alert.id);
+            if (idx >= 0) {
+              const next = [...prev];
+              next[idx] = alert;
+              return next;
+            }
+            return [...prev, alert];
+          });
+        }}
+        onDeleted={(id) => setVenueAlerts(prev => prev.filter(a => a.id !== id))}
       />
 
       {/* Rate Vibe Modal */}
@@ -1596,5 +1750,54 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#888',
+  },
+
+  // ====== CHECK-IN MODE ======
+  glassCardLockedIn: {
+    borderWidth: 1,
+    borderColor: 'rgba(0, 230, 118, 0.25)',
+  },
+  lockedInBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0, 230, 118, 0.08)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 230, 118, 0.18)',
+  },
+  lockedInLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  lockedInDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#00E676',
+  },
+  lockedInLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#00E676',
+    letterSpacing: 1.5,
+  },
+  lockedInTime: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'rgba(0, 230, 118, 0.7)',
+  },
+  yourSignalLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: 'rgba(0, 230, 118, 0.65)',
+    letterSpacing: 0.5,
+    marginTop: -4,
+    marginBottom: 8,
+    marginLeft: 2,
   },
 });

@@ -1,5 +1,5 @@
 /**
- * VibePlusModal — Vibe+ subscription paywall.
+ * VibePlusModal — Viibe+ subscription paywall.
  * Opens when a user taps any AI-gated feature without an active subscription.
  * Handles full Paystack payment flow: initialize → browser → verify → activate.
  */
@@ -136,7 +136,7 @@ export default function VibePlusModal({ visible, onClose, onSuccess }: VibePlusM
                 {/* Header */}
                 <View style={styles.header}>
                   <View style={styles.vibePlusBadge}>
-                    <Text style={styles.vibePlusBadgeText}>✦ VIBE+</Text>
+                    <Text style={styles.vibePlusBadgeText}>✦ VIIBE+</Text>
                   </View>
                   <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
                     <Ionicons name="close" size={20} color="rgba(255,255,255,0.5)" />
@@ -201,7 +201,7 @@ export default function VibePlusModal({ visible, onClose, onSuccess }: VibePlusM
               <View style={styles.content}>
                 <View style={styles.header}>
                   <View style={styles.vibePlusBadge}>
-                    <Text style={styles.vibePlusBadgeText}>✦ VIBE+</Text>
+                    <Text style={styles.vibePlusBadgeText}>✦ VIIBE+</Text>
                   </View>
                   <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
                     <Ionicons name="close" size={20} color="rgba(255,255,255,0.5)" />
@@ -214,7 +214,7 @@ export default function VibePlusModal({ visible, onClose, onSuccess }: VibePlusM
 
                 <Text style={styles.awaitingTitle}>Complete Your Payment</Text>
                 <Text style={styles.awaitingDesc}>
-                  The Paystack payment page was opened. Once you complete the payment, tap below to activate Vibe+.
+                  The Paystack payment page was opened. Once you complete the payment, tap below to activate Viibe+.
                 </Text>
 
                 <TouchableOpacity style={styles.subscribeBtn} onPress={() => handleVerify()} activeOpacity={0.85}>
@@ -244,7 +244,7 @@ export default function VibePlusModal({ visible, onClose, onSuccess }: VibePlusM
                 <View style={styles.successIcon}>
                   <Text style={styles.successStar}>✦</Text>
                 </View>
-                <Text style={styles.successTitle}>Vibe+ Activated!</Text>
+                <Text style={styles.successTitle}>Viibe+ Activated!</Text>
                 <Text style={styles.successDesc}>
                   Your AI suite is now unlocked. Welcome to the inner circle.
                 </Text>
@@ -297,6 +297,10 @@ export default function VibePlusModal({ visible, onClose, onSuccess }: VibePlusM
                 <TouchableOpacity onPress={handleClose} style={styles.maybeLater}>
                   <Text style={styles.maybeLaterText}>Close</Text>
                 </TouchableOpacity>
+
+                <Text style={styles.supportNote}>
+                  Persistent issues? DM us on Instagram @viibe.app
+                </Text>
               </View>
             )}
 
@@ -469,6 +473,12 @@ const styles = StyleSheet.create({
   maybeLaterText: {
     color: 'rgba(255,255,255,0.35)',
     fontSize: 14,
+  },
+  supportNote: {
+    color: 'rgba(255,255,255,0.25)',
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 4,
   },
 
   // Processing

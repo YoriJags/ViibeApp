@@ -126,9 +126,9 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.welcomeContainer}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logo}>VIBE</Text>
+            <Text style={styles.logo}>VIIBE</Text>
           </View>
-          <Text style={styles.welcomeTitle}>Welcome to Vibe</Text>
+          <Text style={styles.welcomeTitle}>Welcome to Viibe</Text>
           <Text style={styles.welcomeSubtitle}>
             Nigeria's real-time nightlife pulse
           </Text>
@@ -350,12 +350,12 @@ export default function ProfileScreen() {
           {isVibePlus() ? (
             <View style={styles.vibePlusBadge}>
               <Ionicons name="star" size={11} color="#FFD700" />
-              <Text style={styles.vibePlusBadgeText}>VIBE+</Text>
+              <Text style={styles.vibePlusBadgeText}>VIIBE+</Text>
             </View>
           ) : (
             <TouchableOpacity style={styles.vibePlusUpgrade} onPress={() => setShowVibePlus(true)} activeOpacity={0.8}>
               <Ionicons name="lock-open-outline" size={13} color="#FFD700" />
-              <Text style={styles.vibePlusUpgradeText}>✦ Upgrade to Vibe+ — ₦1,500/mo</Text>
+              <Text style={styles.vibePlusUpgradeText}>✦ Upgrade to Viibe+ — ₦1,500/mo</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -417,7 +417,7 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.debriefLockedRight}>
                 <Ionicons name="lock-closed" size={18} color="#FFD700" />
-                <Text style={styles.debriefLockedChip}>VIBE+</Text>
+                <Text style={styles.debriefLockedChip}>VIIBE+</Text>
               </View>
             </TouchableOpacity>
           )

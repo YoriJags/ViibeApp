@@ -76,7 +76,7 @@ interface Venue {
   area: string;
   coordinates: Coordinates;
   current_vibe_score: number;
-  energy_level: 'chill' | 'popping' | 'electric';
+  energy_level: 'quiet' | 'chill' | 'warming' | 'charged' | 'lit' | 'peak';
   capacity_level: 'sparse' | 'vibrant' | 'full';
   gate_level: 'clear' | 'slow' | 'blocked';
   vibe_velocity: 'heating_up' | 'cooling_down' | 'stable';
@@ -341,7 +341,7 @@ export const MockMap: React.FC<MockMapProps> = ({
           const hasPulseDrop = venue.active_pulse_tier !== null && venue.active_pulse_tier !== undefined;
           const markerSize = isRatedGlow ? 60 : hasPulseDrop ? 56 : isHighlighted ? 52 : 44;
           // Seismic rings: silent signal that something real is happening
-          const isSpiking = venue.energy_level === 'electric' && venue.vibe_velocity === 'heating_up';
+          const isSpiking = (venue.energy_level === 'peak' || venue.energy_level === 'lit') && venue.vibe_velocity === 'heating_up';
 
           return (
             <TouchableOpacity
@@ -583,7 +583,7 @@ export const MockMap: React.FC<MockMapProps> = ({
               </View>
 
               {/* Raw spike data — only shown when spiking */}
-              {hoveredVenue.energy_level === 'electric' && hoveredVenue.vibe_velocity === 'heating_up' && hoveredVenue.ratings_last_30m && (
+              {(hoveredVenue.energy_level === 'peak' || hoveredVenue.energy_level === 'lit') && hoveredVenue.vibe_velocity === 'heating_up' && hoveredVenue.ratings_last_30m && (
                 <View style={styles.tooltipSpikeRow}>
                   <View style={styles.tooltipSpikeDot} />
                   <Text style={styles.tooltipSpikeText}>
@@ -615,7 +615,7 @@ export const MockMap: React.FC<MockMapProps> = ({
                 </View>
                 <View style={styles.highlightedCardScore}>
                   <Text style={styles.highlightedScoreValue}>{venue.current_vibe_score}%</Text>
-                  <Text style={styles.highlightedScoreLabel}>VIBE</Text>
+                  <Text style={styles.highlightedScoreLabel}>VIIBE</Text>
                 </View>
               </View>
               <View style={styles.highlightedCardAction}>

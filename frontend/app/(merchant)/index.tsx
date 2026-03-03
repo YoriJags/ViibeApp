@@ -32,6 +32,8 @@ import CreateCampaignModal from '../../src/components/CreateCampaignModal';
 import MerchantOnboarding from '../../src/components/MerchantOnboarding';
 import DemoModeBanner from '../../src/components/DemoModeBanner';
 import FloorSwitcher from '../../src/components/FloorSwitcher';
+import { SkeletonLoader } from '../../src/components/SkeletonLoader';
+import ErrorBoundary from '../../src/components/ErrorBoundary';
 import {
   DEMO_VENUE_STATS,
   DEMO_SENTIMENT,
@@ -79,7 +81,7 @@ interface PulseStatus {
 
 export default function MerchantDashboard() {
   const router = useRouter();
-  const { user, getAuthHeaders, hasSeenMerchantOnboarding, completeMerchantOnboarding, isDemoMode, isFeatureEnabled } = useVibeStore();
+  const { user, getAuthHeaders, hasSeenMerchantOnboarding, completeMerchantOnboarding, isDemoMode, isFeatureEnabled, sendLivePush } = useVibeStore();
   const [stats, setStats] = useState<VenueStats | null>(null);
   const [sentiment, setSentiment] = useState<Sentiment | null>(null);
   const [pulseStatus, setPulseStatus] = useState<PulseStatus | null>(null);
@@ -94,6 +96,11 @@ export default function MerchantDashboard() {
   const [geofenceRadius, setGeofenceRadius] = useState(100);
   const [isSaving, setIsSaving] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
+
+  // Live Push State
+  const [livePushMessage, setLivePushMessage] = useState('');
+  const [isSendingPush, setIsSendingPush] = useState(false);
+  const [lastPushSent, setLastPushSent] = useState<string | null>(null);
 
   // Pulse Drop State
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
@@ -127,7 +134,10 @@ export default function MerchantDashboard() {
       return;
     }
 
-    if (!user?.merchant_venue_id) return;
+    if (!user?.merchant_venue_id) {
+      setLoading(false);
+      return;
+    }
 
     const headers = getAuthHeaders();
 
@@ -200,32 +210,28 @@ export default function MerchantDashboard() {
     fetchAllData();
   }, [user?.merchant_venue_id]);
 
-  // Countdown timer
+  // Countdown timer — track remaining seconds in a ref to avoid stale closures
+  const countdownRef = React.useRef<number>(0);
   useEffect(() => {
     if (pulseStatus?.is_active && pulseStatus.time_remaining) {
+      countdownRef.current = pulseStatus.time_remaining.total_seconds;
       const interval = setInterval(() => {
-        const { hours, minutes, seconds, total_seconds } = pulseStatus.time_remaining!;
-        if (total_seconds <= 0) {
+        countdownRef.current -= 1;
+        const remaining = countdownRef.current;
+        if (remaining <= 0) {
           setCountdown('Expired');
-          fetchAllData(); // Refresh status
-        } else {
-          setCountdown(`${hours}h ${minutes}m ${seconds}s`);
-          pulseStatus.time_remaining!.total_seconds -= 1;
-          if (pulseStatus.time_remaining!.seconds > 0) {
-            pulseStatus.time_remaining!.seconds -= 1;
-          } else if (pulseStatus.time_remaining!.minutes > 0) {
-            pulseStatus.time_remaining!.minutes -= 1;
-            pulseStatus.time_remaining!.seconds = 59;
-          } else if (pulseStatus.time_remaining!.hours > 0) {
-            pulseStatus.time_remaining!.hours -= 1;
-            pulseStatus.time_remaining!.minutes = 59;
-            pulseStatus.time_remaining!.seconds = 59;
-          }
+          clearInterval(interval);
+          fetchAllData();
+          return;
         }
+        const h = Math.floor(remaining / 3600);
+        const m = Math.floor((remaining % 3600) / 60);
+        const s = remaining % 60;
+        setCountdown(`${h}h ${m}m ${s}s`);
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [pulseStatus?.is_active, pulseStatus?.time_remaining]);
+  }, [pulseStatus?.is_active, pulseStatus?.time_remaining?.total_seconds]);
 
   const onRefresh = useCallback(async () => {
     if (isDemoMode) return;
@@ -233,6 +239,30 @@ export default function MerchantDashboard() {
     await fetchAllData();
     setRefreshing(false);
   }, [user?.merchant_venue_id, isDemoMode]);
+
+  const handleSendLivePush = async () => {
+    const venueId = stats?.venue?.id || user?.merchant_venue_id;
+    if (!venueId) return;
+    if (!livePushMessage.trim()) {
+      Alert.alert('Empty message', 'Write something before sending.');
+      return;
+    }
+    setIsSendingPush(true);
+    const result = await sendLivePush(venueId, livePushMessage.trim());
+    setIsSendingPush(false);
+    if (result.success) {
+      setLastPushSent(livePushMessage.trim());
+      setLivePushMessage('');
+      Alert.alert(
+        '📣 Live Update Sent!',
+        `Delivered to ${result.notifications_sent} followers nearby.`,
+        [{ text: 'Nice', style: 'default' }]
+      );
+    } else {
+      const errMsg = (result as any).error || 'Could not send right now.';
+      Alert.alert('Failed to send', errMsg);
+    }
+  };
 
   const handleSaveContent = async () => {
     if (isDemoMode) {
@@ -343,10 +373,11 @@ export default function MerchantDashboard() {
   };
 
   const getEnergyColor = (score: number) => {
-    if (score >= 80) return '#FF3366';
-    if (score >= 60) return '#FF9933';
-    if (score >= 40) return '#9933FF';
-    return '#3399FF';
+    if (score >= 85) return '#FF3366';   // PEAK
+    if (score >= 65) return '#FF9933';   // LIT
+    if (score >= 45) return '#9B59B6';   // WARMING / CHARGED
+    if (score >= 20) return '#3399FF';   // CHILL
+    return '#555E6E';                    // QUIET
   };
 
   if (!user?.merchant_venue_id) {
@@ -364,9 +395,24 @@ export default function MerchantDashboard() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={styles.loadingText}>Loading your dashboard...</Text>
+        <View style={{ paddingHorizontal: 16, paddingTop: 16, gap: 12 }}>
+          {/* Header row */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <SkeletonLoader width={120} height={20} borderRadius={6} />
+            <SkeletonLoader width={80} height={32} borderRadius={16} />
+          </View>
+          {/* Energy score hero */}
+          <SkeletonLoader width="100%" height={130} borderRadius={16} />
+          {/* Stat row */}
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <SkeletonLoader.StatCard />
+            <SkeletonLoader.StatCard />
+            <SkeletonLoader.StatCard />
+          </View>
+          {/* Sentiment card */}
+          <SkeletonLoader width="100%" height={110} borderRadius={14} />
+          {/* Pulse card */}
+          <SkeletonLoader width="100%" height={90} borderRadius={14} />
         </View>
       </SafeAreaView>
     );
@@ -651,6 +697,71 @@ export default function MerchantDashboard() {
           )}
         </View>
 
+        {/* ====== LIVE PUSH — SEND A BLAST TO YOUR FOLLOWERS ====== */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📣 Send Live Update</Text>
+          <Text style={styles.sectionSubtitle}>
+            Push a message straight to everyone who follows your venue. They get it instantly.
+          </Text>
+
+          {/* Last push sent */}
+          {lastPushSent ? (
+            <View style={[styles.livePushLastCard]}>
+              <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
+              <Text style={styles.livePushLastText} numberOfLines={2}>
+                Last sent: "{lastPushSent}"
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Message compose area */}
+          <View style={styles.livePushCompose}>
+            <TextInput
+              style={styles.livePushInput}
+              placeholder={`Tell people what's happening at ${stats?.venue?.name || 'your venue'}...\n\ne.g. "DJ Spinall just walked in. Floor is mad. Free entry till 1am."`}
+              placeholderTextColor="#666"
+              value={livePushMessage}
+              onChangeText={setLivePushMessage}
+              multiline
+              maxLength={500}
+              textAlignVertical="top"
+            />
+            <View style={styles.livePushFooter}>
+              <Text style={[
+                styles.livePushCharCount,
+                livePushMessage.length > 400 && { color: '#FF9800' },
+                livePushMessage.length > 470 && { color: '#FF3366' },
+              ]}>
+                {livePushMessage.length}/500
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.livePushSendBtn,
+                  (!livePushMessage.trim() || isSendingPush) && styles.livePushSendBtnDisabled,
+                ]}
+                onPress={isDemoMode
+                  ? () => Alert.alert('Demo Mode', 'Live push simulated. In production this fires to real followers.')
+                  : handleSendLivePush
+                }
+                disabled={isSendingPush}
+              >
+                {isSendingPush ? (
+                  <ActivityIndicator size="small" color="#000" />
+                ) : (
+                  <>
+                    <Ionicons name="send" size={14} color="#000" style={{ marginRight: 6 }} />
+                    <Text style={styles.livePushSendBtnText}>Send Now</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <Text style={styles.livePushNote}>
+            ⏱  One update every 30 minutes. Make it count.
+          </Text>
+        </View>
+
         {/* ====== PULSE DROP - ATTRACT MORE SCOUTS ====== */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🚀 Attract More Scouts</Text>
@@ -815,16 +926,20 @@ export default function MerchantDashboard() {
 
         {/* ====== VIBE INTELLIGENCE ====== */}
         {user?.merchant_venue_id && (
-          <View style={styles.section}>
-            <VibeIntelCard venueId={user.merchant_venue_id} getAuthHeaders={getAuthHeaders} />
-          </View>
+          <ErrorBoundary label="Vibe Intelligence">
+            <View style={styles.section}>
+              <VibeIntelCard venueId={user.merchant_venue_id} getAuthHeaders={getAuthHeaders} />
+            </View>
+          </ErrorBoundary>
         )}
 
         {/* ====== VIBE FORECAST ====== */}
         {user?.merchant_venue_id && (
-          <View style={styles.section}>
-            <VibeForecast venueId={user.merchant_venue_id} />
-          </View>
+          <ErrorBoundary label="Forecast">
+            <View style={styles.section}>
+              <VibeForecast venueId={user.merchant_venue_id} />
+            </View>
+          </ErrorBoundary>
         )}
 
         {/* ====== AI ADVISOR ====== */}
@@ -1012,6 +1127,75 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.xl,
+  },
+  // Live Push styles
+  livePushLastCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#4CAF5015',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#4CAF5030',
+  },
+  livePushLastText: {
+    fontSize: 11,
+    color: '#4CAF50',
+    flex: 1,
+  },
+  livePushCompose: {
+    backgroundColor: '#111',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#222',
+    overflow: 'hidden',
+  },
+  livePushInput: {
+    color: '#fff',
+    fontSize: 14,
+    lineHeight: 20,
+    padding: 14,
+    minHeight: 110,
+    maxHeight: 200,
+  },
+  livePushFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#1e1e1e',
+  },
+  livePushCharCount: {
+    fontSize: 11,
+    color: '#555',
+    fontWeight: '600',
+  },
+  livePushSendBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  livePushSendBtnDisabled: {
+    opacity: 0.4,
+  },
+  livePushSendBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#000',
+  },
+  livePushNote: {
+    fontSize: 11,
+    color: '#444',
+    marginTop: 8,
+    textAlign: 'center',
   },
   sectionHeaderRow: {
     flexDirection: 'row',

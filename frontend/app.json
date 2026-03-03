@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "Vibe",
-    "slug": "vibe-app",
+    "name": "Viibe",
+    "slug": "viibe-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "vibe",
+    "scheme": "viibe",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.vibe.nightlife",
+      "bundleIdentifier": "com.viibe.nightlife",
       "config": {
         "googleMapsApiKey": "GOOGLE_MAPS_API_KEY_IOS"
       },
@@ -20,7 +20,7 @@
       }
     },
     "android": {
-      "package": "com.vibe.nightlife",
+      "package": "com.viibe.nightlife",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0A0A0F"
@@ -55,7 +55,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow Vibe to use your location to verify vibe checks"
+          "locationAlwaysAndWhenInUsePermission": "Allow Viibe to use your location to verify vibe checks"
         }
       ]
     ],

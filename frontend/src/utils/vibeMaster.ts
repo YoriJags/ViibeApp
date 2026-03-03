@@ -6,12 +6,12 @@
  */
 
 // ==================== VIBE LEVEL TYPES ====================
-export type VibeLevel = 'electric' | 'popping' | 'moderate' | 'chill' | 'quiet';
+export type VibeLevel = 'peak' | 'lit' | 'warming' | 'chill' | 'quiet';
 export type CityMood = 'high' | 'mid' | 'low' | 'rainy' | 'weekend';
 
 // ==================== TEMPLATE LIBRARY ====================
 
-// Templates for when a venue is ELECTRIC (80+ vibe score)
+// Templates for when a venue is PEAK (80+ vibe score)
 const ELECTRIC_TEMPLATES = [
   "{venue} is currently the capital of {city}! The energy is pure gbedu. Pull up now! 🔥",
   "Omo! {venue} dey scatter ground tonight! No be small thing o. 🎉",
@@ -23,7 +23,7 @@ const ELECTRIC_TEMPLATES = [
   "Somebody hold me o! {venue} too hot right now! Fire dey! 🔥🔥",
 ];
 
-// Templates for when a venue is POPPING (60-79 vibe score)
+// Templates for when a venue is LIT (60-79 vibe score)
 const POPPING_TEMPLATES = [
   "{venue} is heating up nicely! The night is young, the vibes are right. 🌙",
   "Things are looking good at {venue}. Energy dey build small small. 📈",
@@ -33,7 +33,7 @@ const POPPING_TEMPLATES = [
   "Vibes dey increase for {venue}! Better go early before e full up. 🏃",
 ];
 
-// Templates for when a venue is MODERATE (40-59 vibe score)
+// Templates for when a venue is WARMING (40-59 vibe score)
 const MODERATE_TEMPLATES = [
   "{venue} is still finding its rhythm tonight. Give it time, magic dey come. ⏳",
   "Lowkey vibes at {venue} right now. Good for those who like am calm. 🎵",
@@ -115,9 +115,9 @@ export interface CityStats {
  * Get the vibe level based on score
  */
 export const getVibeLevel = (score: number): VibeLevel => {
-  if (score >= 80) return 'electric';
-  if (score >= 60) return 'popping';
-  if (score >= 40) return 'moderate';
+  if (score >= 80) return 'peak';
+  if (score >= 60) return 'lit';
+  if (score >= 40) return 'warming';
   if (score >= 20) return 'chill';
   return 'quiet';
 };
@@ -157,13 +157,13 @@ export const getVenueCommentary = (venue: VenueSummary, city: string): string =>
   let templates: string[];
   
   switch (level) {
-    case 'electric':
+    case 'peak':
       templates = ELECTRIC_TEMPLATES;
       break;
-    case 'popping':
+    case 'lit':
       templates = POPPING_TEMPLATES;
       break;
-    case 'moderate':
+    case 'warming':
       templates = MODERATE_TEMPLATES;
       break;
     case 'chill':

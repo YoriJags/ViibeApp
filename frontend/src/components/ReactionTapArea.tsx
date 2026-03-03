@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -43,28 +43,24 @@ interface ReactionTapAreaProps {
   venueId: string;
   userId: string;
   vibeState: string;          // peak / lit / charged / warming / chill / quiet
-  isVibePlus: boolean;
   reactionsPerMin: number;    // live rate from socket
   activeScouts: number;       // scouts reacting right now
   incomingBoltCount: number;  // increments when another scout reacts — triggers other bolt
   onReact: () => Promise<void>;
-  onUpgradePress: () => void;
 }
 
 /**
- * The core reaction mechanic. Vibe+ users tap ⚡ to express live energy.
+ * The core reaction mechanic. All scouts tap ⚡ to express live energy.
  * Tap rate across all scouts at the venue IS the energy measurement.
- * Free users see it dimmed with a Vibe+ prompt.
  */
 export default function ReactionTapArea({
   venueId,
   userId,
   vibeState,
-  isVibePlus,
   reactionsPerMin,
   activeScouts,
+  incomingBoltCount,
   onReact,
-  onUpgradePress,
 }: ReactionTapAreaProps) {
   const [bolts, setBolts] = useState<Bolt[]>([]);
   const buttonScale = useRef(new Animated.Value(1)).current;
@@ -89,11 +85,6 @@ export default function ReactionTapArea({
   }, [reactionsPerMin]);
 
   const handleTap = useCallback(async () => {
-    if (!isVibePlus) {
-      onUpgradePress();
-      return;
-    }
-
     // Throttle to 4 taps/sec on the client side
     const now = Date.now();
     if (now - lastTapRef.current < 250) return;
@@ -120,7 +111,7 @@ export default function ReactionTapArea({
 
     // Fire API call (non-blocking)
     onReact().catch(() => {});
-  }, [isVibePlus, onReact, onUpgradePress]);
+  }, [onReact]);
 
   // Called by each bolt when its animation finishes
   const removeBolt = useCallback((id: string) => {
@@ -180,7 +171,7 @@ export default function ReactionTapArea({
 
       {/* Tap button */}
       <TouchableOpacity
-        activeOpacity={isVibePlus ? 0.9 : 1}
+        activeOpacity={0.9}
         onPress={handleTap}
         style={styles.buttonWrapper}
       >
@@ -195,31 +186,15 @@ export default function ReactionTapArea({
 
           {/* Button body */}
           <LinearGradient
-            colors={
-              isVibePlus
-                ? [`${color}33`, `${color}11`]
-                : ['rgba(30,30,45,0.9)', 'rgba(20,20,35,0.95)']
-            }
-            style={[styles.button, { borderColor: isVibePlus ? color : '#333' }]}
+            colors={[`${color}33`, `${color}11`]}
+            style={[styles.button, { borderColor: color }]}
           >
-            <Text style={[styles.boltEmoji, !isVibePlus && styles.boltLocked]}>⚡</Text>
-            {!isVibePlus && (
-              <View style={styles.lockBadge}>
-                <Text style={styles.lockIcon}>🔒</Text>
-              </View>
-            )}
+            <Text style={styles.boltEmoji}>⚡</Text>
           </LinearGradient>
         </Animated.View>
 
-        {/* Label below button */}
-        <Text style={[styles.tapLabel, { color: isVibePlus ? color : '#555' }]}>
-          {isVibePlus ? intensityLabel() : 'VIBE+ ONLY'}
-        </Text>
-        {!isVibePlus && (
-          <Text style={styles.upgradeHint} onPress={onUpgradePress}>
-            Tap to unlock live reactions
-          </Text>
-        )}
+        {/* Intensity label */}
+        <Text style={[styles.tapLabel, { color }]}>{intensityLabel()}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -289,28 +264,10 @@ const styles = StyleSheet.create({
   boltEmoji: {
     fontSize: 30,
   },
-  boltLocked: {
-    opacity: 0.3,
-  },
-  lockBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-  },
-  lockIcon: {
-    fontSize: 14,
-  },
   tapLabel: {
     marginTop: 8,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 2,
-  },
-  upgradeHint: {
-    marginTop: 3,
-    fontSize: 10,
-    color: '#FF9933',
-    textDecorationLine: 'underline',
-    letterSpacing: 0.5,
   },
 });

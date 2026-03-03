@@ -1,7 +1,7 @@
 /**
- * EnergyLevelGuide - Compact horizontal strip explaining the 4 energy levels
+ * EnergyLevelGuide - Compact horizontal strip explaining the 5 energy levels
  *
- * Educates users about what Chill, Moderate, Popping, and Electric mean.
+ * Educates users about what Quiet, Chill, Warming, Lit, and Peak mean.
  * Positioned between Vibe Intel and the Podium on the trending page.
  */
 import React from 'react';
@@ -13,31 +13,38 @@ const { colors } = publicTheme;
 
 const LEVELS = [
   {
+    key: 'quiet',
+    icon: 'remove-circle-outline' as keyof typeof Ionicons.glyphMap,
+    label: 'Quiet',
+    desc: 'Nothing happening',
+    color: '#555E6E',
+  },
+  {
     key: 'chill',
     icon: 'moon' as keyof typeof Ionicons.glyphMap,
     label: 'Chill',
-    desc: 'Relaxed & lowkey',
-    color: '#4FC3F7',
+    desc: 'Low key vibes',
+    color: '#3399FF',
   },
   {
-    key: 'moderate',
-    icon: 'musical-notes' as keyof typeof Ionicons.glyphMap,
-    label: 'Moderate',
-    desc: 'Building up',
-    color: '#FFD54F',
+    key: 'warming',
+    icon: 'thermometer' as keyof typeof Ionicons.glyphMap,
+    label: 'Warming',
+    desc: 'Something building',
+    color: '#9B59B6',
   },
   {
-    key: 'popping',
-    icon: 'flame' as keyof typeof Ionicons.glyphMap,
-    label: 'Popping',
-    desc: 'Vibes are hot',
-    color: '#FF9800',
-  },
-  {
-    key: 'electric',
+    key: 'lit',
     icon: 'flash' as keyof typeof Ionicons.glyphMap,
-    label: 'Electric',
-    desc: 'Maximum energy!',
+    label: 'Lit',
+    desc: 'Energy is real',
+    color: '#FF9933',
+  },
+  {
+    key: 'peak',
+    icon: 'flame' as keyof typeof Ionicons.glyphMap,
+    label: 'Peak',
+    desc: 'Max send',
     color: '#FF3366',
   },
 ];

@@ -11,10 +11,10 @@ import {
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { merchantTheme, spacing, borderRadius, typography } from '../../src/theme/floors';
 import { useVibeStore } from '../../src/store/vibeStore';
 
@@ -22,7 +22,6 @@ const { colors } = merchantTheme;
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function MerchantWallet() {
-  const router = useRouter();
   const { user, getAuthHeaders } = useVibeStore();
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -76,9 +75,13 @@ export default function MerchantWallet() {
           ) : (
             <Text style={styles.balanceAmount}>₦{balance.toLocaleString()}</Text>
           )}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.topUpButton}
-            onPress={() => router.push(`/merchant/topup/${user?.merchant_venue_id}`)}
+            onPress={() => Alert.alert(
+              'Top Up Wallet',
+              'To top up your wallet, contact support or use your Paystack dashboard. Automated top-up coming soon.',
+              [{ text: 'OK' }]
+            )}
           >
             <Ionicons name="add-circle" size={20} color="#FFF" />
             <Text style={styles.topUpText}>Top Up Wallet</Text>

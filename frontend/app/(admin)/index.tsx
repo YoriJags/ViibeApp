@@ -90,12 +90,12 @@ interface IntegrityData {
     count: number;
     average_energy: number;
     venues: Array<{ id: string; name: string; energy_score: number }>;
-    distribution: { electric: number; popping: number; moderate: number; quiet: number };
+    distribution: { peak: number; lit: number; warming: number; chill: number; quiet: number };
   };
   organic: {
     count: number;
     average_energy: number;
-    distribution: { electric: number; popping: number; moderate: number; quiet: number };
+    distribution: { peak: number; lit: number; warming: number; chill: number; quiet: number };
   };
   delta: number;
   integrity_warnings: Array<{ venue_id: string; venue_name: string; energy_score: number; issue: string }>;
@@ -173,12 +173,12 @@ const DEMO_INTEGRITY: IntegrityData = {
       { id: 'v2', name: 'Skybar Lagos', energy_score: 95 },
       { id: 'v3', name: 'DNA Lounge', energy_score: 88 },
     ],
-    distribution: { electric: 8, popping: 10, moderate: 4, quiet: 1 },
+    distribution: { peak: 8, lit: 10, warming: 4, chill: 1, quiet: 0 },
   },
   organic: {
     count: 133,
     average_energy: 68,
-    distribution: { electric: 15, popping: 45, moderate: 52, quiet: 21 },
+    distribution: { peak: 15, lit: 45, warming: 52, chill: 21, quiet: 0 },
   },
   delta: 14,
   integrity_warnings: [],
@@ -282,8 +282,8 @@ export default function AdminAnalytics() {
   const router = useRouter();
   const { user, hasHydrated, getAuthHeaders } = useVibeStore();
   
-  // Demo Mode State
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  // Demo Mode State — defaults ON so admins see a populated dashboard immediately
+  const [isDemoMode, setIsDemoMode] = useState(true);
   
   // Walkthrough State
   const [showWalkthrough, setShowWalkthrough] = useState(false);
@@ -697,7 +697,7 @@ export default function AdminAnalytics() {
                 color={isDemoMode ? '#000' : '#FFF'} 
               />
               <Text style={[styles.demoToggleText, isDemoMode && styles.demoToggleTextActive]}>
-                {isDemoMode ? 'DEMO' : 'Demo'}
+                {isDemoMode ? 'DEMO ON' : 'Go Live'}
               </Text>
             </TouchableOpacity>
             <View style={[styles.liveBadge, isDemoMode && styles.demoBadge]}>
@@ -731,7 +731,7 @@ export default function AdminAnalytics() {
           <View style={styles.demoBanner}>
             <Ionicons name="information-circle" size={16} color="#9333EA" />
             <Text style={styles.demoBannerText}>
-              Showing sample data for demonstration. Toggle off to see real metrics.
+              Showing sample data. Tap "Go Live" in the header to switch to real platform metrics.
             </Text>
           </View>
         )}
@@ -779,36 +779,43 @@ export default function AdminAnalytics() {
             {/* Most Purchased Tiers Chart */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Most Purchased Tiers</Text>
-              <View style={styles.tiersChart}>
-                {displayTreasury?.revenue_by_tier && Object.entries(displayTreasury.revenue_by_tier)
-                  .sort((a, b) => b[1].total - a[1].total)
-                  .map(([tier, stats]) => {
-                    const maxTotal = Math.max(...Object.values(displayTreasury.revenue_by_tier).map(s => s.total)) || 1;
-                    const percentage = (stats.total / maxTotal) * 100;
-                    
-                    return (
-                      <View key={tier} style={styles.tierRow}>
-                        <View style={styles.tierInfo}>
-                          <View style={[styles.tierBadge, { backgroundColor: getTierColor(tier) + '20' }]}>
-                            <Ionicons 
-                              name={tier === 'supernova' ? 'star' : tier === 'flare' ? 'flame' : 'flash'} 
-                              size={16} 
-                              color={getTierColor(tier)} 
-                            />
+              {displayTreasury?.revenue_by_tier && Object.keys(displayTreasury.revenue_by_tier).length > 0 ? (
+                <View style={styles.tiersChart}>
+                  {Object.entries(displayTreasury.revenue_by_tier)
+                    .sort((a, b) => b[1].total - a[1].total)
+                    .map(([tier, stats]) => {
+                      const maxTotal = Math.max(...Object.values(displayTreasury.revenue_by_tier).map(s => s.total)) || 1;
+                      const percentage = (stats.total / maxTotal) * 100;
+                      return (
+                        <View key={tier} style={styles.tierRow}>
+                          <View style={styles.tierInfo}>
+                            <View style={[styles.tierBadge, { backgroundColor: getTierColor(tier) + '20' }]}>
+                              <Ionicons
+                                name={tier === 'supernova' ? 'star' : tier === 'flare' ? 'flame' : 'flash'}
+                                size={16}
+                                color={getTierColor(tier)}
+                              />
+                            </View>
+                            <Text style={styles.tierName}>{tier.charAt(0).toUpperCase() + tier.slice(1)}</Text>
                           </View>
-                          <Text style={styles.tierName}>{tier.charAt(0).toUpperCase() + tier.slice(1)}</Text>
+                          <View style={styles.tierBarContainer}>
+                            <View style={[styles.tierBar, { width: `${percentage}%`, backgroundColor: getTierColor(tier) }]} />
+                          </View>
+                          <View style={styles.tierStats}>
+                            <Text style={styles.tierAmount}>₦{stats.total.toLocaleString()}</Text>
+                            <Text style={styles.tierCount}>{stats.transactions} drops</Text>
+                          </View>
                         </View>
-                        <View style={styles.tierBarContainer}>
-                          <View style={[styles.tierBar, { width: `${percentage}%`, backgroundColor: getTierColor(tier) }]} />
-                        </View>
-                        <View style={styles.tierStats}>
-                          <Text style={styles.tierAmount}>₦{stats.total.toLocaleString()}</Text>
-                          <Text style={styles.tierCount}>{stats.transactions} drops</Text>
-                        </View>
-                      </View>
-                    );
-                  })}
-              </View>
+                      );
+                    })}
+                </View>
+              ) : (
+                <View style={styles.emptyState}>
+                  <Ionicons name="flash-outline" size={32} color={adminColors.textMuted} />
+                  <Text style={styles.emptyText}>No Pulse Drop revenue yet</Text>
+                  <Text style={[styles.emptyText, { fontSize: 11, marginTop: 2 }]}>Merchants purchase drops from the Merchant floor</Text>
+                </View>
+              )}
             </View>
 
             {/* Transaction Ledger */}

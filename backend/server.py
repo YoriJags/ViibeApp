@@ -1,5 +1,5 @@
 """
-Vibe App API - Main Entry Point
+Viibe App API - Main Entry Point
 Assembles FastAPI app from modular route, service, and config modules.
 """
 import os
@@ -44,9 +44,10 @@ from app.routes.platform_settings import router as platform_settings_router
 from app.routes.subscriptions import router as subscriptions_router
 from app.routes.reactions import router as reactions_router
 from app.routes.city_pulse import router as city_pulse_router
+from app.routes.venue_live import router as venue_live_router
 
 # ===== Create FastAPI App =====
-app = FastAPI(title="Vibe App API", version="3.0.0")
+app = FastAPI(title="Viibe App API", version="3.0.0")
 
 # ===== Create API Router with /api prefix =====
 api_router = APIRouter(prefix="/api")
@@ -84,6 +85,7 @@ api_router.include_router(platform_settings_router)
 api_router.include_router(subscriptions_router)
 api_router.include_router(reactions_router)
 api_router.include_router(city_pulse_router)
+api_router.include_router(venue_live_router)
 
 # Include the API router in the main app
 app.include_router(api_router)
@@ -101,9 +103,9 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     await ensure_indexes()
-    logger.info("Vibe App API started - indexes ensured")
+    logger.info("Viibe App API started - indexes ensured")
 
 # ===== Socket.IO ASGI App =====
 socket_app = socketio.ASGIApp(sio, app)
 
-logger.info("Vibe App API initialized - modular architecture loaded")
+logger.info("Viibe App API initialized - modular architecture loaded")

@@ -133,7 +133,7 @@ export default function CrewScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </TouchableOpacity>
-          <Text style={styles.pageTitle}>Vibez Cartel</Text>
+          <Text style={styles.pageTitle}>Viibez Cartel</Text>
           <View style={{ width: 24 }} />
         </View>
 

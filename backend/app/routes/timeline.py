@@ -41,9 +41,12 @@ async def get_venue_timeline(venue_id: str, hours: int = Query(default=24, le=72
                 "avg_energy": {"$avg": {
                     "$switch": {
                         "branches": [
-                            {"case": {"$eq": ["$energy_level", "chill"]}, "then": 1},
-                            {"case": {"$eq": ["$energy_level", "popping"]}, "then": 2},
-                            {"case": {"$eq": ["$energy_level", "electric"]}, "then": 3},
+                            {"case": {"$eq": ["$energy_level", "quiet"]},   "then": 0},
+                            {"case": {"$eq": ["$energy_level", "chill"]},   "then": 1},
+                            {"case": {"$eq": ["$energy_level", "warming"]}, "then": 2},
+                            {"case": {"$eq": ["$energy_level", "charged"]}, "then": 3},
+                            {"case": {"$eq": ["$energy_level", "lit"]},     "then": 4},
+                            {"case": {"$eq": ["$energy_level", "peak"]},    "then": 5},
                         ],
                         "default": 1,
                     }
@@ -83,7 +86,14 @@ async def get_venue_timeline(venue_id: str, hours: int = Query(default=24, le=72
 
         avg_score = round(snap["avg_vibe_score"], 1)
         energy_num = snap["avg_energy"]
-        energy_label = "chill" if energy_num < 1.5 else "popping" if energy_num < 2.5 else "electric"
+        energy_label = (
+            "quiet"   if energy_num < 0.5 else
+            "chill"   if energy_num < 1.5 else
+            "warming" if energy_num < 2.5 else
+            "charged" if energy_num < 3.5 else
+            "lit"     if energy_num < 4.5 else
+            "peak"
+        )
 
         if avg_score > peak_score:
             peak_score = avg_score

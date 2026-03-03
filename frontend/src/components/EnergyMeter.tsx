@@ -2,7 +2,7 @@
  * EnergyMeter - Gamified energy level display with animated gradient bars
  *
  * Replaces the plain 4px energy bar with a vibrant, level-aware power meter.
- * Features animated fill, gradient colors per level, and pulsing glow at ELECTRIC.
+ * Features animated fill, gradient colors per level, and pulsing glow at PEAK.
  */
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
@@ -13,39 +13,48 @@ import { neonGlow } from '../theme';
 // ─── Energy Level Configs ────────────────────────────────────────
 const ENERGY_LEVELS = [
   {
-    min: 80,
-    key: 'electric',
-    label: 'ELECTRIC',
+    min: 85,
+    key: 'peak',
+    label: 'PEAK',
     icon: 'flash' as keyof typeof Ionicons.glyphMap,
     colors: ['#FF3366', '#FF6B35'] as [string, string],
     accent: '#FF3366',
     pulse: true,
   },
   {
-    min: 60,
-    key: 'popping',
-    label: 'POPPING',
+    min: 65,
+    key: 'lit',
+    label: 'LIT',
     icon: 'flame' as keyof typeof Ionicons.glyphMap,
-    colors: ['#FF9800', '#FF6B35'] as [string, string],
-    accent: '#FF9800',
+    colors: ['#FF9933', '#FF6B35'] as [string, string],
+    accent: '#FF9933',
     pulse: false,
   },
   {
-    min: 40,
-    key: 'moderate',
-    label: 'MODERATE',
-    icon: 'musical-notes' as keyof typeof Ionicons.glyphMap,
-    colors: ['#FFD54F', '#FF9800'] as [string, string],
-    accent: '#FFD54F',
+    min: 45,
+    key: 'warming',
+    label: 'WARMING',
+    icon: 'thermometer' as keyof typeof Ionicons.glyphMap,
+    colors: ['#9B59B6', '#6C3483'] as [string, string],
+    accent: '#9B59B6',
+    pulse: false,
+  },
+  {
+    min: 20,
+    key: 'chill',
+    label: 'CHILL',
+    icon: 'moon' as keyof typeof Ionicons.glyphMap,
+    colors: ['#3399FF', '#1A75CC'] as [string, string],
+    accent: '#3399FF',
     pulse: false,
   },
   {
     min: 0,
-    key: 'chill',
-    label: 'CHILL',
-    icon: 'moon' as keyof typeof Ionicons.glyphMap,
-    colors: ['#4FC3F7', '#4FC3F7'] as [string, string],
-    accent: '#4FC3F7',
+    key: 'quiet',
+    label: 'QUIET',
+    icon: 'remove-circle-outline' as keyof typeof Ionicons.glyphMap,
+    colors: ['#555E6E', '#3A3F4A'] as [string, string],
+    accent: '#555E6E',
     pulse: false,
   },
 ];
@@ -90,7 +99,7 @@ export default function EnergyMeter({
     }
   }, [percent, animate]);
 
-  // Electric pulse loop
+  // Peak pulse loop
   useEffect(() => {
     if (level.pulse) {
       Animated.loop(

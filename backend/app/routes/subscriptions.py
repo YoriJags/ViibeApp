@@ -161,28 +161,36 @@ async def initialize_subscription(body: InitializeBody, request: Request):
     """
     user = await require_auth(request)
 
-    price_kobo = int(await get_platform_setting("vibe_plus_price_kobo"))
+    try:
+        price_kobo = int(await get_platform_setting("vibe_plus_price_kobo"))
+    except Exception:
+        price_kobo = DEFAULT_PRICE_KOBO
+
     email = body.email or f"{user.get('username', user['id'][:8])}@vibeapp.ng"
 
     import time
-    reference = f"VIBE-PLUS-{user['id'][:8]}-{int(time.time())}"
+    reference = f"VIIBE-PLUS-{user['id'][:8]}-{int(time.time())}"
 
     # Store pending record
-    await db.pending_subscriptions.insert_one({
-        "reference": reference,
-        "user_id": user["id"],
-        "amount_kobo": price_kobo,
-        "email": email,
-        "status": "pending",
-        "created_at": datetime.now(timezone.utc),
-        "authorization_url": None,
-    })
+    try:
+        await db.pending_subscriptions.insert_one({
+            "reference": reference,
+            "user_id": user["id"],
+            "amount_kobo": price_kobo,
+            "email": email,
+            "status": "pending",
+            "created_at": datetime.now(timezone.utc),
+            "authorization_url": None,
+        })
+    except Exception as e:
+        logger.error(f"Failed to store pending subscription: {e}")
+        raise HTTPException(status_code=500, detail="Could not create payment record. Please try again.")
 
     api_key = os.environ.get("PAYSTACK_SECRET_KEY", "")
 
     if not api_key:
-        # Local dev / no key configured — return a mock URL
-        mock_url = f"https://checkout.paystack.com/mock/{reference}"
+        # Dev / no key configured — activate immediately (mock mode)
+        mock_url = f"https://checkout.paystack.com/access/{reference}"
         await db.pending_subscriptions.update_one(
             {"reference": reference},
             {"$set": {"authorization_url": mock_url}}
@@ -209,14 +217,23 @@ async def initialize_subscription(body: InitializeBody, request: Request):
                     },
                     "callback_url": "https://vibe-app-hc83.vercel.app/subscription/callback",
                 },
-                timeout=10,
+                timeout=15,
             )
 
+        if resp.status_code == 401:
+            logger.error("Paystack API key is invalid (401)")
+            raise HTTPException(status_code=502, detail="Payment provider configuration error. Please contact support.")
+
         if resp.status_code != 200:
-            raise HTTPException(status_code=502, detail="Paystack initialization failed")
+            paystack_message = resp.json().get("message", "") if resp.headers.get("content-type", "").startswith("application/json") else ""
+            logger.error(f"Paystack init returned {resp.status_code}: {paystack_message}")
+            raise HTTPException(status_code=502, detail=f"Payment provider error. Please try again shortly.")
 
         data = resp.json().get("data", {})
         authorization_url = data.get("authorization_url", "")
+
+        if not authorization_url:
+            raise HTTPException(status_code=502, detail="Payment provider did not return a checkout URL.")
 
         await db.pending_subscriptions.update_one(
             {"reference": reference},
@@ -227,9 +244,12 @@ async def initialize_subscription(body: InitializeBody, request: Request):
 
     except HTTPException:
         raise
+    except httpx.TimeoutException:
+        logger.error("Paystack API timeout during subscription initialize")
+        raise HTTPException(status_code=504, detail="Payment provider timed out. Please try again.")
     except Exception as e:
         logger.error(f"Subscription initialize error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to initialize payment")
+        raise HTTPException(status_code=500, detail="Could not start payment. Please try again.")
 
 
 @router.post("/subscription/verify/{reference}")

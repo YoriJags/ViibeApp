@@ -209,7 +209,7 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         }},
     )
 
-    return {
+    result = {
         "current_vibe_score": round(avg_score, 1),
         "energy_level": energy_level,
         "vibe_state": vibe_state,
@@ -219,6 +219,12 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         "total_ratings_24h": ratings_24h,
         "viibe_certified": viibe_certified,
     }
+
+    # Fire any matching venue energy alerts (non-blocking import avoids circular dep)
+    from app.routes.alerts import check_venue_alerts
+    await check_venue_alerts(venue_id, avg_score)
+
+    return result
 
 
 async def update_user_clout(user_id: str, venue_id: str, rating_score: float):

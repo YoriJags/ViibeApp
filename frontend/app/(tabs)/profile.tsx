@@ -108,9 +108,9 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.welcomeContainer}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logo}>VIBE</Text>
+            <Text style={styles.logo}>VIIBE</Text>
           </View>
-          <Text style={styles.welcomeTitle}>Welcome to Vibe</Text>
+          <Text style={styles.welcomeTitle}>Welcome to Viibe</Text>
           <Text style={styles.welcomeSubtitle}>
             Nigeria's real-time nightlife pulse
           </Text>

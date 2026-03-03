@@ -145,7 +145,11 @@ export default function VibeIntelCard({ venueId, getAuthHeaders }: VibeIntelCard
                   {Object.entries(data.rating_breakdown).map(([key, pct]) => (
                     <View key={key} style={styles.breakdownItem}>
                       <View style={[styles.breakdownDot, {
-                        backgroundColor: key === 'electric' ? '#FF3366' : key === 'popping' ? '#FF9933' : '#4FC3F7',
+                        backgroundColor:
+                          key === 'peak'    ? '#FF3366' :
+                          key === 'lit'     ? '#FF9933' :
+                          key === 'warming' ? '#9B59B6' :
+                          key === 'chill'   ? '#3399FF' : '#555E6E',
                       }]} />
                       <Text style={styles.breakdownLabel}>{key}</Text>
                       <Text style={styles.breakdownValue}>{pct}%</Text>

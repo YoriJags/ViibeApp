@@ -97,7 +97,7 @@ export default function MapScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>VIBE</Text>
+          <Text style={styles.headerTitle}>VIIBE</Text>
           <TouchableOpacity 
             style={styles.citySelector}
             onPress={() => setShowCityPicker(true)}
