@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import PulseStrip, { PulseData } from './PulseStrip';
 import PulseBottomSheet from './PulseBottomSheet';
+import MomentumArrow from './MomentumArrow';
 
 interface Venue {
   id: string;
@@ -116,6 +117,13 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
 
   const velocityIcon = getVelocityIcon(venue.vibe_velocity);
   const vibeColor = getVibeColor(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
+
+  // Derive momentum from velocity + score for MomentumArrow
+  const momentum: 'rising' | 'peaking' | 'fading' | 'stable' =
+    venue.vibe_velocity === 'heating_up' ? 'rising' :
+    venue.vibe_velocity === 'cooling_down' ? 'fading' :
+    venue.current_vibe_score >= 70 ? 'peaking' :
+    'stable';
   const vibeStateLabel = getVibeState(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
   const isLowEnergy = venue.current_vibe_score < 20;
   const gradientKey = getVibeStateKey(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
@@ -186,7 +194,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
               )}
             </View>
 
-            {/* PROMINENT Energy Score */}
+            {/* PROMINENT Energy Score + Momentum */}
             <Animated.View style={[styles.scoreContainer, { transform: [{ scale: scoreScale }] }]}>
               <View style={styles.scoreBox}>
                 <Text style={[styles.energyLabel, { color: vibeColor }]}>
@@ -196,11 +204,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
                   {Math.round(venue.current_vibe_score)}%
                 </Text>
               </View>
-              <Ionicons
-                name={velocityIcon.name as any}
-                size={16}
-                color={velocityIcon.color}
-              />
+              <MomentumArrow momentum={momentum} size="sm" />
             </Animated.View>
           </View>
 

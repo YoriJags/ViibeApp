@@ -1654,6 +1654,200 @@ def handle_unfollow_venue(venue_id, headers):
     return 200, {"success": True, "following": False, "followers": count}
 
 
+def handle_get_momentum():
+    """Venue momentum — score delta vs 60 min ago."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    now = datetime.now(timezone.utc)
+    window_start = now - timedelta(minutes=90)
+    window_end = now - timedelta(minutes=30)
+    venues = list(db.venues.find({}, {"_id": 0, "id": 1, "name": 1, "current_vibe_score": 1}))
+    result = []
+    for venue in venues:
+        vid = venue.get("id")
+        current = venue.get("current_vibe_score", 0)
+        snap = list(db.vibe_snapshots.aggregate([
+            {"$match": {"venue_id": vid, "timestamp": {"$gte": window_start, "$lte": window_end}}},
+            {"$group": {"_id": None, "avg": {"$avg": "$vibe_score"}}},
+        ]))
+        prev = round(snap[0]["avg"], 1) if snap else None
+        delta = round(current - prev, 1) if prev is not None else 0.0
+        if delta >= 5:
+            momentum = "rising"
+        elif delta <= -5:
+            momentum = "fading"
+        elif current >= 70:
+            momentum = "peaking"
+        else:
+            momentum = "stable"
+        result.append({"id": vid, "name": venue.get("name"), "current_score": current,
+                        "score_1h_ago": prev, "delta": delta, "momentum": momentum})
+    return 200, {"momentum": result, "computed_at": now.isoformat()}
+
+
+def handle_get_missed_peaks(headers):
+    """Missed peaks for followed venues."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(hours=24)
+    follows = list(db.venue_follows.find({"user_id": user["id"], "active": True}, {"venue_id": 1}))
+    followed_ids = [f["venue_id"] for f in follows]
+    if not followed_ids:
+        return 200, {"missed": []}
+    missed = []
+    for venue_id in followed_ids:
+        peaks = list(db.vibe_snapshots.aggregate([
+            {"$match": {"venue_id": venue_id, "timestamp": {"$gte": since}, "vibe_score": {"$gte": 70}}},
+            {"$group": {"_id": None, "peak_score": {"$max": "$vibe_score"}, "peak_time": {"$last": "$timestamp"}}},
+        ]))
+        if not peaks:
+            continue
+        peak = peaks[0]
+        did_rate = db.ratings.count_documents({"user_id": user["id"], "venue_id": venue_id, "timestamp": {"$gte": since}})
+        did_checkin = db.checkins.count_documents({"user_id": user["id"], "venue_id": venue_id, "created_at": {"$gte": since}})
+        if did_rate == 0 and did_checkin == 0:
+            vdoc = db.venues.find_one({"id": venue_id}, {"_id": 0, "name": 1, "area": 1})
+            missed.append({
+                "venue_id": venue_id,
+                "venue_name": vdoc.get("name") if vdoc else "Unknown",
+                "area": vdoc.get("area") if vdoc else "",
+                "peak_score": round(peak["peak_score"], 1),
+                "message": f"Hit {round(peak['peak_score'])}% while you were away",
+            })
+    missed.sort(key=lambda x: x["peak_score"], reverse=True)
+    return 200, {"missed": missed[:5]}
+
+
+def handle_get_scene_report():
+    """Auto-generated last-night scene report."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    now = datetime.now(timezone.utc)
+    today_3am = now.replace(hour=3, minute=0, second=0, microsecond=0)
+    report_end = today_3am
+    report_start = today_3am - timedelta(hours=8)
+    top_raw = list(db.vibe_snapshots.aggregate([
+        {"$match": {"timestamp": {"$gte": report_start, "$lte": report_end}}},
+        {"$group": {"_id": "$venue_id", "peak_score": {"$max": "$vibe_score"}, "avg_score": {"$avg": "$vibe_score"}}},
+        {"$sort": {"peak_score": -1}},
+        {"$limit": 5},
+    ]))
+    if not top_raw:
+        return 200, {"available": False, "message": "No data for last night yet."}
+    top_venues = []
+    for v in top_raw:
+        vdoc = db.venues.find_one({"id": v["_id"]}, {"_id": 0, "name": 1, "area": 1})
+        top_venues.append({
+            "venue_id": v["_id"],
+            "venue_name": vdoc.get("name") if vdoc else v["_id"],
+            "area": vdoc.get("area") if vdoc else "",
+            "peak_score": round(v["peak_score"], 1),
+            "avg_score": round(v["avg_score"], 1),
+        })
+    winner = top_venues[0]
+    surge_raw = list(db.vibe_snapshots.aggregate([
+        {"$match": {"timestamp": {"$gte": report_start, "$lte": report_end}}},
+        {"$group": {"_id": "$venue_id", "max_score": {"$max": "$vibe_score"}, "min_score": {"$min": "$vibe_score"}}},
+        {"$addFields": {"surge": {"$subtract": ["$max_score", "$min_score"]}}},
+        {"$sort": {"surge": -1}},
+        {"$limit": 1},
+    ]))
+    surge_venue = None
+    if surge_raw:
+        s = surge_raw[0]
+        sdoc = db.venues.find_one({"id": s["_id"]}, {"_id": 0, "name": 1})
+        surge_venue = {
+            "venue_id": s["_id"],
+            "venue_name": sdoc.get("name") if sdoc else s["_id"],
+            "surge": round(s["surge"], 1),
+        }
+    return 200, {
+        "available": True,
+        "winner": winner,
+        "top_venues": top_venues,
+        "surge_venue": surge_venue,
+        "headline": f"{winner['venue_name']} peaked at {winner['peak_score']}% last night",
+    }
+
+
+def handle_get_coins_balance(headers):
+    db = get_db()
+    if not db: return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user: return 401, {"detail": "Not authenticated"}
+    CASHOUT_RATE_FREE, CASHOUT_RATE_VIBE_PLUS = 4000, 5000
+    is_vibe_plus = False
+    vp_expires = user.get("vibe_plus_expires_at")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    if vp_expires and vp_expires > now_iso: is_vibe_plus = True
+    rate = CASHOUT_RATE_VIBE_PLUS if is_vibe_plus else CASHOUT_RATE_FREE
+    wallet = db.vibe_coins.find_one({"user_id": user["id"]}, {"_id": 0}) or {}
+    txns = list(db.coin_transactions.find({"user_id": user["id"]}, {"_id": 0}).sort("timestamp", -1).limit(20))
+    for t in txns:
+        if isinstance(t.get("timestamp"), datetime): t["timestamp"] = t["timestamp"].isoformat()
+    return 200, {
+        "balance": wallet.get("balance", 0),
+        "total_earned": wallet.get("total_earned", 0),
+        "total_cashed_out": wallet.get("total_cashed_out", 0),
+        "cashout_rate_naira": rate // 100,
+        "cashout_min_coins": 500,
+        "is_vibe_plus": is_vibe_plus,
+        "transactions": txns,
+    }
+
+
+def handle_get_banks(headers):
+    db = get_db()
+    if not db: return 503, {"detail": "Database unavailable"}
+    paystack_key = os.environ.get("PAYSTACK_SECRET_KEY", "")
+    if not paystack_key: return 200, {"banks": []}
+    try:
+        import urllib.request
+        req = urllib.request.Request("https://api.paystack.co/bank", headers={"Authorization": f"Bearer {paystack_key}"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+        banks = [{"name": b["name"], "code": b["code"]} for b in data.get("data", [])]
+        return 200, {"banks": banks}
+    except Exception:
+        return 200, {"banks": []}
+
+
+def handle_get_bank_account(headers):
+    db = get_db()
+    if not db: return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user: return 401, {"detail": "Not authenticated"}
+    udoc = db.users.find_one({"id": user["id"]}, {"_id": 0, "paystack_recipient_code": 1, "bank_account": 1})
+    if not udoc or not udoc.get("paystack_recipient_code"):
+        return 200, {"saved": False}
+    acct = udoc.get("bank_account", {})
+    return 200, {
+        "saved": True,
+        "account_name": acct.get("account_name"),
+        "account_number_masked": acct.get("account_number_masked"),
+        "bank_code": acct.get("bank_code"),
+    }
+
+
+def handle_get_reward_pool(venue_id):
+    db = get_db()
+    if not db: return 503, {"detail": "Database unavailable"}
+    now = datetime.now(timezone.utc)
+    pool = db.venue_reward_pools.find_one(
+        {"venue_id": venue_id, "active": True, "coins_remaining": {"$gt": 0}, "expires_at": {"$gt": now.isoformat()}},
+        {"_id": 0},
+    )
+    if not pool: return 200, {"active": False}
+    return 200, {"active": True, "coin_rate": pool["coin_rate"], "coins_remaining": pool["coins_remaining"], "expires_at": pool["expires_at"]}
+
+
 def route_get(path, query_params, headers):
     """Route GET requests."""
     if path == "/" or path == "":
@@ -1721,6 +1915,25 @@ def route_get(path, query_params, headers):
         return handle_admin_get_config()
     if path == "/api/admin/economy-config":
         return handle_get_economy_config()
+
+    # Momentum, Missed Peaks, Scene Report
+    if path == "/api/momentum":
+        return handle_get_momentum()
+    if path == "/api/notifications/missed-peaks":
+        return handle_get_missed_peaks(headers)
+    if path == "/api/scene-report":
+        return handle_get_scene_report()
+
+    # Coins + Reward Pool GET routes
+    if path == "/api/coins/balance":
+        return handle_get_coins_balance(headers)
+    if path == "/api/coins/banks":
+        return handle_get_banks(headers)
+    if path == "/api/coins/bank-account":
+        return handle_get_bank_account(headers)
+    m = re.match(r'^/api/venues/([^/]+)/reward-pool$', path)
+    if m:
+        return handle_get_reward_pool(m.group(1))
 
     return 404, {"detail": "Not found"}
 
@@ -1792,7 +2005,138 @@ def route_post(path, body, headers):
     if m:
         return handle_follow_venue(m.group(1), headers)
 
+    # Coins POST routes
+    if path == "/api/coins/bank-account":
+        return handle_post_bank_account(body, headers)
+    if path == "/api/coins/cashout":
+        return handle_post_cashout(body, headers)
+
+    # Reward Pool POST route
+    m = re.match(r'^/api/venues/([^/]+)/reward-pool/fund$', path)
+    if m:
+        return handle_fund_reward_pool(m.group(1), body, headers)
+
     return 404, {"detail": "Not found"}
+
+
+def handle_post_bank_account(body, headers):
+    """Resolve + save bank account for coin cashouts."""
+    db = get_db()
+    if not db: return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user: return 401, {"detail": "Not authenticated"}
+    account_number = body.get("account_number", "")
+    bank_code = body.get("bank_code", "")
+    if not account_number or not bank_code:
+        return 400, {"detail": "account_number and bank_code required"}
+    paystack_key = os.environ.get("PAYSTACK_SECRET_KEY", "")
+    if not paystack_key:
+        return 503, {"detail": "Payment service not configured"}
+    try:
+        import urllib.request, urllib.parse
+        resolve_url = f"https://api.paystack.co/bank/resolve?account_number={account_number}&bank_code={bank_code}"
+        req = urllib.request.Request(resolve_url, headers={"Authorization": f"Bearer {paystack_key}"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            rdata = json.loads(resp.read())
+        if not rdata.get("status"):
+            return 400, {"ok": False, "detail": "Could not resolve account"}
+        account_name = rdata["data"]["account_name"]
+        # Create Paystack Transfer Recipient
+        rcpt_data = json.dumps({"type": "nuban", "name": account_name, "account_number": account_number, "bank_code": bank_code, "currency": "NGN"}).encode()
+        req2 = urllib.request.Request("https://api.paystack.co/transferrecipient", data=rcpt_data,
+                                       headers={"Authorization": f"Bearer {paystack_key}", "Content-Type": "application/json"})
+        with urllib.request.urlopen(req2, timeout=10) as resp2:
+            rcpt = json.loads(resp2.read())
+        recipient_code = rcpt.get("data", {}).get("recipient_code")
+        masked = f"****{account_number[-4:]}"
+        db.users.update_one({"id": user["id"]}, {"$set": {
+            "paystack_recipient_code": recipient_code,
+            "bank_account": {"account_name": account_name, "account_number_masked": masked, "bank_code": bank_code},
+        }})
+        return 200, {"ok": True, "account_name": account_name, "account_number_masked": masked}
+    except Exception as e:
+        return 500, {"ok": False, "detail": str(e)}
+
+
+def handle_post_cashout(body, headers):
+    """Request a coin cashout via Paystack Transfer."""
+    db = get_db()
+    if not db: return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user: return 401, {"detail": "Not authenticated"}
+    coins = int(body.get("coins", 0))
+    if coins < 500: return 400, {"detail": "Minimum cashout is 500 coins"}
+    wallet = db.vibe_coins.find_one({"user_id": user["id"]}) or {}
+    if wallet.get("balance", 0) < coins: return 400, {"detail": "Insufficient coin balance"}
+    udoc = db.users.find_one({"id": user["id"]}, {"_id": 0, "paystack_recipient_code": 1})
+    if not udoc or not udoc.get("paystack_recipient_code"): return 400, {"detail": "No bank account saved"}
+    is_vibe_plus = False
+    vp_expires = user.get("vibe_plus_expires_at")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    if vp_expires and vp_expires > now_iso: is_vibe_plus = True
+    rate_kobo = 5000 if is_vibe_plus else 4000
+    naira_kobo = int((coins / 100) * rate_kobo)
+    paystack_key = os.environ.get("PAYSTACK_SECRET_KEY", "")
+    if not paystack_key: return 503, {"detail": "Payment service not configured"}
+    try:
+        import urllib.request
+        xfer_data = json.dumps({"source": "balance", "recipient": udoc["paystack_recipient_code"],
+                                 "amount": naira_kobo, "reason": "Vibe Coins Cashout"}).encode()
+        req = urllib.request.Request("https://api.paystack.co/transfer", data=xfer_data,
+                                      headers={"Authorization": f"Bearer {paystack_key}", "Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            xdata = json.loads(resp.read())
+        transfer_code = xdata.get("data", {}).get("transfer_code", "")
+        db.vibe_coins.update_one({"user_id": user["id"]},
+                                  {"$inc": {"balance": -coins, "total_cashed_out": coins}}, upsert=True)
+        db.coin_transactions.insert_one({"id": str(uuid.uuid4()), "user_id": user["id"],
+                                          "amount": -coins, "type": "cashout", "timestamp": datetime.now(timezone.utc)})
+        naira_sent = naira_kobo // 100
+        db.platform_revenue.insert_one({"id": str(uuid.uuid4()), "type": "coin_cashout_cut",
+                                         "user_id": user["id"], "amount": int(naira_sent * 0.20),
+                                         "timestamp": datetime.now(timezone.utc)})
+        return 200, {"ok": True, "transfer_code": transfer_code, "naira_sent": naira_sent, "coins_deducted": coins}
+    except Exception as e:
+        return 500, {"ok": False, "detail": str(e)}
+
+
+def handle_fund_reward_pool(venue_id, body, headers):
+    """Merchant funds a scout reward pool from wallet."""
+    db = get_db()
+    if not db: return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user: return 401, {"detail": "Not authenticated"}
+    amount_naira = int(body.get("amount_naira", 0))
+    if amount_naira < 5000: return 400, {"detail": "Minimum pool funding is ₦5,000"}
+    venue = db.venues.find_one({"id": venue_id})
+    if not venue: return 404, {"detail": "Venue not found"}
+    wallet = db.merchant_wallets.find_one({"venue_id": venue_id})
+    if not wallet or wallet.get("balance", 0) < amount_naira: return 400, {"detail": "Insufficient wallet balance"}
+    coins_funded = int(amount_naira * 0.2)
+    if amount_naira >= 25000: coins_funded = int(coins_funded * 1.1)
+    coin_rate = int(body.get("coin_rate", 15))
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(days=7)
+    result = db.merchant_wallets.update_one(
+        {"venue_id": venue_id, "balance": {"$gte": amount_naira}},
+        {"$inc": {"balance": -amount_naira, "total_spent": amount_naira}, "$set": {"updated_at": now}},
+    )
+    if result.modified_count == 0: return 400, {"detail": "Wallet deduction failed"}
+    existing = db.venue_reward_pools.find_one({"venue_id": venue_id, "active": True})
+    if existing:
+        db.venue_reward_pools.update_one({"id": existing["id"]}, {
+            "$inc": {"total_coins_funded": coins_funded, "coins_remaining": coins_funded},
+            "$set": {"expires_at": expires_at.isoformat(), "coin_rate": coin_rate},
+        })
+        pool_id = existing["id"]
+    else:
+        pool_id = str(uuid.uuid4())
+        db.venue_reward_pools.insert_one({"id": pool_id, "venue_id": venue_id, "funded_by": user["id"],
+                                           "total_coins_funded": coins_funded, "coins_remaining": coins_funded,
+                                           "coin_rate": coin_rate, "active": True,
+                                           "funded_at": now.isoformat(), "expires_at": expires_at.isoformat()})
+    return 200, {"ok": True, "pool_id": pool_id, "coins_funded": coins_funded, "coin_rate": coin_rate, "expires_at": expires_at.isoformat()}
+
 
 # ========================
 # Vercel Handler

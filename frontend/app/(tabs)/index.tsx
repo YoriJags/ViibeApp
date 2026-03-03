@@ -19,6 +19,8 @@ import { useVibeStore } from '../../src/store/vibeStore';
 import { MockMap } from '../../src/components/MockMap';
 import { VenueCard } from '../../src/components/VenueCard';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
+import SceneReportCard from '../../src/components/SceneReportCard';
+import MissedPeaksBanner from '../../src/components/MissedPeaksBanner';
 
 const { width } = Dimensions.get('window');
 
@@ -31,7 +33,7 @@ const CITIES = [
 
 export default function MapScreen() {
   const router = useRouter();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, sessionToken, isDemoMode } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
@@ -194,6 +196,16 @@ export default function MapScreen() {
             />
           }
         >
+          {/* Morning scene recap — shown daily after a night of data */}
+          <SceneReportCard isDemoMode={isDemoMode} />
+
+          {/* "You Missed It" — venues that peaked while user was away */}
+          <MissedPeaksBanner
+            authToken={sessionToken ?? undefined}
+            isDemoMode={isDemoMode}
+            onVenuePress={(id) => router.push(`/venue/${id}`)}
+          />
+
           {venues
             .sort((a, b) => b.current_vibe_score - a.current_vibe_score)
             .map((venue) => (

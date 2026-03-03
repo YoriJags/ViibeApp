@@ -12,9 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // ─── Seismic Ring ────────────────────────────────────────────────────────────
-// Silent expanding ring that pulses outward from spiking venue pins.
-// Three rings with staggered delays create a continuous sonar-wave effect.
-// No text, no narration — the map just tells the truth.
+// Cinematic sonar rings — slow, deliberate, like a radar sweep.
+// WorldMonitor-inspired: unhurried, not alarming. The map breathes.
 const SeismicRing: React.FC<{ color: string; delay: number; baseSize: number }> = ({
   color,
   delay,
@@ -26,12 +25,13 @@ const SeismicRing: React.FC<{ color: string; delay: number; baseSize: number }> 
 
   const run = useCallback(() => {
     scale.setValue(1);
-    opacity.setValue(0.65);
+    opacity.setValue(0.5);
     Animated.parallel([
-      Animated.timing(scale, { toValue: 4.2, duration: 2400, useNativeDriver: true }),
+      // Slower expand: 4800ms instead of 2400ms. Max 2.6x instead of 4.2x.
+      Animated.timing(scale, { toValue: 2.6, duration: 4800, useNativeDriver: true }),
       Animated.sequence([
-        Animated.timing(opacity, { toValue: 0.65, duration: 80, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 0, duration: 2320, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.5, duration: 120, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0, duration: 4680, useNativeDriver: true }),
       ]),
     ]).start(({ finished }) => {
       if (finished && mounted.current) run();
@@ -55,13 +55,108 @@ const SeismicRing: React.FC<{ color: string; delay: number; baseSize: number }> 
         width: baseSize,
         height: baseSize,
         borderRadius: baseSize / 2,
-        borderWidth: 1,
+        borderWidth: 0.5,
         borderColor: color,
         transform: [{ scale }],
         opacity,
       }}
     />
   );
+};
+
+// ─── Breath Glow ─────────────────────────────────────────────────────────────
+// The pin's living core — soft scale breath. WorldMonitor's heartbeat mechanic.
+// Runs on native driver (GPU only). No JS thread involvement.
+const BreathGlow: React.FC<{ color: string; size: number; delay?: number }> = ({
+  color,
+  size,
+  delay = 0,
+}) => {
+  const breath = useRef(new Animated.Value(1)).current;
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    const t = setTimeout(() => {
+      if (!mounted.current) return;
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(breath, { toValue: 1.18, duration: 2200, useNativeDriver: true }),
+          Animated.timing(breath, { toValue: 1, duration: 2200, useNativeDriver: true }),
+        ])
+      ).start();
+    }, delay);
+    return () => {
+      mounted.current = false;
+      clearTimeout(t);
+      breath.stopAnimation();
+    };
+  }, []);
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: color + '18',
+        transform: [{ scale: breath }],
+      }}
+    />
+  );
+};
+
+// ─── Live Dot ────────────────────────────────────────────────────────────────
+// 8px pulsing status dot — WorldMonitor's exact live indicator mechanic.
+const LiveDot: React.FC = () => {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 1.6, duration: 900, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1, duration: 900, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <View style={liveDotStyles.container}>
+      <Animated.View style={[liveDotStyles.ring, { transform: [{ scale }] }]} />
+      <View style={liveDotStyles.dot} />
+      <Text style={liveDotStyles.label}>LIVE</Text>
+    </View>
+  );
+};
+
+const liveDotStyles = {
+  container: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 5,
+  },
+  ring: {
+    position: 'absolute' as const,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#0f504040',
+    left: -3,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#16a34a',
+  },
+  label: {
+    fontSize: 9,
+    fontWeight: '700' as const,
+    color: '#16a34a',
+    letterSpacing: 1.5,
+  },
 };
 
 interface Coordinates {
@@ -281,39 +376,41 @@ export const MockMap: React.FC<MockMapProps> = ({
 
   return (
     <View style={styles.mapContainer}>
-      {/* Dark map background with grid */}
-      <View style={styles.mapBackground}>
-        {/* Grid lines */}
-        {[0.2, 0.4, 0.6, 0.8].map((ratio, i) => (
-          <React.Fragment key={i}>
-            <View
-              style={[
-                styles.gridLineH,
-                { top: `${ratio * 100}%` },
-              ]}
-            />
-            <View
-              style={[
-                styles.gridLineV,
-                { left: `${ratio * 100}%` },
-              ]}
-            />
-          </React.Fragment>
-        ))}
+      {/* ── Cinematic background: WorldMonitor radial gradient ── */}
+      <LinearGradient
+        colors={['#0a2a20', '#071a14', '#020a08']}
+        start={{ x: 0.5, y: 0.3 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
 
-        {/* Area labels */}
-        <View style={[styles.areaLabel, { top: 20, left: 20 }]}>
+      {/* ── Dot grid (replaces hard grid lines) ── */}
+      <View style={styles.mapBackground} pointerEvents="none">
+        {[0.15, 0.30, 0.45, 0.60, 0.75, 0.90].map((row, ri) =>
+          [0.12, 0.25, 0.38, 0.51, 0.64, 0.77, 0.90].map((col, ci) => (
+            <View
+              key={`${ri}-${ci}`}
+              style={[
+                styles.gridDot,
+                { top: `${row * 100}%`, left: `${col * 100}%` },
+              ]}
+            />
+          ))
+        )}
+
+        {/* Area labels — monospace, atmospheric */}
+        <View style={[styles.areaLabel, { top: 18, left: 16 }]}>
           <Text style={styles.areaText}>IKOYI</Text>
         </View>
-        <View style={[styles.areaLabel, { bottom: 40, right: 20 }]}>
+        <View style={[styles.areaLabel, { bottom: 44, right: 16 }]}>
           <Text style={styles.areaText}>VICTORIA ISLAND</Text>
         </View>
 
-        {/* Map ready indicator */}
-        <View style={styles.mapReadyBadge}>
-          <Ionicons name="location" size={12} color="#4CAF50" />
-          <Text style={styles.mapReadyText}>Ready for Google Maps API</Text>
+        {/* Live dot — bottom left */}
+        <View style={styles.liveIndicator}>
+          <LiveDot />
         </View>
+      </View>
 
         {/* User location marker */}
         {userLocation && (
@@ -362,12 +459,19 @@ export const MockMap: React.FC<MockMapProps> = ({
               onMouseEnter={() => handleMouseEnter(venue, position)}
               onMouseLeave={handleMouseLeave}
             >
-              {/* ── Seismic Rings ── silent sonar waves on spiking venues */}
+              {/* ── Breath Glow ── every pin breathes. The map is alive. */}
+              <BreathGlow
+                color={color}
+                size={markerSize + 8}
+                delay={parseInt(venue.id.slice(-3), 16) % 1400}
+              />
+
+              {/* ── Seismic Rings ── slow sonar waves. Deliberate. Cinematic. */}
               {isSpiking && !isRatedGlow && (
                 <>
-                  <SeismicRing color={color} delay={0}    baseSize={markerSize} />
-                  <SeismicRing color={color} delay={800}  baseSize={markerSize} />
-                  <SeismicRing color={color} delay={1600} baseSize={markerSize} />
+                  <SeismicRing color={color} delay={0}     baseSize={markerSize} />
+                  <SeismicRing color={color} delay={1600}  baseSize={markerSize} />
+                  <SeismicRing color={color} delay={3200}  baseSize={markerSize} />
                 </>
               )}
 
@@ -494,10 +598,20 @@ export const MockMap: React.FC<MockMapProps> = ({
                 </View>
               )}
               
-              {/* Velocity indicator */}
+              {/* Momentum indicator — up/star/down on map pins */}
               {venue.vibe_velocity === 'heating_up' && !isHighlighted && (
-                <View style={styles.velocityBadge}>
+                <View style={[styles.velocityBadge, { borderColor: '#4CAF5040' }]}>
                   <Ionicons name="trending-up" size={10} color="#4CAF50" />
+                </View>
+              )}
+              {venue.vibe_velocity === 'cooling_down' && !isHighlighted && (
+                <View style={[styles.velocityBadge, { borderColor: '#FF525240' }]}>
+                  <Ionicons name="trending-down" size={10} color="#FF5252" />
+                </View>
+              )}
+              {venue.vibe_velocity === 'stable' && venue.current_vibe_score >= 70 && !isHighlighted && (
+                <View style={[styles.velocityBadge, { borderColor: '#FFD70040' }]}>
+                  <Ionicons name="star" size={9} color="#FFD700" />
                 </View>
               )}
             </TouchableOpacity>
@@ -646,53 +760,33 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   mapBackground: {
-    flex: 1,
-    backgroundColor: '#0D1117',
-    position: 'relative',
-  },
-  gridLineH: {
+    ...StyleSheet.absoluteFillObject,
     position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: '#1A1F2A',
   },
-  gridLineV: {
+  gridDot: {
     position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 1,
-    backgroundColor: '#1A1F2A',
+    width: 2,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: '#ffffff08',
   },
   areaLabel: {
     position: 'absolute',
-    backgroundColor: '#1A1F2A80',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    backgroundColor: 'transparent',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
   },
   areaText: {
-    color: '#444',
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 2,
-  },
-  mapReadyBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A1F2A',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  mapReadyText: {
-    color: '#4CAF50',
+    color: '#ffffff18',
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 3,
+    fontVariant: ['small-caps'],
+  },
+  liveIndicator: {
+    position: 'absolute',
+    bottom: 50,
+    left: 14,
   },
   userMarker: {
     position: 'absolute',
@@ -763,14 +857,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 12,
+    elevation: 8,
+    // Backdrop blur effect via border styling
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   markerScore: {
-    fontWeight: '800',
+    fontWeight: '900',
     textAlign: 'center',
+    letterSpacing: -0.5,
   },
   markerPulseIcon: {
     position: 'absolute',
@@ -834,9 +932,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -8,
     right: -8,
-    backgroundColor: '#1A1F2A',
-    padding: 2,
+    backgroundColor: 'rgba(2, 10, 8, 0.85)',
+    padding: 3,
     borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   
   // ====== HOVER TOOLTIP STYLES ======
@@ -846,15 +946,15 @@ const styles = StyleSheet.create({
     width: 160,
   },
   tooltipContent: {
-    backgroundColor: '#1A1F2AEE',
+    backgroundColor: '#071a14F2',
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#333',
-    shadowColor: '#000',
+    borderColor: 'rgba(22, 163, 74, 0.15)',
+    shadowColor: '#16a34a',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
     elevation: 10,
   },
   tooltipName: {
@@ -913,7 +1013,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 8,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderTopColor: '#1A1F2AEE',
+    borderTopColor: '#071a14F2',
   },
   tooltipSpikeRow: {
     flexDirection: 'row',
@@ -946,14 +1046,14 @@ const styles = StyleSheet.create({
   highlightedCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1A1F2AE8',
+    backgroundColor: '#071a14F0',
     borderRadius: 16,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: '#FF3366',
     shadowColor: '#FF3366',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
     elevation: 8,
   },
   highlightedCardContent: {
@@ -1008,11 +1108,13 @@ const styles = StyleSheet.create({
     right: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#151520F0',
+    backgroundColor: '#071a14F0',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
     gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(22, 163, 74, 0.12)',
   },
   featuredText: {
     color: '#FFF',

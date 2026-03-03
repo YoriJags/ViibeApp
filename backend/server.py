@@ -47,6 +47,7 @@ from app.routes.city_pulse import router as city_pulse_router
 from app.routes.venue_live import router as venue_live_router
 from app.routes.coins import router as coins_router
 from app.routes.reward_pools import router as reward_pools_router
+from app.routes.momentum import router as momentum_router
 
 # ===== Create FastAPI App =====
 app = FastAPI(title="Viibe App API", version="3.0.0")
@@ -90,6 +91,7 @@ api_router.include_router(city_pulse_router)
 api_router.include_router(venue_live_router)
 api_router.include_router(coins_router)
 api_router.include_router(reward_pools_router)
+api_router.include_router(momentum_router)
 
 # Include the API router in the main app
 app.include_router(api_router)
