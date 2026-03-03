@@ -1237,6 +1237,44 @@ def handle_get_city_pulse(city: str):
     }
 
 
+def _vercel_compute_burst(user_id: str, venue_id: str, db) -> dict:
+    """
+    Detect burst pattern from last 4 taps by this user at this venue.
+    Returns multiplier + rhythm classification.
+    """
+    recent = list(db.reactions.find(
+        {"user_id": user_id, "venue_id": venue_id},
+        sort=[("timestamp", -1)],
+        limit=4,
+    ))
+    if len(recent) < 2:
+        return {"multiplier": 1.0, "rhythm": "casual", "tap_count": 1}
+
+    intervals = [
+        (recent[i]["timestamp"] - recent[i + 1]["timestamp"]).total_seconds() * 1000
+        for i in range(min(len(recent) - 1, 3))
+    ]
+
+    if len(intervals) >= 3 and all(iv < 600 for iv in intervals):
+        return {"multiplier": 2.0, "rhythm": "frenzy", "tap_count": len(recent)}
+    elif len(intervals) >= 2 and all(iv < 800 for iv in intervals[:2]):
+        return {"multiplier": 1.5, "rhythm": "frantic", "tap_count": len(recent)}
+    elif len(intervals) >= 2 and all(300 <= iv <= 700 for iv in intervals[:2]):
+        return {"multiplier": 1.3, "rhythm": "rhythmic", "tap_count": len(recent)}
+    return {"multiplier": 1.0, "rhythm": "casual", "tap_count": 1}
+
+
+def _vercel_weighted_rpm(venue_id: str, window_start, db) -> float:
+    """Sum reaction weights in window / 5 minutes."""
+    pipeline = [
+        {"$match": {"venue_id": venue_id, "timestamp": {"$gte": window_start}}},
+        {"$group": {"_id": None, "total_weight": {"$sum": {"$ifNull": ["$weight", 1.0]}}}},
+    ]
+    result = list(db.reactions.aggregate(pipeline))
+    weighted_total = result[0]["total_weight"] if result else 0
+    return round(weighted_total / 5, 1)
+
+
 def handle_react_to_venue(venue_id: str, headers: dict):
     """POST /api/venues/{venue_id}/react — live bolt reaction. JWT-authenticated."""
     db = get_db()
@@ -1264,38 +1302,39 @@ def handle_react_to_venue(venue_id: str, headers: dict):
     if user_recent >= 60:
         return 429, {"detail": "Slow down — reaction cap reached"}
 
+    # Detect burst BEFORE inserting (reads previous taps only)
+    burst = _vercel_compute_burst(user_id, venue_id, db)
+
     db.reactions.insert_one({
         "id": str(uuid.uuid4()),
         "user_id": user_id,
         "venue_id": venue_id,
         "timestamp": now,
+        "weight": burst["multiplier"],
     })
 
-    # Reaction rate: total taps in last 5 min
+    # Weighted reaction rate: burst taps count more
     window_start = now - timedelta(minutes=5)
-    total_reactions = db.reactions.count_documents({
-        "venue_id": venue_id,
-        "timestamp": {"$gte": window_start},
-    })
-    reactions_per_min = round(total_reactions / 5, 1)
+    reactions_per_min = _vercel_weighted_rpm(venue_id, window_start, db)
 
-    pipeline = [
+    scout_pipeline = [
         {"$match": {"venue_id": venue_id, "timestamp": {"$gte": window_start}}},
         {"$group": {"_id": "$user_id"}},
         {"$count": "total"},
     ]
-    scout_result = list(db.reactions.aggregate(pipeline))
+    scout_result = list(db.reactions.aggregate(scout_pipeline))
     active_scouts = scout_result[0]["total"] if scout_result else 1
 
     return 200, {
         "ok": True,
         "reactions_per_min": reactions_per_min,
         "active_scouts": active_scouts,
+        "burst": burst,
     }
 
 
 def handle_get_reaction_rate(venue_id: str):
-    """GET /api/venues/{venue_id}/reactions/rate — current reaction rate."""
+    """GET /api/venues/{venue_id}/reactions/rate — current weighted reaction rate."""
     db = get_db()
     if not db:
         return 503, {"detail": "Database unavailable"}
@@ -1303,11 +1342,7 @@ def handle_get_reaction_rate(venue_id: str):
     now          = datetime.now(timezone.utc)
     window_start = now - timedelta(minutes=5)
 
-    total_reactions = db.reactions.count_documents({
-        "venue_id": venue_id,
-        "timestamp": {"$gte": window_start},
-    })
-    reactions_per_min = round(total_reactions / 5, 1)
+    reactions_per_min = _vercel_weighted_rpm(venue_id, window_start, db)
 
     pipeline = [
         {"$match": {"venue_id": venue_id, "timestamp": {"$gte": window_start}}},

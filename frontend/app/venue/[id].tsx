@@ -109,6 +109,7 @@ export default function VenueDetailScreen() {
   const [reactionsPerMin, setReactionsPerMin] = useState(0);
   const [activeScouts, setActiveScouts] = useState(0);
   const [incomingBoltCount, setIncomingBoltCount] = useState(0);
+  const [burst, setBurst] = useState<{ multiplier: number; rhythm: string; tap_count: number } | null>(null);
   const [showVibePlusModal, setShowVibePlusModal] = useState(false);
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [venueAlerts, setVenueAlerts] = useState<VenueAlert[]>([]);
@@ -305,6 +306,7 @@ export default function VenueDetailScreen() {
       const data = await res.json();
       setReactionsPerMin(data.reactions_per_min ?? 0);
       setActiveScouts(data.active_scouts ?? 0);
+      setBurst(data.burst ?? null);
     }
   };
 
@@ -1027,6 +1029,7 @@ export default function VenueDetailScreen() {
               reactionsPerMin={reactionsPerMin}
               activeScouts={activeScouts}
               incomingBoltCount={incomingBoltCount}
+              burst={burst}
               onReact={handleReact}
             />
 

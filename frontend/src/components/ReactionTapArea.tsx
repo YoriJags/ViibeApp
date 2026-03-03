@@ -33,25 +33,40 @@ const GLOW_COLORS: Record<string, [string, string]> = {
   quiet: ['rgba(85,94,110,0.15)', 'rgba(85,94,110,0.02)'],
 };
 
+// Rhythm label shown below intensity when burst is active
+const RHYTHM_LABELS: Record<string, string> = {
+  frenzy: 'ON FIRE 🔥',
+  frantic: 'FRANTIC ⚡',
+  rhythmic: 'BEAT ♪',
+};
+
 interface Bolt {
   id: string;
   origin: BoltOrigin;
   startX: number;
 }
 
+interface BurstInfo {
+  multiplier: number;
+  rhythm: string;
+  tap_count: number;
+}
+
 interface ReactionTapAreaProps {
   venueId: string;
   userId: string;
   vibeState: string;          // peak / lit / charged / warming / chill / quiet
-  reactionsPerMin: number;    // live rate from socket
+  reactionsPerMin: number;    // live weighted rate from socket
   activeScouts: number;       // scouts reacting right now
-  incomingBoltCount: number;  // increments when another scout reacts — triggers other bolt
+  incomingBoltCount: number;  // increments when another scout reacts
+  burst?: BurstInfo | null;   // burst classification returned from backend
   onReact: () => Promise<void>;
 }
 
 /**
  * The core reaction mechanic. All scouts tap ⚡ to express live energy.
  * Tap rate across all scouts at the venue IS the energy measurement.
+ * Burst taps (rapid consecutive) carry a higher weight in the RPM signal.
  */
 export default function ReactionTapArea({
   venueId,
@@ -60,29 +75,57 @@ export default function ReactionTapArea({
   reactionsPerMin,
   activeScouts,
   incomingBoltCount,
+  burst,
   onReact,
 }: ReactionTapAreaProps) {
   const [bolts, setBolts] = useState<Bolt[]>([]);
   const buttonScale = useRef(new Animated.Value(1)).current;
   const glowPulse = useRef(new Animated.Value(0.6)).current;
+  const comboFadeAnim = useRef(new Animated.Value(0)).current;
   const lastTapRef = useRef<number>(0);
+  const glowLoopRef = useRef<Animated.CompositeAnimation | null>(null);
 
   const color = BOLT_COLORS[vibeState] ?? BOLT_COLORS.chill;
   const glowColors = GLOW_COLORS[vibeState] ?? GLOW_COLORS.chill;
 
-  // Pulse glow when other scouts are active
-  React.useEffect(() => {
-    if (reactionsPerMin > 5) {
-      Animated.loop(
+  // Glow pulse intensity scales with burst multiplier
+  useEffect(() => {
+    const multiplier = burst?.multiplier ?? 1.0;
+    const glowTarget = Math.min(1, 0.6 + (multiplier - 1.0) * 0.7);
+    const active = reactionsPerMin > 5 || multiplier > 1.0;
+
+    if (glowLoopRef.current) {
+      glowLoopRef.current.stop();
+      glowLoopRef.current = null;
+    }
+
+    if (active) {
+      const duration = multiplier >= 2.0 ? 300 : multiplier >= 1.5 ? 450 : 600;
+      const loop = Animated.loop(
         Animated.sequence([
-          Animated.timing(glowPulse, { toValue: 1, duration: 600, useNativeDriver: true }),
-          Animated.timing(glowPulse, { toValue: 0.6, duration: 600, useNativeDriver: true }),
+          Animated.timing(glowPulse, { toValue: glowTarget, duration, useNativeDriver: true }),
+          Animated.timing(glowPulse, { toValue: 0.4, duration, useNativeDriver: true }),
         ])
-      ).start();
+      );
+      glowLoopRef.current = loop;
+      loop.start();
     } else {
       glowPulse.setValue(0.6);
     }
-  }, [reactionsPerMin]);
+  }, [reactionsPerMin, burst?.multiplier]);
+
+  // Combo badge: flash in then fade out when burst changes
+  useEffect(() => {
+    if (burst && burst.multiplier > 1.0) {
+      comboFadeAnim.setValue(1);
+      Animated.timing(comboFadeAnim, {
+        toValue: 0,
+        duration: 1800,
+        delay: 600,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [burst?.multiplier, burst?.rhythm]);
 
   const handleTap = useCallback(async () => {
     // Throttle to 4 taps/sec on the client side
@@ -90,9 +133,14 @@ export default function ReactionTapArea({
     if (now - lastTapRef.current < 250) return;
     lastTapRef.current = now;
 
-    // Haptic
+    // Haptic — stronger feedback for burst states
     if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const style = burst?.multiplier >= 2.0
+        ? Haptics.ImpactFeedbackStyle.Heavy
+        : burst?.multiplier >= 1.5
+          ? Haptics.ImpactFeedbackStyle.Medium
+          : Haptics.ImpactFeedbackStyle.Light;
+      Haptics.impactAsync(style);
     }
 
     // Button bounce
@@ -111,7 +159,7 @@ export default function ReactionTapArea({
 
     // Fire API call (non-blocking)
     onReact().catch(() => {});
-  }, [onReact]);
+  }, [onReact, burst?.multiplier]);
 
   // Called by each bolt when its animation finishes
   const removeBolt = useCallback((id: string) => {
@@ -140,6 +188,14 @@ export default function ReactionTapArea({
     if (reactionsPerMin >= 5) return 'LIVE';
     return activeScouts > 0 ? 'SCOUTS HERE' : 'BE FIRST';
   };
+
+  const rhythmLabel = burst && burst.multiplier > 1.0
+    ? RHYTHM_LABELS[burst.rhythm] ?? null
+    : null;
+
+  const multiplierLabel = burst && burst.multiplier > 1.0
+    ? `${burst.multiplier}x`
+    : null;
 
   return (
     <View style={styles.wrapper}>
@@ -175,6 +231,13 @@ export default function ReactionTapArea({
         onPress={handleTap}
         style={styles.buttonWrapper}
       >
+        {/* Burst combo badge — floats above button, fades out */}
+        {multiplierLabel && (
+          <Animated.View style={[styles.comboBadge, { opacity: comboFadeAnim, borderColor: color }]}>
+            <Text style={[styles.comboText, { color }]}>{multiplierLabel}</Text>
+          </Animated.View>
+        )}
+
         <Animated.View style={[styles.buttonOuter, { transform: [{ scale: buttonScale }] }]}>
           {/* Glow ring */}
           <Animated.View
@@ -195,6 +258,11 @@ export default function ReactionTapArea({
 
         {/* Intensity label */}
         <Text style={[styles.tapLabel, { color }]}>{intensityLabel()}</Text>
+
+        {/* Rhythm label — personal tap classification */}
+        {rhythmLabel && (
+          <Text style={[styles.rhythmLabel, { color }]}>{rhythmLabel}</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -236,6 +304,21 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     alignItems: 'center',
   },
+  comboBadge: {
+    position: 'absolute',
+    top: -28,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    backgroundColor: '#0D0D1A',
+    zIndex: 20,
+  },
+  comboText: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+  },
   buttonOuter: {
     position: 'relative',
     width: 72,
@@ -269,5 +352,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 2,
+  },
+  rhythmLabel: {
+    marginTop: 3,
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    opacity: 0.8,
   },
 });
