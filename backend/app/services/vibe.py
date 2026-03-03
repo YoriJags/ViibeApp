@@ -80,6 +80,20 @@ def is_within_geofence(user_coords: Coordinates, venue_coords: Coordinates, radi
     return distance <= radius_m
 
 
+async def compute_scout_credibility(user_id: str) -> float:
+    """
+    Scout credibility weight — 0.1 to 1.0.
+    Based purely on experience (total ratings submitted).
+    New scouts start at low weight; established scouts carry full weight.
+    30+ ratings = full credibility. No ML, no manipulation — just track record.
+    """
+    total = await db.ratings.count_documents({"user_id": user_id})
+    # 0 ratings → 0.15 (floor, not zero — every voice counts a little)
+    # 10 ratings → 0.48
+    # 30 ratings → 1.0 (cap)
+    return min(1.0, max(0.15, total / 30))
+
+
 async def calculate_venue_aggregate(venue_id: str) -> dict:
     """
     Calculate time-decay weighted aggregate vibe score for a venue.
@@ -143,11 +157,16 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         minutes_ago = (now - rating_time).total_seconds() / 60
 
         if minutes_ago <= 15:
-            weight = 3.0
+            time_weight = 3.0
         elif minutes_ago <= 30:
-            weight = 2.0
+            time_weight = 2.0
         else:
-            weight = 1.0
+            time_weight = 1.0
+
+        # Scout credibility weight: stored on rating at submission time.
+        # Fallback 0.5 for legacy ratings that predate credibility scoring.
+        credibility = rating.get("credibility_weight", 0.5)
+        weight = time_weight * credibility
 
         score = rating.get("vibe_score", calculate_vibe_score(
             rating["energy"], rating["capacity"], rating["gate"],

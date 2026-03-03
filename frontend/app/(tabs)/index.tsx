@@ -21,6 +21,8 @@ import { VenueCard } from '../../src/components/VenueCard';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
 import SceneReportCard from '../../src/components/SceneReportCard';
 import MissedPeaksBanner from '../../src/components/MissedPeaksBanner';
+import TonightCard from '../../src/components/TonightCard';
+import AreaPulseBar from '../../src/components/AreaPulseBar';
 
 const { width } = Dimensions.get('window');
 
@@ -196,6 +198,16 @@ export default function MapScreen() {
             />
           }
         >
+          {/* Tonight's top pick — best move right now */}
+          <TonightCard
+            city={selectedCity}
+            isDemoMode={isDemoMode}
+            onVenuePress={(id) => router.push(`/venue/${id}`)}
+          />
+
+          {/* Area heat strip — which neighbourhoods are popping */}
+          <AreaPulseBar city={selectedCity} isDemoMode={isDemoMode} />
+
           {/* Morning scene recap — shown daily after a night of data */}
           <SceneReportCard isDemoMode={isDemoMode} />
 

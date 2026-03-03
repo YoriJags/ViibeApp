@@ -42,6 +42,8 @@ import VibePlusModal from '../../src/components/VibePlusModal';
 import VenueAlertModal, { VenueAlert } from '../../src/components/VenueAlertModal';
 import EnergyMeter from '../../src/components/EnergyMeter';
 import VenueIntentBar from '../../src/components/VenueIntentBar';
+import ArrivalIntelCard from '../../src/components/ArrivalIntelCard';
+import CrowdCompositionBar from '../../src/components/CrowdCompositionBar';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -835,6 +837,20 @@ export default function VenueDetailScreen() {
         {id && isFeatureEnabled('vibe_oracle') && (
           <ErrorBoundary label="Vibe Oracle">
             <VibeOracle venueId={id} venueName={venue?.name} />
+          </ErrorBoundary>
+        )}
+
+        {/* ====== ARRIVAL INTEL ====== */}
+        {id && (
+          <ErrorBoundary label="Arrival Intel">
+            <ArrivalIntelCard venueId={id} isDemoMode={isDemoMode} />
+          </ErrorBoundary>
+        )}
+
+        {/* ====== CROWD COMPOSITION ====== */}
+        {id && (
+          <ErrorBoundary label="Crowd Composition">
+            <CrowdCompositionBar venueId={id} isDemoMode={isDemoMode} />
           </ErrorBoundary>
         )}
 

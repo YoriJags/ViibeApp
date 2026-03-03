@@ -1848,6 +1848,271 @@ def handle_get_reward_pool(venue_id):
     return 200, {"active": True, "coin_rate": pool["coin_rate"], "coins_remaining": pool["coins_remaining"], "expires_at": pool["expires_at"]}
 
 
+# ========================
+# Intelligence Layer Routes
+# ========================
+
+_AREA_BOUNDS = {
+    "victoria_island": {"lat": (6.41, 6.45), "lng": (3.39, 3.45)},
+    "lekki":           {"lat": (6.43, 6.47), "lng": (3.45, 3.58)},
+    "ikoyi":           {"lat": (6.44, 6.47), "lng": (3.42, 3.47)},
+    "surulere":        {"lat": (6.49, 6.53), "lng": (3.34, 3.38)},
+    "ikeja":           {"lat": (6.59, 6.63), "lng": (3.33, 3.37)},
+    "yaba":            {"lat": (6.50, 6.53), "lng": (3.36, 3.40)},
+    "ajah":            {"lat": (6.46, 6.50), "lng": (3.57, 3.65)},
+    "maryland":        {"lat": (6.55, 6.58), "lng": (3.35, 3.38)},
+}
+
+_WEATHER_IMPACT = {
+    "Clear":         ("ideal", "+",  "Dry night — expect peak turnout"),
+    "Clouds":        ("neutral", "~", "Overcast but fine — won't affect the scene"),
+    "Rain":          ("poor",   "−",  "Rain in Lagos kills the vibe — 30-40% fewer people"),
+    "Drizzle":       ("poor",   "−",  "Light rain — expect later starts and thinner early crowds"),
+    "Thunderstorm":  ("dead",   "−−", "Storm warning — venues will be thin tonight"),
+    "Haze":          ("neutral", "~", "Harmattan haze — not ideal but people still go out"),
+    "Mist":          ("neutral", "~", "Light mist — negligible effect"),
+}
+
+
+def _classify_area(venue):
+    """Map a venue to its area using lat/lng bounds or its area field."""
+    lat = venue.get("coordinates", {}).get("lat")
+    lng = venue.get("coordinates", {}).get("lng")
+    if lat and lng:
+        for area, bounds in _AREA_BOUNDS.items():
+            if bounds["lat"][0] <= lat <= bounds["lat"][1] and bounds["lng"][0] <= lng <= bounds["lng"][1]:
+                return area
+    raw = venue.get("area", "").lower().replace(" ", "_")
+    return raw if raw else "other"
+
+
+def handle_get_area_pulse(city: str):
+    """GET /api/area-pulse/{city} — per-neighbourhood aggregated vibe score."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    venues = list(db.venues.find({"city": city}, {"_id": 0,
+        "id": 1, "name": 1, "current_vibe_score": 1, "vibe_velocity": 1,
+        "coordinates": 1, "area": 1, "total_ratings_24h": 1}))
+    area_map: dict = {}
+    for v in venues:
+        area = _classify_area(v)
+        if area not in area_map:
+            area_map[area] = {"scores": [], "names": [], "velocities": []}
+        area_map[area]["scores"].append(v.get("current_vibe_score", 0))
+        area_map[area]["names"].append(v["name"])
+        area_map[area]["velocities"].append(v.get("vibe_velocity", "stable"))
+    areas = []
+    for area, data in area_map.items():
+        scores = data["scores"]
+        avg = round(sum(scores) / len(scores), 1) if scores else 0
+        top_venue = data["names"][scores.index(max(scores))] if scores else ""
+        velocities = data["velocities"]
+        if velocities.count("heating_up") > len(velocities) * 0.4:
+            trend = "heating_up"
+        elif velocities.count("cooling_down") > len(velocities) * 0.4:
+            trend = "cooling_down"
+        else:
+            trend = "stable"
+        areas.append({"area": area, "display_name": area.replace("_", " ").title(),
+                       "avg_score": avg, "venue_count": len(scores),
+                       "top_venue": top_venue, "trend": trend})
+    areas.sort(key=lambda x: x["avg_score"], reverse=True)
+    return 200, {"city": city, "areas": areas, "updated_at": datetime.now(timezone.utc).isoformat()}
+
+
+def handle_get_weather(city: str):
+    """GET /api/weather/{city} — weather with nightlife impact classification."""
+    city_coords = {
+        "lagos": (6.5244, 3.3792),
+        "abuja": (9.0579, 7.4951),
+        "port_harcourt": (4.8156, 7.0498),
+        "ibadan": (7.3775, 3.9470),
+    }
+    coords = city_coords.get(city, (6.5244, 3.3792))
+    api_key = os.environ.get("OPENWEATHER_API_KEY", "")
+    if not api_key:
+        return 200, {"available": False, "message": "Weather service not configured"}
+    try:
+        import urllib.request
+        url = f"https://api.openweathermap.org/data/2.5/weather?lat={coords[0]}&lon={coords[1]}&appid={api_key}&units=metric"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read())
+        condition = data["weather"][0]["main"]
+        temp = data["main"]["temp"]
+        humidity = data["main"]["humidity"]
+        impact, symbol, message = _WEATHER_IMPACT.get(condition, ("neutral", "~", "Conditions normal"))
+        return 200, {
+            "available": True, "condition": condition,
+            "temp_c": round(temp, 1), "humidity": humidity,
+            "nightlife_impact": impact, "impact_symbol": symbol,
+            "message": message,
+        }
+    except Exception as e:
+        return 200, {"available": False, "message": str(e)}
+
+
+def handle_get_tonight(city: str):
+    """GET /api/tonight/{city} — weighted top-pick recommendation for tonight."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    now = datetime.now(timezone.utc)
+    two_h_ago = now - timedelta(hours=2)
+    venues = list(db.venues.find({"city": city}, {"_id": 0,
+        "id": 1, "name": 1, "area": 1, "current_vibe_score": 1, "vibe_velocity": 1,
+        "music_genre": 1, "entry_fee": 1, "venue_type": 1,
+        "total_ratings_24h": 1}))
+    if not venues:
+        return 200, {"available": False}
+    scored = []
+    for v in venues:
+        score = v.get("current_vibe_score", 0)
+        velocity = v.get("vibe_velocity", "stable")
+        vel_bonus = 15 if velocity == "heating_up" else -10 if velocity == "cooling_down" else 0
+        recent_count = db.ratings.count_documents({"venue_id": v["id"], "timestamp": {"$gte": two_h_ago}})
+        activity_bonus = min(20, recent_count * 2)
+        total = (score * 0.55) + (vel_bonus * 0.20) + (activity_bonus * 0.25)
+        scored.append((total, v))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    top = scored[0][1]
+    alts = [v for _, v in scored[1:4]]
+    return 200, {
+        "available": True,
+        "pick": {
+            "venue_id": top["id"],
+            "name": top["name"],
+            "area": top.get("area", ""),
+            "score": top.get("current_vibe_score", 0),
+            "velocity": top.get("vibe_velocity", "stable"),
+            "music_genre": top.get("music_genre", ""),
+            "entry_fee": top.get("entry_fee", "Free"),
+            "venue_type": top.get("venue_type", ""),
+        },
+        "alternatives": [
+            {"venue_id": v["id"], "name": v["name"], "area": v.get("area", ""),
+             "score": v.get("current_vibe_score", 0)} for v in alts
+        ],
+    }
+
+
+def handle_get_arrival_intel(venue_id: str):
+    """GET /api/venues/{id}/arrival-intel — best arrival time from check-in/rating timing."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    venue = db.venues.find_one({"id": venue_id}, {"_id": 0, "name": 1})
+    if not venue:
+        return 404, {"detail": "Venue not found"}
+    since = datetime.now(timezone.utc) - timedelta(days=14)
+    # Use ratings as proxy for arrival timing
+    ratings = list(db.ratings.find({"venue_id": venue_id, "timestamp": {"$gte": since}},
+                                    {"_id": 0, "timestamp": 1}))
+    if len(ratings) < 5:
+        return 200, {"available": False, "message": "Not enough data yet"}
+    # Night hours in WAT (UTC+1): 19-23h and 0-3h UTC (= 20-24h and 1-4h WAT)
+    NIGHT_HOURS_UTC = list(range(18, 24)) + list(range(0, 4))
+    hour_counts: dict = {}
+    for r in ratings:
+        ts = r.get("timestamp")
+        if isinstance(ts, str):
+            ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        if ts and ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        if ts:
+            h_utc = ts.hour
+            if h_utc in NIGHT_HOURS_UTC:
+                h_wat = (h_utc + 1) % 24
+                hour_counts[h_wat] = hour_counts.get(h_wat, 0) + 1
+    if not hour_counts:
+        return 200, {"available": False, "message": "No night-time activity data"}
+    peak_h = max(hour_counts, key=hour_counts.get)
+    # Recommend arriving 1h before peak
+    recommend_h = (peak_h - 1) % 24
+    hourly = []
+    for h_utc in NIGHT_HOURS_UTC:
+        h_wat = (h_utc + 1) % 24
+        hourly.append({"hour_wat": h_wat,
+                        "hour_label": f"{h_wat:02d}:00",
+                        "activity": hour_counts.get(h_wat, 0)})
+    return 200, {
+        "available": True,
+        "venue_name": venue.get("name"),
+        "peak_hour": f"{peak_h:02d}:00 WAT",
+        "recommended_arrival": f"{recommend_h:02d}:00 WAT",
+        "insight": f"Arrive by {recommend_h:02d}:00 WAT to beat the queue — peak hits around {peak_h:02d}:00 WAT.",
+        "hourly": hourly,
+    }
+
+
+def handle_get_crowd_composition(venue_id: str):
+    """GET /api/venues/{id}/crowd-composition — persona breakdown of recent raters."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    four_h_ago = datetime.now(timezone.utc) - timedelta(hours=4)
+    recent_ratings = list(db.ratings.find({"venue_id": venue_id, "timestamp": {"$gte": four_h_ago}},
+                                           {"_id": 0, "user_id": 1}))
+    if not recent_ratings:
+        return 200, {"available": False}
+    user_ids = [r["user_id"] for r in recent_ratings]
+    personas: dict = {"turn_up": 0, "grown_sexy": 0, "culture": 0, "chill_set": 0}
+    for uid in user_ids:
+        user = db.users.find_one({"id": uid}, {"_id": 0, "vibe_persona": 1})
+        persona = user.get("vibe_persona", "turn_up") if user else "turn_up"
+        if persona in personas:
+            personas[persona] += 1
+        else:
+            personas["turn_up"] += 1
+    total = sum(personas.values())
+    breakdown = [{"persona": k, "count": v, "pct": round((v / total) * 100) if total else 0}
+                 for k, v in personas.items()]
+    breakdown.sort(key=lambda x: x["pct"], reverse=True)
+    dominant = breakdown[0]["persona"] if breakdown else "turn_up"
+    return 200, {
+        "available": True,
+        "sample_size": total,
+        "dominant_persona": dominant,
+        "breakdown": breakdown,
+    }
+
+
+def handle_get_venue_reputation(venue_id: str):
+    """GET /api/venues/{id}/reputation — 90-day rolling reputation score."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    since = datetime.now(timezone.utc) - timedelta(days=90)
+    snaps = list(db.vibe_snapshots.find({"venue_id": venue_id, "timestamp": {"$gte": since}},
+                                         {"_id": 0, "vibe_score": 1, "user_id": 1, "timestamp": 1}))
+    if len(snaps) < 10:
+        return 200, {"available": False, "message": "Not enough history"}
+    scores = [s["vibe_score"] for s in snaps]
+    avg = sum(scores) / len(scores)
+    # Consistency: lower std_dev = more consistent
+    variance = sum((s - avg) ** 2 for s in scores) / len(scores)
+    std_dev = variance ** 0.5
+    consistency = max(0, 100 - std_dev * 2)
+    # Loyalty: unique raters returning (at least 2 ratings in window)
+    from collections import Counter
+    user_counts = Counter(s.get("user_id") for s in snaps if s.get("user_id"))
+    loyal = sum(1 for c in user_counts.values() if c >= 2)
+    loyalty_score = min(100, loyal * 5)
+    reputation = round((avg * 0.40) + (consistency * 0.30) + (loyalty_score * 0.30), 1)
+    tier = "legendary" if reputation >= 85 else "trusted" if reputation >= 70 else "established" if reputation >= 50 else "building"
+    return 200, {
+        "available": True,
+        "reputation_score": reputation,
+        "tier": tier,
+        "avg_vibe": round(avg, 1),
+        "consistency": round(consistency, 1),
+        "loyalty_score": round(loyalty_score, 1),
+        "sample_size": len(snaps),
+        "days_analyzed": 90,
+    }
+
+
 def route_get(path, query_params, headers):
     """Route GET requests."""
     if path == "/" or path == "":
@@ -1934,6 +2199,26 @@ def route_get(path, query_params, headers):
     m = re.match(r'^/api/venues/([^/]+)/reward-pool$', path)
     if m:
         return handle_get_reward_pool(m.group(1))
+
+    # Intelligence Layer GET routes
+    m = re.match(r'^/api/area-pulse/([^/]+)$', path)
+    if m:
+        return handle_get_area_pulse(m.group(1))
+    m = re.match(r'^/api/weather/([^/]+)$', path)
+    if m:
+        return handle_get_weather(m.group(1))
+    m = re.match(r'^/api/tonight/([^/]+)$', path)
+    if m:
+        return handle_get_tonight(m.group(1))
+    m = re.match(r'^/api/venues/([^/]+)/arrival-intel$', path)
+    if m:
+        return handle_get_arrival_intel(m.group(1))
+    m = re.match(r'^/api/venues/([^/]+)/crowd-composition$', path)
+    if m:
+        return handle_get_crowd_composition(m.group(1))
+    m = re.match(r'^/api/venues/([^/]+)/reputation$', path)
+    if m:
+        return handle_get_venue_reputation(m.group(1))
 
     return 404, {"detail": "Not found"}
 

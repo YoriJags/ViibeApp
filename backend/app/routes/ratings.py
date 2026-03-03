@@ -10,6 +10,7 @@ from app.models import Rating, RatingCreate, Coordinates
 from app.services.vibe import (
     calculate_vibe_score,
     calculate_venue_aggregate,
+    compute_scout_credibility,
     is_within_geofence,
     update_user_clout,
 )
@@ -101,9 +102,13 @@ async def create_rating(rating_data: RatingCreate):
             {"$set": {"superseded": True}},
         )
 
+    # Compute and stamp scout credibility weight before insert
+    credibility = await compute_scout_credibility(rating_data.user_id)
+
     rating_doc = rating.dict()
     rating_doc["provisional"] = is_provisional
     rating_doc["provisional_until"] = provisional_until
+    rating_doc["credibility_weight"] = credibility
     await db.ratings.insert_one(rating_doc)
 
     aggregate = await calculate_venue_aggregate(rating_data.venue_id)
