@@ -29,13 +29,14 @@ interface VibePlusModalProps {
 }
 
 const AI_FEATURES = [
+  { icon: 'cash', label: 'Earn cashable coins', desc: 'Rate at participating venues, cash out direct to your bank' },
+  { icon: 'ribbon', label: 'Verified Scout badge', desc: 'Venues recognise you — early access, priority at the door' },
+  { icon: 'flash', label: 'No rating cooldowns', desc: 'Rate venues back-to-back, build your reputation faster' },
   { icon: 'eye', label: 'Oracle AI Prediction', desc: 'Claude-powered peak time forecast' },
   { icon: 'newspaper', label: 'Vibe Brief', desc: 'Daily AI city briefing at home' },
   { icon: 'chatbubbles', label: 'Roast & Toast', desc: 'Punchy AI venue personality card' },
   { icon: 'git-branch', label: 'DNA Narrative', desc: 'AI-written taste fingerprint story' },
   { icon: 'map', label: 'AI Night Planner', desc: 'Conversational venue planning' },
-  { icon: 'moon', label: 'Night Debrief', desc: 'Post-night AI recap on profile' },
-  { icon: 'analytics', label: 'Vibe DNA Analysis', desc: 'Full AI affinity breakdown' },
 ];
 
 export default function VibePlusModal({ visible, onClose, onSuccess }: VibePlusModalProps) {
@@ -143,9 +144,9 @@ export default function VibePlusModal({ visible, onClose, onSuccess }: VibePlusM
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.headline}>Unlock the full AI suite</Text>
+                <Text style={styles.headline}>The Scout's Earning Toolkit</Text>
                 <Text style={styles.subheadline}>
-                  Get Claude-powered nightlife intelligence — personalized for Lagos.
+                  Rate venues, earn cashable coins, and get AI-powered nightlife intel — all in one.
                 </Text>
 
                 {/* Feature list */}

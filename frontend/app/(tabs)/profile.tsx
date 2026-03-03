@@ -14,12 +14,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
+import VibeCoinBalance from '../../src/components/VibeCoinBalance';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode } = useVibeStore();
+  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, sessionToken } = useVibeStore();
   const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
@@ -328,6 +329,13 @@ export default function ProfileScreen() {
             {user?.scout_status?.toUpperCase()} SCOUT
           </Text>
         </View>
+
+        {/* Vibe Coins — pool-backed cashable earnings */}
+        {sessionToken && (
+          <View style={{ paddingHorizontal: 16 }}>
+            <VibeCoinBalance authToken={sessionToken} />
+          </View>
+        )}
 
         {/* Stats Grid */}
         <View style={styles.statsGrid}>

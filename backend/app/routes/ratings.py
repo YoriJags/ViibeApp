@@ -13,6 +13,7 @@ from app.services.vibe import (
     is_within_geofence,
     update_user_clout,
 )
+from app.routes.coins import award_coins, COIN_EARN, VIBE_PLUS_MULTIPLIER
 
 BURST_THRESHOLD = 4        # ratings triggering provisional hold
 BURST_WINDOW_MINUTES = 10  # window to detect burst
@@ -113,6 +114,40 @@ async def create_rating(rating_data: RatingCreate):
 
     await update_user_clout(rating_data.user_id, rating_data.venue_id, vibe_score)
 
+    # ── Award Vibe Coins ──────────────────────────────────────────────────────
+    # PHASE 1 (now): pool-funded coins only — every coin backed by venue money.
+    # PHASE 2 (post-funding): enable PLATFORM_BASE_COINS to award base coins
+    #   from platform revenue on every rating, regardless of pool status.
+    #   Flip the flag in economy_config when ready.
+    PLATFORM_BASE_COINS = False  # set True when platform revenue can fund this
+
+    _now_iso = datetime.now(timezone.utc).isoformat()
+    _pool = await db.venue_reward_pools.find_one({
+        "venue_id": rating_data.venue_id,
+        "active": True,
+        "coins_remaining": {"$gt": 0},
+        "expires_at": {"$gt": _now_iso},
+    })
+    _coins = 0
+    _pool_bonus = 0
+
+    if _pool:
+        _coins = _pool["coin_rate"]
+        _pool_bonus = _coins
+        await db.venue_reward_pools.update_one(
+            {"id": _pool["id"]},
+            {"$inc": {"coins_remaining": -_coins}},
+        )
+        await award_coins(rating_data.user_id, _coins, "pool_rating", rating_data.venue_id)
+
+    elif PLATFORM_BASE_COINS:
+        # Future: platform funds base coins from subscription/fee revenue
+        rater = await db.users.find_one({"id": rating_data.user_id}, {"is_vibe_plus": 1, "vibe_plus_expires_at": 1})
+        _is_vp = rater and rater.get("is_vibe_plus") and rater.get("vibe_plus_expires_at", "") > _now_iso
+        _coins = COIN_EARN["rating"] * (VIBE_PLUS_MULTIPLIER if _is_vp else 1)
+        await award_coins(rating_data.user_id, _coins, "rating", rating_data.venue_id)
+    # ─────────────────────────────────────────────────────────────────────────
+
     # Update streak + apply multiplier
     streak_result = await update_streak(rating_data.user_id)
     if streak_result.get("multiplier", 1.0) > 1.0:
@@ -165,6 +200,8 @@ async def create_rating(rating_data: RatingCreate):
         "streak": streak_result,
         "squad_bonus": squad_bonus,
         "campaign_multiplier": campaign_multiplier,
+        "coins_earned": _coins,
+        "pool_bonus": _pool_bonus,
     }
 
 
