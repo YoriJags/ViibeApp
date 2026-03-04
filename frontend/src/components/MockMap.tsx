@@ -709,7 +709,6 @@ export const MockMap: React.FC<MockMapProps> = ({
             <View style={styles.tooltipArrow} />
           </Animated.View>
         )}
-      </View>
 
       {/* Highlighted venue card at bottom */}
       {highlightedVenueId && (
