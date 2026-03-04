@@ -5,7 +5,8 @@ Coins can be cashed out directly to a Nigerian bank account via Paystack Transfe
 Clout (reputation) is unchanged — coins are the parallel economic layer.
 """
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
@@ -29,13 +30,23 @@ COIN_EARN = {
 }
 VIBE_PLUS_MULTIPLIER = 2
 
-# Cashout: kobo per 100 coins
+# In-app perks scouts can spend coins on
+COIN_SPEND = {
+    "boost_rating":    50,   # pin your rating to top of venue for 24h
+    "oracle_unlock":  100,   # unlock Oracle AI predictions for 1 venue (24h)
+    "planner_session": 75,   # extra Night Planner AI session credit
+    "profile_title":  200,   # Verified Scout title badge (permanent)
+}
+
+# Cashout — disabled until fintech compliance + Paystack Transfer is live.
+# Architecture is complete; flip CASHOUT_ENABLED = True to activate.
+CASHOUT_ENABLED        = False
 CASHOUT_RATE_FREE      = 4000   # ₦40 per 100 coins
 CASHOUT_RATE_VIBE_PLUS = 5000   # ₦50 per 100 coins
-CASHOUT_MIN_COINS      = 500    # minimum coins to cash out
-CASHOUT_PLATFORM_CUT   = 0.20  # 20% kept by platform
+CASHOUT_MIN_COINS      = 500
+CASHOUT_PLATFORM_CUT   = 0.20
 
-# Anti-fraud gates
+# Anti-fraud gates (used when cashout re-enabled)
 MIN_ACCOUNT_AGE_DAYS   = 30
 MIN_VERIFIED_RATINGS   = 20
 # ─────────────────────────────────────────────────────────────────────────────
@@ -183,12 +194,124 @@ class CashoutBody(BaseModel):
     coins: int
 
 
+@router.get("/coins/perks")
+async def list_perks():
+    """Return available in-app perks scouts can spend coins on."""
+    return {
+        "perks": [
+            {
+                "id": "boost_rating",
+                "name": "Boost Rating",
+                "description": "Pin your rating to the top of a venue for 24h",
+                "cost": COIN_SPEND["boost_rating"],
+                "icon": "rocket",
+            },
+            {
+                "id": "oracle_unlock",
+                "name": "Oracle Unlock",
+                "description": "Unlock AI vibe predictions for a venue for 24h",
+                "cost": COIN_SPEND["oracle_unlock"],
+                "icon": "eye",
+            },
+            {
+                "id": "planner_session",
+                "name": "Night Planner Credit",
+                "description": "One extra AI night planning session",
+                "cost": COIN_SPEND["planner_session"],
+                "icon": "sparkles",
+            },
+            {
+                "id": "profile_title",
+                "name": "Verified Scout",
+                "description": "Permanent Verified Scout badge on your profile",
+                "cost": COIN_SPEND["profile_title"],
+                "icon": "shield-checkmark",
+            },
+        ]
+    }
+
+
+class SpendBody(BaseModel):
+    perk: str
+    venue_id: Optional[str] = None
+
+
+@router.post("/coins/spend")
+async def spend_on_perk(body: SpendBody, user: dict = Depends(require_auth)):
+    """Spend Vibe Coins on an in-app perk."""
+    cost = COIN_SPEND.get(body.perk)
+    if cost is None:
+        raise HTTPException(status_code=400, detail=f"Unknown perk: {body.perk}")
+
+    wallet = await db.vibe_coins.find_one({"user_id": user["id"]})
+    balance = wallet["balance"] if wallet else 0
+    if balance < cost:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Need {cost} coins — you have {balance}. Keep rating to earn more.",
+        )
+
+    now = datetime.now(timezone.utc)
+    await db.vibe_coins.update_one(
+        {"user_id": user["id"]},
+        {"$inc": {"balance": -cost}, "$set": {"updated_at": now}},
+    )
+    await db.coin_transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "amount": -cost,
+        "type": "spend",
+        "reference": body.perk,
+        "venue_id": body.venue_id,
+        "timestamp": now,
+    })
+
+    # Apply perk effect
+    if body.perk == "oracle_unlock" and body.venue_id:
+        expires = (now + timedelta(hours=24)).isoformat()
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$push": {"oracle_unlocks": {"venue_id": body.venue_id, "expires": expires}}},
+        )
+    elif body.perk == "planner_session":
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$inc": {"planner_credits": 1}},
+        )
+    elif body.perk == "boost_rating" and body.venue_id:
+        boost_expires = (now + timedelta(hours=24)).isoformat()
+        await db.ratings.update_one(
+            {"user_id": user["id"], "venue_id": body.venue_id},
+            {"$set": {"boosted": True, "boost_expires": boost_expires}},
+            sort=[("timestamp", -1)],
+        )
+    elif body.perk == "profile_title":
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$addToSet": {"unlocked_titles": "verified_scout"}},
+        )
+
+    return {
+        "ok": True,
+        "perk": body.perk,
+        "coins_spent": cost,
+        "new_balance": balance - cost,
+    }
+
+
 @router.post("/coins/cashout")
 async def request_cashout(body: CashoutBody, user: dict = Depends(require_auth)):
     """
     Cash out Vibe Coins to the scout's bank account via Paystack Transfer.
     Anti-fraud: account age >= 30 days, verified ratings >= 20, bank account saved.
+    Currently disabled — flip CASHOUT_ENABLED = True to activate.
     """
+    if not CASHOUT_ENABLED:
+        raise HTTPException(
+            status_code=503,
+            detail="Cashout is coming soon — your coins are safe and waiting.",
+        )
+
     user_id = user["id"]
     now = datetime.now(timezone.utc)
 

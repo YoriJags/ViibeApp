@@ -1,9 +1,23 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 
 export default function TabLayout() {
+  // Public scout floor is mobile-only — web visitors see download prompt
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.mobileOnly}>
+        <Text style={styles.mobileEmoji}>📱</Text>
+        <Text style={styles.mobileTitle}>VIIBE</Text>
+        <Text style={styles.mobileHeading}>Scout floor is mobile-only</Text>
+        <Text style={styles.mobileBody}>
+          Download the app to discover{'\n'}the scene and earn Vibe Coins.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <Tabs
       screenOptions={{
@@ -55,6 +69,36 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+  mobileOnly: {
+    flex: 1,
+    backgroundColor: '#0A0A0F',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  mobileEmoji: {
+    fontSize: 56,
+    marginBottom: 16,
+  },
+  mobileTitle: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#FF3366',
+    letterSpacing: 6,
+    marginBottom: 12,
+  },
+  mobileHeading: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFF',
+    marginBottom: 8,
+  },
+  mobileBody: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
   tabBar: {
     backgroundColor: '#151520',
     borderTopColor: '#252530',

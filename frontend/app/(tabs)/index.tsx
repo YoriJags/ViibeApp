@@ -101,18 +101,6 @@ export default function MapScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>VIIBE</Text>
-          <TouchableOpacity 
-            style={styles.citySelector}
-            onPress={() => setShowCityPicker(true)}
-          >
-            <Text style={styles.headerSubtitle}>
-              {CITIES.find(c => c.code === selectedCity)?.emoji} {CITIES.find(c => c.code === selectedCity)?.name} Scene
-            </Text>
-            <Ionicons name="chevron-down" size={14} color="#FF3366" />
-          </TouchableOpacity>
-        </View>
         <TouchableOpacity
           style={styles.viewToggle}
           onPress={() => setShowList(!showList)}
@@ -123,6 +111,19 @@ export default function MapScreen() {
             color="#FF3366"
           />
         </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>VIIBE</Text>
+          <TouchableOpacity
+            style={styles.citySelector}
+            onPress={() => setShowCityPicker(true)}
+          >
+            <Text style={styles.headerSubtitle}>
+              {CITIES.find(c => c.code === selectedCity)?.emoji} {CITIES.find(c => c.code === selectedCity)?.name} Scene
+            </Text>
+            <Ionicons name="chevron-down" size={14} color="#FF3366" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.headerSpacer} />
       </View>
 
       {/* City Picker Modal */}
@@ -282,10 +283,16 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    gap: 12,
+  },
+  headerCenter: {
+    flex: 1,
+  },
+  headerSpacer: {
+    width: 44,
   },
   headerTitle: {
     fontSize: 32,
