@@ -12,7 +12,7 @@ export default function TabLayout() {
         <Text style={styles.mobileTitle}>VIIBE</Text>
         <Text style={styles.mobileHeading}>Scout floor is mobile-only</Text>
         <Text style={styles.mobileBody}>
-          Download the app to discover{'\n'}the scene and earn Vibe Coins.
+          Download the app to discover{'\n'}the scene around you.
         </Text>
       </View>
     );
