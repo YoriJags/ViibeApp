@@ -39,7 +39,8 @@ export default function MapScreen() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
-  const [showList, setShowList] = useState(false);
+  // Default to list on web — MockMap is not useful in a browser
+  const [showList, setShowList] = useState(Platform.OS === 'web');
   const [showCityPicker, setShowCityPicker] = useState(false);
 
   useEffect(() => {

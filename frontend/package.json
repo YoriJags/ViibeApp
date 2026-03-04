@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
+    "start:tunnel": "expo start --tunnel",
     "build": "expo export -p web",
     "build:web": "expo export -p web",
     "build:native": "eas build",
