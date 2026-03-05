@@ -1,7 +1,6 @@
 /**
- * PUBLIC FLOOR - Crew Screen
- * Create/join a crew, view members, start venue votes.
- * Accessible from profile (not a tab).
+ * PUBLIC FLOOR - Crew (Viibez Cartel)
+ * First-class tab. Premium dark glass design to match the Explore/Intel aesthetic.
  */
 import React, { useEffect, useState } from 'react';
 import {
@@ -12,41 +11,37 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  ActivityIndicator,
+  Clipboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { publicTheme, spacing, borderRadius, typography } from '../../src/theme/floors';
+import * as Haptics from 'expo-haptics';
 import { useVibeStore } from '../../src/store/vibeStore';
 import VoteCard from '../../src/components/VoteCard';
 import AvatarDisplay from '../../src/components/AvatarDisplay';
 import CartelRadarMap from '../../src/components/CartelRadarMap';
-
-const { colors } = publicTheme;
+import ErrorBoundary from '../../src/components/ErrorBoundary';
 
 export default function CrewScreen() {
-  const router = useRouter();
-  const {
-    user,
-    crew,
-    activeVote,
-    lobbyVenues,
-    fetchCrew,
-    createCrew,
-    joinCrew,
-    leaveCrew,
-    startVote,
-    castVote,
-    fetchLobby,
-  } = useVibeStore();
+  const user = useVibeStore(s => s.user);
+  const crew = useVibeStore(s => s.crew);
+  const activeVote = useVibeStore(s => s.activeVote);
+  const lobbyVenues = useVibeStore(s => s.lobbyVenues);
+  const fetchCrew = useVibeStore(s => s.fetchCrew);
+  const createCrew = useVibeStore(s => s.createCrew);
+  const joinCrew = useVibeStore(s => s.joinCrew);
+  const leaveCrew = useVibeStore(s => s.leaveCrew);
+  const startVote = useVibeStore(s => s.startVote);
+  const castVote = useVibeStore(s => s.castVote);
+  const fetchLobby = useVibeStore(s => s.fetchLobby);
 
   const [crewName, setCrewName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [showVotePicker, setShowVotePicker] = useState(false);
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([]);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   useEffect(() => {
     fetchCrew();
@@ -55,6 +50,7 @@ export default function CrewScreen() {
 
   const handleCreate = async () => {
     if (crewName.length < 2) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     try {
       await createCrew(crewName);
@@ -67,6 +63,7 @@ export default function CrewScreen() {
 
   const handleJoin = async () => {
     if (inviteCode.length < 6) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     try {
       await joinCrew(inviteCode);
@@ -79,6 +76,7 @@ export default function CrewScreen() {
 
   const handleLeave = () => {
     if (!crew) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
       'Leave Cartel',
       crew.is_captain
@@ -86,17 +84,22 @@ export default function CrewScreen() {
         : 'Are you sure you want to leave?',
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Leave',
-          style: 'destructive',
-          onPress: () => leaveCrew(crew.id),
-        },
+        { text: 'Leave', style: 'destructive', onPress: () => leaveCrew(crew.id) },
       ]
     );
   };
 
+  const handleCopyCode = () => {
+    if (!crew) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Clipboard.setString(crew.invite_code);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
+  };
+
   const handleStartVote = async () => {
     if (!crew || selectedVenueIds.length < 2) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     try {
       await startVote(crew.id, selectedVenueIds);
@@ -110,6 +113,7 @@ export default function CrewScreen() {
 
   const handleCastVote = async (venueId: string) => {
     if (!crew || !activeVote) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await castVote(crew.id, activeVote.id, venueId);
     } catch (e: any) {
@@ -118,6 +122,7 @@ export default function CrewScreen() {
   };
 
   const toggleVenueSelection = (venueId: string) => {
+    Haptics.selectionAsync();
     setSelectedVenueIds(prev =>
       prev.includes(venueId)
         ? prev.filter(id => id !== venueId)
@@ -125,154 +130,241 @@ export default function CrewScreen() {
     );
   };
 
-  // No crew - show create/join
+  const liveMembers = crew?.member_details?.filter((m: any) => m.checked_in) ?? [];
+
+  // ── NO CREW: create / join ────────────────────────────────────────────────
   if (!crew) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.topBar}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
-          </TouchableOpacity>
-          <Text style={styles.pageTitle}>Viibez Cartel</Text>
-          <View style={{ width: 24 }} />
-        </View>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Hero */}
-          <View style={styles.hero}>
-            <View style={styles.heroIcon}>
-              <Ionicons name="people" size={48} color={colors.primary} />
-            </View>
-            <Text style={styles.heroTitle}>Start a Cartel</Text>
-            <Text style={styles.heroSubtitle}>
-              Create or join a Cartel to vote on venues, see where your squad is, and earn bonus clout!
-            </Text>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>CARTEL</Text>
+            <Text style={styles.headerSub}>Your crew. Your moves.</Text>
           </View>
 
+          {/* Hero graphic */}
+          <LinearGradient
+            colors={['#1A0A2E', '#110822', '#0A0A0F']}
+            style={styles.heroCard}
+          >
+            <View style={styles.heroGlow} />
+            <View style={styles.heroIconRing}>
+              <LinearGradient colors={['#9933FF', '#FF3366']} style={styles.heroIconGrad}>
+                <Ionicons name="people" size={34} color="#FFF" />
+              </LinearGradient>
+            </View>
+            <Text style={styles.heroTitle}>Build Your Cartel</Text>
+            <Text style={styles.heroBody}>
+              Move as a unit. Vote on where to go, track your squad live, and earn bonus clout for rolling deep.
+            </Text>
+
+            <View style={styles.heroStats}>
+              {[
+                { icon: 'location', label: 'Live tracking' },
+                { icon: 'hand-left', label: 'Group votes' },
+                { icon: 'flash', label: 'Clout boost' },
+              ].map(s => (
+                <View key={s.label} style={styles.heroStat}>
+                  <Ionicons name={s.icon as any} size={16} color="#9933FF" />
+                  <Text style={styles.heroStatText}>{s.label}</Text>
+                </View>
+              ))}
+            </View>
+          </LinearGradient>
+
           {/* Create */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Create Your Cartel</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Cartel name (max 20 chars)"
-              placeholderTextColor={colors.text.muted}
-              value={crewName}
-              onChangeText={(t) => setCrewName(t.slice(0, 20))}
-            />
+          <View style={styles.formSection}>
+            <View style={styles.formLabelRow}>
+              <View style={styles.formDot} />
+              <Text style={styles.formLabel}>CREATE A CARTEL</Text>
+            </View>
+            <View style={styles.inputWrap}>
+              <Ionicons name="shield" size={16} color="#555" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Cartel name (max 20 chars)"
+                placeholderTextColor="#444"
+                value={crewName}
+                onChangeText={(t) => setCrewName(t.slice(0, 20))}
+              />
+              <Text style={styles.inputCounter}>{crewName.length}/20</Text>
+            </View>
             <TouchableOpacity
-              style={[styles.button, crewName.length < 2 && styles.buttonDisabled]}
               onPress={handleCreate}
               disabled={crewName.length < 2 || loading}
+              activeOpacity={0.8}
             >
-              <LinearGradient colors={['#FF3366', '#FF6B35']} style={styles.buttonGradient}>
-                <Text style={styles.buttonText}>
-                  {loading ? 'Creating...' : 'Create Cartel'}
+              <LinearGradient
+                colors={crewName.length >= 2 ? ['#9933FF', '#FF3366'] : ['#1E1E2A', '#1E1E2A']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.ctaBtn}
+              >
+                <Text style={[styles.ctaBtnText, crewName.length < 2 && { color: '#444' }]}>
+                  {loading ? 'Creating...' : 'Found Cartel'}
                 </Text>
+                {crewName.length >= 2 && <Ionicons name="shield-checkmark" size={16} color="#FFF" />}
               </LinearGradient>
             </TouchableOpacity>
           </View>
 
+          {/* Divider */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
           {/* Join */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Join a Cartel</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter 6-character invite code"
-              placeholderTextColor={colors.text.muted}
-              value={inviteCode}
-              onChangeText={(t) => setInviteCode(t.toUpperCase().slice(0, 6))}
-              autoCapitalize="characters"
-              maxLength={6}
-            />
+          <View style={styles.formSection}>
+            <View style={styles.formLabelRow}>
+              <View style={[styles.formDot, { backgroundColor: '#FF3366' }]} />
+              <Text style={styles.formLabel}>JOIN A CARTEL</Text>
+            </View>
+            <View style={styles.inputWrap}>
+              <Ionicons name="key" size={16} color="#555" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, { letterSpacing: 4, fontWeight: '800' }]}
+                placeholder="6-CHAR CODE"
+                placeholderTextColor="#444"
+                value={inviteCode}
+                onChangeText={(t) => setInviteCode(t.toUpperCase().slice(0, 6))}
+                autoCapitalize="characters"
+                maxLength={6}
+              />
+            </View>
             <TouchableOpacity
-              style={[styles.button, inviteCode.length < 6 && styles.buttonDisabled]}
               onPress={handleJoin}
               disabled={inviteCode.length < 6 || loading}
+              activeOpacity={0.8}
+              style={[styles.joinBtn, inviteCode.length < 6 && { opacity: 0.4 }]}
             >
-              <View style={styles.secondaryButton}>
-                <Text style={styles.secondaryButtonText}>
-                  {loading ? 'Joining...' : 'Join Cartel'}
-                </Text>
-              </View>
+              <Text style={styles.joinBtnText}>
+                {loading ? 'Joining...' : 'Join Cartel'}
+              </Text>
+              <Ionicons name="arrow-forward" size={16} color="#FF3366" />
             </TouchableOpacity>
           </View>
 
-          <View style={{ height: 100 }} />
+          <View style={{ height: 120 }} />
         </ScrollView>
       </SafeAreaView>
     );
   }
 
-  // Has crew - show dashboard
+  // ── HAS CREW: dashboard ──────────────────────────────────────────────────
+  const checkedInCount = liveMembers.length;
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.pageTitle}>{crew.name}</Text>
-        <TouchableOpacity onPress={handleLeave}>
-          <Ionicons name="exit-outline" size={22} color="#FF5252" />
-        </TouchableOpacity>
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Invite Code */}
-        <View style={styles.codeCard}>
-          <Text style={styles.codeLabel}>Invite Code</Text>
-          <Text style={styles.codeValue}>{crew.invite_code}</Text>
-          <Text style={styles.codeHint}>Share this with friends to join</Text>
+        {/* Header — crew name + leave */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.headerTitle}>{crew.name.toUpperCase()}</Text>
+            <Text style={styles.headerSub}>
+              {crew.members.length}/8 members
+              {checkedInCount > 0 && ` · ${checkedInCount} out tonight`}
+            </Text>
+          </View>
+          <TouchableOpacity onPress={handleLeave} style={styles.leaveBtn}>
+            <Ionicons name="exit-outline" size={16} color="#FF5252" />
+            <Text style={styles.leaveBtnText}>Leave</Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Invite code card */}
+        <TouchableOpacity onPress={handleCopyCode} activeOpacity={0.8}>
+          <LinearGradient
+            colors={['#1A0A2E', '#110A22']}
+            style={styles.codeCard}
+          >
+            <View style={styles.codeLabelRow}>
+              <View style={styles.codeLiveDot} />
+              <Text style={styles.codeCardLabel}>INVITE CODE</Text>
+            </View>
+            <Text style={styles.codeValue}>{crew.invite_code}</Text>
+            <View style={styles.codeCopyRow}>
+              <Ionicons
+                name={codeCopied ? 'checkmark-circle' : 'copy-outline'}
+                size={14}
+                color={codeCopied ? '#00E676' : '#555'}
+              />
+              <Text style={[styles.codeCopyText, codeCopied && { color: '#00E676' }]}>
+                {codeCopied ? 'Copied!' : 'Tap to copy · Share with friends'}
+              </Text>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
 
         {/* Members */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Members ({crew.members.length}/8)
-          </Text>
-          {crew.member_details.map((member: any) => (
-            <View key={member.user_id} style={styles.memberRow}>
-              <AvatarDisplay
-                config={member.avatar_config || null}
-                username={member.username}
-                size={36}
-                showBorder={member.checked_in}
-                borderColor="#00E676"
-              />
-              <View style={styles.memberInfo}>
-                <Text style={styles.memberName}>
-                  {member.username}
-                  {member.user_id === crew.captain_id && ' (Captain)'}
-                </Text>
-                {member.checked_in && member.venue_name && (
-                  <Text style={styles.memberVenue}>
-                    At {member.venue_name}
-                  </Text>
-                )}
+          <View style={styles.sectionLabelRow}>
+            <View style={styles.sectionDot} />
+            <Text style={styles.sectionLabel}>MEMBERS</Text>
+          </View>
+
+          {crew.member_details.map((member: any) => {
+            const isLive = member.checked_in;
+            const isCaptain = member.user_id === crew.captain_id;
+            return (
+              <View key={member.user_id} style={[styles.memberCard, isLive && styles.memberCardLive]}>
+                <AvatarDisplay
+                  config={member.avatar_config || null}
+                  username={member.username}
+                  size={40}
+                  showBorder={isLive}
+                  borderColor="#00E676"
+                />
+                <View style={styles.memberInfo}>
+                  <View style={styles.memberNameRow}>
+                    <Text style={styles.memberName}>{member.username}</Text>
+                    {isCaptain && (
+                      <View style={styles.captainBadge}>
+                        <Text style={styles.captainBadgeText}>CAPTAIN</Text>
+                      </View>
+                    )}
+                  </View>
+                  {isLive && member.venue_name ? (
+                    <Text style={styles.memberVenue}>📍 {member.venue_name}</Text>
+                  ) : (
+                    <Text style={styles.memberOffline}>Not out yet</Text>
+                  )}
+                </View>
+                {isLive && <View style={styles.livePulse} />}
               </View>
-              {member.checked_in && (
-                <View style={styles.activeDot} />
-              )}
-            </View>
-          ))}
+            );
+          })}
         </View>
 
-        {/* Cartel Radar — live squad tracker */}
+        {/* Cartel Radar */}
         <View style={styles.section}>
-          <View style={styles.locationHeader}>
-            <Ionicons name="location" size={16} color={colors.primary} />
-            <Text style={styles.sectionTitle}>Cartel Radar</Text>
+          <View style={styles.sectionLabelRow}>
+            <View style={[styles.sectionDot, { backgroundColor: '#00E676' }]} />
+            <Text style={styles.sectionLabel}>CARTEL RADAR</Text>
+            <Text style={styles.sectionSub}> · live squad positions</Text>
           </View>
-          <CartelRadarMap
-            crewId={crew.id}
-            crewSize={crew.members?.length || crew.member_details?.length || 1}
-            height={300}
-          />
+          <View style={styles.radarWrap}>
+            <ErrorBoundary label="Radar">
+              <CartelRadarMap
+                crewId={crew.id}
+                crewSize={crew.members?.length || crew.member_details?.length || 1}
+                height={260}
+              />
+            </ErrorBoundary>
+          </View>
         </View>
 
         {/* Active Vote */}
         {activeVote && user && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Active Vote</Text>
+            <View style={styles.sectionLabelRow}>
+              <View style={[styles.sectionDot, { backgroundColor: '#FF9933' }]} />
+              <Text style={styles.sectionLabel}>ACTIVE VOTE</Text>
+            </View>
             <VoteCard
               options={activeVote.options}
               totalVotes={activeVote.total_votes}
@@ -284,21 +376,35 @@ export default function CrewScreen() {
           </View>
         )}
 
-        {/* Start Vote (Captain only) */}
+        {/* Start Vote — captain only, no active vote */}
         {crew.is_captain && !activeVote && (
           <View style={styles.section}>
+            <View style={styles.sectionLabelRow}>
+              <View style={[styles.sectionDot, { backgroundColor: '#FF3366' }]} />
+              <Text style={styles.sectionLabel}>CARTEL VOTE</Text>
+            </View>
+
             {!showVotePicker ? (
               <TouchableOpacity
-                style={styles.startVoteButton}
-                onPress={() => setShowVotePicker(true)}
+                style={styles.startVoteBtn}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowVotePicker(true); }}
+                activeOpacity={0.8}
               >
-                <Ionicons name="hand-left" size={20} color={colors.primary} />
-                <Text style={styles.startVoteText}>Cartel Vote</Text>
+                <LinearGradient
+                  colors={['#FF336615', '#9933FF15']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.startVoteBtnInner}
+                >
+                  <Ionicons name="hand-left" size={18} color="#FF3366" />
+                  <Text style={styles.startVoteBtnText}>Start a Venue Vote</Text>
+                  <Ionicons name="chevron-forward" size={14} color="#555" />
+                </LinearGradient>
               </TouchableOpacity>
             ) : (
               <View>
-                <Text style={styles.sectionTitle}>
-                  Pick 2-4 venues ({selectedVenueIds.length} selected)
+                <Text style={styles.pickerHint}>
+                  Pick 2–4 venues to vote on ({selectedVenueIds.length} selected)
                 </Text>
                 {lobbyVenues.map((venue) => {
                   const selected = selectedVenueIds.includes(venue.id);
@@ -307,24 +413,31 @@ export default function CrewScreen() {
                       key={venue.id}
                       style={[styles.venuePickRow, selected && styles.venuePickSelected]}
                       onPress={() => toggleVenueSelection(venue.id)}
+                      activeOpacity={0.8}
                     >
                       <Text style={styles.venuePickName}>{venue.name}</Text>
                       <Ionicons
                         name={selected ? 'checkmark-circle' : 'ellipse-outline'}
                         size={20}
-                        color={selected ? colors.primary : colors.text.muted}
+                        color={selected ? '#FF3366' : '#333'}
                       />
                     </TouchableOpacity>
                   );
                 })}
                 <TouchableOpacity
-                  style={[styles.button, selectedVenueIds.length < 2 && styles.buttonDisabled]}
                   onPress={handleStartVote}
                   disabled={selectedVenueIds.length < 2 || loading}
+                  activeOpacity={0.8}
+                  style={{ marginTop: 10 }}
                 >
-                  <LinearGradient colors={['#FF3366', '#FF6B35']} style={styles.buttonGradient}>
-                    <Text style={styles.buttonText}>
-                      {loading ? 'Starting...' : 'Start Vote'}
+                  <LinearGradient
+                    colors={selectedVenueIds.length >= 2 ? ['#FF3366', '#9933FF'] : ['#1E1E2A', '#1E1E2A']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.ctaBtn}
+                  >
+                    <Text style={[styles.ctaBtnText, selectedVenueIds.length < 2 && { color: '#444' }]}>
+                      {loading ? 'Starting...' : 'Launch Vote'}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -333,248 +446,239 @@ export default function CrewScreen() {
           </View>
         )}
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.dark,
-  },
-  topBar: {
+  container: { flex: 1, backgroundColor: '#0A0A0F' },
+  scroll: { paddingHorizontal: 16 },
+
+  // Header
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: 14,
+    marginBottom: 4,
   },
-  pageTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-  },
-  hero: {
+  headerTitle: { fontSize: 16, fontWeight: '900', color: '#FFF', letterSpacing: 2 },
+  headerSub: { fontSize: 11, color: '#555', marginTop: 2, fontWeight: '500' },
+
+  // Hero (no crew)
+  heroCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#9933FF22',
+    padding: 24,
     alignItems: 'center',
-    paddingVertical: spacing.xxxl,
-    paddingHorizontal: spacing.xxl,
-  },
-  heroIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: `${colors.primary}15`,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  heroTitle: {
-    fontSize: typography.fontSize.xxl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  heroSubtitle: {
-    fontSize: typography.fontSize.md,
-    color: colors.text.muted,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  section: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  input: {
-    backgroundColor: colors.background.input,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    fontSize: typography.fontSize.md,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  button: {
-    borderRadius: borderRadius.lg,
+    marginBottom: 24,
     overflow: 'hidden',
   },
-  buttonDisabled: {
-    opacity: 0.5,
+  heroGlow: {
+    position: 'absolute',
+    top: -40,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#9933FF18',
   },
-  buttonGradient: {
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    borderRadius: borderRadius.lg,
-  },
-  buttonText: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: '#FFF',
-  },
-  secondaryButton: {
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  secondaryButtonText: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-  },
-  codeCard: {
-    alignItems: 'center',
-    backgroundColor: colors.background.card,
-    marginHorizontal: spacing.lg,
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    marginBottom: spacing.xl,
-  },
-  codeLabel: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.muted,
-    marginBottom: spacing.sm,
-  },
-  codeValue: {
-    fontSize: typography.fontSize.xxxl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.primary,
-    letterSpacing: 4,
-  },
-  codeHint: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.muted,
-    marginTop: spacing.sm,
-  },
-  memberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    gap: spacing.md,
-  },
-  memberAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.background.elevated,
+  heroIconRing: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 1.5,
+    borderColor: '#9933FF44',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.md,
+    marginBottom: 16,
+    shadowColor: '#9933FF',
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 0 },
   },
-  memberAvatarText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.secondary,
+  heroIconGrad: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  memberInfo: {
-    flex: 1,
+  heroTitle: { fontSize: 22, fontWeight: '900', color: '#FFF', letterSpacing: -0.3, marginBottom: 10 },
+  heroBody: { fontSize: 13, color: '#777', textAlign: 'center', lineHeight: 20, marginBottom: 20 },
+  heroStats: { flexDirection: 'row', gap: 20 },
+  heroStat: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  heroStatText: { fontSize: 11, color: '#555', fontWeight: '600' },
+
+  // Form section
+  formSection: { marginBottom: 20 },
+  formLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
+  formDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#9933FF' },
+  formLabel: { fontSize: 9, fontWeight: '800', color: '#555', letterSpacing: 1.5 },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0E0E18',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#1E1E2A',
+    paddingHorizontal: 14,
+    marginBottom: 12,
+    height: 52,
   },
-  memberName: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, fontSize: 15, color: '#EEE', fontWeight: '600' },
+  inputCounter: { fontSize: 10, color: '#333', fontWeight: '600' },
+  ctaBtn: {
+    borderRadius: 14,
+    paddingVertical: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
-  memberVenue: {
-    fontSize: typography.fontSize.xs,
-    color: '#00E676',
-    marginTop: 1,
+  ctaBtnText: { fontSize: 15, fontWeight: '800', color: '#FFF' },
+  joinBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#FF336633',
+    borderRadius: 14,
+    paddingVertical: 15,
+    backgroundColor: '#FF33660A',
   },
-  activeDot: {
+  joinBtnText: { fontSize: 15, fontWeight: '700', color: '#FF3366' },
+
+  // Divider
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#111' },
+  dividerText: { fontSize: 12, color: '#333', fontWeight: '600' },
+
+  // Invite code
+  codeCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#9933FF22',
+    padding: 20,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  codeLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
+  codeLiveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#9933FF' },
+  codeCardLabel: { fontSize: 9, fontWeight: '800', color: '#666', letterSpacing: 1.5 },
+  codeValue: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#FFF',
+    letterSpacing: 10,
+    marginBottom: 12,
+    textShadowColor: '#9933FF',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
+  },
+  codeCopyRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  codeCopyText: { fontSize: 11, color: '#444', fontWeight: '500' },
+
+  // Leave btn
+  leaveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderColor: '#FF525222',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  leaveBtnText: { fontSize: 11, color: '#FF5252', fontWeight: '700' },
+
+  // Section
+  section: { marginBottom: 24 },
+  sectionLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
+  sectionDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#9933FF' },
+  sectionLabel: { fontSize: 9, fontWeight: '800', color: '#555', letterSpacing: 1.5 },
+  sectionSub: { fontSize: 9, color: '#333', fontWeight: '600' },
+
+  // Member cards
+  memberCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#0D0D16',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#1A1A24',
+  },
+  memberCardLive: {
+    borderColor: '#00E67622',
+    backgroundColor: '#00E6760A',
+  },
+  memberInfo: { flex: 1 },
+  memberNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
+  memberName: { fontSize: 14, fontWeight: '700', color: '#DDD' },
+  captainBadge: {
+    backgroundColor: '#FF336618',
+    borderWidth: 1,
+    borderColor: '#FF336633',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  captainBadgeText: { fontSize: 8, fontWeight: '800', color: '#FF3366', letterSpacing: 1 },
+  memberVenue: { fontSize: 11, color: '#00E676', fontWeight: '500' },
+  memberOffline: { fontSize: 11, color: '#333', fontWeight: '500' },
+  livePulse: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: '#00E676',
+    shadowColor: '#00E676',
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 0 },
   },
-  startVoteButton: {
+
+  // Radar
+  radarWrap: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#1A1A24',
+  },
+
+  // Vote
+  startVoteBtn: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#FF336622',
+  },
+  startVoteBtnInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    gap: 10,
   },
-  startVoteText: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.primary,
-  },
+  startVoteBtnText: { flex: 1, fontSize: 14, fontWeight: '700', color: '#CCC' },
+  pickerHint: { fontSize: 11, color: '#555', marginBottom: 12, fontWeight: '600' },
   venuePickRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  venuePickSelected: {
+    backgroundColor: '#0D0D16',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: '#1A1A24',
   },
-  venuePickName: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-  },
-  locationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,230,118,0.06)',
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    gap: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(0,230,118,0.1)',
-  },
-  locationInfo: {
-    flex: 1,
-  },
-  locationName: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-  },
-  locationVenue: {
-    fontSize: typography.fontSize.xs,
-    color: '#00E676',
-    marginTop: 1,
-  },
-  locationLive: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#00E676',
-  },
-  liveText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#00E676',
-  },
+  venuePickSelected: { borderColor: '#FF336655', backgroundColor: '#FF33660A' },
+  venuePickName: { fontSize: 14, fontWeight: '600', color: '#CCC' },
 });
