@@ -46,6 +46,7 @@ import { calculateDistance } from '../../src/utils/geo';
 import VibeBriefCard from '../../src/components/VibeBriefCard';
 import LivePushFeed from '../../src/components/LivePushFeed';
 import { getSceneIntelShort } from '../../src/utils/sceneIntel';
+import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
 
@@ -1070,7 +1071,24 @@ export default function MapScreen() {
       <DemoModeBanner />
       {/* Header with neon glow */}
       <View style={styles.header}>
-        <View>
+        {/* LEFT: Map / List toggle */}
+        <TouchableOpacity
+          style={styles.viewToggle}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setShowList(!showList);
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name={showList ? 'map' : 'list'}
+            size={22}
+            color="#FF3366"
+          />
+        </TouchableOpacity>
+
+        {/* CENTER: Brand + city selector */}
+        <View style={styles.headerCenter}>
           <Animated.Text
             style={[
               styles.headerTitle,
@@ -1082,7 +1100,10 @@ export default function MapScreen() {
           </Animated.Text>
           <TouchableOpacity
             style={styles.citySelector}
-            onPress={() => setShowCityPicker(true)}
+            onPress={() => {
+              Haptics.selectionAsync();
+              setShowCityPicker(true);
+            }}
           >
             <Text style={styles.headerSubtitle}>
               {CITIES.find(c => c.code === selectedCity)?.emoji} {CITIES.find(c => c.code === selectedCity)?.tagline}
@@ -1092,6 +1113,8 @@ export default function MapScreen() {
             </Animated.View>
           </TouchableOpacity>
         </View>
+
+        {/* RIGHT: Live energy + mode toggle + planner */}
         <View style={styles.headerActions}>
           {/* TheWave — live city energy visualizer */}
           <TheWave
@@ -1099,10 +1122,13 @@ export default function MapScreen() {
             spotsLive={spotsLive}
             cityName={cityName}
           />
-          {/* Mode toggle — Scout ↔ Insider (always visible; null treated as scout) */}
+          {/* Mode toggle — Scout ↔ Insider */}
           <TouchableOpacity
             style={[styles.modePill, userMode === 'insider' && styles.modePillInsider]}
-            onPress={() => setUserMode(userMode === 'insider' ? 'scout' : 'insider')}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setUserMode(userMode === 'insider' ? 'scout' : 'insider');
+            }}
             activeOpacity={0.75}
           >
             <Text style={[styles.modePillText, userMode === 'insider' && { color: '#9933FF' }]}>
@@ -1118,17 +1144,6 @@ export default function MapScreen() {
               <Ionicons name="sparkles" size={20} color="#FFD700" />
             </TouchableOpacity>
           )}
-          <TouchableOpacity
-            style={styles.viewToggle}
-            onPress={() => setShowList(!showList)}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={showList ? 'map' : 'list'}
-              size={22}
-              color="#FF3366"
-            />
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -1155,6 +1170,7 @@ export default function MapScreen() {
                   selectedCity === city.code && styles.cityOptionActive
                 ]}
                 onPress={() => {
+                  Haptics.selectionAsync();
                   setSelectedCity(city.code);
                   setShowCityPicker(false);
                 }}
@@ -1200,51 +1216,19 @@ export default function MapScreen() {
           }
           contentContainerStyle={{ paddingBottom: 120 }}
         >
-          {/* ActivityTicker — always visible; demo data seeds the feed until real activity flows */}
+          {/* ── HERO ZONE: one editorial block before content ── */}
+
+          {/* Live activity ribbon — subtle ticker, not a blocking card */}
           <ActivityTicker items={DEMO_ACTIVITY_FEED} />
 
-          {/* City Pulse Bar — live city heartbeat with 30-min sparkline */}
-          {cityPulse && (
-            <CityPulseBar
-              pulse={cityPulse}
-              onPress={() => router.push('/(public)/trending')}
-            />
-          )}
-
-          {/* Live Push Feed — updates from followed venues */}
-          <ErrorBoundary label="Live Push Feed">
-            <LivePushFeed />
-          </ErrorBoundary>
-
-          {/* Top 3 Strip — tonight's hottest venues */}
-          {vibeMarketVenues.length > 0 && (
-            <TopThreeStrip
-              venues={vibeMarketVenues}
-              onVenuePress={(id) => router.push(`/venue/${id}`)}
-              onSeeMore={() => router.push('/(public)/trending')}
-            />
-          )}
-
-          {/* WeekendCard — Friday 6PM+ and Saturday only, dismissable */}
-          {isWeekendActive && !weekendDismissed && (
-            <WeekendCard
-              pulseScore={cityPulse?.pulse_score ?? 50}
-              onDismiss={() => setWeekendDismissed(true)}
-              onExplore={() => router.push('/(public)/trending')}
-            />
-          )}
-
-          {/* CityWelcomeCard — first-impression hook for new users */}
-          {isNewUser && (
+          {/* Tonight's Hero — adaptive journey card; collapses for new users */}
+          {isNewUser ? (
             <CityWelcomeCard
               cityPulse={cityPulse}
               cityName={cityName}
               onPlannerPress={() => setShowPlanner(true)}
             />
-          )}
-
-          {/* TonightHero — Adaptive journey card (returning users only) */}
-          {!isNewUser && (
+          ) : (
             <TonightHero
               phase={nightPhase}
               currentHour={isDemoMode ? DEMO_TONIGHT.currentHour : new Date().toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })}
@@ -1281,16 +1265,32 @@ export default function MapScreen() {
             />
           )}
 
-          {/* VibeMatch — DNA-powered recommendation */}
-          {vibeMatchVenue && (
-            <VibeMatch
-              venueName={vibeMatchVenue.venueName}
-              venueArea={vibeMatchVenue.venueArea}
-              matchPercent={vibeMatchVenue.matchPercent}
-              vibeScore={vibeMatchVenue.vibeScore}
-              energyLevel={vibeMatchVenue.energyLevel}
-              reason={vibeMatchVenue.reason}
-              onPress={() => router.push(`/venue/${vibeMatchVenue.venueId}`)}
+          {/* Top 3 Strip — tonight's hottest, immediately after hero */}
+          {vibeMarketVenues.length > 0 && (
+            <TopThreeStrip
+              venues={vibeMarketVenues}
+              onVenuePress={(id) => router.push(`/venue/${id}`)}
+              onSeeMore={() => router.push('/(public)/trending')}
+            />
+          )}
+
+          {/* City Pulse + Live Push: only show if there is real data */}
+          {cityPulse && (
+            <CityPulseBar
+              pulse={cityPulse}
+              onPress={() => router.push('/(public)/trending')}
+            />
+          )}
+          <ErrorBoundary label="Live Push Feed">
+            <LivePushFeed />
+          </ErrorBoundary>
+
+          {/* WeekendCard — Friday 6PM+ and Saturday only, dismissable */}
+          {isWeekendActive && !weekendDismissed && (
+            <WeekendCard
+              pulseScore={cityPulse?.pulse_score ?? 50}
+              onDismiss={() => setWeekendDismissed(true)}
+              onExplore={() => router.push('/(public)/trending')}
             />
           )}
 
@@ -1312,7 +1312,7 @@ export default function MapScreen() {
             />
           )}
 
-          {/* Category filter */}
+          {/* ── VENUE LIST: Category filter → cards → inline VibeMatch ── */}
           <VenueCategoryFilter
             selected={selectedCategory}
             onSelect={handleCategoryChange}
@@ -1329,13 +1329,8 @@ export default function MapScreen() {
           )}
 
           {filteredVenues.map((venue, index) => (
-              <Animated.View
-                key={venue.id}
-                style={{
-                  opacity: 1,
-                  transform: [{ translateY: 0 }],
-                }}
-              >
+            <React.Fragment key={venue.id}>
+              <Animated.View style={{ opacity: 1, transform: [{ translateY: 0 }] }}>
                 <VenueCard
                   venue={venue}
                   onPress={() => router.push(`/venue/${venue.id}`)}
@@ -1348,7 +1343,20 @@ export default function MapScreen() {
                   } : undefined}
                 />
               </Animated.View>
-            ))}
+              {/* VibeMatch injected inline after 2nd card — feels editorial, not blocky */}
+              {index === 1 && vibeMatchVenue && (
+                <VibeMatch
+                  venueName={vibeMatchVenue.venueName}
+                  venueArea={vibeMatchVenue.venueArea}
+                  matchPercent={vibeMatchVenue.matchPercent}
+                  vibeScore={vibeMatchVenue.vibeScore}
+                  energyLevel={vibeMatchVenue.energyLevel}
+                  reason={vibeMatchVenue.reason}
+                  onPress={() => router.push(`/venue/${vibeMatchVenue.venueId}`)}
+                />
+              )}
+            </React.Fragment>
+          ))}
 
         </ScrollView>
       ) : (
@@ -1395,6 +1403,18 @@ export default function MapScreen() {
               </View>
             ))}
           </View>
+          {/* Floating "Show List" pill — Airbnb-style map→list switch */}
+          <TouchableOpacity
+            style={styles.floatingListPill}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setShowList(true);
+            }}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="list" size={15} color="#FFF" />
+            <Text style={styles.floatingListPillText}>Show List</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -1448,8 +1468,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 8,
   },
   headerTitle: {
     fontSize: 32,
@@ -1628,6 +1653,33 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 11,
     fontWeight: '500',
+  },
+  floatingListPill: {
+    position: 'absolute',
+    bottom: 20,
+    alignSelf: 'center',
+    left: '50%',
+    transform: [{ translateX: -52 }],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(10,10,18,0.92)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,51,102,0.35)',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 24,
+    shadowColor: '#FF3366',
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 8,
+  },
+  floatingListPillText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.4,
   },
   mapContainer: {
     flex: 1,

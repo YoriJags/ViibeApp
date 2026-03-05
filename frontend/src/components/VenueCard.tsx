@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, ScrollView } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import PulseStrip, { PulseData } from './PulseStrip';
@@ -17,11 +18,15 @@ interface Venue {
   gate_level: 'clear' | 'slow' | 'blocked';
   vibe_velocity: 'heating_up' | 'cooling_down' | 'stable';
   is_featured: boolean;
-  active_pulse_tier?: 'spark' | 'flare' | 'supernova' | null;
+  active_pulse_tier?: string | null;
   entry_fee?: string;
   music_genre?: string;
   pulse?: PulseData;
   viibe_certified?: boolean;
+  is_open_now?: boolean | null;
+  next_open?: string;
+  vibe_tier?: string;
+  icon_spotted?: { username: string; icon_tier: string; icon_label?: string } | null;
 }
 
 interface VenueCardProps {
@@ -32,17 +37,16 @@ interface VenueCardProps {
   onRatePress?: () => void;
 }
 
-// Gradient color pairs per vibe state
+// Premium gradient palettes per vibe state
 const VIBE_GRADIENTS: Record<string, [string, string, string]> = {
-  peak:    ['#FF3366', '#FF6B35', '#FF3366'],
-  lit:     ['#FF9933', '#FFD700', '#FF9933'],
-  charged: ['#9B59B6', '#8E44AD', '#9B59B6'],
-  warming: ['#9933FF', '#6B1FCC', '#9933FF'],
-  chill:   ['#3399FF', '#00D4FF', '#3399FF'],
-  quiet:   ['#555E6E', '#3D4450', '#555E6E'],
+  peak:    ['#FF3366', '#C0183E', '#FF3366'],
+  lit:     ['#FF8C00', '#E67300', '#FF8C00'],
+  charged: ['#8B31C7', '#6A1F9E', '#8B31C7'],
+  warming: ['#7B2FBE', '#5A1A99', '#7B2FBE'],
+  chill:   ['#1E78D4', '#0F5CA8', '#1E78D4'],
+  quiet:   ['#3A3F4E', '#2A2E3A', '#3A3F4E'],
 };
 
-// Derive display state label from score + capacity (matches backend get_venue_state)
 const getVibeState = (score: number, capacity: string): string => {
   if (score >= 85) return 'PEAK';
   if (score >= 65) return 'LIT';
@@ -61,77 +65,53 @@ const getVibeStateKey = (score: number, capacity: string): string => {
 
 export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostBadge = true, isNearby, onRatePress }) => {
   const isPulseBoosted = venue.active_pulse_tier !== null && venue.active_pulse_tier !== undefined;
-  // Native-driver opacity for gradient border — runs on GPU, not JS thread
-  const maxOpacity = venue.current_vibe_score >= 80 ? 0.7 : venue.current_vibe_score >= 60 ? 0.45 : 0.25;
-  const borderOpacity = useRef(new Animated.Value(0.1)).current;
-  const scoreScale = useRef(new Animated.Value(1)).current;
+  const maxOpacity = venue.current_vibe_score >= 80 ? 0.65 : venue.current_vibe_score >= 60 ? 0.4 : 0.18;
+  const borderOpacity = useRef(new Animated.Value(0.08)).current;
+  const scoreScale = useRef(new Animated.Value(0.85)).current;
   const [showPulseSheet, setShowPulseSheet] = useState(false);
 
-  // Animated border glow — native driver only (GPU thread, not JS thread)
+  // Ambient border breathe — GPU thread only
   useEffect(() => {
-    const duration = venue.current_vibe_score >= 80 ? 1200 : venue.current_vibe_score >= 60 ? 2000 : 3000;
+    const duration = venue.current_vibe_score >= 80 ? 1400 : venue.current_vibe_score >= 60 ? 2200 : 3500;
     const anim = Animated.loop(
       Animated.sequence([
         Animated.timing(borderOpacity, { toValue: maxOpacity, duration, useNativeDriver: true }),
-        Animated.timing(borderOpacity, { toValue: 0.1, duration, useNativeDriver: true }),
+        Animated.timing(borderOpacity, { toValue: 0.08, duration, useNativeDriver: true }),
       ])
     );
     anim.start();
-    // Stop when component unmounts or score changes (prevents off-screen leaks)
     return () => anim.stop();
   }, [venue.current_vibe_score]);
 
-  // Score pop animation on mount
+  // Score entrance pop
   useEffect(() => {
-    Animated.sequence([
-      Animated.timing(scoreScale, { toValue: 1.15, duration: 300, useNativeDriver: true }),
-      Animated.spring(scoreScale, { toValue: 1, tension: 80, friction: 8, useNativeDriver: true }),
-    ]).start();
+    Animated.spring(scoreScale, { toValue: 1, tension: 70, friction: 7, useNativeDriver: true }).start();
   }, []);
 
   const getVibeColor = (score: number, capacity: string) => {
-    const key = getVibeStateKey(score, capacity);
-    const gradient = VIBE_GRADIENTS[key] ?? VIBE_GRADIENTS.quiet;
-    return gradient[0];
+    return VIBE_GRADIENTS[getVibeStateKey(score, capacity)][0];
   };
 
   const getGateLabel = (gate: string) => {
-    switch (gate) {
-      case 'clear':   return 'No queue';
-      case 'slow':    return 'Short wait';
-      case 'blocked': return 'Long line';
-      default:        return 'Unknown';
-    }
+    if (gate === 'blocked') return 'Long queue';
+    if (gate === 'slow') return 'Short wait';
+    return 'No queue';
   };
 
-  const getVelocityIcon = (velocity: string) => {
-    switch (velocity) {
-      case 'heating_up':
-        return { name: 'trending-up', color: '#4CAF50' };
-      case 'cooling_down':
-        return { name: 'trending-down', color: '#FF5252' };
-      default:
-        return { name: 'remove', color: '#888' };
-    }
-  };
-
-  const velocityIcon = getVelocityIcon(venue.vibe_velocity);
   const vibeColor = getVibeColor(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
+  const gradientKey = getVibeStateKey(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
+  const gradientColors = VIBE_GRADIENTS[gradientKey] ?? VIBE_GRADIENTS.quiet;
+  const vibeStateLabel = getVibeState(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
+  const isLowEnergy = venue.current_vibe_score < 20;
 
-  // Derive momentum from velocity + score for MomentumArrow
   const momentum: 'rising' | 'peaking' | 'fading' | 'stable' =
     venue.vibe_velocity === 'heating_up' ? 'rising' :
     venue.vibe_velocity === 'cooling_down' ? 'fading' :
-    venue.current_vibe_score >= 70 ? 'peaking' :
-    'stable';
-  const vibeStateLabel = getVibeState(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
-  const isLowEnergy = venue.current_vibe_score < 20;
-  const gradientKey = getVibeStateKey(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
-  const gradientColors = VIBE_GRADIENTS[gradientKey] ?? VIBE_GRADIENTS.quiet;
+    venue.current_vibe_score >= 70 ? 'peaking' : 'stable';
 
-  // Static shadow values — no JS-thread animation needed for shadows
-  const staticShadowOpacity = venue.current_vibe_score >= 80 ? 0.4 : venue.current_vibe_score >= 60 ? 0.25 : 0.1;
-  const staticShadowRadius = venue.current_vibe_score >= 80 ? 12 : 6;
+  // Glow strength drives shadow radius — high-energy cards levitate more
+  const shadowRadius = venue.current_vibe_score >= 80 ? 18 : venue.current_vibe_score >= 60 ? 10 : 4;
+  const shadowOpacity = venue.current_vibe_score >= 80 ? 0.45 : venue.current_vibe_score >= 60 ? 0.28 : 0.1;
 
   return (
     <View
@@ -139,14 +119,14 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
         styles.cardOuter,
         {
           shadowColor: vibeColor,
-          shadowOpacity: staticShadowOpacity,
-          shadowRadius: staticShadowRadius,
-          shadowOffset: { width: 0, height: 0 },
-          elevation: venue.current_vibe_score >= 60 ? 6 : 2,
+          shadowOpacity,
+          shadowRadius,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: venue.current_vibe_score >= 60 ? 8 : 3,
         },
       ]}
     >
-      {/* Live gradient border — opacity pulses via native driver */}
+      {/* Ambient gradient border — breathes with energy */}
       <Animated.View style={[styles.gradientBorderWrap, { opacity: borderOpacity }]}>
         <LinearGradient
           colors={gradientColors as any}
@@ -157,26 +137,24 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
       </Animated.View>
 
       <TouchableOpacity
-        style={[
-          styles.card,
-          isPulseBoosted && styles.cardBoosted,
-        ]}
-        onPress={onPress}
-        activeOpacity={0.7}
+        style={[styles.card, isPulseBoosted && styles.cardBoosted]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress();
+        }}
+        activeOpacity={0.72}
       >
-        {/* Gold Border for Pulse Drop venues */}
+        {/* Gold shimmer overlay for pulse-boosted cards */}
         {isPulseBoosted && (
-          <View style={styles.goldBorderOverlay}>
-            <LinearGradient
-              colors={['#FFD700', '#FFA500', '#FFD700']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.goldGradientBorder}
-            />
-          </View>
+          <LinearGradient
+            colors={['rgba(212,175,55,0.12)', 'transparent', 'rgba(212,175,55,0.06)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
         )}
 
-        {/* Left accent bar - Shows REAL vibe color */}
+        {/* Left energy bar — 6px thick, full-height gradient */}
         <LinearGradient
           colors={[vibeColor, gradientColors[1]]}
           start={{ x: 0, y: 0 }}
@@ -184,22 +162,28 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
           style={styles.accentBar}
         />
 
-        {/* Content */}
+        {/* Card content */}
         <View style={styles.content}>
-          <View style={styles.header}>
+
+          {/* VIIBE CERTIFIED — premium gold stamp */}
+          {venue.viibe_certified && (
+            <View style={styles.viibeStamp}>
+              <Text style={styles.viibeStampText}>✦ VIIBE CERTIFIED</Text>
+            </View>
+          )}
+
+          {/* Top row: name + score */}
+          <View style={styles.topRow}>
             <View style={styles.nameContainer}>
               <Text style={styles.name} numberOfLines={1}>{venue.name}</Text>
               {venue.is_featured && !isPulseBoosted && (
-                <Ionicons name="star" size={14} color="#FFD700" />
+                <Ionicons name="star" size={13} color="#D4AF37" />
               )}
             </View>
 
-            {/* PROMINENT Energy Score + Momentum */}
             <Animated.View style={[styles.scoreContainer, { transform: [{ scale: scoreScale }] }]}>
               <View style={styles.scoreBox}>
-                <Text style={[styles.energyLabel, { color: vibeColor }]}>
-                  {vibeStateLabel}
-                </Text>
+                <Text style={[styles.energyLabel, { color: vibeColor }]}>{vibeStateLabel}</Text>
                 <Text style={[styles.score, { color: vibeColor }]}>
                   {Math.round(venue.current_vibe_score)}%
                 </Text>
@@ -208,107 +192,127 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
             </Animated.View>
           </View>
 
+          {/* Area */}
           <Text style={styles.area}>{venue.area}</Text>
 
-          {/* VIIBE CERTIFIED badge */}
-          {venue.viibe_certified && (
-            <View style={styles.viibeStamp}>
-              <Text style={styles.viibeStampText}>✦ VIIBE CERTIFIED</Text>
-            </View>
-          )}
-
-          {/* Context chips — crowd + queue */}
-          <View style={styles.chips}>
+          {/* Context chips — horizontal scroll: one clean line, no wrapping overlap */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chipsScroll}
+            contentContainerStyle={styles.chips}
+          >
+            {venue.is_open_now === true && (
+              <View style={[styles.chip, styles.chipOpen]}>
+                <View style={styles.openDot} />
+                <Text style={[styles.chipText, { color: '#4FC56E' }]}>Open</Text>
+              </View>
+            )}
+            {venue.is_open_now === false && venue.next_open && (
+              <View style={styles.chip}>
+                <Ionicons name="time-outline" size={11} color="#666" />
+                <Text style={styles.chipText}>{venue.next_open}</Text>
+              </View>
+            )}
             {venue.capacity_level && venue.capacity_level !== 'sparse' && (
               <View style={styles.chip}>
-                <Ionicons name="people" size={12} color="#888" />
+                <Ionicons name="people" size={11} color="#666" />
                 <Text style={styles.chipText}>
-                  {venue.capacity_level === 'full' ? 'Packed' : 'Filling Up'}
+                  {venue.capacity_level === 'full' ? 'Packed' : 'Filling up'}
                 </Text>
               </View>
             )}
             {venue.gate_level && venue.gate_level !== 'clear' && (
               <View style={styles.chip}>
-                <Ionicons name="enter" size={12} color="#888" />
-                <Text style={styles.chipText}>
-                  {venue.gate_level === 'blocked' ? 'Long queue' : 'Short wait'}
-                </Text>
+                <Ionicons name="enter" size={11} color="#666" />
+                <Text style={styles.chipText}>{getGateLabel(venue.gate_level)}</Text>
               </View>
             )}
             {venue.entry_fee && (
               <View style={styles.chip}>
-                <Ionicons name="ticket-outline" size={12} color="#888" />
+                <Ionicons name="ticket-outline" size={11} color="#666" />
                 <Text style={styles.chipText}>{venue.entry_fee}</Text>
               </View>
             )}
-          </View>
+            {venue.vibe_tier === 'Elite' && (
+              <View style={[styles.chip, styles.chipElite]}>
+                <Ionicons name="diamond" size={10} color="#D4AF37" />
+                <Text style={[styles.chipText, { color: '#D4AF37' }]}>Elite</Text>
+              </View>
+            )}
+            {venue.icon_spotted && (
+              <View style={[styles.chip, styles.chipIcon]}>
+                <Text style={{ fontSize: 10 }}>
+                  {venue.icon_spotted.icon_tier === 'legend' ? '🔥' : '👑'}
+                </Text>
+                <Text style={[styles.chipText, { color: '#D4AF37' }]}>
+                  {venue.icon_spotted.icon_label || 'Icon'} spotted
+                </Text>
+              </View>
+            )}
+          </ScrollView>
 
-          {/* Source of Pulse strip */}
+          {/* Pulse strip */}
           {venue.pulse && (
-            <PulseStrip
-              pulse={venue.pulse}
-              onPress={() => setShowPulseSheet(true)}
-            />
+            <PulseStrip pulse={venue.pulse} onPress={() => setShowPulseSheet(true)} />
           )}
 
-          {/* Pulse Drop Badge */}
+          {/* Pulse Drop badge */}
           {isPulseBoosted && showBoostBadge && (
-            <View style={styles.pulseBadgeContainer}>
+            <View style={styles.pulseBadgeRow}>
               <View style={styles.pulseBadge}>
-                <Ionicons name="flash" size={12} color="#FFD700" />
-                <Text style={styles.pulseBadgeText}>PULSE</Text>
+                <Ionicons name="flash" size={11} color="#D4AF37" />
+                <Text style={styles.pulseBadgeText}>PULSE DROP</Text>
               </View>
-              <Text style={styles.cloutBonusText}>2x Clout for check-ins!</Text>
+              <Text style={styles.cloutBonusText}>2× Clout</Text>
             </View>
           )}
 
-          {/* Low energy warning */}
           {isPulseBoosted && isLowEnergy && (
-            <View style={styles.lowEnergyWarning}>
-              <Ionicons name="information-circle" size={12} color="#888" />
-              <Text style={styles.lowEnergyText}>
-                Low activity right now
-              </Text>
+            <View style={styles.lowEnergyRow}>
+              <Ionicons name="information-circle-outline" size={12} color="#555" />
+              <Text style={styles.lowEnergyText}>Low activity right now</Text>
             </View>
           )}
         </View>
 
-        {/* Rate chip when nearby */}
+        {/* Right action */}
         {isNearby && onRatePress ? (
           <TouchableOpacity
             style={styles.rateChip}
             onPress={(e) => {
               e.stopPropagation();
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               onRatePress();
             }}
-            activeOpacity={0.7}
+            activeOpacity={0.75}
           >
             <LinearGradient
-              colors={['#FF3366', '#FF6B35']}
+              colors={['#FF3366', '#C0183E']}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              end={{ x: 0, y: 1 }}
               style={styles.rateChipGradient}
             >
-              <Ionicons name="star" size={12} color="#FFF" />
+              <Ionicons name="star" size={11} color="#FFF" />
               <Text style={styles.rateChipText}>RATE</Text>
             </LinearGradient>
           </TouchableOpacity>
         ) : (
-          <Ionicons name="chevron-forward" size={20} color={isPulseBoosted ? '#FFD700' : '#444'} />
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={isPulseBoosted ? '#D4AF37' : '#333'}
+          />
         )}
       </TouchableOpacity>
 
-      {/* Source of Pulse bottom sheet */}
       {venue.pulse && (
         <PulseBottomSheet
           visible={showPulseSheet}
           onClose={() => setShowPulseSheet(false)}
           venueName={venue.name}
           pulse={venue.pulse}
-          onRatePress={() => {
-            setShowPulseSheet(false);
-            onRatePress?.();
-          }}
+          onRatePress={() => { setShowPulseSheet(false); onRatePress?.(); }}
         />
       )}
     </View>
@@ -317,48 +321,37 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
 
 const styles = StyleSheet.create({
   cardOuter: {
-    marginBottom: 12,
-    borderRadius: 17,
+    marginBottom: 10,
+    borderRadius: 20,
+    marginHorizontal: 16,
   },
   gradientBorderWrap: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 17,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#151520',
-    borderRadius: 16,
+    backgroundColor: '#0E0E1A',
+    borderRadius: 19,
     overflow: 'hidden',
-    paddingRight: 16,
-    margin: 1.5,
+    paddingRight: 14,
+    margin: 1,
   },
   cardBoosted: {
-    backgroundColor: '#1A1815',
-  },
-  goldBorderOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 16,
-    overflow: 'hidden',
-    opacity: 0.1,
-  },
-  goldGradientBorder: {
-    flex: 1,
+    backgroundColor: '#110F1A',
   },
   accentBar: {
-    width: 4,
-    height: '100%',
+    width: 5,
+    alignSelf: 'stretch',
   },
   content: {
     flex: 1,
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
   },
-  header: {
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
@@ -366,75 +359,101 @@ const styles = StyleSheet.create({
   nameContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 7,
     flex: 1,
-    marginRight: 12,
+    marginRight: 10,
   },
   name: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#FFF',
+    fontWeight: '800',
+    color: '#F0F0F8',
+    letterSpacing: 0.1,
     flex: 1,
   },
   scoreContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
   scoreBox: {
     alignItems: 'flex-end',
   },
   energyLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   score: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '900',
+    lineHeight: 28,
   },
   area: {
     fontSize: 12,
-    color: '#666',
-    marginTop: 4,
+    color: '#555',
+    marginTop: 3,
+    letterSpacing: 0.2,
+  },
+  chipsScroll: {
+    marginTop: 10,
   },
   chips: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 10,
-    gap: 8,
+    gap: 6,
+    paddingRight: 4,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#252530',
+    backgroundColor: '#181825',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     gap: 4,
+    borderWidth: 0.5,
+    borderColor: '#2A2A38',
+  },
+  chipOpen: {
+    backgroundColor: 'rgba(79,197,110,0.08)',
+    borderColor: 'rgba(79,197,110,0.25)',
+  },
+  chipElite: {
+    backgroundColor: 'rgba(212,175,55,0.08)',
+    borderColor: 'rgba(212,175,55,0.25)',
+  },
+  chipIcon: {
+    backgroundColor: 'rgba(212,175,55,0.07)',
+    borderColor: 'rgba(212,175,55,0.2)',
+  },
+  openDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#4FC56E',
   },
   chipText: {
     fontSize: 11,
-    color: '#888',
-    textTransform: 'capitalize',
+    color: '#666',
   },
   viibeStamp: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,215,0,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.4)',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginBottom: 6,
+    backgroundColor: 'rgba(212,175,55,0.1)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(212,175,55,0.45)',
+    borderRadius: 5,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    marginBottom: 8,
   },
   viibeStampText: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '900',
-    color: '#FFD700',
-    letterSpacing: 1.5,
+    color: '#D4AF37',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
-  pulseBadgeContainer: {
+  pulseBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 10,
@@ -443,52 +462,52 @@ const styles = StyleSheet.create({
   pulseBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFD70020',
+    backgroundColor: 'rgba(212,175,55,0.12)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#FFD70040',
+    borderRadius: 7,
+    borderWidth: 0.5,
+    borderColor: 'rgba(212,175,55,0.35)',
     gap: 4,
   },
   pulseBadgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
-    color: '#FFD700',
-    letterSpacing: 1,
+    color: '#D4AF37',
+    letterSpacing: 1.2,
   },
   cloutBonusText: {
     fontSize: 11,
-    color: '#4CAF50',
-    fontWeight: '600',
+    color: '#4FC56E',
+    fontWeight: '700',
   },
-  lowEnergyWarning: {
+  lowEnergyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 6,
     gap: 4,
   },
   lowEnergyText: {
     fontSize: 11,
-    color: '#888',
+    color: '#444',
     fontStyle: 'italic',
   },
   rateChip: {
     borderRadius: 10,
     overflow: 'hidden',
+    marginLeft: 8,
   },
   rateChipGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingVertical: 7,
   },
   rateChipText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
     color: '#FFF',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
   },
 });

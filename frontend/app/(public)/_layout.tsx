@@ -2,7 +2,7 @@
  * PUBLIC FLOOR - Layout
  * The Social Experience - Neon/Midnight Theme
  *
- * Navigation: Map | Trending | Lobby | Profile
+ * Navigation: Explore | Trending | Crew | Intel | Profile
  * Access: All users (default entry point)
  *
  * Features: Custom AnimatedTabBar with neon pink glow
@@ -15,10 +15,11 @@ import { AnimatedTabBar } from '../../src/components/AnimatedTabBar';
 const { colors } = publicTheme;
 
 const PUBLIC_TABS = [
-  { name: 'index', label: 'Map', icon: 'map-outline' as const, iconFocused: 'map' as const },
-  { name: 'trending', label: 'Trending', icon: 'flame-outline' as const, iconFocused: 'flame' as const },
-  { name: 'lobby', label: 'Lobby', icon: 'bookmark-outline' as const, iconFocused: 'bookmark' as const },
-  { name: 'profile', label: 'Profile', icon: 'person-outline' as const, iconFocused: 'person' as const },
+  { name: 'index',    label: 'Explore',  icon: 'compass-outline' as const,      iconFocused: 'compass' as const },
+  { name: 'trending', label: 'Trending', icon: 'flame-outline' as const,         iconFocused: 'flame' as const },
+  { name: 'crew',     label: 'Crew',     icon: 'people-outline' as const,        iconFocused: 'people' as const },
+  { name: 'intel',    label: 'Intel',    icon: 'sparkles-outline' as const,      iconFocused: 'sparkles' as const },
+  { name: 'profile',  label: 'Profile',  icon: 'person-outline' as const,        iconFocused: 'person' as const },
 ];
 
 export default function PublicLayout() {
@@ -38,8 +39,11 @@ export default function PublicLayout() {
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="trending" />
-      <Tabs.Screen name="lobby" />
+      <Tabs.Screen name="crew" />
+      <Tabs.Screen name="intel" />
       <Tabs.Screen name="profile" />
+      {/* Lobby kept as a push screen, not a tab — accessible from Profile */}
+      <Tabs.Screen name="lobby" options={{ href: null }} />
     </Tabs>
   );
 }
