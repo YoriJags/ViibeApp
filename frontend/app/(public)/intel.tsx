@@ -27,13 +27,11 @@ import { DEMO_ORACLE_PREDICTIONS } from '../../src/data/demoData';
 
 export default function IntelScreen() {
   const router = useRouter();
-  const { userMode, setUserMode, isDemoMode, selectedCity, user } = useVibeStore(s => ({
-    userMode: s.userMode,
-    setUserMode: s.setUserMode,
-    isDemoMode: s.isDemoMode,
-    selectedCity: s.selectedCity,
-    user: s.user,
-  }));
+  const userMode = useVibeStore(s => s.userMode);
+  const setUserMode = useVibeStore(s => s.setUserMode);
+  const isDemoMode = useVibeStore(s => s.isDemoMode);
+  const selectedCity = useVibeStore(s => s.selectedCity);
+  const user = useVibeStore(s => s.user);
   const [showPlanner, setShowPlanner] = useState(false);
   const [showVibePlus, setShowVibePlus] = useState(false);
 
