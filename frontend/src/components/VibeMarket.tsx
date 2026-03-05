@@ -46,43 +46,11 @@ interface Props {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Deterministic fake score-change based on venue ID + velocity */
-function getScoreChange(venueId: string, velocity: string): number {
-  const seed = venueId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 14;
-  if (velocity === 'heating_up')   return seed + 5;    // +5 to +19
-  if (velocity === 'cooling_down') return -(seed + 3); // -3 to -17
-  return seed % 3 - 1;                                  // -1, 0, +1
-}
-
-/** 7-point sparkline — deterministic trend shaped by velocity */
-function generateSparkline(venueId: string, velocity: string, score: number): number[] {
-  const seed = venueId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const points: number[] = [];
-  for (let i = 0; i < 6; i++) {
-    const noise   = ((seed * (i + 7)) % 12) - 6;
-    const trend   =
-      velocity === 'heating_up'   ?  -((5 - i) * 3.5)  :
-      velocity === 'cooling_down' ?   (5 - i) * 3       :
-      noise * 0.4;
-    points.push(Math.max(5, Math.min(100, Math.round(score + trend + noise))));
-  }
-  points.push(score);
-  return points;
-}
-
 function scoreColor(score: number): string {
   if (score >= 80) return '#FF3366';
   if (score >= 60) return '#FF9933';
   if (score >= 40) return '#9933FF';
   return '#3399FF';
-}
-
-function changeColor(change: number): string {
-  if (change >  8) return '#00E676';
-  if (change >  0) return '#69F0AE';
-  if (change < -8) return '#FF5252';
-  if (change <  0) return '#FF8A80';
-  return '#888';
 }
 
 /** Maps city/venue vibe label → display config. Consistent with app-wide vibe vocabulary. */
@@ -110,49 +78,6 @@ function liveTime(): string {
     hour12: true,
   }).toUpperCase();
 }
-
-// ─── Sparkline ───────────────────────────────────────────────────────────────
-
-function Sparkline({ points, color }: { points: number[]; color: string }) {
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  const range = max - min || 1;
-
-  return (
-    <View style={sparkStyles.row}>
-      {points.map((p, i) => {
-        const h = Math.max(2, Math.round(((p - min) / range) * 16) + 2);
-        const isLast = i === points.length - 1;
-        return (
-          <View
-            key={i}
-            style={[
-              sparkStyles.bar,
-              {
-                height: h,
-                backgroundColor: isLast ? color : color + '55',
-                width: isLast ? 3.5 : 2.5,
-              },
-            ]}
-          />
-        );
-      })}
-    </View>
-  );
-}
-
-const sparkStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    height: 20,
-    gap: 1.5,
-    width: 40,
-  },
-  bar: {
-    borderRadius: 1,
-  },
-});
 
 // ─── Volume Bar ──────────────────────────────────────────────────────────────
 
@@ -214,16 +139,12 @@ function VenueRow({
   delay: number;
   onPress: () => void;
 }) {
-  const slideAnim  = useRef(new Animated.Value(16)).current;
-  const fadeAnim   = useRef(new Animated.Value(0)).current;
-  const flashAnim  = useRef(new Animated.Value(0)).current;
-  const blinkAnim  = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(16)).current;
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
+  const blinkAnim = useRef(new Animated.Value(1)).current;
 
-  const change     = getScoreChange(venue.id, venue.vibe_velocity);
-  const points     = generateSparkline(venue.id, venue.vibe_velocity, venue.current_vibe_score);
-  const sColor     = scoreColor(venue.current_vibe_score);
-  const cColor     = changeColor(change);
-  const vl         = venueVibeLabel(venue.current_vibe_score);
+  const sColor = scoreColor(venue.current_vibe_score);
+  const vl     = venueVibeLabel(venue.current_vibe_score);
 
   // Slide-in on mount
   useEffect(() => {
@@ -233,16 +154,7 @@ function VenueRow({
         Animated.timing(fadeAnim,  { toValue: 1, duration: 280, useNativeDriver: true }),
       ]).start();
     }, delay);
-
-    // Flash change color on entry
-    const ft = setTimeout(() => {
-      Animated.sequence([
-        Animated.timing(flashAnim, { toValue: 0.15, duration: 180, useNativeDriver: true }),
-        Animated.timing(flashAnim, { toValue: 0,    duration: 600, useNativeDriver: true }),
-      ]).start();
-    }, delay + 400);
-
-    return () => { clearTimeout(t); clearTimeout(ft); };
+    return () => clearTimeout(t);
   }, []);
 
   // #1 venue: blink score every 3s
@@ -261,10 +173,6 @@ function VenueRow({
     return () => loop.stop();
   }, [rank]);
 
-  const changeSign = change > 0 ? '+' : '';
-  const isUp   = change > 0;
-  const isDown = change < 0;
-
   return (
     <Animated.View
       style={[
@@ -280,15 +188,6 @@ function VenueRow({
         onPress={onPress}
         activeOpacity={0.7}
       >
-        {/* Flash overlay */}
-        <Animated.View
-          style={[
-            StyleSheet.absoluteFillObject,
-            { backgroundColor: cColor, opacity: flashAnim, borderRadius: 10 },
-          ]}
-          pointerEvents="none"
-        />
-
         {/* Rank */}
         <Text style={[rowStyles.rank, rank === 0 && { color: '#FFD700' }]}>
           #{rank + 1}
@@ -310,25 +209,10 @@ function VenueRow({
           </Text>
         </View>
 
-        {/* Sparkline */}
-        <Sparkline points={points} color={sColor} />
-
         {/* Score */}
         <Animated.Text style={[rowStyles.price, { color: sColor, opacity: rank === 0 ? blinkAnim : 1 }]}>
           {Math.round(venue.current_vibe_score)}
         </Animated.Text>
-
-        {/* Change chip */}
-        <View style={[rowStyles.changeChip, { backgroundColor: cColor + '22', borderColor: cColor + '55' }]}>
-          <Ionicons
-            name={isUp ? 'arrow-up' : isDown ? 'arrow-down' : 'remove'}
-            size={8}
-            color={cColor}
-          />
-          <Text style={[rowStyles.changeText, { color: cColor }]}>
-            {changeSign}{change}
-          </Text>
-        </View>
 
         {/* Volume */}
         <View style={rowStyles.volCol}>
@@ -401,22 +285,6 @@ const rowStyles = StyleSheet.create({
     width: 36,
     textAlign: 'right',
     letterSpacing: -0.5,
-  },
-  changeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    paddingHorizontal: 5,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    width: 42,
-    justifyContent: 'center',
-  },
-  changeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: -0.2,
   },
   volCol: {
     alignItems: 'center',
@@ -527,9 +395,7 @@ function IndexHeader({
       {/* Column headers */}
       <View style={idxStyles.colHeaders}>
         <Text style={[idxStyles.colLabel, { flex: 1, marginLeft: 32 }]}>VENUE</Text>
-        <Text style={[idxStyles.colLabel, { width: 40 }]}>TREND</Text>
         <Text style={[idxStyles.colLabel, { width: 36, textAlign: 'right' }]}>SCORE</Text>
-        <Text style={[idxStyles.colLabel, { width: 42, textAlign: 'center' }]}>CHG</Text>
         <Text style={[idxStyles.colLabel, { width: 30, textAlign: 'center' }]}>PULSE</Text>
       </View>
     </LinearGradient>
