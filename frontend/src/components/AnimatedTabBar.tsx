@@ -15,6 +15,7 @@ import {
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useVibeStore } from '../store/vibeStore';
 
 interface TabItem {
   name: string;
@@ -42,6 +43,20 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
 }) => {
   const screenWidth = Dimensions.get('window').width;
   const tabWidth = screenWidth / tabs.length;
+
+  const tabBarHidden = useVibeStore(s => s.tabBarHidden);
+  const setTabBarHidden = useVibeStore(s => s.setTabBarHidden);
+
+  // Slide tab bar in/out
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.spring(slideAnim, {
+      toValue: tabBarHidden ? 120 : 0,
+      tension: 80,
+      friction: 14,
+      useNativeDriver: true,
+    }).start();
+  }, [tabBarHidden]);
 
   // Pill indicator slides under the active tab
   const pillAnim = useRef(new Animated.Value(0)).current;
@@ -76,7 +91,20 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
   }, [state.index]);
 
   return (
-    <View style={styles.wrapper}>
+    <Animated.View style={[styles.wrapper, { transform: [{ translateY: slideAnim }] }]}>
+      {/* Collapse handle — tap to hide/show tab bar */}
+      <TouchableOpacity
+        style={styles.collapseHandle}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setTabBarHidden(!tabBarHidden);
+        }}
+        activeOpacity={0.7}
+        hitSlop={{ top: 8, bottom: 0, left: 60, right: 60 }}
+      >
+        <View style={[styles.collapseNub, { backgroundColor: glowColor + '60' }]} />
+      </TouchableOpacity>
+
       <BlurView intensity={60} tint="dark" style={styles.blur}>
         {/* Top hairline */}
         <View style={styles.topBorder} />
@@ -165,7 +193,7 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
           })}
         </View>
       </BlurView>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -175,7 +203,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    overflow: 'hidden',
+  },
+  collapseHandle: {
+    alignItems: 'center',
+    paddingTop: 6,
+    paddingBottom: 2,
+  },
+  collapseNub: {
+    width: 36,
+    height: 3,
+    borderRadius: 2,
   },
   blur: {
     overflow: 'hidden',

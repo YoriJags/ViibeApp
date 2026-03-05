@@ -68,7 +68,7 @@ const CITIES = [
 export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string }>();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode, tabBarHidden, setTabBarHidden } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showList, setShowList] = useState(true); // List-first: content before map
@@ -648,7 +648,7 @@ export default function MapScreen() {
               ratedGlowVenueId={ratedGlowVenueId}
             />
           </ErrorBoundary>
-          {/* Legend overlay on map */}
+          {/* Legend — bottom-left, compact */}
           <View style={styles.legendOverlay}>
             {[
               { color: '#3399FF', label: 'Chill' },
@@ -681,19 +681,37 @@ export default function MapScreen() {
               </View>
             ))}
           </View>
-          {/* Floating "Show List" pill — Airbnb-style map→list switch */}
-          <TouchableOpacity
-            style={styles.floatingListPill}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              setShowList(true);
-            }}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="list" size={15} color="#FFF" />
-            <Text style={styles.floatingListPillText}>Show List</Text>
-          </TouchableOpacity>
         </View>
+      )}
+
+      {/* Floating "Show List" pill — lives outside mapContainer so tab bar never covers it */}
+      {!showList && (
+        <TouchableOpacity
+          style={styles.floatingListPill}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setShowList(true);
+          }}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="list" size={15} color="#FFF" />
+          <Text style={styles.floatingListPillText}>Show List</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Re-show tab bar pill — appears when tab bar is swiped away */}
+      {tabBarHidden && (
+        <TouchableOpacity
+          style={styles.showTabBarPill}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setTabBarHidden(false);
+          }}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="chevron-up" size={14} color="#FF3366" />
+          <Text style={styles.showTabBarText}>Show Nav</Text>
+        </TouchableOpacity>
       )}
 
       {/* Rate Prompt FAB - Shows on map when near a venue */}
@@ -895,14 +913,14 @@ const styles = StyleSheet.create({
   },
   legendOverlay: {
     position: 'absolute',
-    top: 10,
-    left: 10,
+    bottom: 14,
+    left: 12,
     flexDirection: 'row',
-    backgroundColor: 'rgba(10,10,15,0.75)',
+    backgroundColor: 'rgba(10,10,15,0.80)',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
-    gap: 12,
+    gap: 10,
     zIndex: 10,
   },
   legendItem: {
@@ -934,7 +952,7 @@ const styles = StyleSheet.create({
   },
   floatingListPill: {
     position: 'absolute',
-    bottom: 20,
+    bottom: Platform.OS === 'ios' ? 108 : 86,
     alignSelf: 'center',
     left: '50%',
     transform: [{ translateX: -52 }],
@@ -952,10 +970,34 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 0 },
     elevation: 8,
+    zIndex: 20,
   },
   floatingListPillText: {
     color: '#FFF',
     fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  showTabBarPill: {
+    position: 'absolute',
+    bottom: 12,
+    alignSelf: 'center',
+    left: '50%',
+    transform: [{ translateX: -44 }],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(10,10,18,0.90)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,51,102,0.3)',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    zIndex: 20,
+  },
+  showTabBarText: {
+    color: '#FF3366',
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.4,
   },

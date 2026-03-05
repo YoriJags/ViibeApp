@@ -253,6 +253,7 @@ interface TransientState {
   activeCampaigns: ActiveCampaign[];
   crewLocations: CrewMemberLocation[];
   ghostMode: boolean;
+  tabBarHidden: boolean;
   demoRatedVenues: Record<string, number>; // venueId → timestamp of last demo rating
   demoPulsedVenues: Record<string, number>; // venueId → timestamp of last quick pulse (demo)
   vibeDNA: VibeDNA | null;
@@ -380,6 +381,7 @@ interface VibeStoreActions {
   toggleLocationSharing: () => void;
   setVibePersona: (persona: 'turn_up' | 'grown_sexy' | 'culture' | 'chill_set') => void;
   setUserMode: (mode: 'scout' | 'insider') => void;
+  setTabBarHidden: (hidden: boolean) => void;
   // Cooldown
   cooldownSkip: (venueId: string, method: 'clout' | 'payment') => Promise<{ success: boolean; clout_remaining?: number; error?: string }>;
   // Crew Tracker
@@ -454,6 +456,7 @@ export const useVibeStore = create<VibeStore>()(
       activeCampaigns: [],
       crewLocations: [],
       ghostMode: false,
+      tabBarHidden: false,
       demoRatedVenues: {},
       demoPulsedVenues: {},
       vibeDNA: null,
@@ -1565,6 +1568,7 @@ export const useVibeStore = create<VibeStore>()(
       },
       setVibePersona: (persona) => set({ vibePersona: persona }),
       setUserMode: (mode) => set({ userMode: mode }),
+      setTabBarHidden: (hidden) => set({ tabBarHidden: hidden }),
 
       // ===== Campaign Actions =====
       fetchActiveCampaigns: async (city?: string) => {
