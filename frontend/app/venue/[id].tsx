@@ -693,24 +693,34 @@ export default function VenueDetailScreen() {
             style={[styles.glassCard, isWithinGeofence && styles.glassCardLockedIn]}
           >
             <View style={styles.glassCardInner}>
-              {/* LOCKED IN banner — shows when scout is geofenced into venue */}
+              {/* LOCKED IN banner — modern with crowd count */}
               {isWithinGeofence && (
-                <Animated.View
-                  style={[
-                    styles.lockedInBanner,
-                    {
-                      opacity: checkinBannerAnim,
-                      transform: [{ translateY: checkinBannerAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }],
-                    },
-                  ]}
-                >
-                  <View style={styles.lockedInLeft}>
-                    <Animated.View style={[styles.lockedInDot, { opacity: checkinDotAnim }]} />
-                    <Text style={styles.lockedInLabel}>LOCKED IN</Text>
-                  </View>
-                  <Text style={styles.lockedInTime}>
-                    {checkinMinutes > 0 ? `${checkinMinutes}m here` : 'Just arrived'}
-                  </Text>
+                <Animated.View style={[styles.lockedInBanner, {
+                  opacity: checkinBannerAnim,
+                  transform: [{ translateY: checkinBannerAnim.interpolate({ inputRange: [0, 1], outputRange: [-16, 0] }) }],
+                }]}>
+                  <LinearGradient
+                    colors={['rgba(0,230,118,0.12)', 'rgba(0,230,118,0.04)']}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={styles.lockedInGradient}
+                  >
+                    <View style={styles.lockedInLeft}>
+                      <Animated.View style={[styles.lockedInDot, { opacity: checkinDotAnim }]} />
+                      <Text style={styles.lockedInLabel}>YOU'RE IN</Text>
+                    </View>
+                    <View style={styles.lockedInMeta}>
+                      <Text style={styles.lockedInTime}>
+                        {checkinMinutes > 0 ? checkinMinutes + 'm' : 'Just arrived'}
+                      </Text>
+                      {venueCheckinCount > 0 && (
+                        <>
+                          <View style={styles.lockedInDivider} />
+                          <Ionicons name="people" size={12} color="#00E676" />
+                          <Text style={styles.lockedInCrowd}>{venueCheckinCount}</Text>
+                        </>
+                      )}
+                    </View>
+                  </LinearGradient>
                 </Animated.View>
               )}
 
@@ -851,7 +861,7 @@ export default function VenueDetailScreen() {
 
         {/* NOW — live energy + surge + intent */}
         {activeTab === 'now' && <>
-          {id && <ErrorBoundary label="Vibe Surge"><VibeSurgeBar venueId={id} venueName={venue?.name ?? ''} isDemoMode={isDemoMode} onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }} /></ErrorBoundary>}
+          {id && <ErrorBoundary label="Vibe Surge"><VibeSurgeBar venueId={id} venueName={venue?.name ?? ''} isDemoMode={isDemoMode} onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }} onReact={handleReact} /></ErrorBoundary>}
           {id && <VenueIntentBar venueId={id} venueName={venue?.name} />}
         </>}
 
@@ -1801,38 +1811,49 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 230, 118, 0.25)',
   },
   lockedInBanner: {
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 230, 118, 0.22)',
+    overflow: 'hidden',
+  },
+  lockedInGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(0, 230, 118, 0.08)',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 230, 118, 0.18)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
   lockedInLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
+  lockedInMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  lockedInDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: 'rgba(0, 230, 118, 0.3)',
+  },
+  lockedInCrowd: {
+    fontSize: 12,
+    color: '#00E676',
+    fontWeight: '700',
+  },
   lockedInDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 9, height: 9, borderRadius: 5,
     backgroundColor: '#00E676',
+    shadowColor: '#00E676', shadowOpacity: 0.9, shadowRadius: 6, shadowOffset: { width: 0, height: 0 },
   },
   lockedInLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#00E676',
-    letterSpacing: 1.5,
+    fontSize: 12, fontWeight: '900', color: '#00E676', letterSpacing: 2,
   },
   lockedInTime: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: 'rgba(0, 230, 118, 0.7)',
+    fontSize: 13, fontWeight: '700', color: '#00E676',
   },
   yourSignalLabel: {
     fontSize: 10,
