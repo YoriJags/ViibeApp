@@ -163,7 +163,12 @@ export default function VibeSurgeBar({ venueId, isDemoMode, onElectric }: Props)
               colors={cooldown ? ['#181820', '#111118'] : isElectric ? [color + '55', color + '22'] : [color + '33', color + '18']}
               style={[styles.boltBtn, { borderColor: cooldown ? '#2A2A38' : boltFlash ? color : color + '55' }]}
             >
-              {tapping ? <ActivityIndicator size="small" color={color} /> : <Ionicons name="flash" size={24} color={cooldown ? '#333' : color} />}
+              {tapping ? <ActivityIndicator size="small" color={color} /> : (
+                <>
+                  <Ionicons name="trending-up" size={22} color={cooldown ? '#333' : color} />
+                  <Text style={[styles.chargeLabel, { color: cooldown ? '#333' : color }]}>SURGE</Text>
+                </>
+              )}
               {surge.is_squad_surge && !cooldown && (
                 <View style={styles.squadPip}><Text style={styles.squadPipText}>1.5x</Text></View>
               )}
@@ -182,21 +187,22 @@ export default function VibeSurgeBar({ venueId, isDemoMode, onElectric }: Props)
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: '#0C0C15', borderRadius: 16, borderWidth: 1, borderColor: '#1C1C2C', padding: 14, marginHorizontal: 16, marginTop: 12 },
+  container: { backgroundColor: '#0C0C15', borderRadius: 18, borderWidth: 1, borderColor: '#1C1C2C', padding: 18, marginHorizontal: 16, marginTop: 12 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   titleBlock: { gap: 2 },
   sectionLabel: { fontSize: 9, color: '#3A3A4E', fontWeight: '700', letterSpacing: 1.5 },
-  levelBadge: { fontSize: 17, fontWeight: '900', letterSpacing: 1.5 },
+  levelBadge: { fontSize: 22, fontWeight: '900', letterSpacing: 1.5 },
   levelDots: { flexDirection: 'row', gap: 6, alignItems: 'center' },
   dot: { width: 9, height: 9, borderRadius: 5, shadowOffset: { width: 0, height: 0 } },
-  barTrack: { height: 5, backgroundColor: '#181826', borderRadius: 3, marginBottom: 12, position: 'relative', overflow: 'visible' },
-  barFill: { height: 5, borderRadius: 3, shadowOffset: { width: 0, height: 0 } },
-  barTip: { position: 'absolute', top: -2, width: 5, height: 9, borderRadius: 3, backgroundColor: '#FFF', shadowColor: '#FFF', shadowOpacity: 0.8, shadowRadius: 4, shadowOffset: { width: 0, height: 0 } },
+  barTrack: { height: 10, backgroundColor: '#181826', borderRadius: 6, marginBottom: 14, position: 'relative', overflow: 'visible' },
+  barFill: { height: 10, borderRadius: 6, shadowOffset: { width: 0, height: 0 } },
+  barTip: { position: 'absolute', top: -3, width: 8, height: 16, borderRadius: 4, backgroundColor: '#FFF', shadowColor: '#FFF', shadowOpacity: 0.9, shadowRadius: 6, shadowOffset: { width: 0, height: 0 } },
   bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   statsBlock: { flex: 1, gap: 4 },
   statsText: { fontSize: 13, color: '#999', fontWeight: '600' },
   subStats: { fontSize: 10, color: '#3A3A4E', fontWeight: '500' },
-  boltBtn: { width: 54, height: 54, borderRadius: 27, borderWidth: 1.5, justifyContent: 'center', alignItems: 'center', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 10 },
+  boltBtn: { width: 70, height: 70, borderRadius: 35, borderWidth: 1.5, justifyContent: 'center', alignItems: 'center', gap: 2, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 12 },
+  chargeLabel: { fontSize: 8, fontWeight: '900', letterSpacing: 1, marginTop: -2 },
   squadPip: { position: 'absolute', top: -3, right: -3, backgroundColor: '#9933FF', borderRadius: 8, paddingHorizontal: 4, paddingVertical: 1, borderWidth: 1, borderColor: '#0C0C15' },
   squadPipText: { fontSize: 8, color: '#FFF', fontWeight: '900' },
   squadRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#181826' },

@@ -24,7 +24,7 @@ interface SplashAnimationProps {
   isReady: boolean;
 }
 
-const LETTERS = ['V', 'I', 'B', 'E'];
+const LETTERS = ['V', 'I', 'I', 'B', 'E'];
 const STAGGER_DELAY = 150;
 
 export default function SplashAnimation({
