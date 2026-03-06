@@ -542,3 +542,55 @@ async def get_user_analytics(request: Request):
         "new_users_today": new_users_today,
         "tier_distribution": tier_distribution,
     }
+
+
+# ── ICONS MANAGEMENT ─────────────────────────────────────────────────────────
+
+@router.get("/admin/icons")
+async def list_icons(request: Request):
+    """List all users with an icon tier."""
+    _require_admin(request)
+    icons = await db.users.find(
+        {"icon_tier": {"$ne": None}},
+        {"_id": 0, "id": 1, "username": 1, "phone": 1, "icon_tier": 1, "icon_label": 1, "icon_granted_at": 1},
+    ).sort("icon_granted_at", -1).to_list(200)
+    return {"icons": icons}
+
+
+@router.put("/admin/users/{user_id}/icon-tier")
+async def set_icon_tier(user_id: str, request: Request):
+    """Grant or revoke icon tier for a user. Body: {tier: 'verified'|'icon'|'legend'|null, label: '...'}"""
+    _require_admin(request)
+    body = await request.json()
+    tier = body.get("tier")  # None to revoke
+    label = body.get("label", "")
+
+    from datetime import datetime, timezone
+    if tier:
+        if tier not in ("verified", "icon", "legend"):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail="Invalid tier. Use: verified, icon, legend")
+        update = {"icon_tier": tier, "icon_label": label, "icon_granted_at": datetime.now(timezone.utc)}
+    else:
+        update = {"icon_tier": None, "icon_label": None, "icon_granted_at": None}
+
+    result = await db.users.update_one({"id": user_id}, {"$set": update})
+    if result.matched_count == 0:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "username": 1, "icon_tier": 1, "icon_label": 1})
+    return {"success": True, "user": user}
+
+
+@router.get("/admin/venues/{venue_id}/icons-spotted")
+async def get_icons_spotted(venue_id: str, request: Request):
+    """Icons currently spotted at a venue (last 3 hours)."""
+    _require_admin(request)
+    from datetime import datetime, timedelta, timezone
+    three_hours_ago = datetime.now(timezone.utc) - timedelta(hours=3)
+    spotted = await db.icon_spotted.find(
+        {"venue_id": venue_id, "spotted_at": {"$gte": three_hours_ago}},
+        {"_id": 0},
+    ).to_list(50)
+    return {"spotted": spotted}

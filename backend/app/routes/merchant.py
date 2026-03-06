@@ -355,6 +355,8 @@ async def update_venue_content(venue_id: str, update: VenueUpdateRequest, reques
         update_data["tables_available"] = update.tables_available
     if update.geofence_radius_m is not None:
         update_data["geofence_radius_m"] = max(20, min(500, update.geofence_radius_m))
+    if update.operating_hours is not None:
+        update_data["operating_hours"] = update.operating_hours
 
     if update_data:
         await db.venues.update_one({"id": venue_id}, {"$set": update_data})
@@ -701,3 +703,378 @@ async def get_spotlight_status(venue_id: str, request: Request):
         "time_remaining": time_remaining,
         "available_tiers": SPOTLIGHT_TIERS,
     }
+
+
+# ===== Venue Analytics (Intelligence Layer) =====
+
+@router.get("/merchant/venues/{venue_id}/analytics")
+async def get_venue_analytics(venue_id: str):
+    """
+    30-day venue intelligence: vibe history, peak hours, slow nights, area rank trend.
+    This is the core data product — what venues pay for.
+    """
+    now = datetime.now(timezone.utc)
+    thirty_days_ago = now - timedelta(days=30)
+    seven_days_ago = now - timedelta(days=7)
+
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    city = venue.get("city", "lagos")
+
+    # ── 30-day daily vibe history ─────────────────────────────────────────────
+    ratings_30d = await db.ratings.find(
+        {"venue_id": venue_id, "timestamp": {"$gte": thirty_days_ago}},
+        {"vibe_score": 1, "timestamp": 1, "_id": 0},
+    ).to_list(2000)
+
+    daily_map: dict = {}
+    for r in ratings_30d:
+        ts = r["timestamp"]
+        if isinstance(ts, str):
+            ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        day = ts.strftime("%Y-%m-%d")
+        if day not in daily_map:
+            daily_map[day] = {"scores": [], "count": 0}
+        daily_map[day]["scores"].append(r.get("vibe_score", 0))
+        daily_map[day]["count"] += 1
+
+    vibe_history = []
+    for day in sorted(daily_map.keys()):
+        scores = daily_map[day]["scores"]
+        vibe_history.append({
+            "date": day,
+            "avg_score": round(sum(scores) / len(scores)) if scores else 0,
+            "rating_count": daily_map[day]["count"],
+        })
+
+    # ── Peak hours (last 30 days) ──────────────────────────────────────────────
+    hour_map: dict = {h: {"count": 0, "scores": []} for h in range(24)}
+    for r in ratings_30d:
+        ts = r["timestamp"]
+        if isinstance(ts, str):
+            ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        hour = ts.hour
+        hour_map[hour]["count"] += 1
+        hour_map[hour]["scores"].append(r.get("vibe_score", 0))
+
+    peak_hours = []
+    for hour, data in hour_map.items():
+        if data["count"] > 0:
+            peak_hours.append({
+                "hour": hour,
+                "label": f"{hour:02d}:00",
+                "count": data["count"],
+                "avg_score": round(sum(data["scores"]) / len(data["scores"])),
+            })
+    peak_hours.sort(key=lambda x: x["count"], reverse=True)
+
+    # ── Day-of-week breakdown — identify slow nights ───────────────────────────
+    DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    dow_map: dict = {d: {"count": 0, "scores": []} for d in range(7)}
+    for r in ratings_30d:
+        ts = r["timestamp"]
+        if isinstance(ts, str):
+            ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        dow_map[ts.weekday()]["count"] += 1
+        dow_map[ts.weekday()]["scores"].append(r.get("vibe_score", 0))
+
+    all_avg = (
+        sum(r.get("vibe_score", 0) for r in ratings_30d) / len(ratings_30d)
+        if ratings_30d else 50
+    )
+    slow_nights = []
+    day_breakdown = []
+    for dow, data in dow_map.items():
+        avg = round(sum(data["scores"]) / len(data["scores"])) if data["scores"] else 0
+        day_breakdown.append({"day": DAY_NAMES[dow], "avg_score": avg, "count": data["count"]})
+        if avg > 0 and avg < all_avg * 0.7:
+            slow_nights.append({
+                "day": DAY_NAMES[dow],
+                "avg_score": avg,
+                "tip": f"{DAY_NAMES[dow]}s are quiet — a live blast before 10pm could turn this around.",
+            })
+
+    # ── Area rank snapshot (last 7 days) ──────────────────────────────────────
+    area_venues = await db.venues.find(
+        {"city": city},
+        {"id": 1, "current_vibe_score": 1, "name": 1},
+    ).to_list(100)
+
+    sorted_area = sorted(area_venues, key=lambda v: v.get("current_vibe_score", 0), reverse=True)
+    current_rank = next(
+        (i + 1 for i, v in enumerate(sorted_area) if v["id"] == venue_id), None
+    )
+
+    # ── Top scouts for this venue ──────────────────────────────────────────────
+    scout_pipeline = [
+        {"$match": {"venue_id": venue_id, "timestamp": {"$gte": seven_days_ago}}},
+        {"$group": {"_id": "$user_id", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 5},
+    ]
+    scout_rows = await db.ratings.aggregate(scout_pipeline).to_list(5)
+    top_scouts = []
+    for row in scout_rows:
+        u = await db.users.find_one({"id": row["_id"]}, {"username": 1, "clout_points": 1})
+        if u:
+            top_scouts.append({
+                "user_id": row["_id"],
+                "username": u.get("username", "scout"),
+                "rating_count": row["count"],
+                "clout": u.get("clout_points", 0),
+            })
+
+    # ── Summary ────────────────────────────────────────────────────────────────
+    best_day = max(day_breakdown, key=lambda d: d["avg_score"], default=None)
+    worst_day = min(
+        [d for d in day_breakdown if d["count"] > 0],
+        key=lambda d: d["avg_score"],
+        default=None,
+    )
+    avg_30d = round(all_avg) if ratings_30d else 0
+    recent_avg = (
+        round(sum(r.get("vibe_score", 0) for r in ratings_30d[-20:]) / 20)
+        if len(ratings_30d) >= 20 else avg_30d
+    )
+    trend = (
+        "improving" if recent_avg > avg_30d + 5
+        else "declining" if recent_avg < avg_30d - 5
+        else "stable"
+    )
+
+    return {
+        "venue_id": venue_id,
+        "venue_name": venue.get("name", ""),
+        "vibe_history": vibe_history,
+        "peak_hours": peak_hours[:8],
+        "day_breakdown": day_breakdown,
+        "slow_nights": slow_nights,
+        "area_rank": {
+            "current_rank": current_rank,
+            "total_venues": len(area_venues),
+        },
+        "top_scouts": top_scouts,
+        "summary": {
+            "avg_score_30d": avg_30d,
+            "total_ratings_30d": len(ratings_30d),
+            "best_day": best_day["day"] if best_day else None,
+            "worst_day": worst_day["day"] if worst_day else None,
+            "trend": trend,
+        },
+    }
+
+
+# ===== Live Scout Activity Feed =====
+
+@router.get("/merchant/venues/{venue_id}/scout-activity")
+async def get_scout_activity(venue_id: str, request: Request):
+    """
+    Recent scout ratings for a venue — last 1h and 24h counts plus enriched scout list.
+    Powers the "X scouts rated you in the last hour" merchant widget.
+    """
+    await get_current_user(request)
+
+    now = datetime.now(timezone.utc)
+    one_hour_ago = now - timedelta(hours=1)
+    twenty_four_hours_ago = now - timedelta(hours=24)
+
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0, "name": 1})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    count_1h = await db.ratings.count_documents({
+        "venue_id": venue_id,
+        "timestamp": {"$gte": one_hour_ago},
+    })
+    count_24h = await db.ratings.count_documents({
+        "venue_id": venue_id,
+        "timestamp": {"$gte": twenty_four_hours_ago},
+    })
+
+    recent = await db.ratings.find(
+        {"venue_id": venue_id, "timestamp": {"$gte": twenty_four_hours_ago}},
+        {"user_id": 1, "energy": 1, "vibe_score": 1, "timestamp": 1, "_id": 0},
+    ).sort("timestamp", -1).limit(20).to_list(20)
+
+    scouts = []
+    for r in recent:
+        u = await db.users.find_one(
+            {"id": r["user_id"]},
+            {"username": 1, "clout_points": 1, "_id": 0},
+        )
+        if u:
+            ts = r["timestamp"]
+            if isinstance(ts, str):
+                ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            scouts.append({
+                "username": u.get("username", "scout"),
+                "clout": u.get("clout_points", 0),
+                "energy": r.get("energy", "chill"),
+                "vibe_score": round(r.get("vibe_score", 0)),
+                "timestamp": ts.isoformat(),
+                "is_last_hour": ts >= one_hour_ago,
+            })
+
+    return {
+        "venue_id": venue_id,
+        "count_1h": count_1h,
+        "count_24h": count_24h,
+        "scouts": scouts,
+    }
+
+
+# ===== Event Performance =====
+
+class EventCreateRequest:
+    def __init__(self, name: str, event_type: str, expected_start: str,
+                 expected_end: str, expected_crowd: Optional[int] = None):
+        self.name = name
+        self.event_type = event_type
+        self.expected_start = expected_start
+        self.expected_end = expected_end
+        self.expected_crowd = expected_crowd
+
+from pydantic import BaseModel as PydanticBase
+
+class EventCreate(PydanticBase):
+    name: str
+    event_type: str
+    expected_start: str   # ISO string
+    expected_end: str     # ISO string
+    expected_crowd: Optional[int] = None
+
+
+async def _compute_baseline(venue_id: str, expected_start: datetime, expected_end: datetime) -> float:
+    """
+    Compute baseline vibe score for a given time window using same day-of-week
+    and hour range over the last 4 weeks.
+    """
+    four_weeks_ago = expected_start - timedelta(weeks=4)
+    target_dow = expected_start.weekday()  # 0=Monday
+    start_hour = expected_start.hour
+    end_hour = expected_end.hour
+
+    ratings = await db.ratings.find(
+        {"venue_id": venue_id, "timestamp": {"$gte": four_weeks_ago, "$lt": expected_start}},
+        {"vibe_score": 1, "timestamp": 1, "_id": 0},
+    ).to_list(2000)
+
+    matching = [
+        r["vibe_score"] for r in ratings
+        if _parse_ts(r["timestamp"]).weekday() == target_dow
+        and start_hour <= _parse_ts(r["timestamp"]).hour <= end_hour
+    ]
+    return round(sum(matching) / len(matching)) if matching else 50
+
+
+def _parse_ts(ts) -> datetime:
+    if isinstance(ts, str):
+        return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    if ts.tzinfo is None:
+        return ts.replace(tzinfo=timezone.utc)
+    return ts
+
+
+@router.post("/merchant/venues/{venue_id}/events")
+async def create_event(venue_id: str, body: EventCreate, request: Request):
+    """Create a new merchant event and pre-compute the baseline vibe prediction."""
+    user = await get_current_user(request)
+
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0, "name": 1})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    expected_start = datetime.fromisoformat(body.expected_start.replace("Z", "+00:00"))
+    expected_end = datetime.fromisoformat(body.expected_end.replace("Z", "+00:00"))
+
+    if expected_end <= expected_start:
+        raise HTTPException(status_code=400, detail="expected_end must be after expected_start")
+
+    baseline_score = await _compute_baseline(venue_id, expected_start, expected_end)
+
+    event_doc = {
+        "id": str(uuid.uuid4()),
+        "venue_id": venue_id,
+        "name": body.name,
+        "event_type": body.event_type,
+        "expected_start": expected_start,
+        "expected_end": expected_end,
+        "expected_crowd": body.expected_crowd,
+        "baseline_score": baseline_score,
+        "actual_score": None,
+        "rating_count": 0,
+        "status": "upcoming",
+        "created_by": user["id"],
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.venue_events.insert_one(event_doc)
+    event_doc.pop("_id", None)
+    event_doc["expected_start"] = expected_start.isoformat()
+    event_doc["expected_end"] = expected_end.isoformat()
+    event_doc["created_at"] = event_doc["created_at"].isoformat()
+    return event_doc
+
+
+@router.get("/merchant/venues/{venue_id}/events")
+async def get_events(venue_id: str, request: Request):
+    """
+    List recent events for a venue. Computes actual_score for completed events
+    by aggregating ratings within the event time window.
+    """
+    await get_current_user(request)
+
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0, "name": 1})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    now = datetime.now(timezone.utc)
+    raw_events = await db.venue_events.find(
+        {"venue_id": venue_id},
+        {"_id": 0},
+    ).sort("expected_start", -1).limit(10).to_list(10)
+
+    events = []
+    for ev in raw_events:
+        end = _parse_ts(ev["expected_end"])
+        start = _parse_ts(ev["expected_start"])
+
+        if end < now and ev.get("actual_score") is None:
+            # Compute and cache actual score
+            ratings = await db.ratings.find(
+                {"venue_id": venue_id, "timestamp": {"$gte": start, "$lte": end}},
+                {"vibe_score": 1, "_id": 0},
+            ).to_list(500)
+            actual = round(sum(r["vibe_score"] for r in ratings) / len(ratings)) if ratings else 0
+            status = "completed"
+            await db.venue_events.update_one(
+                {"id": ev["id"]},
+                {"$set": {"actual_score": actual, "rating_count": len(ratings), "status": status}},
+            )
+            ev["actual_score"] = actual
+            ev["rating_count"] = len(ratings)
+            ev["status"] = status
+        elif start <= now <= end:
+            ev["status"] = "live"
+        else:
+            ev["status"] = "upcoming"
+
+        # Serialize datetimes
+        for field in ("expected_start", "expected_end", "created_at"):
+            if field in ev and not isinstance(ev[field], str):
+                ev[field] = _parse_ts(ev[field]).isoformat()
+
+        events.append(ev)
+
+    return {"venue_id": venue_id, "events": events}
+
+
+@router.delete("/merchant/venues/{venue_id}/events/{event_id}")
+async def delete_event(venue_id: str, event_id: str, request: Request):
+    """Cancel / delete a scheduled event."""
+    await get_current_user(request)
+    result = await db.venue_events.delete_one({"id": event_id, "venue_id": venue_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return {"deleted": True}

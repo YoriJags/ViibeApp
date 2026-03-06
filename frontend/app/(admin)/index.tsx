@@ -278,6 +278,168 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
 
 const WALKTHROUGH_STORAGE_KEY = 'admin_walkthrough_completed';
 
+// ── ICONS PANEL ──────────────────────────────────────────────────────────────
+const ICON_TIER_OPTIONS = [
+  { label: 'Verified', value: 'verified', color: '#C0C0C0' },
+  { label: 'Icon', value: 'icon', color: '#FFD700' },
+  { label: 'Legend', value: 'legend', color: '#FF3366' },
+];
+
+function IconsPanel({ headers }: { headers: Record<string, string> }) {
+  const [icons, setIcons] = React.useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [searchResults, setSearchResults] = React.useState<any[]>([]);
+  const [searching, setSearching] = React.useState(false);
+  const [saving, setSaving] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    fetch(`${API_URL}/api/admin/icons`, { headers })
+      .then(r => r.ok ? r.json() : { icons: [] })
+      .then(d => setIcons(d.icons || []));
+  }, []);
+
+  const searchUsers = async () => {
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users/search?q=${encodeURIComponent(searchQuery)}`, { headers });
+      if (res.ok) {
+        const d = await res.json();
+        setSearchResults(d.users || []);
+      }
+    } catch {}
+    setSearching(false);
+  };
+
+  const grantTier = async (userId: string, username: string, tier: string) => {
+    const label = await new Promise<string>(resolve => {
+      Alert.prompt
+        ? Alert.prompt(`Label for ${username}`, 'e.g. DJ, Dancer, Artist, Socialite', resolve, 'plain-text', '')
+        : resolve('');
+    }).catch(() => '');
+    setSaving(userId);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users/${userId}/icon-tier`, {
+        method: 'PUT',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier, label }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setIcons(prev => {
+          const filtered = prev.filter(i => i.id !== userId);
+          return [d.user, ...filtered];
+        });
+        setSearchResults(prev => prev.filter(u => u.id !== userId));
+        Alert.alert('Done', `${username} granted ${tier} tier.`);
+      }
+    } catch {}
+    setSaving(null);
+  };
+
+  const revokeTier = async (userId: string, username: string) => {
+    Alert.alert('Revoke Icon', `Remove icon tier from ${username}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Revoke', style: 'destructive', onPress: async () => {
+          setSaving(userId);
+          await fetch(`${API_URL}/api/admin/users/${userId}/icon-tier`, {
+            method: 'PUT',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tier: null }),
+          });
+          setIcons(prev => prev.filter(i => i.id !== userId));
+          setSaving(null);
+        },
+      },
+    ]);
+  };
+
+  const tierColor = (tier: string) => ICON_TIER_OPTIONS.find(t => t.value === tier)?.color || '#888';
+  const tierEmoji = (tier: string) => tier === 'legend' ? '🔥' : tier === 'icon' ? '👑' : '✓';
+
+  return (
+    <View style={{ backgroundColor: adminColors.cardBackground, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,215,0,0.25)', padding: 16 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <Text style={{ fontSize: 18 }}>👑</Text>
+        <Text style={{ fontSize: 14, fontWeight: '800', color: adminColors.gold }}>ICONS MANAGEMENT</Text>
+        {icons.length > 0 && (
+          <View style={{ backgroundColor: adminColors.gold, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, marginLeft: 'auto' }}>
+            <Text style={{ color: '#000', fontSize: 11, fontWeight: '800' }}>{icons.length}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Search to add */}
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+        <TextInput
+          style={{ flex: 1, backgroundColor: adminColors.inputBackground, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, color: adminColors.text, borderWidth: 1, borderColor: adminColors.border }}
+          placeholder="Search by username..."
+          placeholderTextColor={adminColors.textMuted}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onSubmitEditing={searchUsers}
+          returnKeyType="search"
+        />
+        <TouchableOpacity
+          onPress={searchUsers}
+          style={{ backgroundColor: adminColors.gold, borderRadius: 8, paddingHorizontal: 14, justifyContent: 'center' }}
+        >
+          {searching
+            ? <ActivityIndicator size="small" color="#000" />
+            : <Text style={{ color: '#000', fontWeight: '800', fontSize: 12 }}>Find</Text>
+          }
+        </TouchableOpacity>
+      </View>
+
+      {/* Search results */}
+      {searchResults.map(u => (
+        <View key={u.id} style={{ backgroundColor: adminColors.inputBackground, borderRadius: 8, padding: 10, marginBottom: 6 }}>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: adminColors.text, marginBottom: 6 }}>@{u.username}</Text>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {ICON_TIER_OPTIONS.map(opt => (
+              <TouchableOpacity
+                key={opt.value}
+                onPress={() => grantTier(u.id, u.username, opt.value)}
+                disabled={saving === u.id}
+                style={{ flex: 1, backgroundColor: opt.color + '20', borderRadius: 6, padding: 6, alignItems: 'center', borderWidth: 1, borderColor: opt.color + '50' }}
+              >
+                {saving === u.id
+                  ? <ActivityIndicator size="small" color={opt.color} />
+                  : <Text style={{ color: opt.color, fontSize: 11, fontWeight: '800' }}>{opt.label}</Text>
+                }
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      ))}
+
+      {/* Current icons list */}
+      {icons.length === 0 ? (
+        <Text style={{ fontSize: 12, color: adminColors.textMuted, textAlign: 'center', paddingVertical: 12 }}>No icons granted yet</Text>
+      ) : (
+        icons.map(icon => (
+          <View key={icon.id} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: adminColors.inputBackground, borderRadius: 8, padding: 10, marginBottom: 6, gap: 10 }}>
+            <Text style={{ fontSize: 18 }}>{tierEmoji(icon.icon_tier)}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: adminColors.text }}>@{icon.username}</Text>
+              <Text style={{ fontSize: 10, color: tierColor(icon.icon_tier), fontWeight: '700', marginTop: 1 }}>
+                {icon.icon_tier?.toUpperCase()} {icon.icon_label ? `· ${icon.icon_label}` : ''}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => revokeTier(icon.id, icon.username)} disabled={saving === icon.id}>
+              {saving === icon.id
+                ? <ActivityIndicator size="small" color={adminColors.error} />
+                : <Ionicons name="close-circle" size={20} color={adminColors.error} />
+              }
+            </TouchableOpacity>
+          </View>
+        ))
+      )}
+    </View>
+  );
+}
+
 export default function AdminAnalytics() {
   const router = useRouter();
   const { user, hasHydrated, getAuthHeaders } = useVibeStore();
@@ -306,6 +468,10 @@ export default function AdminAnalytics() {
   const [airdropReason, setAirdropReason] = useState('');
   const [selectedScouts, setSelectedScouts] = useState<string[]>([]);
   const [isAirdropping, setIsAirdropping] = useState(false);
+
+  // Venue Claims
+  const [pendingClaims, setPendingClaims] = useState<any[]>([]);
+  const [processingClaimId, setProcessingClaimId] = useState<string | null>(null);
 
   // Feature Flags / Control Tower
   const [localFlags, setLocalFlags] = useState<Record<string, boolean>>({});
@@ -367,6 +533,13 @@ export default function AdminAnalytics() {
         });
       }
       
+      // Pending Venue Claims
+      const claimsRes = await fetch(`${API_URL}/admin/claims`, { headers });
+      if (claimsRes.ok) {
+        const cd = await claimsRes.json();
+        setPendingClaims(cd.claims || []);
+      }
+
       // Feature Flags
       const flagsRes = await fetch(`${API_URL}/api/feature-flags`);
       if (flagsRes.ok) {
@@ -395,6 +568,26 @@ export default function AdminAnalytics() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleClaim = async (claimId: string, action: 'approve' | 'reject') => {
+    setProcessingClaimId(claimId);
+    try {
+      const res = await fetch(`${API_URL}/admin/claims/${claimId}/${action}`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(action === 'reject' ? { reason: 'Rejected by admin' } : {}),
+      });
+      if (res.ok) {
+        setPendingClaims(prev => prev.filter(c => c.id !== claimId));
+        Alert.alert('Done', `Claim ${action === 'approve' ? 'approved' : 'rejected'}.`);
+      } else {
+        Alert.alert('Error', 'Could not process claim. Try again.');
+      }
+    } catch {
+      Alert.alert('Error', 'Network error.');
+    }
+    setProcessingClaimId(null);
   };
 
   const saveFlags = async (updated: Record<string, boolean>) => {
@@ -934,6 +1127,56 @@ export default function AdminAnalytics() {
                 ))}
               </View>
             )}
+
+            {/* Pending Venue Claims */}
+            <View style={[styles.card, { borderColor: '#FF336630' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 8 }}>
+                <Ionicons name="business" size={18} color="#FF3366" />
+                <Text style={styles.cardTitle}>Pending Claims</Text>
+                {pendingClaims.length > 0 && (
+                  <View style={{ backgroundColor: '#FF3366', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, marginLeft: 'auto' }}>
+                    <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '800' }}>{pendingClaims.length}</Text>
+                  </View>
+                )}
+              </View>
+              {pendingClaims.length === 0 ? (
+                <Text style={{ fontSize: 12, color: adminColors.textMuted, textAlign: 'center', paddingVertical: 12 }}>
+                  No pending claims
+                </Text>
+              ) : (
+                pendingClaims.map((claim) => (
+                  <View key={claim.id} style={{ backgroundColor: adminColors.inputBackground, borderRadius: 10, padding: 12, marginBottom: 8, gap: 6 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: adminColors.text }}>{claim.venue_name || claim.venue_id}</Text>
+                    <Text style={{ fontSize: 12, color: adminColors.textSecondary }}>By: {claim.owner_name} · {claim.phone}</Text>
+                    {claim.business_reg_no && (
+                      <Text style={{ fontSize: 11, color: adminColors.textMuted }}>Reg: {claim.business_reg_no}</Text>
+                    )}
+                    {claim.message && (
+                      <Text style={{ fontSize: 11, color: adminColors.textMuted }} numberOfLines={2}>{claim.message}</Text>
+                    )}
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                      <TouchableOpacity
+                        style={{ flex: 1, backgroundColor: '#22C55E20', borderRadius: 8, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: '#22C55E40' }}
+                        onPress={() => handleClaim(claim.id, 'approve')}
+                        disabled={processingClaimId === claim.id}
+                      >
+                        {processingClaimId === claim.id
+                          ? <ActivityIndicator size="small" color="#22C55E" />
+                          : <Text style={{ color: '#22C55E', fontWeight: '700', fontSize: 13 }}>Approve</Text>
+                        }
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={{ flex: 1, backgroundColor: '#EF444420', borderRadius: 8, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: '#EF444440' }}
+                        onPress={() => handleClaim(claim.id, 'reject')}
+                        disabled={processingClaimId === claim.id}
+                      >
+                        <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 13 }}>Reject</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
           </View>
         )}
 
@@ -1095,6 +1338,13 @@ export default function AdminAnalytics() {
                 </View>
               </View>
             </View>
+          </View>
+        )}
+
+        {/* ====== ICONS PANEL (in users tab) ====== */}
+        {activeTab === 'users' && (
+          <View style={[styles.section, { marginTop: 0 }]}>
+            <IconsPanel headers={headers} />
           </View>
         )}
 

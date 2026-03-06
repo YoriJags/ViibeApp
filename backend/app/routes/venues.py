@@ -1,14 +1,128 @@
 """
-Vibe App - Venue Routes
+Viibe App - Venue Routes
 Venue listing, details, direction clicks, and city data.
 """
 from typing import Optional
 from datetime import datetime, timedelta, timezone
+import asyncio
 from fastapi import APIRouter
 
 from app.config import db, CITIES
 
 router = APIRouter(tags=["venues"])
+
+
+async def _update_venue_scores(venue_id: str) -> None:
+    """
+    Compute and cache vibe_tier + avg_score_30d on the venue document.
+    Runs async in background — does not block the request.
+    Refreshes at most once per hour per venue.
+    """
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0, "vibe_tier": 1, "updated_scores_at": 1})
+    if not venue:
+        return
+    # Rate-limit: don't recompute if updated < 1 hour ago
+    last = venue.get("updated_scores_at")
+    if last:
+        if isinstance(last, str):
+            last = datetime.fromisoformat(last.replace("Z", "+00:00"))
+        if (datetime.now(timezone.utc) - last).total_seconds() < 3600:
+            return
+
+    now = datetime.now(timezone.utc)
+    thirty_ago = now - timedelta(days=30)
+
+    ratings = await db.ratings.find(
+        {"venue_id": venue_id, "timestamp": {"$gte": thirty_ago}},
+        {"vibe_score": 1, "_id": 0},
+    ).to_list(2000)
+
+    if not ratings:
+        return
+
+    avg_30d = round(sum(r.get("vibe_score", 0) for r in ratings) / len(ratings), 1)
+
+    # Simple tier from 30d avg (full 90d computation happens in reputation endpoint)
+    if avg_30d >= 80:
+        tier = "Elite"
+    elif avg_30d >= 65:
+        tier = "Established"
+    elif avg_30d >= 50:
+        tier = "Solid"
+    elif avg_30d >= 35:
+        tier = "Building"
+    else:
+        tier = "New"
+
+    await db.venues.update_one(
+        {"id": venue_id},
+        {"$set": {
+            "avg_score_30d": avg_30d,
+            "vibe_tier": tier,
+            "updated_scores_at": now,
+        }},
+    )
+
+
+def compute_is_open_now(venue: dict) -> Optional[bool]:
+    """
+    Returns True if venue is open now, False if closed, None if no hours set.
+    operating_hours format: {"mon": {"open": "18:00", "close": "02:00"}, "sun": null, ...}
+    close < open means the venue closes the following day (crosses midnight).
+    WAT = UTC+1.
+    """
+    hours = venue.get("operating_hours")
+    if not hours:
+        return None
+
+    now_wat = datetime.now(timezone.utc) + timedelta(hours=1)
+    day_key = now_wat.strftime("%a").lower()  # "mon", "tue", ...
+    day_hours = hours.get(day_key)
+    if day_hours is None:
+        return False  # closed today
+
+    try:
+        open_h, open_m = map(int, day_hours["open"].split(":"))
+        close_h, close_m = map(int, day_hours["close"].split(":"))
+    except (KeyError, ValueError):
+        return None
+
+    now_mins = now_wat.hour * 60 + now_wat.minute
+    open_mins = open_h * 60 + open_m
+    close_mins = close_h * 60 + close_m
+
+    if close_mins <= open_mins:  # crosses midnight
+        return now_mins >= open_mins or now_mins <= close_mins
+    return open_mins <= now_mins <= close_mins
+
+
+def next_open_label(venue: dict) -> Optional[str]:
+    """Returns 'Opens at HH:MM' string for the next opening time, or None."""
+    hours = venue.get("operating_hours")
+    if not hours:
+        return None
+
+    now_wat = datetime.now(timezone.utc) + timedelta(hours=1)
+    days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+    today_idx = now_wat.weekday()
+
+    for offset in range(7):
+        day_key = days[(today_idx + offset) % 7]
+        day_hours = hours.get(day_key)
+        if not day_hours:
+            continue
+        try:
+            label = day_hours["open"]
+            if offset == 0:
+                return f"Opens at {label}"
+            elif offset == 1:
+                return f"Opens tomorrow at {label}"
+            else:
+                day_name = day_key.capitalize()
+                return f"Opens {day_name} at {label}"
+        except (KeyError, TypeError):
+            continue
+    return None
 
 
 def compute_pulse(venue: dict) -> dict:
@@ -51,6 +165,10 @@ async def get_venues(city: Optional[str] = None):
     for venue in venues:
         venue["ratings_last_30m"] = spike_data.get(venue.get("id"), 0)
         venue["pulse"] = compute_pulse(venue)
+        is_open = compute_is_open_now(venue)
+        venue["is_open_now"] = is_open
+        if is_open is False:
+            venue["next_open"] = next_open_label(venue)
 
     return venues
 
@@ -63,9 +181,15 @@ async def get_venue(venue_id: str):
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
 
-    # Increment profile views
+    # Increment profile views + refresh reputation scores in background
     await db.venues.update_one({"id": venue_id}, {"$inc": {"profile_views": 1}})
+    asyncio.create_task(_update_venue_scores(venue_id))
+
     venue["pulse"] = compute_pulse(venue)
+    is_open = compute_is_open_now(venue)
+    venue["is_open_now"] = is_open
+    if is_open is False:
+        venue["next_open"] = next_open_label(venue)
 
     return venue
 

@@ -351,3 +351,77 @@ async def get_follow_status(
         "followers": follower_count,
         "heading_count": heading_count,
     }
+
+
+# ─── MERCHANT: BLAST ATTRIBUTION ─────────────────────────────────────────────
+
+AVG_SPEND_NGN = 8_000  # estimated avg spend per verified visit
+
+@router.get("/merchant/venues/{venue_id}/blast-attribution")
+async def get_blast_attribution(
+    venue_id: str,
+    authorization: str = Header(None),
+):
+    """
+    Attribution dashboard: for each blast sent, how many scouts visited within
+    2 hours, and what's the estimated revenue impact.
+    Powers the investor ROI story: "Your blast drove 23 verified visits = ₦184,000."
+    """
+    user = await _require_user(authorization)
+    if user.get("merchant_venue_id") != venue_id and not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Not your venue")
+
+    blasts = await db.venue_live_pushes.find(
+        {"venue_id": venue_id},
+        {"_id": 0},
+    ).sort("sent_at", -1).limit(10).to_list(10)
+
+    results = []
+    for blast in blasts:
+        sent_at = blast.get("sent_at")
+        if isinstance(sent_at, str):
+            sent_at = datetime.fromisoformat(sent_at.replace("Z", "+00:00"))
+        if not sent_at:
+            continue
+        window_end = sent_at + timedelta(hours=2)
+
+        # Count unique scouts who rated this venue in the 2h window after blast
+        post_blast_pipeline = [
+            {"$match": {
+                "venue_id": venue_id,
+                "timestamp": {"$gte": sent_at, "$lte": window_end},
+            }},
+            {"$group": {"_id": "$user_id"}},
+            {"$count": "unique_visits"},
+        ]
+        result = await db.ratings.aggregate(post_blast_pipeline).to_list(1)
+        unique_visits = result[0]["unique_visits"] if result else 0
+
+        followers_reached = blast.get("followers_reached", blast.get("heading_count", 0))
+        conversion_rate = round((unique_visits / followers_reached * 100), 1) if followers_reached > 0 else 0
+        estimated_revenue = unique_visits * AVG_SPEND_NGN
+
+        results.append({
+            "blast_id": str(blast.get("_id", "")),
+            "message": blast.get("message", ""),
+            "sent_at": sent_at.isoformat(),
+            "followers_reached": followers_reached,
+            "visits_2h": unique_visits,
+            "conversion_rate": conversion_rate,
+            "estimated_revenue_ngn": estimated_revenue,
+        })
+
+    total_visits = sum(r["visits_2h"] for r in results)
+    total_revenue = sum(r["estimated_revenue_ngn"] for r in results)
+    avg_conversion = round(sum(r["conversion_rate"] for r in results) / len(results), 1) if results else 0
+
+    return {
+        "venue_id": venue_id,
+        "blasts": results,
+        "summary": {
+            "total_blasts": len(results),
+            "total_verified_visits": total_visits,
+            "total_estimated_revenue_ngn": total_revenue,
+            "avg_conversion_rate": avg_conversion,
+        },
+    }

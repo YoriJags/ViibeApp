@@ -197,6 +197,10 @@ async def create_rating(rating_data: RatingCreate):
     await broadcast_leaderboard("all")
     await broadcast_city_pulse(venue.get("city", "lagos"))
 
+    # ── Icon Spotted: if rater is a Verified/Icon/Legend, fire signal to venue followers ──
+    import asyncio as _asyncio
+    _asyncio.create_task(_emit_icon_spotted(user_doc, venue, rating_data.venue_id))
+
     return {
         "rating": rating.dict(),
         "is_correction": is_correction,
@@ -293,3 +297,72 @@ async def _check_squad_bonus(user_id: str, venue_id: str) -> int:
         return SQUAD_BONUS_CLOUT
 
     return 0
+
+
+# ── ICON TIER LABELS ─────────────────────────────────────────────────────────
+_ICON_TIER_LABELS = {
+    "verified": "Verified",
+    "icon": "Icon",
+    "legend": "Legend",
+}
+
+_ICON_TIER_EMOJI = {
+    "verified": "✓",
+    "icon": "👑",
+    "legend": "🔥",
+}
+
+
+async def _emit_icon_spotted(user_doc: dict | None, venue: dict, venue_id: str) -> None:
+    """Fire an 'Icon Spotted' signal to venue followers when an Icon rates a venue.
+
+    - Writes a record to `icon_spotted` collection (3-hour TTL index)
+    - Emits a Socket.IO event to the venue room so live clients see it instantly
+    - Rate-limited: one signal per (icon_user_id, venue_id) per 3 hours
+    """
+    if not user_doc:
+        return
+    icon_tier = user_doc.get("icon_tier")
+    if not icon_tier:
+        return  # regular scout — skip
+
+    now = datetime.now(timezone.utc)
+    three_hours_ago = now - timedelta(hours=3)
+
+    # Rate limit: already fired for this icon at this venue in last 3h?
+    existing = await db.icon_spotted.find_one({
+        "user_id": user_doc["id"],
+        "venue_id": venue_id,
+        "spotted_at": {"$gte": three_hours_ago},
+    })
+    if existing:
+        return
+
+    label = user_doc.get("icon_label") or icon_tier.capitalize()
+    emoji = _ICON_TIER_EMOJI.get(icon_tier, "👑")
+
+    spotted_doc = {
+        "user_id": user_doc["id"],
+        "username": user_doc.get("username", "Someone"),
+        "icon_tier": icon_tier,
+        "icon_label": label,
+        "venue_id": venue_id,
+        "venue_name": venue.get("name", ""),
+        "spotted_at": now,
+        "expires_at": now + timedelta(hours=3),
+    }
+    await db.icon_spotted.insert_one(spotted_doc)
+
+    # Socket.IO broadcast to venue room
+    try:
+        from app.config import sio
+        await sio.emit("icon_spotted", {
+            "venue_id": venue_id,
+            "username": user_doc.get("username", "Someone"),
+            "icon_tier": icon_tier,
+            "icon_label": label,
+            "emoji": emoji,
+            "message": f"{emoji} {label} spotted at {venue.get('name', 'this venue')}",
+        }, room=f"venue_{venue_id}")
+    except Exception:
+        pass  # non-critical

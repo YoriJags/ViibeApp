@@ -218,10 +218,6 @@ async def get_tonight_recommendation(city: str):
     Also returns area pulse summary and top 3 alternatives.
     """
     now = datetime.now(timezone.utc)
-    # Only relevant from 6pm WAT (17:00 UTC) to 4am WAT (03:00 UTC)
-    # Outside those hours, still return but note it's early
-    hour_utc = now.hour
-    is_night = hour_utc >= 17 or hour_utc <= 3
 
     venues = await db.venues.find(
         {}, {"_id": 0, "id": 1, "name": 1, "area": 1, "current_vibe_score": 1,
@@ -284,7 +280,6 @@ async def get_tonight_recommendation(city: str):
 
     return {
         "available": True,
-        "is_night_hours": is_night,
         "headline": headline,
         "top_pick": {
             "venue_id": top["id"],
@@ -339,9 +334,6 @@ async def get_arrival_intel(venue_id: str):
     checkin_map = {r["_id"]: r["count"] for r in checkin_by_hour}
     rating_map = {r["_id"]: {"count": r["count"], "avg": r.get("avg_score", 0)} for r in ratings_by_hour}
 
-    # Nightlife hours: 8pm–4am WAT = 19:00–03:00 UTC
-    night_hours = list(range(19, 24)) + list(range(0, 4))
-
     hourly = []
     peak_activity = 0
     peak_hour_utc = None
@@ -357,9 +349,8 @@ async def get_arrival_intel(venue_id: str):
             "hour_label": f"{(h + 1) % 24:02d}:00",
             "activity": activity,
             "avg_score": round(avg_score, 1),
-            "is_night": h in night_hours,
         })
-        if activity > peak_activity and h in night_hours:
+        if activity > peak_activity:
             peak_activity = activity
             peak_hour_utc = h
 
@@ -379,7 +370,7 @@ async def get_arrival_intel(venue_id: str):
         return {
             "venue_id": venue_id,
             "available": False,
-            "message": "Not enough check-in data yet. Come back after a few nights.",
+            "message": "Not enough scout data yet — check back after more visits.",
         }
 
     return {
@@ -388,8 +379,8 @@ async def get_arrival_intel(venue_id: str):
         "available": True,
         "peak_hour": peak_label,
         "recommended_arrival": recommended_label,
-        "insight": f"Arrive by {recommended_label} to beat the queue — peak hits around {peak_label}." if recommended_label else None,
-        "hourly": [h for h in hourly if h["is_night"]],  # only show night hours
+        "insight": f"Arrive by {recommended_label} to beat the crowd — peak hits around {peak_label}." if recommended_label else None,
+        "hourly": [h for h in hourly if h["activity"] > 0],  # only hours with real data
     }
 
 
@@ -596,3 +587,161 @@ def _reputation_insight(tier: str, delta: float, consistency: float) -> str:
     if consistency < 40:
         return "Unpredictable nights — could be amazing or dead."
     return f"Solid {tier.lower()} venue. Reliable choice."
+
+
+# ===== City Intelligence — The Foursquare Data Story =====
+
+@router.get("/data/city-intelligence")
+async def get_city_intelligence(city: str = "lagos", days: int = 30):
+    """
+    Aggregated city-level intelligence — the enterprise data product.
+    This is what brands, real estate developers, and event promoters pay for:
+    foot traffic patterns, area heat maps, best nights, peak hours city-wide.
+
+    This endpoint tells the Foursquare exit story.
+    """
+    if days not in (7, 30, 90):
+        days = 30
+
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=days)
+
+    DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+    # All venues in city
+    venues = await db.venues.find(
+        {"city": city},
+        {"_id": 0, "id": 1, "name": 1, "area": 1, "venue_type": 1, "current_vibe_score": 1},
+    ).to_list(200)
+    venue_ids = [v["id"] for v in venues]
+    venue_map = {v["id"]: v for v in venues}
+
+    if not venue_ids:
+        return {"available": False, "message": f"No venues in {city}"}
+
+    # ── Top areas by avg score + volume ──────────────────────────────────────
+    area_pipeline = [
+        {"$match": {"venue_id": {"$in": venue_ids}, "timestamp": {"$gte": since}}},
+        {"$addFields": {"area": {
+            "$let": {
+                "vars": {"vids": venue_ids, "areas": [venue_map[v]["area"] for v in venue_ids]},
+                "in": "$venue_id",
+            }
+        }}},
+        {"$group": {
+            "_id": "$venue_id",
+            "avg_score": {"$avg": "$vibe_score"},
+            "total_ratings": {"$sum": 1},
+            "unique_scouts": {"$addToSet": "$user_id"},
+        }},
+    ]
+    venue_stats = await db.ratings.aggregate(area_pipeline).to_list(200)
+
+    # Group by area
+    area_map: dict = {}
+    for vs in venue_stats:
+        v = venue_map.get(vs["_id"], {})
+        area = v.get("area", "Unknown")
+        if area not in area_map:
+            area_map[area] = {"ratings": 0, "scores": [], "unique_scouts": set()}
+        area_map[area]["ratings"] += vs["total_ratings"]
+        area_map[area]["scores"].append(vs["avg_score"])
+        area_map[area]["unique_scouts"].update(vs.get("unique_scouts", []))
+
+    top_areas = sorted([
+        {
+            "area": area,
+            "avg_score": round(sum(d["scores"]) / len(d["scores"]), 1),
+            "total_ratings": d["ratings"],
+            "unique_scouts": len(d["unique_scouts"]),
+        }
+        for area, d in area_map.items() if d["ratings"] > 0
+    ], key=lambda x: x["avg_score"], reverse=True)
+
+    # ── Best nights (day of week breakdown) ───────────────────────────────────
+    ratings = await db.ratings.find(
+        {"venue_id": {"$in": venue_ids}, "timestamp": {"$gte": since}},
+        {"vibe_score": 1, "timestamp": 1, "_id": 0},
+    ).to_list(10000)
+
+    dow_map: dict = {i: {"scores": [], "count": 0} for i in range(7)}
+    hour_map: dict = {h: {"count": 0} for h in range(24)}
+
+    for r in ratings:
+        ts = r["timestamp"]
+        if isinstance(ts, str):
+            ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        dow = ts.weekday()
+        dow_map[dow]["scores"].append(r.get("vibe_score", 0))
+        dow_map[dow]["count"] += 1
+        wat_h = (ts.hour + 1) % 24
+        hour_map[wat_h]["count"] += 1
+
+    best_nights = sorted([
+        {
+            "day": DAY_NAMES[d],
+            "avg_score": round(sum(v["scores"]) / len(v["scores"]), 1) if v["scores"] else 0,
+            "rating_count": v["count"],
+        }
+        for d, v in dow_map.items() if v["count"] > 0
+    ], key=lambda x: x["avg_score"], reverse=True)
+
+    # ── Peak hours city-wide ──────────────────────────────────────────────────
+    max_activity = max((v["count"] for v in hour_map.values()), default=1)
+    peak_hours = sorted([
+        {
+            "hour": h,
+            "label": f"{h:02d}:00 WAT",
+            "activity_index": round((v["count"] / max_activity) * 100) if max_activity > 0 else 0,
+            "count": v["count"],
+        }
+        for h, v in hour_map.items() if v["count"] > 0
+    ], key=lambda x: x["activity_index"], reverse=True)[:8]
+
+    # ── Venue category breakdown ──────────────────────────────────────────────
+    cat_map: dict = {}
+    for vs in venue_stats:
+        v = venue_map.get(vs["_id"], {})
+        vtype = v.get("venue_type", "other")
+        if vtype not in cat_map:
+            cat_map[vtype] = {"count": 0, "scores": []}
+        cat_map[vtype]["count"] += 1
+        cat_map[vtype]["scores"].append(vs["avg_score"])
+
+    category_breakdown = sorted([
+        {
+            "type": vtype,
+            "venue_count": d["count"],
+            "avg_score": round(sum(d["scores"]) / len(d["scores"]), 1) if d["scores"] else 0,
+        }
+        for vtype, d in cat_map.items()
+    ], key=lambda x: x["avg_score"], reverse=True)
+
+    # ── Scout activity summary ────────────────────────────────────────────────
+    total_ratings = len(ratings)
+    unique_scouts = len(set(r.get("user_id", "") for r in ratings if "user_id" in r))
+    # Note: ratings don't always have user_id in projection — get count separately
+    unique_count = await db.ratings.distinct(
+        "user_id",
+        {"venue_id": {"$in": venue_ids}, "timestamp": {"$gte": since}},
+    )
+
+    return {
+        "city": city,
+        "period_days": days,
+        "total_venues": len(venues),
+        "top_areas": top_areas[:10],
+        "best_nights": best_nights,
+        "venue_category_breakdown": category_breakdown,
+        "peak_hours_city": peak_hours,
+        "scout_activity": {
+            "total_scouts": len(unique_count),
+            "total_ratings": total_ratings,
+            "ratings_per_scout": round(total_ratings / max(len(unique_count), 1), 1),
+        },
+        "generated_at": now.isoformat(),
+        "data_note": (
+            "Aggregated from verified scout check-ins. "
+            "Available as enterprise data feed for brands, real estate, and event promoters."
+        ),
+    }

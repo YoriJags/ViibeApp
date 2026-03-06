@@ -34,11 +34,20 @@ import DemoModeBanner from '../../src/components/DemoModeBanner';
 import FloorSwitcher from '../../src/components/FloorSwitcher';
 import { SkeletonLoader } from '../../src/components/SkeletonLoader';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
+import VenueAnalyticsCard from '../../src/components/VenueAnalyticsCard';
+import ScoutActivityFeed from '../../src/components/ScoutActivityFeed';
+import EventPerformanceCard from '../../src/components/EventPerformanceCard';
+import BlastAttributionCard from '../../src/components/BlastAttributionCard';
+import BookingsCard from '../../src/components/BookingsCard';
 import {
   DEMO_VENUE_STATS,
   DEMO_SENTIMENT,
   DEMO_PULSE_STATUS,
   DEMO_ACTIVE_CAMPAIGN,
+  DEMO_SCOUT_ACTIVITY,
+  DEMO_EVENTS,
+  DEMO_BLAST_ATTRIBUTION,
+  DEMO_BOOKINGS,
 } from '../../src/data/demoData';
 
 const { colors } = merchantTheme;
@@ -938,6 +947,70 @@ export default function MerchantDashboard() {
           <ErrorBoundary label="Forecast">
             <View style={styles.section}>
               <VibeForecast venueId={user.merchant_venue_id} />
+            </View>
+          </ErrorBoundary>
+        )}
+
+        {/* ====== VENUE INTELLIGENCE / ANALYTICS ====== */}
+        {user?.merchant_venue_id && user?.token && (
+          <ErrorBoundary label="Analytics">
+            <View style={styles.section}>
+              <VenueAnalyticsCard
+                venueId={user.merchant_venue_id}
+                authToken={user.token}
+              />
+            </View>
+          </ErrorBoundary>
+        )}
+
+        {/* ====== LIVE SCOUT ACTIVITY ====== */}
+        {user?.merchant_venue_id && user?.token && (
+          <ErrorBoundary label="Scout Activity">
+            <View style={styles.section}>
+              <ScoutActivityFeed
+                venueId={user.merchant_venue_id}
+                authToken={user.token}
+                demoData={isDemoMode ? (DEMO_SCOUT_ACTIVITY as any) : undefined}
+              />
+            </View>
+          </ErrorBoundary>
+        )}
+
+        {/* ====== EVENT PERFORMANCE ====== */}
+        {user?.merchant_venue_id && user?.token && (
+          <ErrorBoundary label="Events">
+            <View style={styles.section}>
+              <EventPerformanceCard
+                venueId={user.merchant_venue_id}
+                authToken={user.token}
+                demoData={isDemoMode ? (DEMO_EVENTS as any) : undefined}
+              />
+            </View>
+          </ErrorBoundary>
+        )}
+
+        {/* ====== BLAST ATTRIBUTION ====== */}
+        {user?.merchant_venue_id && user?.token && (
+          <ErrorBoundary label="Blast Attribution">
+            <View style={styles.section}>
+              <BlastAttributionCard
+                venueId={user.merchant_venue_id}
+                authToken={user.token}
+                demoData={isDemoMode ? (DEMO_BLAST_ATTRIBUTION as any) : undefined}
+              />
+            </View>
+          </ErrorBoundary>
+        )}
+
+        {/* ====== BOOKINGS ====== */}
+        {user?.merchant_venue_id && user?.token && (
+          <ErrorBoundary label="Bookings">
+            <View style={styles.section}>
+              <BookingsCard
+                venueId={user.merchant_venue_id}
+                authToken={user.token}
+                demoData={isDemoMode ? (DEMO_BOOKINGS as any) : undefined}
+              />
             </View>
           </ErrorBoundary>
         )}

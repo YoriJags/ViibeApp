@@ -47,6 +47,10 @@ class User(BaseModel):
     is_vibe_plus: bool = False
     vibe_plus_expires_at: Optional[datetime] = None
     vibe_plus_reference: Optional[str] = None   # most recent successful payment ref
+    # ===== Icons System =====
+    icon_tier: Optional[Literal["verified", "icon", "legend"]] = None  # None = regular scout
+    icon_label: Optional[str] = None  # e.g. "DJ", "Dancer", "Artist", "Socialite"
+    icon_granted_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -88,6 +92,16 @@ class Venue(BaseModel):
     is_suppressed: bool = False
     geofence_radius_m: float = 100
     spotlight_until: Optional[datetime] = None
+    # operating_hours: dict keyed by 3-letter day ("mon"–"sun")
+    # Each day: {"open": "HH:MM", "close": "HH:MM"} or null if closed that day
+    # close < open means crosses midnight (e.g. open 22:00 close 04:00)
+    operating_hours: Optional[dict] = None
+    # Persistent reputation — cached from the reputation endpoint
+    vibe_tier: Optional[str] = None          # "Elite" | "Established" | "Solid" | "Building" | "New"
+    avg_score_30d: float = 0.0
+    reputation_score: float = 0.0
+    # Self-serve merchant onboarding
+    claim_status: Literal["unclaimed", "pending", "claimed"] = "unclaimed"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -96,6 +110,7 @@ class VenueUpdateRequest(BaseModel):
     music_genre: Optional[str] = None
     geofence_radius_m: Optional[float] = None
     tables_available: Optional[bool] = None
+    operating_hours: Optional[dict] = None
 
 
 # ===== Ratings =====

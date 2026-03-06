@@ -15,12 +15,27 @@ export interface AvatarConfig {
   accentColor: string;
 }
 
+export type IconTier = 'verified' | 'icon' | 'legend';
+
+const ICON_TIER_COLORS: Record<IconTier, string> = {
+  verified: '#C0C0C0', // silver
+  icon: '#FFD700',     // gold
+  legend: '#FF3366',   // Viibe red — rare
+};
+
+const ICON_TIER_BADGE: Record<IconTier, string> = {
+  verified: '✓',
+  icon: '👑',
+  legend: '🔥',
+};
+
 interface AvatarDisplayProps {
   config: AvatarConfig | null;
   username: string;
   size?: number;
   showBorder?: boolean;
   borderColor?: string;
+  iconTier?: IconTier | null;
 }
 
 // ─── Scout status colors (fallback when no config) ─────────────
@@ -47,11 +62,15 @@ export default function AvatarDisplay({
   size = 40,
   showBorder = false,
   borderColor,
+  iconTier,
 }: AvatarDisplayProps) {
   const glowAnim = useRef(new Animated.Value(0)).current;
+  const isIcon = !!iconTier;
+  const effectiveBorderColor = iconTier ? ICON_TIER_COLORS[iconTier] : borderColor;
+  const effectiveShowBorder = showBorder || isIcon;
 
   useEffect(() => {
-    if (!showBorder) return;
+    if (!effectiveShowBorder) return;
     Animated.loop(
       Animated.sequence([
         Animated.timing(glowAnim, {
@@ -71,7 +90,7 @@ export default function AvatarDisplay({
   const radius = size / 2;
   const emojiSize = size * 0.5;
   const letterSize = size * 0.42;
-  const activeBorderColor = borderColor || config?.accentColor || '#00E676';
+  const activeBorderColor = effectiveBorderColor || config?.accentColor || '#00E676';
 
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
@@ -89,7 +108,7 @@ export default function AvatarDisplay({
     return (
       <View style={containerStyle}>
         {/* Glow border ring */}
-        {showBorder && (
+        {effectiveShowBorder && (
           <Animated.View
             style={[
               styles.glowRing,
@@ -123,6 +142,13 @@ export default function AvatarDisplay({
             {config.emoji}
           </Text>
         </LinearGradient>
+        {isIcon && iconTier && (
+          <View style={[styles.iconBadge, { backgroundColor: ICON_TIER_COLORS[iconTier] }]}>
+            <Text style={{ fontSize: size * 0.18, lineHeight: size * 0.22 }}>
+              {ICON_TIER_BADGE[iconTier]}
+            </Text>
+          </View>
+        )}
       </View>
     );
   }
@@ -196,5 +222,17 @@ const styles = StyleSheet.create({
   },
   letterText: {
     fontWeight: '700',
+  },
+  iconBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#06060F',
   },
 });

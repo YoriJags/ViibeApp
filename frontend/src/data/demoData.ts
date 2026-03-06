@@ -990,3 +990,120 @@ export const DEMO_CITY_PULSE = {
   sparkline: [41, 53, 62, 70, 78, 82],
   updated_at: new Date().toISOString(),
 };
+
+// ===== BLAST ATTRIBUTION — Merchant ROI proof =====
+export const DEMO_BLAST_ATTRIBUTION = {
+  venue_id: 'demo_venue_quilox',
+  blasts: [
+    {
+      blast_id: 'blast_001',
+      message: 'Floor is packed 🔥 Free entry till 1am — DJ Spinall just dropped in',
+      sent_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      followers_reached: 340,
+      visits_2h: 23,
+      conversion_rate: 6.8,
+      estimated_revenue_ngn: 184000,
+    },
+    {
+      blast_id: 'blast_002',
+      message: 'Wednesday vibes 🎶 Open bar for ladies till midnight. Come through',
+      sent_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      followers_reached: 280,
+      visits_2h: 14,
+      conversion_rate: 5.0,
+      estimated_revenue_ngn: 112000,
+    },
+    {
+      blast_id: 'blast_003',
+      message: 'Tonight is different. Table service from ₦50k. Limited spots left',
+      sent_at: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
+      followers_reached: 310,
+      visits_2h: 31,
+      conversion_rate: 10.0,
+      estimated_revenue_ngn: 248000,
+    },
+  ],
+  summary: {
+    total_blasts: 3,
+    total_verified_visits: 68,
+    total_estimated_revenue_ngn: 544000,
+    avg_conversion_rate: 7.3,
+  },
+};
+
+// ===== DEMO BOOKINGS =====
+export const DEMO_BOOKINGS = {
+  venue_id: 'demo_venue_quilox',
+  bookings: [
+    { id: 'bk_001', venue_name: 'Quilox', user_name: 'Tunde Adewale', user_phone: '+2348012345678', party_size: 4, booking_date: new Date(Date.now() + 86400000).toISOString().split('T')[0], booking_time: '22:00', notes: 'Birthday celebration', status: 'confirmed', amount_paid: 500 },
+    { id: 'bk_002', venue_name: 'Quilox', user_name: 'Chioma Obi', user_phone: '+2348098765432', party_size: 2, booking_date: new Date(Date.now() + 86400000).toISOString().split('T')[0], booking_time: '21:00', notes: '', status: 'confirmed', amount_paid: 500 },
+    { id: 'bk_003', venue_name: 'Quilox', user_name: 'Emeka Eze', user_phone: '+2348055544433', party_size: 6, booking_date: new Date(Date.now() + 172800000).toISOString().split('T')[0], booking_time: '23:00', notes: 'Need VIP section', status: 'confirmed', amount_paid: 500 },
+  ],
+  summary: { today_count: 2, total_guests_today: 6, upcoming_count: 3 },
+};
+
+// ===== SCOUT ACTIVITY FEED — Merchant "who's rating me" widget =====
+export const DEMO_SCOUT_ACTIVITY = {
+  venue_id: 'demo_venue_quilox',
+  count_1h: 5,
+  count_24h: 34,
+  scouts: [
+    { username: 'NightCrawler_X', clout: 3120, energy: 'peak', vibe_score: 94, timestamp: new Date(Date.now() - 8 * 60000).toISOString(), is_last_hour: true },
+    { username: 'LagosLens', clout: 2850, energy: 'lit', vibe_score: 88, timestamp: new Date(Date.now() - 22 * 60000).toISOString(), is_last_hour: true },
+    { username: 'VibeHunter', clout: 1940, energy: 'lit', vibe_score: 85, timestamp: new Date(Date.now() - 35 * 60000).toISOString(), is_last_hour: true },
+    { username: 'SceneScout', clout: 1650, energy: 'warming', vibe_score: 72, timestamp: new Date(Date.now() - 48 * 60000).toISOString(), is_last_hour: true },
+    { username: 'AbujaNight', clout: 980, energy: 'warming', vibe_score: 68, timestamp: new Date(Date.now() - 59 * 60000).toISOString(), is_last_hour: true },
+    { username: 'ClubRadar', clout: 2100, energy: 'chill', vibe_score: 55, timestamp: new Date(Date.now() - 95 * 60000).toISOString(), is_last_hour: false },
+    { username: 'StreetPulse', clout: 760, energy: 'lit', vibe_score: 82, timestamp: new Date(Date.now() - 130 * 60000).toISOString(), is_last_hour: false },
+  ],
+};
+
+// ===== EVENT PERFORMANCE — Merchant event tracker =====
+const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+const lastSaturday = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+const nextFriday = new Date(Date.now() + 4 * 24 * 60 * 60 * 1000);
+
+export const DEMO_EVENTS = {
+  venue_id: 'demo_venue_quilox',
+  events: [
+    {
+      id: 'demo_event_001',
+      venue_id: 'demo_venue_quilox',
+      name: 'Quilox Saturday Takeover',
+      event_type: 'DJ Night',
+      expected_start: new Date(lastSaturday.setHours(22, 0, 0, 0)).toISOString(),
+      expected_end: new Date(lastSaturday.setHours(4, 0, 0, 0) + 24 * 60 * 60 * 1000).toISOString(),
+      expected_crowd: 400,
+      baseline_score: 71,
+      actual_score: 89,
+      rating_count: 47,
+      status: 'completed' as const,
+    },
+    {
+      id: 'demo_event_002',
+      venue_id: 'demo_venue_quilox',
+      name: 'Midweek Chill Session',
+      event_type: 'Lounge Night',
+      expected_start: new Date(threeDaysAgo.setHours(20, 0, 0, 0)).toISOString(),
+      expected_end: new Date(threeDaysAgo.setHours(2, 0, 0, 0) + 24 * 60 * 60 * 1000).toISOString(),
+      expected_crowd: 150,
+      baseline_score: 48,
+      actual_score: 41,
+      rating_count: 12,
+      status: 'completed' as const,
+    },
+    {
+      id: 'demo_event_003',
+      venue_id: 'demo_venue_quilox',
+      name: 'Afrobeats Fridays — Vol. 8',
+      event_type: 'DJ Night',
+      expected_start: new Date(nextFriday.setHours(22, 0, 0, 0)).toISOString(),
+      expected_end: new Date(nextFriday.setHours(4, 0, 0, 0) + 24 * 60 * 60 * 1000).toISOString(),
+      expected_crowd: 350,
+      baseline_score: 74,
+      actual_score: null,
+      rating_count: 0,
+      status: 'upcoming' as const,
+    },
+  ],
+};
