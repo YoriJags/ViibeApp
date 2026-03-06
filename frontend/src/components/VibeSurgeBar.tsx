@@ -141,45 +141,67 @@ export default function VibeSurgeBar({ venueId, isDemoMode, onElectric }: Props)
           opacity: isElectric ? glowAnim : 0.8,
         }]} />
       </View>
-      <View style={styles.bottomRow}>
-        <View style={styles.statsBlock}>
-          {surge.next_level && surge.taps_to_next > 0 ? (
-            <Text style={styles.statsText}>
-              <Text style={{ color: '#777' }}>{surge.taps_to_next} taps to </Text>
-              <Text style={{ color, fontWeight: '900' }}>{surge.next_level}</Text>
-            </Text>
-          ) : isElectric ? (
-            <Animated.Text style={[styles.statsText, { color, opacity: glowAnim }]}>
-              SURGE ACTIVE - keep it alive
-            </Animated.Text>
-          ) : (
-            <Text style={styles.statsText}>Tap to charge the venue</Text>
-          )}
-          <Text style={styles.subStats}>{surge.tap_count} taps tonight - {surge.total_surges} surges</Text>
-        </View>
-        <TouchableOpacity onPress={handleBolt} activeOpacity={0.75} disabled={tapping}>
-          <Animated.View style={{ transform: [{ scale: boltScale }] }}>
-            <LinearGradient
-              colors={cooldown ? ['#181820', '#111118'] : isElectric ? [color + '55', color + '22'] : [color + '33', color + '18']}
-              style={[styles.boltBtn, { borderColor: cooldown ? '#2A2A38' : boltFlash ? color : color + '55' }]}
-            >
-              {tapping ? <ActivityIndicator size="small" color={color} /> : (
-                <>
-                  <Ionicons name="trending-up" size={22} color={cooldown ? '#333' : color} />
-                  <Text style={[styles.chargeLabel, { color: cooldown ? '#333' : color }]}>SURGE</Text>
-                </>
-              )}
-              {surge.is_squad_surge && !cooldown && (
-                <View style={styles.squadPip}><Text style={styles.squadPipText}>1.5x</Text></View>
-              )}
-            </LinearGradient>
-          </Animated.View>
+      {/* Centered pulsing SURGE button */}
+      <View style={styles.boltCenter}>
+        <TouchableOpacity onPress={handleBolt} activeOpacity={0.8} disabled={tapping}>
+          <View style={styles.boltWrapper}>
+            <Animated.View style={[styles.pulseRing, {
+              borderColor: cooldown ? '#2A2A38' : color,
+              transform: [{ scale: boltScale.interpolate({ inputRange: [0.82, 1], outputRange: [1.4, 1.3] }) }],
+              opacity: cooldown ? 0 : glowAnim.interpolate({ inputRange: [0.4, 1], outputRange: [0.15, 0.6] }),
+            }]} />
+            <Animated.View style={[styles.pulseRing, {
+              borderColor: cooldown ? '#2A2A38' : color,
+              transform: [{ scale: boltScale.interpolate({ inputRange: [0.82, 1], outputRange: [1.7, 1.6] }) }],
+              opacity: cooldown ? 0 : glowAnim.interpolate({ inputRange: [0.4, 1], outputRange: [0.05, 0.25] }),
+            }]} />
+            <Animated.View style={{ transform: [{ scale: boltScale }] }}>
+              <LinearGradient
+                colors={cooldown ? ['#181820', '#111118'] : isElectric ? [color + '88', color + '44'] : [color + '55', color + '22']}
+                style={[styles.boltBtn, {
+                  borderColor: cooldown ? '#2A2A38' : boltFlash ? color : color + '88',
+                  shadowColor: color, shadowOpacity: cooldown ? 0 : isElectric ? 0.95 : 0.7, shadowRadius: isElectric ? 24 : 14,
+                }]}
+              >
+                {tapping
+                  ? <ActivityIndicator size="large" color={color} />
+                  : <Ionicons name="flash" size={40} color={cooldown ? '#333' : color} />
+                }
+                {surge.is_squad_surge && !cooldown && (
+                  <View style={styles.squadPip}><Text style={styles.squadPipText}>1.5x</Text></View>
+                )}
+              </LinearGradient>
+            </Animated.View>
+          </View>
         </TouchableOpacity>
+
+        {surge.next_level && surge.taps_to_next > 0 ? (
+          <Text style={styles.tapHint}>
+            <Text style={{ color: '#666' }}>{surge.taps_to_next} taps to </Text>
+            <Text style={{ color, fontWeight: '900' }}>{surge.next_level}</Text>
+          </Text>
+        ) : isElectric ? (
+          <Animated.Text style={[styles.tapHint, { color, fontWeight: '900', opacity: glowAnim }]}>
+            ELECTRIC — keep it alive
+          </Animated.Text>
+        ) : (
+          <Text style={styles.tapHint}>Tap to power the venue</Text>
+        )}
+        <Text style={styles.subStats}>{surge.tap_count} taps tonight  •  {surge.total_surges} surges</Text>
       </View>
+
+      {/* How it works */}
+      <View style={styles.explainerRow}>
+        <Ionicons name="information-circle-outline" size={12} color="#3A3A4E" />
+        <Text style={styles.explainerText}>
+          Collective taps charge this bar — hits ELECTRIC when the whole crowd surges together
+        </Text>
+      </View>
+
       {surge.is_squad_surge && (
         <View style={styles.squadRow}>
           <Ionicons name="people" size={11} color="#9933FF" />
-          <Text style={styles.squadText}>SQUAD SURGE - crew taps count 1.5x</Text>
+          <Text style={styles.squadText}>SQUAD SURGE — crew taps count 1.5x</Text>
         </View>
       )}
     </Animated.View>
@@ -187,24 +209,26 @@ export default function VibeSurgeBar({ venueId, isDemoMode, onElectric }: Props)
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: '#0C0C15', borderRadius: 18, borderWidth: 1, borderColor: '#1C1C2C', padding: 18, marginHorizontal: 16, marginTop: 12 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  titleBlock: { gap: 2 },
-  sectionLabel: { fontSize: 9, color: '#3A3A4E', fontWeight: '700', letterSpacing: 1.5 },
-  levelBadge: { fontSize: 22, fontWeight: '900', letterSpacing: 1.5 },
-  levelDots: { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  dot: { width: 9, height: 9, borderRadius: 5, shadowOffset: { width: 0, height: 0 } },
-  barTrack: { height: 10, backgroundColor: '#181826', borderRadius: 6, marginBottom: 14, position: 'relative', overflow: 'visible' },
-  barFill: { height: 10, borderRadius: 6, shadowOffset: { width: 0, height: 0 } },
-  barTip: { position: 'absolute', top: -3, width: 8, height: 16, borderRadius: 4, backgroundColor: '#FFF', shadowColor: '#FFF', shadowOpacity: 0.9, shadowRadius: 6, shadowOffset: { width: 0, height: 0 } },
-  bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  statsBlock: { flex: 1, gap: 4 },
-  statsText: { fontSize: 13, color: '#999', fontWeight: '600' },
-  subStats: { fontSize: 10, color: '#3A3A4E', fontWeight: '500' },
-  boltBtn: { width: 70, height: 70, borderRadius: 35, borderWidth: 1.5, justifyContent: 'center', alignItems: 'center', gap: 2, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 12 },
-  chargeLabel: { fontSize: 8, fontWeight: '900', letterSpacing: 1, marginTop: -2 },
-  squadPip: { position: 'absolute', top: -3, right: -3, backgroundColor: '#9933FF', borderRadius: 8, paddingHorizontal: 4, paddingVertical: 1, borderWidth: 1, borderColor: '#0C0C15' },
-  squadPipText: { fontSize: 8, color: '#FFF', fontWeight: '900' },
-  squadRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#181826' },
-  squadText: { fontSize: 10, color: '#9933FF', fontWeight: '700', letterSpacing: 0.5 },
+  container:     { backgroundColor: '#0C0C15', borderRadius: 20, borderWidth: 1, borderColor: '#1C1C2C', padding: 20, marginHorizontal: 16, marginTop: 12 },
+  headerRow:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  titleBlock:    { gap: 2 },
+  sectionLabel:  { fontSize: 9, color: '#3A3A4E', fontWeight: '700', letterSpacing: 1.5 },
+  levelBadge:    { fontSize: 24, fontWeight: '900', letterSpacing: 1.5 },
+  levelDots:     { flexDirection: 'row', gap: 7, alignItems: 'center' },
+  dot:           { width: 10, height: 10, borderRadius: 5, shadowOffset: { width: 0, height: 0 } },
+  barTrack:      { height: 12, backgroundColor: '#181826', borderRadius: 8, marginBottom: 24, position: 'relative', overflow: 'visible' },
+  barFill:       { height: 12, borderRadius: 8, shadowOffset: { width: 0, height: 0 } },
+  barTip:        { position: 'absolute', top: -4, width: 10, height: 20, borderRadius: 5, backgroundColor: '#FFF', shadowColor: '#FFF', shadowOpacity: 0.95, shadowRadius: 8, shadowOffset: { width: 0, height: 0 } },
+  boltCenter:    { alignItems: 'center', marginBottom: 16 },
+  boltWrapper:   { alignItems: 'center', marginBottom: 10, width: 90, height: 90 },
+  pulseRing:     { position: 'absolute', width: 90, height: 90, borderRadius: 45, borderWidth: 2 },
+  boltBtn:       { width: 90, height: 90, borderRadius: 45, borderWidth: 2, justifyContent: 'center', alignItems: 'center', shadowOffset: { width: 0, height: 0 } },
+  tapHint:       { fontSize: 14, color: '#888', fontWeight: '600', marginBottom: 4, textAlign: 'center' },
+  subStats:      { fontSize: 10, color: '#3A3A4E', fontWeight: '500', textAlign: 'center' },
+  explainerRow:  { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#181826' },
+  explainerText: { fontSize: 10, color: '#3A3A4E', fontWeight: '500', flex: 1 },
+  squadPip:      { position: 'absolute', top: -4, right: -4, backgroundColor: '#9933FF', borderRadius: 9, paddingHorizontal: 5, paddingVertical: 2, borderWidth: 1, borderColor: '#0C0C15' },
+  squadPipText:  { fontSize: 8, color: '#FFF', fontWeight: '900' },
+  squadRow:      { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },
+  squadText:     { fontSize: 10, color: '#9933FF', fontWeight: '700', letterSpacing: 0.5 },
 });

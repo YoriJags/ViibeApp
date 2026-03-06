@@ -123,6 +123,7 @@ export default function VenueDetailScreen() {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showSurgeCelebration, setShowSurgeCelebration] = useState(false);
   const [surgeTapCount, setSurgeTapCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<'now' | 'intel' | 'crew' | 'info'>('now');
 
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -827,91 +828,52 @@ export default function VenueDetailScreen() {
           </BlurView>
         </View>
 
-        {/* ====== AI TAKE (Roast & Toast) ====== */}
-        {id && venue && isFeatureEnabled('roast_toast') && (
-          <ErrorBoundary label="AI Take">
-            <VenueRoastCard venueId={id} venueName={venue.name} isDemoMode={isDemoMode} />
-          </ErrorBoundary>
-        )}
+        {/* ====== TAB NAVIGATION ====== */}
+        <View style={styles.tabBar}>
+          {([
+            { key: 'now',   label: 'NOW',   icon: 'flash' },
+            { key: 'intel', label: 'INTEL', icon: 'analytics' },
+            { key: 'crew',  label: 'CREW',  icon: 'people' },
+            { key: 'info',  label: 'INFO',  icon: 'information-circle' },
+          ] as const).map(tab => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[styles.tabItem, activeTab === tab.key && styles.tabItemActive]}
+              onPress={() => setActiveTab(tab.key)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name={tab.icon} size={16} color={activeTab === tab.key ? '#FF3366' : '#3A3A4E'} />
+              <Text style={[styles.tabLabel, activeTab === tab.key && styles.tabLabelActive]}>{tab.label}</Text>
+              {activeTab === tab.key && <View style={styles.tabUnderline} />}
+            </TouchableOpacity>
+          ))}
+        </View>
 
-        {/* ====== INTENT BAR — Enroute / Maybe / Pass + Follow ====== */}
-        {id && (
-          <VenueIntentBar venueId={id} venueName={venue?.name} />
-        )}
+        {/* NOW — live energy + surge + intent */}
+        {activeTab === 'now' && <>
+          {id && <ErrorBoundary label="Vibe Surge"><VibeSurgeBar venueId={id} venueName={venue?.name ?? ''} isDemoMode={isDemoMode} onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }} /></ErrorBoundary>}
+          {id && <VenueIntentBar venueId={id} venueName={venue?.name} />}
+        </>}
 
-        {/* ====== VIBE ORACLE ====== */}
-        {id && isFeatureEnabled('vibe_oracle') && (
-          <ErrorBoundary label="Vibe Oracle">
-            <VibeOracle venueId={id} venueName={venue?.name} />
-          </ErrorBoundary>
-        )}
+        {/* INTEL — predictions, crowd, timing */}
+        {activeTab === 'intel' && <>
+          {id && isFeatureEnabled('vibe_oracle') && <ErrorBoundary label="Vibe Oracle"><VibeOracle venueId={id} venueName={venue?.name} /></ErrorBoundary>}
+          {id && venue && isFeatureEnabled('roast_toast') && <ErrorBoundary label="AI Take"><VenueRoastCard venueId={id} venueName={venue.name} isDemoMode={isDemoMode} /></ErrorBoundary>}
+          {id && <ErrorBoundary label="Arrival Intel"><ArrivalIntelCard venueId={id} isDemoMode={isDemoMode} /></ErrorBoundary>}
+          {id && <ErrorBoundary label="Crowd"><CrowdCompositionBar venueId={id} isDemoMode={isDemoMode} /></ErrorBoundary>}
+          {venueTimeline.length > 0 && <ErrorBoundary label="Timeline"><VibeTimeline timeline={venueTimeline} peakHour={timelinePeakHour} /></ErrorBoundary>}
+          {id && <ErrorBoundary label="Forecast"><View style={{ paddingHorizontal: 16, marginTop: 12 }}><VibeForecast venueId={id} /></View></ErrorBoundary>}
+        </>}
 
-        {/* ====== VIBE SURGE ====== */}
-        {id && (
-          <ErrorBoundary label="Vibe Surge">
-            <VibeSurgeBar
-              venueId={id}
-              venueName={venue?.name ?? ''}
-              isDemoMode={isDemoMode}
-              onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }}
-            />
-          </ErrorBoundary>
-        )}
+        {/* CREW — scouts + social */}
+        {activeTab === 'crew' && <>
+          {id && isFeatureEnabled('top_scouts') && <ErrorBoundary label="Top Scouts"><TopScoutsCard venueId={id} /></ErrorBoundary>}
+        </>}
 
-        {/* ====== ARRIVAL INTEL ====== */}
-        {id && (
-          <ErrorBoundary label="Arrival Intel">
-            <ArrivalIntelCard venueId={id} isDemoMode={isDemoMode} />
-          </ErrorBoundary>
-        )}
-
-        {/* ====== CROWD COMPOSITION ====== */}
-        {id && (
-          <ErrorBoundary label="Crowd Composition">
-            <CrowdCompositionBar venueId={id} isDemoMode={isDemoMode} />
-          </ErrorBoundary>
-        )}
-
-        {/* ====== VIBE TIMELINE ====== */}
-        {venueTimeline.length > 0 && (
-          <ErrorBoundary label="Timeline">
-            <VibeTimeline timeline={venueTimeline} peakHour={timelinePeakHour} />
-          </ErrorBoundary>
-        )}
-
-        {/* ====== CAMPAIGN BADGE ====== */}
-        {venue.active_campaign_multiplier && (
-          <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
-            <CampaignBadge
-              multiplier={venue.active_campaign_multiplier}
-              expiresAt={venue.active_campaign_expires}
-            />
-          </View>
-        )}
-
-        {/* ====== VIBE CERTIFICATION ====== */}
-        {venue.vibe_certified && (
-          <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
-            <CertifiedBadge score={venue.certification_score} />
-          </View>
-        )}
-
-        {/* ====== VIBE FORECAST ====== */}
-        {id && (
-          <ErrorBoundary label="Forecast">
-            <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
-              <VibeForecast venueId={id} />
-            </View>
-          </ErrorBoundary>
-        )}
-
-        {/* ====== TOP SCOUTS ====== */}
-        {id && isFeatureEnabled('top_scouts') && (
-          <ErrorBoundary label="Top Scouts">
-            <TopScoutsCard venueId={id} />
-          </ErrorBoundary>
-        )}
-
+        {/* INFO — location, booking, status */}
+        {activeTab === 'info' && <>
+          {venue.active_campaign_multiplier && <View style={{ paddingHorizontal: 16, marginTop: 12 }}><CampaignBadge multiplier={venue.active_campaign_multiplier} expiresAt={venue.active_campaign_expires} /></View>}
+          {venue.vibe_certified && <View style={{ paddingHorizontal: 16, marginTop: 12 }}><CertifiedBadge score={venue.certification_score} /></View>}
         {/* Location Card */}
         <View style={styles.locationCard}>
           <View style={styles.locationInfo}>
@@ -1060,6 +1022,8 @@ export default function VenueDetailScreen() {
             </Text>
           </TouchableOpacity>
         )}
+
+        </>}
 
         <View style={{ height: 200 }} />
       </ScrollView>
@@ -1538,6 +1502,12 @@ const styles = StyleSheet.create({
   },
 
   // ====== LOCATION CARD ======
+  tabBar: { flexDirection: 'row', backgroundColor: '#0A0A12', borderBottomWidth: 1, borderBottomColor: '#1C1C2C', marginTop: 4, marginBottom: 4 },
+  tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12, gap: 3, position: 'relative' },
+  tabItemActive: { },
+  tabLabel: { fontSize: 9, color: '#3A3A4E', fontWeight: '700', letterSpacing: 1 },
+  tabLabelActive: { color: '#FF3366' },
+  tabUnderline: { position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 2, backgroundColor: '#FF3366', borderRadius: 1 },
   locationCard: {
     marginHorizontal: 16,
     marginTop: 16,

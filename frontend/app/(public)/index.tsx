@@ -92,8 +92,24 @@ export default function MapScreen() {
 
   // Animations
   const headerGlowAnim = useRef(new Animated.Value(0.6)).current;
+  // Card entrance animations (up to 12 cards staggered)
+  const cardAnims = useRef(Array.from({ length: 12 }, () => ({
+    opacity: new Animated.Value(0),
+    translateY: new Animated.Value(28),
+  }))).current;
   const legendElectricPulse = useRef(new Animated.Value(1)).current;
   const chevronRotate = useRef(new Animated.Value(0)).current;
+
+  // Stagger venue cards on load
+  useEffect(() => {
+    if (!filteredVenues.length) return;
+    Animated.stagger(60, cardAnims.slice(0, Math.min(filteredVenues.length, 12)).map(a =>
+      Animated.parallel([
+        Animated.timing(a.opacity,    { toValue: 1, duration: 350, useNativeDriver: true }),
+        Animated.spring(a.translateY, { toValue: 0, tension: 70, friction: 12, useNativeDriver: true }),
+      ])
+    )).start();
+  }, [filteredVenues.length, selectedCategory]);
 
   // Animate header glow
   useEffect(() => {
@@ -608,7 +624,7 @@ export default function MapScreen() {
 
           {filteredVenues.map((venue, index) => (
             <React.Fragment key={venue.id}>
-              <Animated.View style={{ opacity: 1, transform: [{ translateY: 0 }] }}>
+              <Animated.View style={{ opacity: cardAnims[index % 12]?.opacity ?? 1, transform: [{ translateY: cardAnims[index % 12]?.translateY ?? 0 }] }}>
                 <VenueCard
                   venue={venue}
                   onPress={() => router.push(`/venue/${venue.id}`)}
