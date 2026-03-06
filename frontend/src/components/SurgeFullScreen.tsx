@@ -152,24 +152,34 @@ export default function SurgeFullScreen({ visible, surge, venueName, onClose, on
   }, [surge.level, visible]);
 
   const handleTap = useCallback((e: GestureResponderEvent) => {
-    if (cooldown || tapping) return;
     const { locationX, locationY } = e.nativeEvent;
+
+    // Always spawn a ripple + bolt react — even on cooldown (just no charge)
+    const isCooling = cooldown || tapping;
+    const id = ++rippleId.current;
+    const scale = new Animated.Value(0);
+    const opacity = new Animated.Value(isCooling ? 0.25 : 0.65);
+    setRipples(prev => [...prev, { id, x: locationX, y: locationY, scale, opacity }]);
+    Animated.parallel([
+      Animated.timing(scale,   { toValue: 1, duration: isCooling ? 600 : 750, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 0, duration: isCooling ? 600 : 750, useNativeDriver: true }),
+    ]).start(() => setRipples(prev => prev.filter(r => r.id !== id)));
+
+    Animated.sequence([
+      Animated.timing(boltScale, { toValue: isCooling ? 0.9 : 0.75, duration: 60, useNativeDriver: true }),
+      Animated.spring(boltScale, { toValue: 1, tension: 400, friction: 5, useNativeDriver: true }),
+    ]).start();
+
+    if (isCooling) {
+      // Lighter haptic — still in the zone, just not counting
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      return;
+    }
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium), 80);
     setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 180);
 
-    const id = ++rippleId.current;
-    const scale = new Animated.Value(0), opacity = new Animated.Value(0.65);
-    setRipples(prev => [...prev, { id, x: locationX, y: locationY, scale, opacity }]);
-    Animated.parallel([
-      Animated.timing(scale,   { toValue: 1, duration: 750, useNativeDriver: true }),
-      Animated.timing(opacity, { toValue: 0, duration: 750, useNativeDriver: true }),
-    ]).start(() => setRipples(prev => prev.filter(r => r.id !== id)));
-
-    Animated.sequence([
-      Animated.timing(boltScale, { toValue: 0.75, duration: 60, useNativeDriver: true }),
-      Animated.spring(boltScale, { toValue: 1, tension: 400, friction: 5, useNativeDriver: true }),
-    ]).start();
     Animated.sequence([
       Animated.timing(beamAnim, { toValue: 1.4, duration: 90, useNativeDriver: true }),
       Animated.spring(beamAnim, { toValue: 1, tension: 250, friction: 7, useNativeDriver: true }),

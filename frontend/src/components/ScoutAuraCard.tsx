@@ -3,6 +3,10 @@ import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVibeStore } from '../store/vibeStore';
+import AuraLevelUp from './AuraLevelUp';
+import StreakCelebration from './StreakCelebration';
+
+const STREAK_MILESTONES = [3, 7, 14, 30];
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -25,6 +29,10 @@ export default function ScoutAuraCard({ userId, isDemoMode }: Props) {
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const [aura, setAura] = useState<AuraState | null>(isDemoMode ? DEMO_AURA : null);
   const [expanded, setExpanded] = useState(false);
+  const [showLevelUp, setShowLevelUp]     = useState(false);
+  const [showStreak, setShowStreak]       = useState(false);
+  const prevLevel  = useRef<string | null>(null);
+  const prevStreak = useRef<number>(0);
   const barAnim    = useRef(new Animated.Value(isDemoMode ? DEMO_AURA.aura_progress : 0)).current;
   const expandAnim = useRef(new Animated.Value(0)).current;
   const glowAnim   = useRef(new Animated.Value(0.6)).current;
@@ -41,7 +49,22 @@ export default function ScoutAuraCard({ userId, isDemoMode }: Props) {
   useEffect(() => {
     if (!aura) return;
     Animated.spring(barAnim, { toValue: aura.aura_progress, tension: 60, friction: 12, useNativeDriver: false }).start();
-  }, [aura?.aura_progress]);
+
+    // Level-up detection — only fire after first load (prevLevel is set)
+    if (prevLevel.current !== null && prevLevel.current !== aura.aura_level) {
+      const oldIdx = LEVEL_ORDER.indexOf(prevLevel.current);
+      const newIdx = LEVEL_ORDER.indexOf(aura.aura_level);
+      if (newIdx > oldIdx) setShowLevelUp(true);
+    }
+    prevLevel.current = aura.aura_level;
+
+    // Streak milestone detection
+    const streak = aura.streak_days;
+    if (STREAK_MILESTONES.includes(streak) && streak > prevStreak.current) {
+      setShowStreak(true);
+    }
+    prevStreak.current = streak;
+  }, [aura?.aura_progress, aura?.aura_level, aura?.streak_days]);
 
   const fetchAura = useCallback(async () => {
     if (isDemoMode) { setAura(DEMO_AURA); return; }
@@ -72,6 +95,7 @@ export default function ScoutAuraCard({ userId, isDemoMode }: Props) {
     { label: 'Streak',    value: aura.streak_days,    pts: '+1.5/day',    icon: 'flame' },
   ];
   return (
+    <>
     <View style={styles.container}>
       <TouchableOpacity onPress={toggleExpand} activeOpacity={0.8} style={styles.headerRow}>
         <LinearGradient colors={[color + '22', color + '08']} style={styles.iconCircle}>
@@ -152,6 +176,26 @@ export default function ScoutAuraCard({ userId, isDemoMode }: Props) {
         )}
       </Animated.View>
     </View>
+
+    {/* Delight moments */}
+    {aura && (
+      <AuraLevelUp
+        visible={showLevelUp}
+        newLevel={aura.aura_level}
+        newLabel={aura.aura_label}
+        color={aura.aura_color}
+        perks={aura.perks}
+        onDismiss={() => setShowLevelUp(false)}
+      />
+    )}
+    {aura && (
+      <StreakCelebration
+        visible={showStreak}
+        streakDays={aura.streak_days}
+        onDismiss={() => setShowStreak(false)}
+      />
+    )}
+  </>
   );
 }
 const styles = StyleSheet.create({
