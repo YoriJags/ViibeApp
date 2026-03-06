@@ -37,7 +37,6 @@ import TopScoutsCard from '../../src/components/TopScoutsCard';
 import VibeOracle from '../../src/components/VibeOracle';
 import VenueRoastCard from '../../src/components/VenueRoastCard';
 import PulseButton from '../../src/components/PulseButton';
-import ReactionTapArea from '../../src/components/ReactionTapArea';
 import VibePlusModal from '../../src/components/VibePlusModal';
 import VenueAlertModal, { VenueAlert } from '../../src/components/VenueAlertModal';
 import EnergyMeter from '../../src/components/EnergyMeter';
@@ -111,10 +110,6 @@ export default function VenueDetailScreen() {
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [pulsedAt, setPulsedAt] = useState<number | null>(null);
-  const [reactionsPerMin, setReactionsPerMin] = useState(0);
-  const [activeScouts, setActiveScouts] = useState(0);
-  const [incomingBoltCount, setIncomingBoltCount] = useState(0);
-  const [burst, setBurst] = useState<{ multiplier: number; rhythm: string; tap_count: number } | null>(null);
   const [showVibePlusModal, setShowVibePlusModal] = useState(false);
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [venueAlerts, setVenueAlerts] = useState<VenueAlert[]>([]);
@@ -279,44 +274,14 @@ export default function VenueDetailScreen() {
   useEffect(() => {
     if (!socket || !venue?.id) return;
     socket.emit('join_venue', { venue_id: venue.id });
-    socket.on('reaction_pulse', (data: any) => {
-      if (data.venue_id !== venue.id) return;
-      setReactionsPerMin(data.reactions_per_min ?? 0);
-      setActiveScouts(data.active_scouts ?? 0);
-      // Only spawn a bolt for reactions from other scouts
-      if (data.reactor_id && data.reactor_id !== user?.id) {
-        setIncomingBoltCount(prev => prev + 1);
-      }
-    });
-    return () => {
-      socket.off('reaction_pulse');
-    };
+    return () => {};
   }, [socket, venue?.id, user?.id]);
-
-  // Fetch initial reaction rate when venue loads
-  useEffect(() => {
-    if (!venue?.id) return;
-    fetch(`${API_URL}/api/venues/${venue.id}/reactions/rate`)
-      .then(r => r.json())
-      .then(data => {
-        setReactionsPerMin(data.reactions_per_min ?? 0);
-        setActiveScouts(data.active_scouts ?? 0);
-      })
-      .catch(() => {});
-  }, [venue?.id]);
 
   const handleReact = async () => {
     if (!user || !venue) return;
-    const res = await fetch(`${API_URL}/api/venues/${venue.id}/react`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setReactionsPerMin(data.reactions_per_min ?? 0);
-      setActiveScouts(data.active_scouts ?? 0);
-      setBurst(data.burst ?? null);
-    }
+    fetch(`${API_URL}/api/venues/${venue.id}/react`, {
+      method: 'POST', headers: getAuthHeaders(),
+    }).catch(() => {});
   };
 
   const checkUserLocation = async () => {
@@ -461,12 +426,6 @@ export default function VenueDetailScreen() {
     if (score >= 20) return 'CHILL';
     return 'QUIET';
   };
-
-  // Lowercase state key used by ReactionTapArea for colour mapping
-  const currentVibeStateKey = getVibeState(
-    venue?.current_vibe_score ?? 0,
-    venue?.capacity_level ?? 'sparse'
-  ).toLowerCase();
 
   const now = new Date();
   const isVibePlus = !!(
@@ -1045,18 +1004,6 @@ export default function VenueDetailScreen() {
             colors={['rgba(15,15,25,0.92)', 'rgba(10,10,18,0.98)']}
             style={styles.stickyGradient}
           >
-            {/* Reaction Tap Area — live energy expression, open to all scouts */}
-            <ReactionTapArea
-              venueId={venue?.id ?? ''}
-              userId={user?.id ?? ''}
-              vibeState={currentVibeStateKey}
-              reactionsPerMin={reactionsPerMin}
-              activeScouts={activeScouts}
-              incomingBoltCount={incomingBoltCount}
-              burst={burst}
-              onReact={handleReact}
-            />
-
             <View style={styles.stickyFooterRow}>
               <TouchableOpacity
                 style={styles.stickyRateBtn}
