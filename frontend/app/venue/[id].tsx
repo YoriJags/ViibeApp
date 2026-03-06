@@ -853,10 +853,7 @@ export default function VenueDetailScreen() {
               venueId={id}
               venueName={venue?.name ?? ''}
               isDemoMode={isDemoMode}
-              onElectric={() => {
-                setSurgeTapCount(s => s + 1);
-                setShowSurgeCelebration(true);
-              }}
+              onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }}
             />
           </ErrorBoundary>
         )}

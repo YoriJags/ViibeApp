@@ -17,7 +17,7 @@ export const DEMO_SURGE: SurgeState = {
   charge_pct: 0.72, level: 'popping', level_label: 'POPPING', level_color: '#FF9933',
   level_progress: 0.71, taps_to_next: 12, next_level: 'ELECTRIC', tap_count: 87, total_surges: 3,
 };
-interface Props { venueId: string; venueName: string; isDemoMode?: boolean; onElectric?: () => void; }
+interface Props { venueId: string; venueName: string; isDemoMode?: boolean; onElectric?: (tapCount: number) => void; }
 
 export default function VibeSurgeBar({ venueId, isDemoMode, onElectric }: Props) {
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
@@ -44,7 +44,7 @@ export default function VibeSurgeBar({ venueId, isDemoMode, onElectric }: Props)
   useEffect(() => {
     if (!surge) return;
     Animated.spring(barAnim, { toValue: surge.level_progress, tension: 60, friction: 12, useNativeDriver: false }).start();
-    if (surge.level === 'electric' && prevLevel.current && prevLevel.current !== 'electric') onElectric?.();
+    if (surge.level === 'electric' && prevLevel.current && prevLevel.current !== 'electric') onElectric?.(surge.tap_count);
     prevLevel.current = surge.level;
   }, [surge?.level_progress, surge?.level]);
 
@@ -64,7 +64,7 @@ export default function VibeSurgeBar({ venueId, isDemoMode, onElectric }: Props)
     const handler = (data: any) => {
       if (data.venue_id !== venueId) return;
       fetchSurge();
-      if (data.new_level === 'electric' && data.prev_level !== 'electric') onElectric?.();
+      if (data.new_level === 'electric' && data.prev_level !== 'electric') onElectric?.(data.tap_count ?? 0);
       Animated.sequence([
         Animated.timing(levelBump, { toValue: 1.06, duration: 150, useNativeDriver: true }),
         Animated.timing(levelBump, { toValue: 1,    duration: 150, useNativeDriver: true }),
