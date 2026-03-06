@@ -49,6 +49,10 @@ from app.routes.coins import router as coins_router
 from app.routes.reward_pools import router as reward_pools_router
 from app.routes.momentum import router as momentum_router
 from app.routes.intelligence import router as intelligence_router
+from app.routes.claims import router as claims_router
+from app.routes.bookings import router as bookings_router
+from app.routes.surge import router as surge_router
+from app.routes.aura import router as aura_router
 
 # ===== Create FastAPI App =====
 app = FastAPI(title="Viibe App API", version="3.0.0")
@@ -94,6 +98,10 @@ api_router.include_router(coins_router)
 api_router.include_router(reward_pools_router)
 api_router.include_router(momentum_router)
 api_router.include_router(intelligence_router)
+api_router.include_router(claims_router)
+api_router.include_router(bookings_router)
+api_router.include_router(surge_router)
+api_router.include_router(aura_router)
 
 # Include the API router in the main app
 app.include_router(api_router)

@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
 import VibePlusModal from '../../src/components/VibePlusModal';
+import ScoutAuraCard from '../../src/components/ScoutAuraCard';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -385,6 +386,9 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Status</Text>
           </View>
         </View>
+
+        {/* Scout Aura */}
+        <ScoutAuraCard isDemoMode={isDemoMode} />
 
         {/* Night Debrief */}
         {isFeatureEnabled('night_debrief') && (

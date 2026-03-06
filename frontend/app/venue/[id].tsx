@@ -44,6 +44,9 @@ import EnergyMeter from '../../src/components/EnergyMeter';
 import VenueIntentBar from '../../src/components/VenueIntentBar';
 import ArrivalIntelCard from '../../src/components/ArrivalIntelCard';
 import CrowdCompositionBar from '../../src/components/CrowdCompositionBar';
+import BookingModal from '../../src/components/BookingModal';
+import VibeSurgeBar from '../../src/components/VibeSurgeBar';
+import SurgeCelebration from '../../src/components/SurgeCelebration';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -117,6 +120,9 @@ export default function VenueDetailScreen() {
   const [venueAlerts, setVenueAlerts] = useState<VenueAlert[]>([]);
   const [checkinEnteredAt, setCheckinEnteredAt] = useState<number | null>(null);
   const [checkinMinutes, setCheckinMinutes] = useState(0);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [showSurgeCelebration, setShowSurgeCelebration] = useState(false);
+  const [surgeTapCount, setSurgeTapCount] = useState(0);
 
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -840,6 +846,21 @@ export default function VenueDetailScreen() {
           </ErrorBoundary>
         )}
 
+        {/* ====== VIBE SURGE ====== */}
+        {id && (
+          <ErrorBoundary label="Vibe Surge">
+            <VibeSurgeBar
+              venueId={id}
+              venueName={venue?.name ?? ''}
+              isDemoMode={isDemoMode}
+              onElectric={() => {
+                setSurgeTapCount(s => s + 1);
+                setShowSurgeCelebration(true);
+              }}
+            />
+          </ErrorBoundary>
+        )}
+
         {/* ====== ARRIVAL INTEL ====== */}
         {id && (
           <ErrorBoundary label="Arrival Intel">
@@ -904,16 +925,32 @@ export default function VenueDetailScreen() {
             </View>
           </View>
           
-          {/* GET DIRECTIONS Button */}
-          <TouchableOpacity style={styles.directionsButton} onPress={handleGetDirections}>
-            <LinearGradient
-              colors={['#1E88E5', '#1565C0']}
-              style={styles.directionsGradient}
-            >
-              <Ionicons name="navigate" size={18} color="#FFF" />
-              <Text style={styles.directionsText}>GET DIRECTIONS</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+          {/* Action Buttons Row */}
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+            <TouchableOpacity style={[styles.directionsButton, { flex: 1 }]} onPress={handleGetDirections}>
+              <LinearGradient
+                colors={['#1E88E5', '#1565C0']}
+                style={styles.directionsGradient}
+              >
+                <Ionicons name="navigate" size={18} color="#FFF" />
+                <Text style={styles.directionsText}>DIRECTIONS</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            {isAuthenticated && (
+              <TouchableOpacity
+                style={[styles.directionsButton, { flex: 1 }]}
+                onPress={() => setShowBookingModal(true)}
+              >
+                <LinearGradient
+                  colors={['#FF3366', '#CC0044']}
+                  style={styles.directionsGradient}
+                >
+                  <Ionicons name="calendar" size={18} color="#FFF" />
+                  <Text style={styles.directionsText}>RESERVE TABLE</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* GPS Lock / Geofence Status */}
@@ -1115,6 +1152,26 @@ export default function VenueDetailScreen() {
       <VibePlusModal
         visible={showVibePlusModal}
         onClose={() => setShowVibePlusModal(false)}
+      />
+
+      {/* Booking Modal */}
+      {venue && (
+        <BookingModal
+          visible={showBookingModal}
+          onClose={() => setShowBookingModal(false)}
+          venueId={venue.id}
+          venueName={venue.name}
+          authToken={user?.token}
+          isDemoMode={isDemoMode}
+        />
+      )}
+
+      {/* Surge Celebration */}
+      <SurgeCelebration
+        visible={showSurgeCelebration}
+        venueName={venue?.name ?? ''}
+        tapCount={surgeTapCount}
+        onDone={() => setShowSurgeCelebration(false)}
       />
 
       {/* Venue Energy Alert Modal */}
