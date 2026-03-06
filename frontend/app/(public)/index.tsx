@@ -102,14 +102,16 @@ export default function MapScreen() {
 
   // Stagger venue cards on load
   useEffect(() => {
-    if (!filteredVenues.length) return;
+    if (!filteredVenues?.length) return;
+    // Reset animations before staggering
+    cardAnims.forEach(a => { a.opacity.setValue(0); a.translateY.setValue(28); });
     Animated.stagger(60, cardAnims.slice(0, Math.min(filteredVenues.length, 12)).map(a =>
       Animated.parallel([
         Animated.timing(a.opacity,    { toValue: 1, duration: 350, useNativeDriver: true }),
         Animated.spring(a.translateY, { toValue: 0, tension: 70, friction: 12, useNativeDriver: true }),
       ])
     )).start();
-  }, [filteredVenues.length, selectedCategory]);
+  }, [filteredVenues?.length, selectedCategory]);
 
   // Animate header glow
   useEffect(() => {
