@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useVibeStore } from '../store/vibeStore';
+import SurgeFullScreen from './SurgeFullScreen';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -27,13 +28,14 @@ interface Props {
 // 8 tick mark angles around the ring
 const TICKS = Array.from({ length: 12 }, (_, i) => i * 30);
 
-export default function VibeSurgeBar({ venueId, isDemoMode, onElectric, onReact }: Props) {
+export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectric, onReact }: Props) {
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const socket         = useVibeStore(s => s.socket);
   const [surge, setSurge]       = useState<SurgeState | null>(isDemoMode ? DEMO_SURGE : null);
-  const [tapping, setTapping]   = useState(false);
-  const [cooldown, setCooldown] = useState(false);
+  const [tapping, setTapping]     = useState(false);
+  const [cooldown, setCooldown]   = useState(false);
   const [boltFlash, setBoltFlash] = useState(false);
+  const [showFull, setShowFull]   = useState(false);
   const prevLevel = useRef<string | null>(null);
 
   // Animations
@@ -135,17 +137,18 @@ export default function VibeSurgeBar({ venueId, isDemoMode, onElectric, onReact 
     ]).start();
   };
 
-  const handleBolt = async () => {
+  // The actual charge logic — called from both card bolt and full-screen
+  const handleCharge = useCallback(async () => {
     if (cooldown || tapping) return;
-    fireTapAnimations();
-    onReact?.(); // also fire parent reaction
+    onReact?.();
 
     if (isDemoMode) {
       setSurge(prev => {
         if (!prev) return prev;
-        const newCharge = Math.min(prev.charge_pct + 0.03, 1);
+        const newCharge  = Math.min(prev.charge_pct + 0.03, 1);
         const toElectric = newCharge >= 0.85 && prev.level !== 'electric';
-        return { ...prev, charge_pct: newCharge,
+        return {
+          ...prev, charge_pct: newCharge,
           level_progress: Math.min(prev.level_progress + 0.06, 1),
           tap_count: prev.tap_count + 1, taps_to_next: Math.max(0, prev.taps_to_next - 1),
           ...(toElectric ? { level: 'electric', level_label: 'ELECTRIC', level_color: '#FF3366', next_level: null, taps_to_next: 0 } : {}),
@@ -160,6 +163,13 @@ export default function VibeSurgeBar({ venueId, isDemoMode, onElectric, onReact 
       else if (res.status === 429) { setCooldown(true); setTimeout(() => setCooldown(false), 10000); }
     } catch {}
     setTapping(false);
+  }, [cooldown, tapping, isDemoMode, venueId, onReact]);
+
+  // Card bolt: fire animations + open full screen
+  const handleBolt = () => {
+    if (!surge) return;
+    fireTapAnimations();
+    setShowFull(true);
   };
 
   if (!surge) return null;
@@ -171,6 +181,7 @@ export default function VibeSurgeBar({ venueId, isDemoMode, onElectric, onReact 
   const orbitDegReverse = orbitAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-360deg'] });
 
   return (
+    <>
     <Animated.View style={[styles.container, { transform: [{ scale: levelBump }] }]}>
       {/* Header */}
       <View style={styles.headerRow}>
@@ -282,8 +293,12 @@ export default function VibeSurgeBar({ venueId, isDemoMode, onElectric, onReact 
             ELECTRIC — keep it alive
           </Animated.Text>
         ) : (
-          <Text style={styles.tapHint}>{cooldown ? 'Cooldown...' : 'Tap to power the venue'}</Text>
+          <Text style={styles.tapHint}>{cooldown ? 'Cooldown...' : 'Tap to open full surge'}</Text>
         )}
+        <View style={styles.expandHint}>
+          <Ionicons name="expand" size={11} color="#3A3A4E" />
+          <Text style={styles.expandHintText}>Full screen</Text>
+        </View>
         <Text style={styles.subStats}>{surge.tap_count} taps tonight  •  {surge.total_surges} surges</Text>
       </View>
 
@@ -302,6 +317,20 @@ export default function VibeSurgeBar({ venueId, isDemoMode, onElectric, onReact 
         </View>
       )}
     </Animated.View>
+
+    {/* Full-screen surge experience */}
+    {surge && (
+      <SurgeFullScreen
+        visible={showFull}
+        surge={surge}
+        venueName={venueName}
+        onClose={() => setShowFull(false)}
+        onTap={handleCharge}
+        tapping={tapping}
+        cooldown={cooldown}
+      />
+    )}
+  </>
   );
 }
 
@@ -333,4 +362,6 @@ const styles = StyleSheet.create({
   squadPipText:    { fontSize: 8, color: '#FFF', fontWeight: '900' },
   squadRow:        { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },
   squadText:       { fontSize: 10, color: '#9933FF', fontWeight: '700', letterSpacing: 0.5 },
+  expandHint:      { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  expandHintText:  { fontSize: 10, color: '#3A3A4E', fontWeight: '600' },
 });
