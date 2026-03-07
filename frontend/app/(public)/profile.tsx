@@ -16,8 +16,26 @@ import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
 import VibePlusModal from '../../src/components/VibePlusModal';
 import ScoutAuraCard from '../../src/components/ScoutAuraCard';
+import AvatarBuilder from '../../src/components/AvatarBuilder';
+import AvatarDisplay from '../../src/components/AvatarDisplay';
+import AchievementBadge, { Badge } from '../../src/components/AchievementBadge';
+import CrewCard from '../../src/components/CrewCard';
+import { DEMO_BADGES, DEMO_CREW } from '../../src/data/demoData';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+
+function computeBadges(user: any): Badge[] {
+  const ratings = user?.total_ratings ?? 0;
+  const clout   = user?.clout_points  ?? 0;
+  return [
+    { id: 'b_first',    emoji: '🔥', name: 'Trailblazer',  description: 'Drop your first rating',    unlocked: ratings >= 1,  tier: 'silver',  progress: ratings >= 1 ? 1 : 0 },
+    { id: 'b_10rate',   emoji: '⭐', name: 'Scene Reader',  description: 'Rate 10 venues',            unlocked: ratings >= 10, tier: 'gold',    progress: Math.min(ratings / 10, 1) },
+    { id: 'b_50rate',   emoji: '🎯', name: 'Centurion',    description: 'Rate 50 venues',            unlocked: ratings >= 50, tier: 'gold',    progress: Math.min(ratings / 50, 1) },
+    { id: 'b_clout',    emoji: '⚡', name: 'Clout Lord',   description: 'Earn 100 clout points',     unlocked: clout >= 100,  tier: 'bronze',  progress: Math.min(clout / 100, 1) },
+    { id: 'b_elite',    emoji: '💎', name: 'Elite Scout',  description: 'Reach Elite status',        unlocked: user?.scout_status === 'elite', tier: 'diamond' },
+    { id: 'b_squad',    emoji: '🤝', name: 'Squad Up',     description: 'Join or create a crew',     unlocked: !!user?.crew_id, tier: 'bronze' },
+  ];
+}
 
 const DEMO_DEBRIEF = {
   debrief: "You hit 3 spots tonight and kept the energy electric the whole way through — that's certified scout behaviour right there.",
@@ -27,13 +45,14 @@ const DEMO_DEBRIEF = {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode, isFeatureEnabled, isVibePlus } = useVibeStore();
+  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode, isFeatureEnabled, isVibePlus, avatarConfig, updateAvatar, crew, fetchCrew } = useVibeStore();
   const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [debrief, setDebrief] = useState<{ debrief: string; night_title?: string; stats?: any } | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [showVibePlus, setShowVibePlus] = useState(false);
+  const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
 
   useEffect(() => {
     // Check for existing session
@@ -43,6 +62,10 @@ export default function ProfileScreen() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (user?.id && !isDemoMode) fetchCrew();
+  }, [user?.id]);
 
   useEffect(() => {
     if (isDemoMode) { setDebrief(DEMO_DEBRIEF); return; }
@@ -304,29 +327,23 @@ export default function ProfileScreen() {
 
         {/* User Card */}
         <View style={styles.userCard}>
-          <View style={styles.avatarContainer}>
-            {user?.picture ? (
-              <View style={styles.avatarImage}>
-                <Text style={styles.avatarText}>
-                  {user?.name?.charAt(0).toUpperCase() || user?.username?.charAt(0).toUpperCase()}
-                </Text>
-              </View>
-            ) : (
-              <Text style={styles.avatarText}>
-                {user?.username?.charAt(0).toUpperCase()}
-              </Text>
-            )}
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: getStatusColor(user?.scout_status || 'newbie') },
-              ]}
-            >
-              <Ionicons
-                name={getStatusIcon(user?.scout_status || 'newbie') as any}
-                size={12}
-                color="#FFF"
+          <View style={{ position: 'relative', marginBottom: 12 }}>
+            <TouchableOpacity onPress={() => setShowAvatarBuilder(true)} activeOpacity={0.8}>
+              <AvatarDisplay
+                config={avatarConfig}
+                username={user?.username || ''}
+                size={80}
+                showBorder={!!avatarConfig}
+                borderColor={avatarConfig?.bgColor}
               />
+            </TouchableOpacity>
+            {/* Edit hint */}
+            <View style={styles.editAvatarBadge}>
+              <Ionicons name="pencil" size={9} color="#FFF" />
+            </View>
+            {/* Scout status badge */}
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(user?.scout_status || 'newbie') }]}>
+              <Ionicons name={getStatusIcon(user?.scout_status || 'newbie') as any} size={12} color="#FFF" />
             </View>
           </View>
           <Text style={styles.userName}>{user?.name || user?.username}</Text>
@@ -389,6 +406,23 @@ export default function ProfileScreen() {
 
         {/* Scout Aura */}
         <ScoutAuraCard isDemoMode={isDemoMode} />
+
+        {/* Achievements */}
+        <AchievementBadge badges={isDemoMode ? DEMO_BADGES : computeBadges(user)} />
+
+        {/* Crew */}
+        {(isDemoMode ? DEMO_CREW : crew) && (
+          <View style={styles.crewSection}>
+            <Text style={styles.crewSectionLabel}>YOUR CREW</Text>
+            <CrewCard
+              name={isDemoMode ? DEMO_CREW.name : (crew as any).name}
+              members={isDemoMode ? DEMO_CREW.member_details : ((crew as any).member_details || [])}
+              inviteCode={isDemoMode ? DEMO_CREW.invite_code : ((crew as any).invite_code || '')}
+              isCaptain={isDemoMode ? DEMO_CREW.is_captain : ((crew as any).is_captain || false)}
+              onPress={() => router.push('/(public)/crew' as any)}
+            />
+          </View>
+        )}
 
         {/* Night Debrief */}
         {isFeatureEnabled('night_debrief') && (
@@ -540,6 +574,13 @@ export default function ProfileScreen() {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      <AvatarBuilder
+        visible={showAvatarBuilder}
+        onClose={() => setShowAvatarBuilder(false)}
+        onSave={(config) => updateAvatar(config)}
+        initialConfig={avatarConfig}
+      />
 
       <VibePlusModal
         visible={showVibePlus}
@@ -728,27 +769,18 @@ const styles = StyleSheet.create({
     padding: 24,
     marginBottom: 20,
   },
-  avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FF3366',
+  editAvatarBadge: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#252535',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  avatarImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FF3366',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#FFF',
+    borderWidth: 2,
+    borderColor: '#0A0A0F',
   },
   statusBadge: {
     position: 'absolute',
@@ -1069,5 +1101,16 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 0.8,
+  },
+  crewSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  crewSectionLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#3A3A4E',
+    letterSpacing: 2,
+    marginBottom: 8,
   },
 });
