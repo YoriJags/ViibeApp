@@ -183,15 +183,23 @@ export default function AuraLevelUp({ visible, newLevel, newLabel, color, perks,
                 : 0.20,
             }]} />
 
-            {/* Icon */}
-            <Animated.View style={[{ transform: [{ scale: iconScale }], opacity: iconOpac }]}>
+            {/* Icon — 3D sphere with specular highlight */}
+            <Animated.View style={[{ transform: [{ perspective: 400 }, { rotateX: '15deg' }, { scale: iconScale }], opacity: iconOpac }]}>
               <LinearGradient
-                colors={[color + 'EE', color + '55']}
+                colors={[color + 'EE', color + '66', color + '22']}
                 style={styles.iconCircle}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }}
               >
+                {/* Sphere specular highlight — top-left bright spot */}
+                <LinearGradient
+                  colors={['rgba(255,255,255,0.45)', 'rgba(255,255,255,0.10)', 'rgba(255,255,255,0)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.sphereShine}
+                  pointerEvents="none"
+                />
                 <Animated.View style={isGod ? { opacity: glowAnim } : {}}>
-                  <Ionicons name={iconName} size={52} color={color} />
+                  <Ionicons name={iconName} size={52} color="#FFF" />
                 </Animated.View>
               </LinearGradient>
             </Animated.View>
@@ -266,7 +274,8 @@ const styles = StyleSheet.create({
   orbitRing:    { position: 'absolute', width: ORBIT_R * 2, height: ORBIT_R * 2, borderRadius: ORBIT_R, borderWidth: 0.5 },
   orbitDot:     { position: 'absolute', borderRadius: 4 },
   iconGlow:     { position: 'absolute', width: 130, height: 130, borderRadius: 65 },
-  iconCircle:   { width: 96, height: 96, borderRadius: 48, justifyContent: 'center', alignItems: 'center' },
+  iconCircle:   { width: 96, height: 96, borderRadius: 48, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  sphereShine:  { position: 'absolute', top: 6, left: 8, width: 40, height: 28, borderRadius: 20 },
   smallLabel:   { fontSize: 10, color: '#3A3A4E', fontWeight: '700', letterSpacing: 2.5, marginBottom: 12 },
   levelUpStamp: { fontSize: 40, fontWeight: '900', letterSpacing: 5, marginBottom: 10, textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20 },
   tierName:     { fontSize: 30, fontWeight: '900', letterSpacing: 2, marginBottom: 14, textAlign: 'center' },

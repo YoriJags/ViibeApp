@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
+  Animated,
   Dimensions,
   ScrollView,
 } from 'react-native';
@@ -67,19 +68,30 @@ export default function AvatarBuilder({
   const [selectedEmoji, setSelectedEmoji] = useState(
     initialConfig?.emoji || DEFAULT_CONFIG.emoji,
   );
+  const [displayEmoji, setDisplayEmoji] = useState(
+    initialConfig?.emoji || DEFAULT_CONFIG.emoji,
+  );
   const [selectedColor, setSelectedColor] = useState(
     initialConfig?.bgColor || DEFAULT_CONFIG.bgColor,
   );
+  const flipAnim = React.useRef(new Animated.Value(0)).current;
 
   const previewConfig: AvatarConfig = {
-    emoji: selectedEmoji,
+    emoji: displayEmoji,
     bgColor: selectedColor,
     accentColor: selectedColor,
   };
 
   const handleEmojiSelect = (emoji: string) => {
+    if (emoji === selectedEmoji) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedEmoji(emoji);
+    // Coin flip: rotate to 90° (hide), swap emoji, spring back from -90°
+    Animated.timing(flipAnim, { toValue: 90, duration: 140, useNativeDriver: true }).start(() => {
+      setDisplayEmoji(emoji);
+      flipAnim.setValue(-90);
+      Animated.spring(flipAnim, { toValue: 0, tension: 220, friction: 7, useNativeDriver: true }).start();
+    });
   };
 
   const handleColorSelect = (color: string) => {
@@ -118,15 +130,22 @@ export default function AvatarBuilder({
             bounces={false}
             contentContainerStyle={styles.scrollContent}
           >
-            {/* Preview */}
+            {/* Preview — coin-flip on emoji change */}
             <View style={styles.previewSection}>
-              <AvatarDisplay
-                config={previewConfig}
-                username=""
-                size={120}
-                showBorder
-                borderColor={selectedColor}
-              />
+              <Animated.View style={{
+                transform: [
+                  { perspective: 400 },
+                  { rotateY: flipAnim.interpolate({ inputRange: [-90, 0, 90], outputRange: ['-90deg', '0deg', '90deg'] }) },
+                ],
+              }}>
+                <AvatarDisplay
+                  config={previewConfig}
+                  username=""
+                  size={120}
+                  showBorder
+                  borderColor={selectedColor}
+                />
+              </Animated.View>
             </View>
 
             {/* Face picker */}

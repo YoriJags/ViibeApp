@@ -67,8 +67,12 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
   const isPulseBoosted = venue.active_pulse_tier !== null && venue.active_pulse_tier !== undefined;
   const maxOpacity = venue.current_vibe_score >= 80 ? 0.65 : venue.current_vibe_score >= 60 ? 0.4 : 0.18;
   const borderOpacity = useRef(new Animated.Value(0.08)).current;
-  const scoreScale = useRef(new Animated.Value(0.85)).current;
+  const scoreScale    = useRef(new Animated.Value(0.85)).current;
+  const pressDepth    = useRef(new Animated.Value(0)).current;
   const [showPulseSheet, setShowPulseSheet] = useState(false);
+
+  const onPressIn  = () => Animated.spring(pressDepth, { toValue: 1, tension: 300, friction: 10, useNativeDriver: true }).start();
+  const onPressOut = () => Animated.spring(pressDepth, { toValue: 0, tension: 200, friction: 14, useNativeDriver: true }).start();
 
   // Ambient border breathe — GPU thread only
   useEffect(() => {
@@ -114,7 +118,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
   const shadowOpacity = venue.current_vibe_score >= 80 ? 0.45 : venue.current_vibe_score >= 60 ? 0.28 : 0.1;
 
   return (
-    <View
+    <Animated.View
       style={[
         styles.cardOuter,
         {
@@ -123,6 +127,11 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
           shadowRadius,
           shadowOffset: { width: 0, height: 4 },
           elevation: venue.current_vibe_score >= 60 ? 8 : 3,
+          transform: [
+            { perspective: 900 },
+            { rotateX: pressDepth.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-3deg'] }) },
+            { scale: pressDepth.interpolate({ inputRange: [0, 1], outputRange: [1, 0.974] }) },
+          ],
         },
       ]}
     >
@@ -142,6 +151,8 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onPress();
         }}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
         activeOpacity={0.72}
       >
         {/* Gold shimmer overlay for pulse-boosted cards */}
@@ -315,7 +326,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
           onRatePress={() => { setShowPulseSheet(false); onRatePress?.(); }}
         />
       )}
-    </View>
+    </Animated.View>
   );
 };
 

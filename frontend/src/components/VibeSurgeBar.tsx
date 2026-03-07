@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useVibeStore } from '../store/vibeStore';
 import SurgeFullScreen from './SurgeFullScreen';
@@ -157,13 +158,13 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
     <>
       {/* Compact trigger card */}
       <Animated.View style={[styles.container, {
-        transform: [{ scale: levelBump }],
+        transform: [{ perspective: 900 }, { rotateX: '2deg' }, { scale: levelBump }],
         borderColor: isElectric ? color + 'AA' : color + '33',
         shadowColor: color,
-        shadowOpacity: isElectric ? 0.5 : 0.15,
-        shadowRadius: isElectric ? 12 : 4,
-        shadowOffset: { width: 0, height: 0 },
-        elevation: isElectric ? 6 : 2,
+        shadowOpacity: isElectric ? 0.55 : 0.18,
+        shadowRadius: isElectric ? 16 : 6,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: isElectric ? 8 : 3,
       }]}>
         <TouchableOpacity onPress={handleOpen} activeOpacity={0.8} style={styles.inner}>
 
@@ -181,6 +182,14 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
               shadowRadius: isElectric ? 14 : 8,
               transform: [{ scale: isElectric ? boltPulse : 1 }],
             }]}>
+              {/* 3D raised-button specular highlight */}
+              <LinearGradient
+                colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0)']}
+                start={{ x: 0.1, y: 0 }}
+                end={{ x: 0.9, y: 1 }}
+                style={styles.iconShine}
+                pointerEvents="none"
+              />
               <Animated.View style={{ opacity: isElectric ? glowAnim : 1 }}>
                 <Ionicons name="flash" size={20} color={color} />
               </Animated.View>
@@ -196,7 +205,7 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
               </Animated.Text>
             </View>
 
-            {/* Progress bar */}
+            {/* Progress bar — 3D embossed groove */}
             <View style={styles.barTrack}>
               <Animated.View style={[styles.barFill, {
                 width: barAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
@@ -204,7 +213,16 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
                 shadowColor: color,
                 shadowOpacity: isElectric ? 0.9 : 0.5,
                 shadowRadius: isElectric ? 10 : 4,
-              }]} />
+              }]}>
+                {/* Glossy shine overlay — top-to-bottom fade */}
+                <LinearGradient
+                  colors={['rgba(255,255,255,0.35)', 'rgba(255,255,255,0.08)', 'rgba(0,0,0,0)']}
+                  start={{ x: 0.5, y: 0 }}
+                  end={{ x: 0.5, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                  pointerEvents="none"
+                />
+              </Animated.View>
             </View>
 
             <Text style={styles.subText}>
@@ -245,15 +263,29 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
 }
 
 const styles = StyleSheet.create({
-  container:    { backgroundColor: '#0C0C15', borderRadius: 16, borderWidth: 1, borderColor: '#1C1C2C', marginHorizontal: 16, marginTop: 12 },
+  container:    {
+    backgroundColor: '#0C0C15', borderRadius: 16, borderWidth: 1, borderColor: '#1C1C2C',
+    marginHorizontal: 16, marginTop: 12,
+    // 3D depth shadow base
+    shadowOffset: { width: 0, height: 4 },
+  },
   inner:        { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
-  iconWrap:     { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, justifyContent: 'center', alignItems: 'center', shadowOffset: { width: 0, height: 0 } },
-  centerBlock:  { flex: 1, gap: 5 },
+  iconWrap:     {
+    width: 44, height: 44, borderRadius: 22, borderWidth: 1.5,
+    justifyContent: 'center', alignItems: 'center',
+    shadowOffset: { width: 0, height: 2 }, overflow: 'hidden',
+  },
+  iconShine:    { position: 'absolute', top: 0, left: 0, right: 0, height: '55%', borderTopLeftRadius: 22, borderTopRightRadius: 22 },
+  centerBlock:  { flex: 1, gap: 6 },
   labelRow:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionLabel: { fontSize: 9, color: '#3A3A4E', fontWeight: '700', letterSpacing: 1.5 },
   levelText:    { fontSize: 13, fontWeight: '900', letterSpacing: 1 },
-  barTrack:     { height: 5, backgroundColor: '#181826', borderRadius: 3, overflow: 'visible' },
-  barFill:      { height: 5, borderRadius: 3, shadowOffset: { width: 0, height: 0 } },
+  barTrack:     {
+    height: 8, backgroundColor: '#0A0A18', borderRadius: 4, overflow: 'hidden',
+    borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.7)',
+    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)',
+  },
+  barFill:      { height: 8, borderRadius: 4, shadowOffset: { width: 0, height: 0 }, overflow: 'hidden' },
   subText:      { fontSize: 9, color: '#3A3A4E', fontWeight: '500' },
   rightBlock:   { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dotsCol:      { gap: 4, alignItems: 'center' },
