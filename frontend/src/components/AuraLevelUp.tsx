@@ -14,12 +14,21 @@ const ORBIT_R   = 76;
 const ORBIT_N   = 16;
 
 const LEVEL_ICONS: Record<string, string> = {
-  shadow: 'eye-off', rising: 'trending-up', scene_maker: 'star', hot: 'flame', vibe_god: 'flash',
+  // Nightly heat
+  warming:  'trending-up',
+  hot:      'flame',
+  on_fire:  'flash',
+  // Legacy permanent levels
+  shadow: 'eye-off', rising: 'trending-up', scene_maker: 'star', vibe_god: 'flash',
 };
 const LEVEL_TAGLINES: Record<string, string> = {
+  // Heat levels
+  warming:  'You showed up.\nThat\'s where it starts.',
+  hot:      'You\'re in the scene.\nHot Nights count +1.',
+  on_fire:  'The scene feels you.\nEveryone knows you\'re out.',
+  // Legacy
   rising:      'Your radar is live.\nThe scene is watching.',
   scene_maker: 'You set the scene.\nThey follow.',
-  hot:         'The street knows\nyour name.',
   vibe_god:    'MAXIMUM VIBE.\nYou are the scene.',
 };
 
@@ -47,7 +56,7 @@ export default function AuraLevelUp({ visible, newLevel, newLabel, color, perks,
   const orbitAnim = useRef(new Animated.Value(0)).current;
   const glowAnim  = useRef(new Animated.Value(0.5)).current;
 
-  const isGod = newLevel === 'vibe_god';
+  const isGod = newLevel === 'vibe_god' || newLevel === 'on_fire';
 
   useEffect(() => {
     if (!visible) return;

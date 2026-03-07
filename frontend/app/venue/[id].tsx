@@ -36,7 +36,6 @@ import CertifiedBadge from '../../src/components/CertifiedBadge';
 import TopScoutsCard from '../../src/components/TopScoutsCard';
 import VibeOracle from '../../src/components/VibeOracle';
 import VenueRoastCard from '../../src/components/VenueRoastCard';
-import PulseButton from '../../src/components/PulseButton';
 import VibePlusModal from '../../src/components/VibePlusModal';
 import VenueAlertModal, { VenueAlert } from '../../src/components/VenueAlertModal';
 import EnergyMeter from '../../src/components/EnergyMeter';
@@ -46,6 +45,7 @@ import CrowdCompositionBar from '../../src/components/CrowdCompositionBar';
 import BookingModal from '../../src/components/BookingModal';
 import VibeSurgeBar from '../../src/components/VibeSurgeBar';
 import SurgeCelebration from '../../src/components/SurgeCelebration';
+import FirstScoutCelebration from '../../src/components/FirstScoutCelebration';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -87,8 +87,6 @@ export default function VenueDetailScreen() {
     venueCheckinCount,
     isDemoMode,
     cooldownSkip,
-    dropQuickPulse,
-    demoPulsedVenues,
     isFeatureEnabled,
     socket,
     getAuthHeaders,
@@ -109,7 +107,6 @@ export default function VenueDetailScreen() {
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [pulsedAt, setPulsedAt] = useState<number | null>(null);
   const [showVibePlusModal, setShowVibePlusModal] = useState(false);
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [venueAlerts, setVenueAlerts] = useState<VenueAlert[]>([]);
@@ -118,6 +115,7 @@ export default function VenueDetailScreen() {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showSurgeCelebration, setShowSurgeCelebration] = useState(false);
   const [surgeTapCount, setSurgeTapCount] = useState(0);
+  const [showFirstScout, setShowFirstScout] = useState(false);
   const [activeTab, setActiveTab] = useState<'now' | 'intel' | 'crew' | 'info'>('now');
 
   // Animations
@@ -222,8 +220,9 @@ export default function VenueDetailScreen() {
       if (activeCheckin && activeCheckin.venue_id === venue.id) {
         await ghostCheckOut(venue.id);
       } else {
-        await ghostCheckIn(venue.id, userLocation.lat, userLocation.lng);
+        const result = await ghostCheckIn(venue.id, userLocation.lat, userLocation.lng);
         setShowCelebration(true);
+        if (result?.is_first_tonight || isDemoMode) setShowFirstScout(true);
       }
       fetchVenueCheckins(venue.id);
     } catch (e) {
@@ -1048,19 +1047,6 @@ export default function VenueDetailScreen() {
                 </LinearGradient>
               </TouchableOpacity>
 
-              <PulseButton
-                pulsedAt={pulsedAt}
-                disabled={!user || (!isWithinGeofence && !isDemoMode)}
-                onPress={async () => {
-                  if (!venue || !user) return { success: false };
-                  const lat = userLocation?.lat ?? 0;
-                  const lng = userLocation?.lng ?? 0;
-                  const result = await dropQuickPulse(venue.id, lat, lng);
-                  if (result.success) setPulsedAt(Date.now());
-                  return result;
-                }}
-                style={styles.pulseBtn}
-              />
             </View>
           </LinearGradient>
         </BlurView>
@@ -1090,6 +1076,13 @@ export default function VenueDetailScreen() {
         venueName={venue?.name ?? ''}
         tapCount={surgeTapCount}
         onDone={() => setShowSurgeCelebration(false)}
+      />
+
+      {/* First Scout Celebration */}
+      <FirstScoutCelebration
+        visible={showFirstScout}
+        venueName={venue?.name ?? ''}
+        onDismiss={() => setShowFirstScout(false)}
       />
 
       {/* Venue Energy Alert Modal */}
@@ -1680,9 +1673,6 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 16,
     overflow: 'hidden',
-  },
-  pulseBtn: {
-    width: 130,
   },
   stickyRateGradient: {
     flexDirection: 'row',

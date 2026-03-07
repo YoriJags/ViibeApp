@@ -60,6 +60,14 @@ async def ghost_checkin(data: GhostCheckin, user: dict = Depends(require_auth)):
             detail="Check-in limit reached for this venue today.",
         )
 
+    # Detect first scout tonight (midnight-to-now window, excluding the check-in we're about to create)
+    tonight_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    checkins_tonight = await db.checkins.count_documents({
+        "venue_id": data.venue_id,
+        "created_at": {"$gte": tonight_start},
+    })
+    is_first_tonight = checkins_tonight == 0
+
     now = datetime.now(timezone.utc)
     checkin_doc = {
         "user_id": user["id"],
@@ -96,6 +104,7 @@ async def ghost_checkin(data: GhostCheckin, user: dict = Depends(require_auth)):
         "expires_in_hours": CHECKIN_TTL_HOURS,
         "active_count": active_count,
         "streak": streak_result,
+        "is_first_tonight": is_first_tonight,
     }
 
 

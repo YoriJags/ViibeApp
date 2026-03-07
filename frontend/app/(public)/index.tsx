@@ -45,6 +45,8 @@ import * as Haptics from 'expo-haptics';
 import CityWelcomeCard from '../../src/components/CityWelcomeCard';
 import WeekendCard from '../../src/components/WeekendCard';
 import InsiderFeed from '../../src/components/InsiderFeed';
+import ScoutAuraChip from '../../src/components/ScoutAuraChip';
+import VenueSpotlight from '../../src/components/VenueSpotlight';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [CityWelcomeCard, WeekendCard, InsiderFeed extracted to src/components/]
@@ -80,6 +82,7 @@ export default function MapScreen() {
   const [showTransition, setShowTransition] = useState(false);
   const [showPlanner, setShowPlanner] = useState(false);
   const [showVibePlus, setShowVibePlus] = useState(false);
+  const [spotlightVenue, setSpotlightVenue] = useState<any>(null);
   const [weekendDismissed, setWeekendDismissed] = useState(false);
 
   // Friday 6PM onwards or all of Saturday
@@ -514,6 +517,11 @@ export default function MapScreen() {
         >
           {/* ── HERO ZONE: one editorial block before content ── */}
 
+          {/* Scout Aura chip — persistent level indicator above the feed */}
+          <ErrorBoundary label="Scout Aura Chip">
+            <ScoutAuraChip />
+          </ErrorBoundary>
+
           {/* Live activity ribbon — subtle ticker, not a blocking card */}
           <ActivityTicker items={DEMO_ACTIVITY_FEED} />
 
@@ -629,7 +637,7 @@ export default function MapScreen() {
               <Animated.View style={{ opacity: cardAnims[index % 12]?.opacity ?? 1, transform: [{ translateY: cardAnims[index % 12]?.translateY ?? 0 }] }}>
                 <VenueCard
                   venue={venue}
-                  onPress={() => router.push(`/venue/${venue.id}`)}
+                  onPress={() => setSpotlightVenue(venue)}
                   isNearby={nearbyVenue?.id === venue.id}
                   onRatePress={nearbyVenue?.id === venue.id ? () => {
                     router.push({
@@ -764,6 +772,13 @@ export default function MapScreen() {
         visible={showVibePlus}
         onClose={() => setShowVibePlus(false)}
         onSuccess={() => { setShowVibePlus(false); setShowPlanner(true); }}
+      />
+
+      {/* Venue Spotlight — full-screen theater mode */}
+      <VenueSpotlight
+        visible={spotlightVenue !== null}
+        venue={spotlightVenue}
+        onClose={() => setSpotlightVenue(null)}
       />
     </SafeAreaView>
   );

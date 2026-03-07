@@ -15,9 +15,18 @@ interface SurgeState {
 
 const LEVEL_ORDER = ['dormant', 'stirring', 'buzzing', 'popping', 'electric'];
 
+// Demo level progression — full journey from STIRRING to ELECTRIC in ~12 taps
+const DEMO_LEVELS = [
+  { level: 'dormant',  label: 'DORMANT',  color: '#3A3A4E', min: 0,    next: 'BUZZING' },
+  { level: 'stirring', label: 'STIRRING', color: '#6655FF', min: 0.08, next: 'BUZZING' },
+  { level: 'buzzing',  label: 'BUZZING',  color: '#33CCFF', min: 0.32, next: 'POPPING' },
+  { level: 'popping',  label: 'POPPING',  color: '#FF9933', min: 0.58, next: 'ELECTRIC' },
+  { level: 'electric', label: 'ELECTRIC', color: '#FF3366', min: 0.84, next: null },
+];
+
 export const DEMO_SURGE: SurgeState = {
-  charge_pct: 0.72, level: 'popping', level_label: 'POPPING', level_color: '#FF9933',
-  level_progress: 0.71, taps_to_next: 12, next_level: 'ELECTRIC', tap_count: 87, total_surges: 3,
+  charge_pct: 0.08, level: 'stirring', level_label: 'STIRRING', level_color: '#6655FF',
+  level_progress: 0.08, taps_to_next: 3, next_level: 'BUZZING', tap_count: 0, total_surges: 0,
 };
 
 interface Props {
@@ -104,16 +113,26 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
     if (isDemoMode) {
       setSurge(prev => {
         if (!prev) return prev;
-        const newCharge  = Math.min(prev.charge_pct + 0.03, 1);
-        const toElectric = newCharge >= 0.85 && prev.level !== 'electric';
+        const newProgress = Math.min(prev.level_progress + 0.08, 1.0);
+        const lvl = [...DEMO_LEVELS].reverse().find(t => newProgress >= t.min) ?? DEMO_LEVELS[1];
+        const nextLvl = DEMO_LEVELS.find(t => t.min > lvl.min);
+        const tapsToNext = nextLvl ? Math.max(0, Math.ceil((nextLvl.min - newProgress) / 0.08)) : 0;
         return {
-          ...prev, charge_pct: newCharge,
-          level_progress: Math.min(prev.level_progress + 0.06, 1),
-          tap_count: prev.tap_count + 1, taps_to_next: Math.max(0, prev.taps_to_next - 1),
-          ...(toElectric ? { level: 'electric', level_label: 'ELECTRIC', level_color: '#FF3366', next_level: null, taps_to_next: 0 } : {}),
+          ...prev,
+          charge_pct: newProgress,
+          level_progress: newProgress,
+          tap_count: prev.tap_count + 1,
+          level: lvl.level,
+          level_label: lvl.label,
+          level_color: lvl.color,
+          next_level: lvl.next,
+          taps_to_next: tapsToNext,
+          total_surges: lvl.level === 'electric' && prev.level !== 'electric'
+            ? prev.total_surges + 1
+            : prev.total_surges,
         };
       });
-      setCooldown(true); setTimeout(() => setCooldown(false), 3000); return;
+      setCooldown(true); setTimeout(() => setCooldown(false), 800); return;
     }
     setTapping(true);
     try {
@@ -137,21 +156,36 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
   return (
     <>
       {/* Compact trigger card */}
-      <Animated.View style={[styles.container, { transform: [{ scale: levelBump }] }]}>
+      <Animated.View style={[styles.container, {
+        transform: [{ scale: levelBump }],
+        borderColor: isElectric ? color + 'AA' : color + '33',
+        shadowColor: color,
+        shadowOpacity: isElectric ? 0.5 : 0.15,
+        shadowRadius: isElectric ? 12 : 4,
+        shadowOffset: { width: 0, height: 0 },
+        elevation: isElectric ? 6 : 2,
+      }]}>
         <TouchableOpacity onPress={handleOpen} activeOpacity={0.8} style={styles.inner}>
 
-          {/* Left: pulsing bolt icon */}
-          <Animated.View style={[styles.iconWrap, {
-            borderColor: color + '55',
-            shadowColor: color,
-            shadowOpacity: isElectric ? 0.9 : 0.5,
-            shadowRadius: isElectric ? 14 : 7,
-            transform: [{ scale: isElectric ? boltPulse : 1 }],
-          }]}>
-            <Animated.View style={{ opacity: isElectric ? glowAnim : 1 }}>
-              <Ionicons name="flash" size={20} color={color} />
+          {/* Left: bolt icon — tap directly to charge */}
+          <TouchableOpacity
+            onPress={handleCharge}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 6 }}
+          >
+            <Animated.View style={[styles.iconWrap, {
+              borderColor: color + '88',
+              backgroundColor: color + '15',
+              shadowColor: color,
+              shadowOpacity: isElectric ? 0.9 : 0.6,
+              shadowRadius: isElectric ? 14 : 8,
+              transform: [{ scale: isElectric ? boltPulse : 1 }],
+            }]}>
+              <Animated.View style={{ opacity: isElectric ? glowAnim : 1 }}>
+                <Ionicons name="flash" size={20} color={color} />
+              </Animated.View>
             </Animated.View>
-          </Animated.View>
+          </TouchableOpacity>
 
           {/* Center: label + bar */}
           <View style={styles.centerBlock}>
