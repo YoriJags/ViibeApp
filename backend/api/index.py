@@ -2113,6 +2113,295 @@ def handle_get_venue_reputation(venue_id: str):
     }
 
 
+# ── Tap History ───────────────────────────────────────────────────────────────
+
+def handle_get_tap_history(headers):
+    """GET /api/me/tap-history — cross-venue bolt tap breakdown per scout."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+    user_id = user["id"]
+    now = datetime.now(timezone.utc)
+    if now.hour < 7:
+        base = now - timedelta(days=1)
+    else:
+        base = now
+    tonight_start = base.replace(hour=17, minute=0, second=0, microsecond=0)
+    last_30 = now - timedelta(days=30)
+
+    # Tonight per-venue
+    tonight_pipeline = [
+        {"$match": {"user_id": user_id, "created_at": {"$gte": tonight_start}}},
+        {"$group": {"_id": "$venue_id", "tap_count": {"$sum": 1}}},
+        {"$sort": {"tap_count": -1}},
+        {"$limit": 20},
+    ]
+    tonight_docs = list(db.venue_bolts.aggregate(tonight_pipeline))
+    tonight_venues = []
+    for doc in tonight_docs:
+        venue = db.venues.find_one({"id": doc["_id"]}, {"name": 1, "area": 1})
+        tonight_venues.append({
+            "venue_id": doc["_id"],
+            "venue_name": venue["name"] if venue else "Unknown",
+            "venue_area": venue.get("area", "") if venue else "",
+            "tap_count": doc["tap_count"],
+        })
+    tonight_total = sum(v["tap_count"] for v in tonight_venues)
+
+    # All-time
+    alltime_docs = list(db.venue_bolts.aggregate([
+        {"$match": {"user_id": user_id}},
+        {"$group": {"_id": "$venue_id", "tap_count": {"$sum": 1}}},
+        {"$sort": {"tap_count": -1}},
+    ]))
+    alltime_total = sum(d["tap_count"] for d in alltime_docs)
+    top_venue = None
+    if alltime_docs:
+        tv = db.venues.find_one({"id": alltime_docs[0]["_id"]}, {"name": 1})
+        top_venue = {
+            "venue_id": alltime_docs[0]["_id"],
+            "venue_name": tv["name"] if tv else "Unknown",
+            "tap_count": alltime_docs[0]["tap_count"],
+        }
+
+    # Per-night history
+    history_docs = list(db.venue_bolts.aggregate([
+        {"$match": {"user_id": user_id, "created_at": {"$gte": last_30}}},
+        {"$project": {
+            "venue_id": 1, "created_at": 1,
+            "night_day": {"$dateToString": {
+                "format": "%Y-%m-%d",
+                "date": {"$dateSubtract": {"startDate": "$created_at", "unit": "hour", "amount": 17}},
+                "timezone": "UTC",
+            }},
+        }},
+        {"$group": {"_id": "$night_day", "total_taps": {"$sum": 1}, "venues": {"$addToSet": "$venue_id"}}},
+        {"$sort": {"_id": -1}},
+        {"$limit": 30},
+    ]))
+    history = [{"date": d["_id"], "total_taps": d["total_taps"], "venue_count": len(d["venues"])} for d in history_docs]
+
+    return 200, {
+        "tonight": {"total_taps": tonight_total, "venues": tonight_venues},
+        "all_time": {"total_taps": alltime_total, "top_venue": top_venue, "venues_tapped": len(alltime_docs)},
+        "history": history,
+    }
+
+
+# ── Vibe DNA (tap-enriched) ───────────────────────────────────────────────────
+# handle_get_user_dna is already defined above (line ~668) — it returns rating affinities.
+# Extended version with tap affinities added here under a new name; route_get dispatches to it.
+
+def handle_get_user_dna_v2(user_id):
+    """GET /api/users/{id}/dna — ratings + tap affinities."""
+    status, base = handle_get_user_dna(user_id)
+    if status != 200 or base.get("insufficient_data"):
+        return status, base
+    db = get_db()
+    if not db:
+        return status, base
+
+    # Tap affinities by venue type
+    bolt_docs = list(db.venue_bolts.aggregate([
+        {"$match": {"user_id": user_id}},
+        {"$group": {"_id": "$venue_id", "tap_count": {"$sum": 1}}},
+        {"$sort": {"tap_count": -1}},
+        {"$limit": 50},
+    ]))
+    tap_type_counts = {}
+    for doc in bolt_docs:
+        v = db.venues.find_one({"id": doc["_id"]}, {"venue_type": 1})
+        vtype = v.get("venue_type", "other") if v else "other"
+        tap_type_counts[vtype] = tap_type_counts.get(vtype, 0) + doc["tap_count"]
+
+    tap_total = sum(tap_type_counts.values()) or 1
+    tap_affinities = sorted([
+        {"venue_type": vt, "tap_count": cnt, "share": round(cnt / tap_total * 100)}
+        for vt, cnt in tap_type_counts.items()
+    ], key=lambda x: x["tap_count"], reverse=True)
+
+    base["tap_affinities"] = tap_affinities
+    base["top_tap_type"] = tap_affinities[0]["venue_type"] if tap_affinities else None
+    base["total_bolts_analyzed"] = sum(tap_type_counts.values())
+    return 200, base
+
+
+# ── Venue Battle ──────────────────────────────────────────────────────────────
+
+def handle_get_active_battle():
+    """GET /api/battles/active — current active battle or null."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+    battle = db.battles.find_one({"created_at": {"$gte": cutoff}}, sort=[("created_at", -1)])
+    if not battle:
+        return 200, {"battle": None}
+
+    def enrich(b):
+        va_id, vb_id = b["venue_a_id"], b["venue_b_id"]
+        va = db.venues.find_one({"id": va_id}, {"name": 1, "area": 1, "energy_level": 1, "current_vibe_score": 1}) or {}
+        vb = db.venues.find_one({"id": vb_id}, {"name": 1, "area": 1, "energy_level": 1, "current_vibe_score": 1}) or {}
+        taps_a, taps_b = b.get("taps_a", 0), b.get("taps_b", 0)
+        total = taps_a + taps_b or 1
+        ends_at = b["created_at"] + timedelta(minutes=30)
+        secs_left = max(0, int((ends_at - datetime.now(timezone.utc)).total_seconds()))
+        return {
+            "id": b["id"],
+            "status": "active" if secs_left > 0 else "ended",
+            "seconds_left": secs_left,
+            "venue_a": {"id": va_id, "name": va.get("name", "Unknown"), "area": va.get("area", ""), "energy_level": va.get("energy_level", "chill"), "vibe_score": va.get("current_vibe_score", 0), "taps": taps_a, "share": round(taps_a / total * 100)},
+            "venue_b": {"id": vb_id, "name": vb.get("name", "Unknown"), "area": vb.get("area", ""), "energy_level": vb.get("energy_level", "chill"), "vibe_score": vb.get("current_vibe_score", 0), "taps": taps_b, "share": round(taps_b / total * 100)},
+            "total_taps": taps_a + taps_b,
+            "winner": ("a" if taps_a > taps_b else "b" if taps_b > taps_a else "tie") if secs_left == 0 else None,
+        }
+    return 200, {"battle": enrich(battle)}
+
+
+def handle_tap_battle(battle_id, side, headers):
+    """POST /api/battles/{id}/tap/{side} — cast a bolt."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+    if side not in ("a", "b"):
+        return 400, {"detail": "Side must be 'a' or 'b'"}
+    battle = db.battles.find_one({"id": battle_id})
+    if not battle:
+        return 404, {"detail": "Battle not found"}
+    if datetime.now(timezone.utc) > battle["created_at"] + timedelta(minutes=30):
+        return 410, {"detail": "Battle has ended"}
+    if db.battle_taps.find_one({"battle_id": battle_id, "user_id": user["id"]}):
+        return 429, {"detail": "Already tapped in this battle"}
+    db.battle_taps.insert_one({"battle_id": battle_id, "user_id": user["id"], "side": side, "created_at": datetime.now(timezone.utc)})
+    inc = "taps_a" if side == "a" else "taps_b"
+    db.battles.update_one({"id": battle_id}, {"$inc": {inc: 1}})
+    updated = db.battles.find_one({"id": battle_id})
+    # Enrich inline
+    _, result = handle_get_active_battle()
+    return 200, result
+
+
+def handle_create_battle(body):
+    """POST /api/battles — create a new battle."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    va, vb = body.get("venue_a_id"), body.get("venue_b_id")
+    if not va or not vb:
+        return 400, {"detail": "venue_a_id and venue_b_id required"}
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+    if db.battles.find_one({"created_at": {"$gte": cutoff}}):
+        return 409, {"detail": "A battle is already active"}
+    bid = str(uuid.uuid4())[:8]
+    db.battles.insert_one({"id": bid, "venue_a_id": va, "venue_b_id": vb, "taps_a": 0, "taps_b": 0, "created_at": datetime.now(timezone.utc)})
+    return handle_get_active_battle()
+
+
+# ── City Heat Map ─────────────────────────────────────────────────────────────
+
+def handle_get_heat_map(city):
+    """GET /api/heat-map/{city} — venue heat intensity grid."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    import re as _re
+    venues = list(db.venues.find({"city": {"$regex": city, "$options": "i"}},
+        {"_id": 0, "id": 1, "name": 1, "area": 1, "lat": 1, "lng": 1, "current_vibe_score": 1, "energy_level": 1, "capacity_level": 1}))
+    one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
+    heat_points = []
+    for v in venues:
+        bolt_1h = db.venue_bolts.count_documents({"venue_id": v["id"], "created_at": {"$gte": one_hour_ago}})
+        heat_points.append({
+            "venue_id": v["id"], "name": v["name"], "area": v.get("area", ""),
+            "lat": v.get("lat"), "lng": v.get("lng"),
+            "vibe_score": v.get("current_vibe_score", 0),
+            "energy_level": v.get("energy_level", "quiet"),
+            "bolt_velocity_1h": bolt_1h,
+            "heat_intensity": min(100, v.get("current_vibe_score", 0) + min(bolt_1h * 2, 30)),
+        })
+    area_map = {}
+    for p in heat_points:
+        area = p["area"] or "Other"
+        area_map.setdefault(area, {"venues": [], "total_heat": 0, "bolt_total": 0})
+        area_map[area]["venues"].append(p)
+        area_map[area]["total_heat"] += p["heat_intensity"]
+        area_map[area]["bolt_total"] += p["bolt_velocity_1h"]
+    areas = sorted([
+        {"area": area, "venue_count": len(info["venues"]), "avg_heat": round(info["total_heat"] / len(info["venues"])), "bolt_total_1h": info["bolt_total"], "top_venue": max(info["venues"], key=lambda x: x["heat_intensity"])["name"]}
+        for area, info in area_map.items()
+    ], key=lambda x: x["avg_heat"], reverse=True)
+    return 200, {"city": city, "heat_points": heat_points, "areas": areas, "generated_at": datetime.now(timezone.utc).isoformat()}
+
+
+# ── Afterhours / Night Recap ──────────────────────────────────────────────────
+
+def handle_get_night_recap(headers):
+    """GET /api/me/night-recap — tonight's activity debrief."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+    user_id = user["id"]
+    now = datetime.now(timezone.utc)
+    if now.hour < 7:
+        base = now - timedelta(days=1)
+    else:
+        base = now
+    night_start = base.replace(hour=17, minute=0, second=0, microsecond=0)
+
+    checkins_tonight = db.checkins.count_documents({"user_id": user_id, "created_at": {"$gte": night_start}})
+    ratings_tonight  = db.ratings.count_documents({"user_id": user_id, "created_at": {"$gte": night_start}})
+
+    bolt_docs = list(db.venue_bolts.aggregate([
+        {"$match": {"user_id": user_id, "created_at": {"$gte": night_start}}},
+        {"$group": {"_id": "$venue_id", "tap_count": {"$sum": 1}}},
+        {"$sort": {"tap_count": -1}},
+    ]))
+    bolts_tonight = sum(d["tap_count"] for d in bolt_docs)
+
+    top_venue = None
+    if bolt_docs:
+        v = db.venues.find_one({"id": bolt_docs[0]["_id"]}, {"name": 1, "area": 1, "energy_level": 1})
+        if v:
+            top_venue = {"venue_id": bolt_docs[0]["_id"], "venue_name": v["name"], "venue_area": v.get("area", ""), "energy_level": v.get("energy_level", "chill"), "tap_count": bolt_docs[0]["tap_count"]}
+
+    checkin_docs = list(db.checkins.find({"user_id": user_id, "created_at": {"$gte": night_start}}, {"venue_id": 1, "venue_name": 1}))
+    seen = {}
+    for d in checkin_docs:
+        seen[d["venue_id"]] = d.get("venue_name", "Unknown")
+    venues_visited = [{"id": vid, "name": name} for vid, name in seen.items()]
+
+    heat_score = checkins_tonight * 5 + ratings_tonight * 4 + bolts_tonight
+    LEVELS = [(0, 0, "cold", "Cold", "#3A3A4E"), (1, 9, "warming", "Warming", "#6655FF"), (10, 24, "hot", "Hot", "#FF9933"), (25, 9999, "on_fire", "On Fire", "#FF3366")]
+    level_row = LEVELS[0]
+    for row in LEVELS:
+        if heat_score >= row[0]:
+            level_row = row
+    _, _, heat_level, heat_label, heat_color = level_row
+
+    streak_doc = db.streaks.find_one({"user_id": user_id}) or {}
+    user_doc = db.users.find_one({"id": user_id}, {"hot_nights": 1}) or {}
+
+    return 200, {
+        "checkins_tonight": checkins_tonight, "ratings_tonight": ratings_tonight,
+        "bolts_tonight": bolts_tonight, "venues_visited": venues_visited,
+        "top_venue": top_venue, "heat_score": heat_score,
+        "heat_level": heat_level, "heat_label": heat_label, "heat_color": heat_color,
+        "streak_days": streak_doc.get("current_streak", 0),
+        "hot_nights": user_doc.get("hot_nights", 0),
+        "is_hot_night": heat_level in ("hot", "on_fire"),
+        "night_start": night_start.isoformat(),
+    }
+
+
 def route_get(path, query_params, headers):
     """Route GET requests."""
     if path == "/" or path == "":
@@ -2149,7 +2438,7 @@ def route_get(path, query_params, headers):
         return handle_get_oracle(m.group(1))
     m = re.match(r'^/api/users/([^/]+)/dna$', path)
     if m:
-        return handle_get_user_dna(m.group(1))
+        return handle_get_user_dna_v2(m.group(1))
     m = re.match(r'^/api/ratings/status/([^/]+)/([^/]+)$', path)
     if m:
         return handle_get_rating_status(m.group(1), m.group(2))
@@ -2219,6 +2508,23 @@ def route_get(path, query_params, headers):
     m = re.match(r'^/api/venues/([^/]+)/reputation$', path)
     if m:
         return handle_get_venue_reputation(m.group(1))
+
+    # Tap History
+    if path == "/api/me/tap-history":
+        return handle_get_tap_history(headers)
+
+    # Venue Battle
+    if path == "/api/battles/active":
+        return handle_get_active_battle()
+
+    # City Heat Map
+    m = re.match(r'^/api/heat-map/([^/]+)$', path)
+    if m:
+        return handle_get_heat_map(m.group(1))
+
+    # Afterhours night recap
+    if path == "/api/me/night-recap":
+        return handle_get_night_recap(headers)
 
     return 404, {"detail": "Not found"}
 
@@ -2300,6 +2606,13 @@ def route_post(path, body, headers):
     m = re.match(r'^/api/venues/([^/]+)/reward-pool/fund$', path)
     if m:
         return handle_fund_reward_pool(m.group(1), body, headers)
+
+    # Venue Battle POST routes
+    if path == "/api/battles":
+        return handle_create_battle(body)
+    m = re.match(r'^/api/battles/([^/]+)/tap/([ab])$', path)
+    if m:
+        return handle_tap_battle(m.group(1), m.group(2), headers)
 
     return 404, {"detail": "Not found"}
 
