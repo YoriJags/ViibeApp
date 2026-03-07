@@ -125,6 +125,8 @@ export default function VenueDetailScreen() {
   const tooltipAnim = useRef(new Animated.Value(0)).current;
   const checkinBannerAnim = useRef(new Animated.Value(0)).current;
   const checkinDotAnim = useRef(new Animated.Value(1)).current;
+  const readyBannerAnim = useRef(new Animated.Value(0)).current;
+  const readyDotAnim = useRef(new Animated.Value(1)).current;
 
   // ── Check-in mode: triggers when geofence confirmed ──────────────────────
   useEffect(() => {
@@ -145,6 +147,12 @@ export default function VenueDetailScreen() {
           Animated.timing(checkinDotAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
         ])
       ).start();
+      // Ready to rate banner — slide up from bottom
+      Animated.spring(readyBannerAnim, { toValue: 1, tension: 60, friction: 10, useNativeDriver: true }).start();
+      Animated.loop(Animated.sequence([
+        Animated.timing(readyDotAnim, { toValue: 0.2, duration: 600, useNativeDriver: true }),
+        Animated.timing(readyDotAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      ])).start();
     }
     if (!isWithinGeofence && checkinEnteredAt !== null) {
       setCheckinEnteredAt(null);
@@ -817,9 +825,8 @@ export default function VenueDetailScreen() {
           ))}
         </View>
 
-        {/* NOW — live energy + surge + intent */}
+        {/* NOW — live energy + intent */}
         {activeTab === 'now' && <>
-          {id && <ErrorBoundary label="Vibe Surge"><VibeSurgeBar venueId={id} venueName={venue?.name ?? ''} isDemoMode={isDemoMode} onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }} onReact={handleReact} /></ErrorBoundary>}
           {id && <VenueIntentBar venueId={id} venueName={venue?.name} />}
         </>}
 
@@ -842,108 +849,151 @@ export default function VenueDetailScreen() {
         {activeTab === 'info' && <>
           {venue.active_campaign_multiplier && <View style={{ paddingHorizontal: 16, marginTop: 12 }}><CampaignBadge multiplier={venue.active_campaign_multiplier} expiresAt={venue.active_campaign_expires} /></View>}
           {venue.vibe_certified && <View style={{ paddingHorizontal: 16, marginTop: 12 }}><CertifiedBadge score={venue.certification_score} /></View>}
-        {/* Location Card */}
-        <View style={styles.locationCard}>
-          <View style={styles.locationInfo}>
-            <Ionicons name="location" size={20} color="#FF3366" />
-            <View style={styles.locationTextContainer}>
-              <Text style={styles.locationAddress}>{venue.address}</Text>
-              <Text style={styles.locationArea}>{venue.area}</Text>
-            </View>
-          </View>
-          
-          {/* Action Buttons Row */}
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
-            <TouchableOpacity style={[styles.directionsButton, { flex: 1 }]} onPress={handleGetDirections}>
-              <LinearGradient
-                colors={['#1E88E5', '#1565C0']}
-                style={styles.directionsGradient}
-              >
-                <Ionicons name="navigate" size={18} color="#FFF" />
-                <Text style={styles.directionsText}>DIRECTIONS</Text>
+
+        {/* ── Action Buttons: full-width stacked ── */}
+        <View style={styles.actionButtonStack}>
+          <TouchableOpacity onPress={handleGetDirections} activeOpacity={0.85}>
+            <LinearGradient colors={['#1E88E5', '#1565C0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.actionBtn}>
+              <Ionicons name="navigate" size={20} color="#FFF" />
+              <Text style={styles.actionBtnText}>GET DIRECTIONS</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          {isAuthenticated && (
+            <TouchableOpacity onPress={() => setShowBookingModal(true)} activeOpacity={0.85}>
+              <LinearGradient colors={['#FF3366', '#CC0044']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.actionBtn}>
+                <Ionicons name="calendar" size={20} color="#FFF" />
+                <Text style={styles.actionBtnText}>RESERVE TABLE</Text>
               </LinearGradient>
             </TouchableOpacity>
-            {isAuthenticated && (
-              <TouchableOpacity
-                style={[styles.directionsButton, { flex: 1 }]}
-                onPress={() => setShowBookingModal(true)}
-              >
-                <LinearGradient
-                  colors={['#FF3366', '#CC0044']}
-                  style={styles.directionsGradient}
-                >
-                  <Ionicons name="calendar" size={18} color="#FFF" />
-                  <Text style={styles.directionsText}>RESERVE TABLE</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            )}
+          )}
+        </View>
+
+        {/* ── Venue Details Card ── */}
+        <View style={styles.venueDetailsCard}>
+          <Text style={styles.venueDetailsSectionLabel}>VENUE DETAILS</Text>
+
+          <View style={styles.venueDetailsGrid}>
+            {/* Address */}
+            <View style={styles.venueDetailRow}>
+              <View style={styles.venueDetailIcon}><Ionicons name="location" size={16} color="#FF3366" /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.venueDetailLabel}>Address</Text>
+                <Text style={styles.venueDetailValue}>{venue.address}</Text>
+                <Text style={styles.venueDetailSub}>{venue.area} · {venue.city}</Text>
+              </View>
+            </View>
+
+            {/* Entry */}
+            <View style={styles.venueDetailRow}>
+              <View style={styles.venueDetailIcon}><Ionicons name="ticket-outline" size={16} color="#FFD700" /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.venueDetailLabel}>Entry</Text>
+                <Text style={styles.venueDetailValue}>{venue.entry_fee || 'Free'}</Text>
+              </View>
+            </View>
+
+            {/* Music */}
+            <View style={styles.venueDetailRow}>
+              <View style={styles.venueDetailIcon}><Ionicons name="musical-notes" size={16} color="#9933FF" /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.venueDetailLabel}>Music</Text>
+                <Text style={styles.venueDetailValue}>{venue.music_genre || 'Mixed'}</Text>
+              </View>
+            </View>
+
+            {/* Tables */}
+            <View style={styles.venueDetailRow}>
+              <View style={styles.venueDetailIcon}>
+                <Ionicons name={venue.tables_available ? 'checkmark-circle' : 'close-circle'} size={16} color={venue.tables_available ? '#4CAF50' : '#FF5252'} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.venueDetailLabel}>Tables</Text>
+                <Text style={[styles.venueDetailValue, { color: venue.tables_available ? '#4CAF50' : '#FF5252' }]}>
+                  {venue.tables_available ? 'Available' : 'Full tonight'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Crowd / Capacity */}
+            <View style={styles.venueDetailRow}>
+              <View style={styles.venueDetailIcon}><Ionicons name="people" size={16} color="#33CCFF" /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.venueDetailLabel}>Crowd</Text>
+                <Text style={styles.venueDetailValue}>
+                  {venue.capacity_level === 'full' ? 'Packed' : venue.capacity_level === 'vibrant' ? 'Filling Up' : 'Plenty of Room'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Queue */}
+            <View style={[styles.venueDetailRow, { borderBottomWidth: 0 }]}>
+              <View style={styles.venueDetailIcon}><Ionicons name="enter" size={16} color="#FF9933" /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.venueDetailLabel}>Entry Queue</Text>
+                <Text style={styles.venueDetailValue}>
+                  {venue.gate_level === 'blocked' ? 'Long Queue' : venue.gate_level === 'slow' ? 'Short Wait' : 'Walk In'}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
 
-        {/* GPS Lock / Geofence Status */}
-        <Animated.View 
-          style={[
-            styles.gpsContainer,
-            isWithinGeofence && styles.gpsContainerActive
-          ]}
-        >
-          <View style={styles.gpsContent}>
-            <Animated.View style={{ transform: [{ scale: isWithinGeofence ? pulseAnim : 1 }] }}>
-              <View style={[
-                styles.gpsIcon,
-                isWithinGeofence ? styles.gpsIconActive : styles.gpsIconInactive
-              ]}>
-                <Ionicons 
-                  name={isWithinGeofence ? "location" : "location-outline"} 
-                  size={24} 
-                  color={isWithinGeofence ? "#4CAF50" : "#666"} 
-                />
-              </View>
+        {/* GPS status + check-in */}
+        <View style={styles.venueDetailsCard}>
+          <Text style={styles.venueDetailsSectionLabel}>YOUR STATUS</Text>
+
+          {/* GPS / Location row */}
+          <View style={[styles.venueDetailRow, { borderBottomWidth: user && ratingStatus ? 1 : 0 }]}>
+            <Animated.View style={[styles.venueDetailIcon, { transform: [{ scale: isWithinGeofence ? pulseAnim : 1 }] }]}>
+              <Ionicons name={isWithinGeofence ? 'location' : 'location-outline'} size={16} color={isWithinGeofence ? '#4CAF50' : '#555'} />
             </Animated.View>
-            <View style={styles.gpsTextContainer}>
-              <Text style={[styles.gpsTitle, { color: isWithinGeofence ? "#4CAF50" : "#888" }]}>
-                {checkingLocation 
-                  ? "Verifying location..." 
-                  : isWithinGeofence 
-                    ? "GPS Verified - Ready to Rate!" 
-                    : "Location Required"}
-              </Text>
-              <Text style={styles.gpsSubtitle}>
-                {isWithinGeofence 
-                  ? "You're at the venue" 
-                  : `Must be within ${venue?.geofence_radius_m || 100}m to rate`}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.venueDetailLabel}>Location</Text>
+              <Text style={[styles.venueDetailValue, { color: isWithinGeofence ? '#4CAF50' : '#888' }]}>
+                {checkingLocation ? 'Verifying...' : isWithinGeofence ? `At the venue` : `Must be within ${venue?.geofence_radius_m || 100}m to rate`}
               </Text>
             </View>
             {checkingLocation && <ActivityIndicator size="small" color="#FF3366" />}
           </View>
-        </Animated.View>
 
-        {/* Rating Status */}
-        {user && ratingStatus && (
-          <View style={styles.ratingStatusCard}>
-            <View style={styles.ratingStatusHeader}>
-              <Text style={styles.ratingStatusTitle}>Your Rating Status</Text>
-              <View style={styles.ratingCount}>
-                <Text style={styles.ratingCountText}>{ratingStatus.ratings_count}/2</Text>
+          {/* Rating status */}
+          {user && ratingStatus && (
+            <View style={[styles.venueDetailRow, { borderBottomWidth: user && isWithinGeofence ? 1 : 0 }]}>
+              <View style={styles.venueDetailIcon}>
+                <Ionicons name={ratingStatus.can_rate ? 'star' : 'time'} size={16} color={ratingStatus.can_rate ? '#FF3366' : '#FF9800'} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.venueDetailLabel}>Rating</Text>
+                <Text style={[styles.venueDetailValue, { color: ratingStatus.can_rate ? '#FF3366' : '#888' }]}>
+                  {ratingStatus.is_correction_available ? 'Correction available' : ratingStatus.can_rate ? 'Ready to rate' : 'Limit reached — resets in 24h'}
+                </Text>
+              </View>
+              <View style={{ backgroundColor: '#1E1E2E', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3 }}>
+                <Text style={{ color: '#555', fontSize: 11, fontWeight: '700' }}>{ratingStatus.ratings_count}/2</Text>
               </View>
             </View>
-            <View style={styles.ratingStatusContent}>
-              {ratingStatus.can_rate ? (
-                <View style={styles.ratingStatusRow}>
-                  <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
-                  <Text style={styles.ratingStatusText}>
-                    {ratingStatus.is_correction_available ? 'Correction available' : 'Ready to rate'}
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.ratingStatusRow}>
-                  <Ionicons name="time" size={18} color="#FF9800" />
-                  <Text style={styles.ratingStatusText}>Limit reached (resets in 24h)</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
+          )}
+
+          {/* Ghost check-in */}
+          {user && isWithinGeofence && (
+            <TouchableOpacity
+              style={[styles.venueDetailRow, { borderBottomWidth: 0 }]}
+              onPress={handleGhostCheckin}
+              disabled={checkinLoading}
+              activeOpacity={0.7}
+            >
+              <View style={styles.venueDetailIcon}>
+                <Ionicons name={activeCheckin?.venue_id === venue?.id ? 'radio-button-on' : 'radio-button-off'} size={16} color={activeCheckin?.venue_id === venue?.id ? '#00E676' : '#555'} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.venueDetailLabel}>Check-in</Text>
+                <Text style={[styles.venueDetailValue, { color: activeCheckin?.venue_id === venue?.id ? '#00E676' : '#888' }]}>
+                  {checkinLoading ? 'Updating...' : activeCheckin?.venue_id === venue?.id ? "You're Here (ghost mode)" : "Tap to ghost check-in"}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Geofence Tooltip */}
         {showGeofenceTooltip && (
@@ -953,48 +1003,34 @@ export default function VenueDetailScreen() {
           </Animated.View>
         )}
 
-        {/* Geofence Warning inline */}
-        {user && !isWithinGeofence && (
-          <View style={styles.geofenceWarning}>
-            <Ionicons name="information-circle" size={16} color="#888" />
-            <Text style={styles.geofenceWarningText}>
-              You must be within {venue?.geofence_radius_m || 100}m of the venue to submit a rating
-            </Text>
-          </View>
-        )}
-
-        {/* Ghost Check-in "I'm Here" Button */}
-        {user && isWithinGeofence && (
-          <TouchableOpacity
-            style={[
-              styles.ghostCheckinButton,
-              activeCheckin?.venue_id === venue?.id && styles.ghostCheckinActive,
-            ]}
-            onPress={handleGhostCheckin}
-            disabled={checkinLoading}
-          >
-            <Ionicons
-              name={activeCheckin?.venue_id === venue?.id ? 'radio-button-on' : 'radio-button-off'}
-              size={20}
-              color={activeCheckin?.venue_id === venue?.id ? '#00E676' : '#888'}
-            />
-            <Text style={[
-              styles.ghostCheckinText,
-              activeCheckin?.venue_id === venue?.id && { color: '#00E676' },
-            ]}>
-              {checkinLoading
-                ? 'Updating...'
-                : activeCheckin?.venue_id === venue?.id
-                ? "You're Here"
-                : "I'm Here (Ghost Check-in)"}
-            </Text>
-          </TouchableOpacity>
-        )}
-
         </>}
+
+        {/* ── Vibe Surge Bar — always visible, near Rate the Vibe ── */}
+        {id && <ErrorBoundary label="Vibe Surge"><VibeSurgeBar venueId={id} venueName={venue?.name ?? ''} isDemoMode={isDemoMode} onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }} onReact={handleReact} /></ErrorBoundary>}
 
         <View style={{ height: 200 }} />
       </ScrollView>
+
+      {/* ═══ GPS Ready to Rate Banner ═══ */}
+      {(isWithinGeofence || isDemoMode) && (
+        <Animated.View style={[styles.readyToRateBanner, {
+          opacity: readyBannerAnim,
+          transform: [{ translateY: readyBannerAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+        }]}>
+          <LinearGradient
+            colors={['rgba(0,230,118,0.14)', 'rgba(0,200,100,0.06)']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={styles.readyToRateGradient}
+          >
+            <Animated.View style={[styles.readyToRateDot, { opacity: readyDotAnim, shadowColor: '#00E676', shadowOpacity: 0.8, shadowRadius: 6 }]} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.readyToRateText}>GPS LOCKED IN · READY TO RATE</Text>
+              <Text style={styles.readyToRateSub}>You're at the venue — your rating counts now</Text>
+            </View>
+            <Ionicons name="star" size={18} color="#00E676" />
+          </LinearGradient>
+        </Animated.View>
+      )}
 
       {/* ═══ Sticky Rate Footer ═══ */}
       <View style={styles.stickyRateFooter}>
@@ -1800,5 +1836,115 @@ const styles = StyleSheet.create({
     marginTop: -4,
     marginBottom: 8,
     marginLeft: 2,
+  },
+
+  // ====== INFO TAB: ACTION BUTTONS ======
+  actionButtonStack: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    gap: 10,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 14,
+    gap: 10,
+  },
+  actionBtnText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+  },
+
+  // ====== INFO TAB: VENUE DETAILS CARD ======
+  venueDetailsCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: '#0F0F1C',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+  },
+  venueDetailsSectionLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#3A3A4E',
+    letterSpacing: 2,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 10,
+  },
+  venueDetailsGrid: {},
+  venueDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.04)',
+    gap: 12,
+  },
+  venueDetailIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  venueDetailLabel: {
+    fontSize: 10,
+    color: '#3A3A4E',
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginBottom: 3,
+  },
+  venueDetailValue: {
+    fontSize: 14,
+    color: '#DDD',
+    fontWeight: '600',
+  },
+  venueDetailSub: {
+    fontSize: 11,
+    color: '#555',
+    marginTop: 2,
+  },
+
+  // ====== GPS READY BANNER ======
+  readyToRateBanner: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  readyToRateGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  readyToRateDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#00E676',
+  },
+  readyToRateText: {
+    flex: 1,
+    color: '#00E676',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  readyToRateSub: {
+    color: 'rgba(0,230,118,0.6)',
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
 });

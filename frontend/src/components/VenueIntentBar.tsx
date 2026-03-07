@@ -38,28 +38,31 @@ interface Props {
 
 const INTENT_CONFIG = {
   enroute: {
-    label: 'Enroute',
-    icon: 'navigate' as const,
+    label: "I'm Heading There",
+    shortLabel: 'Heading',
+    icon: 'navigate-circle' as const,
     activeColor: '#4ade80',
-    activeBg: '#4ade8020',
-    activeBorder: '#4ade80',
-    inactiveColor: '#555',
+    activeBg: '#4ade8018',
+    activeBorder: '#4ade8055',
+    inactiveColor: '#444',
   },
   maybe: {
-    label: 'Maybe',
-    icon: 'help-circle' as const,
+    label: 'Still Deciding',
+    shortLabel: 'Maybe',
+    icon: 'time' as const,
     activeColor: '#fbbf24',
-    activeBg: '#fbbf2420',
-    activeBorder: '#fbbf24',
-    inactiveColor: '#555',
+    activeBg: '#fbbf2418',
+    activeBorder: '#fbbf2455',
+    inactiveColor: '#444',
   },
   pass: {
-    label: 'Pass',
-    icon: 'close-circle' as const,
+    label: 'Not Tonight',
+    shortLabel: 'Pass',
+    icon: 'moon' as const,
     activeColor: '#f87171',
-    activeBg: '#f8717120',
-    activeBorder: '#f87171',
-    inactiveColor: '#555',
+    activeBg: '#f8717118',
+    activeBorder: '#f8717155',
+    inactiveColor: '#444',
   },
 };
 
@@ -155,32 +158,44 @@ export default function VenueIntentBar({ venueId, venueName }: Props) {
 
   if (!initialised) return null;
 
+  const headingCount = counts.enroute + counts.maybe;
+
   return (
     <View style={styles.container}>
-      {/* Follow button */}
-      <TouchableOpacity
-        style={[styles.followBtn, isFollowing && styles.followBtnActive]}
-        onPress={isDemoMode ? () => setIsFollowing(f => !f) : handleFollow}
-        disabled={loadingFollow}
-      >
-        {loadingFollow ? (
-          <ActivityIndicator size="small" color={isFollowing ? '#ff4d6d' : '#888'} />
-        ) : (
-          <>
-            <Ionicons
-              name={isFollowing ? 'notifications' : 'notifications-outline'}
-              size={15}
-              color={isFollowing ? '#ff4d6d' : '#888'}
-            />
-            <Text style={[styles.followBtnText, isFollowing && styles.followBtnTextActive]}>
-              {isFollowing ? 'Following' : 'Follow'}
+      {/* Header row: social proof + follow */}
+      <View style={styles.headerRow}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerLabel}>SCENE PLANS</Text>
+          {headingCount > 0 && (
+            <Text style={styles.socialProof}>
+              {counts.enroute > 0 ? `${counts.enroute} heading here` : ''}
+              {counts.enroute > 0 && counts.maybe > 0 ? '  ·  ' : ''}
+              {counts.maybe > 0 ? `${counts.maybe} deciding` : ''}
             </Text>
-          </>
-        )}
-      </TouchableOpacity>
-
-      {/* Divider */}
-      <View style={styles.divider} />
+          )}
+        </View>
+        <TouchableOpacity
+          style={[styles.followBtn, isFollowing && styles.followBtnActive]}
+          onPress={isDemoMode ? () => setIsFollowing(f => !f) : handleFollow}
+          disabled={loadingFollow}
+          activeOpacity={0.7}
+        >
+          {loadingFollow ? (
+            <ActivityIndicator size="small" color={isFollowing ? '#ff4d6d' : '#555'} />
+          ) : (
+            <>
+              <Ionicons
+                name={isFollowing ? 'notifications' : 'notifications-outline'}
+                size={13}
+                color={isFollowing ? '#ff4d6d' : '#555'}
+              />
+              <Text style={[styles.followBtnText, isFollowing && styles.followBtnTextActive]}>
+                {isFollowing ? 'Alerts On' : 'Get Alerts'}
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
 
       {/* Intent taps */}
       <View style={styles.intentRow}>
@@ -200,21 +215,19 @@ export default function VenueIntentBar({ venueId, venueName }: Props) {
                 ]}
                 onPress={() => handleIntent(intent)}
                 disabled={loadingIntent}
+                activeOpacity={0.75}
               >
                 <Ionicons
                   name={cfg.icon}
-                  size={16}
+                  size={18}
                   color={isActive ? cfg.activeColor : cfg.inactiveColor}
                 />
-                <Text style={[
-                  styles.intentLabel,
-                  isActive && { color: cfg.activeColor },
-                ]}>
-                  {cfg.label}
+                <Text style={[styles.intentLabel, isActive && { color: cfg.activeColor }]}>
+                  {cfg.shortLabel}
                 </Text>
                 {counts[intent] > 0 && (
-                  <View style={[styles.countBadge, isActive && { backgroundColor: cfg.activeColor }]}>
-                    <Text style={[styles.countText, isActive && { color: '#000' }]}>
+                  <View style={[styles.countBadge, isActive && { backgroundColor: cfg.activeColor + '30' }]}>
+                    <Text style={[styles.countText, isActive && { color: cfg.activeColor }]}>
                       {counts[intent]}
                     </Text>
                   </View>
@@ -230,37 +243,62 @@ export default function VenueIntentBar({ venueId, venueName }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#111',
+    backgroundColor: '#0C0C18',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#1e1e1e',
+    borderColor: '#1A1A28',
     marginHorizontal: 16,
     marginVertical: 12,
     overflow: 'hidden',
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1A1A28',
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  headerLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#3A3A4E',
+    letterSpacing: 2,
+    marginBottom: 3,
+  },
+  socialProof: {
+    fontSize: 12,
+    color: '#4ade80',
+    fontWeight: '600',
+  },
   followBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 11,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    backgroundColor: '#111120',
   },
   followBtnActive: {
     backgroundColor: '#ff4d6d12',
+    borderColor: '#ff4d6d40',
   },
   followBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#888',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#555',
+    letterSpacing: 0.3,
   },
   followBtnTextActive: {
     color: '#ff4d6d',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#1e1e1e',
-    marginHorizontal: 12,
   },
   intentRow: {
     flexDirection: 'row',
@@ -268,33 +306,34 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   intentBtn: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 10,
+    gap: 4,
+    paddingVertical: 12,
     paddingHorizontal: 4,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1e1e1e',
-    backgroundColor: '#0d0d0d',
+    borderColor: '#1A1A28',
+    backgroundColor: '#0A0A14',
   },
   intentLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#555',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#444',
+    letterSpacing: 0.2,
   },
   countBadge: {
-    backgroundColor: '#2a2a2a',
     borderRadius: 8,
-    paddingHorizontal: 5,
+    paddingHorizontal: 6,
     paddingVertical: 1,
     minWidth: 18,
     alignItems: 'center',
+    backgroundColor: '#1A1A28',
   },
   countText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#888',
+    color: '#555',
   },
 });

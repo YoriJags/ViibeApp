@@ -47,6 +47,7 @@ import WeekendCard from '../../src/components/WeekendCard';
 import InsiderFeed from '../../src/components/InsiderFeed';
 import ScoutAuraChip from '../../src/components/ScoutAuraChip';
 import VenueSpotlight from '../../src/components/VenueSpotlight';
+import VibeBriefCard from '../../src/components/VibeBriefCard';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [CityWelcomeCard, WeekendCard, InsiderFeed extracted to src/components/]
@@ -524,6 +525,11 @@ export default function MapScreen() {
 
           {/* Live activity ribbon — subtle ticker, not a blocking card */}
           <ActivityTicker items={DEMO_ACTIVITY_FEED} />
+
+          {/* AI Daily Brief — star feature, Vibe+ full brief */}
+          <ErrorBoundary label="Vibe Brief">
+            <VibeBriefCard city={selectedCity} isDemoMode={isDemoMode} />
+          </ErrorBoundary>
 
           {/* Tonight's Hero — adaptive journey card; collapses for new users */}
           {isNewUser ? (

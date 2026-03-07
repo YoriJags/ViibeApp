@@ -21,6 +21,7 @@ import { useVibeStore } from '../../src/store/vibeStore';
 import VoteCard from '../../src/components/VoteCard';
 import AvatarDisplay from '../../src/components/AvatarDisplay';
 import CartelRadarMap from '../../src/components/CartelRadarMap';
+import CartelPulse from '../../src/components/CartelPulse';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
 
 export default function CrewScreen() {
@@ -275,6 +276,13 @@ export default function CrewScreen() {
             <Text style={styles.leaveBtnText}>Leave</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Cartel Pulse — live crew activity */}
+        <CartelPulse
+          cartelName={crew.name}
+          members={crew.member_details ?? []}
+          onPress={() => {}}
+        />
 
         {/* Invite code card */}
         <TouchableOpacity onPress={handleCopyCode} activeOpacity={0.8}>
