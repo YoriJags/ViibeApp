@@ -35,7 +35,7 @@ async def get_trending_venues(city: str, limit: int = 10):
     six_hours_ago = now - timedelta(hours=6)
 
     venues = await db.venues.find(
-        {"city": city.lower()},
+        {"city": {"$regex": city, "$options": "i"}},
         {"_id": 0},
     ).to_list(100)
 

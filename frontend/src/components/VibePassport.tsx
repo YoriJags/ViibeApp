@@ -69,11 +69,9 @@ const DEMO_PASSPORT: PassportData = {
 };
 
 export default function VibePassport({ visible, onClose, isDemoMode }: Props) {
-  const { user, avatarConfig, getAuthHeaders } = useVibeStore(s => ({
-    user: s.user,
-    avatarConfig: s.avatarConfig,
-    getAuthHeaders: s.getAuthHeaders,
-  }));
+  const user           = useVibeStore(s => s.user);
+  const avatarConfig   = useVibeStore(s => s.avatarConfig);
+  const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const [data, setData] = useState<PassportData | null>(null);
   const [loading, setLoading] = useState(false);
 

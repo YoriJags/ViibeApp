@@ -154,7 +154,7 @@ def handle_get_venues(query_params):
     query = {}
     city = query_params.get("city", [None])[0]
     if city:
-        query["city"] = city.lower()
+        query["city"] = {"$regex": city, "$options": "i"}
     venues = list(db.venues.find(query, {"_id": 0}).limit(100))
     for v in venues:
         v["pulse"] = compute_pulse(v)
@@ -492,14 +492,14 @@ def handle_get_trending(city, query_params):
 
     sponsored = []
     if sponsored_ids:
-        for v in db.venues.find({"id": {"$in": sponsored_ids}, "city": city.lower()}, {"_id": 0}).sort("current_vibe_score", -1).limit(10):
+        for v in db.venues.find({"id": {"$in": sponsored_ids}, "city": {"$regex": city, "$options": "i"}}, {"_id": 0}).sort("current_vibe_score", -1).limit(10):
             pulse = next((p for p in pulse_drops if p["venue_id"] == v["id"]), None)
             v["is_sponsored"] = True
             v["pulse_tier"] = pulse["tier"] if pulse else None
             sponsored.append(v)
 
     organic = list(db.venues.find(
-        {"city": city.lower(), "id": {"$nin": sponsored_ids}}, {"_id": 0}
+        {"city": {"$regex": city, "$options": "i"}, "id": {"$nin": sponsored_ids}}, {"_id": 0}
     ).sort("current_vibe_score", -1).limit(limit))
     for v in organic:
         v["is_sponsored"] = False

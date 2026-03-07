@@ -95,12 +95,19 @@ export default function VenueBattle({ isDemoMode }: Props) {
     setTimeLeft(battle.seconds_left);
     const interval = setInterval(() => {
       setTimeLeft(t => {
-        if (t <= 1) { clearInterval(interval); fetchBattle(); return 0; }
+        if (t <= 1) { clearInterval(interval); return 0; }
         return t - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
   }, [battle?.id]);
+
+  // Re-fetch when countdown hits zero
+  useEffect(() => {
+    if (timeLeft === 0 && battle && battle.status !== 'ended') {
+      fetchBattle();
+    }
+  }, [timeLeft]);
 
   const fetchBattle = async () => {
     try {
