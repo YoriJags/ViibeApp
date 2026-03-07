@@ -486,25 +486,56 @@ def handle_get_trending(city, query_params):
         return 503, {"detail": "Database unavailable"}
     limit = int(query_params.get("limit", [20])[0])
     now = datetime.now(timezone.utc)
+    hour_ago = now - timedelta(hours=1)
 
     pulse_drops = list(db.pulse_drops.find({"end_time": {"$gte": now}, "start_time": {"$lte": now}}, {"_id": 0}))
     sponsored_ids = [p["venue_id"] for p in pulse_drops]
 
-    sponsored = []
-    if sponsored_ids:
-        for v in db.venues.find({"id": {"$in": sponsored_ids}, "city": {"$regex": city, "$options": "i"}}, {"_id": 0}).sort("current_vibe_score", -1).limit(10):
-            pulse = next((p for p in pulse_drops if p["venue_id"] == v["id"]), None)
-            v["is_sponsored"] = True
-            v["pulse_tier"] = pulse["tier"] if pulse else None
-            sponsored.append(v)
+    all_venues = list(db.venues.find({"city": {"$regex": city, "$options": "i"}}, {"_id": 0}).limit(100))
+    if not all_venues:
+        return 200, {"city": city, "venues": [], "sponsored": [], "last_updated": now.isoformat(), "total_venues": 0}
 
-    organic = list(db.venues.find(
-        {"city": {"$regex": city, "$options": "i"}, "id": {"$nin": sponsored_ids}}, {"_id": 0}
-    ).sort("current_vibe_score", -1).limit(limit))
-    for v in organic:
-        v["is_sponsored"] = False
+    def _wrap(v, rank, is_sponsored):
+        score = v.get("current_vibe_score", 0)
+        recent = db.checkins.count_documents({"venue_id": v["id"], "created_at": {"$gte": hour_ago}})
+        scouts = len(db.checkins.distinct("user_id", {"venue_id": v["id"], "created_at": {"$gte": now - timedelta(hours=24)}}))
+        trending_score = round((score * 0.5) + (recent * 10 * 0.3) + (scouts * 5 * 0.2), 1)
+        return {
+            "venue": v,
+            "trending_score": trending_score,
+            "energy_percent": min(100, round(score)),
+            "check_in_velocity": recent,
+            "scout_count": scouts,
+            "trend": "up" if recent > 0 else "stable",
+            "last_rating": None,
+            "is_sponsored": is_sponsored,
+            "is_pulse_boosted": is_sponsored,
+            "clout_multiplier": 2 if is_sponsored else 1,
+            "rank": rank,
+        }
 
-    return 200, {"sponsored": sponsored, "organic": organic}
+    sponsored_venues = []
+    organic_venues = []
+    for v in all_venues:
+        is_sp = v["id"] in sponsored_ids
+        if is_sp:
+            sponsored_venues.append(v)
+        else:
+            organic_venues.append(v)
+
+    organic_venues.sort(key=lambda x: x.get("current_vibe_score", 0), reverse=True)
+    sponsored_venues.sort(key=lambda x: x.get("current_vibe_score", 0), reverse=True)
+
+    organic_wrapped  = [_wrap(v, i + 1, False) for i, v in enumerate(organic_venues[:limit])]
+    sponsored_wrapped = [_wrap(v, i + 1, True)  for i, v in enumerate(sponsored_venues)]
+
+    return 200, {
+        "city": city,
+        "venues": organic_wrapped,
+        "sponsored": sponsored_wrapped,
+        "last_updated": now.isoformat(),
+        "total_venues": len(all_venues),
+    }
 
 def handle_get_top_scouts(city, query_params):
     db = get_db()
