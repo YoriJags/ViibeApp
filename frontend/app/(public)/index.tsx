@@ -48,6 +48,8 @@ import InsiderFeed from '../../src/components/InsiderFeed';
 import ScoutAuraChip from '../../src/components/ScoutAuraChip';
 import VenueSpotlight from '../../src/components/VenueSpotlight';
 import VibeBriefCard from '../../src/components/VibeBriefCard';
+import VenueBattle from '../../src/components/VenueBattle';
+import HeatMapCard from '../../src/components/HeatMapCard';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [CityWelcomeCard, WeekendCard, InsiderFeed extracted to src/components/]
@@ -529,6 +531,16 @@ export default function MapScreen() {
           {/* AI Daily Brief — star feature, Vibe+ full brief */}
           <ErrorBoundary label="Vibe Brief">
             <VibeBriefCard city={selectedCity} isDemoMode={isDemoMode} />
+          </ErrorBoundary>
+
+          {/* Venue Battle — real-time tap-off */}
+          <ErrorBoundary label="Venue Battle">
+            <VenueBattle isDemoMode={isDemoMode} />
+          </ErrorBoundary>
+
+          {/* City Heat Map — neighborhood heat intensity grid */}
+          <ErrorBoundary label="Heat Map">
+            <HeatMapCard city={selectedCity} isDemoMode={isDemoMode} />
           </ErrorBoundary>
 
           {/* Tonight's Hero — adaptive journey card; collapses for new users */}

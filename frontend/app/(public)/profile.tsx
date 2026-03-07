@@ -16,6 +16,9 @@ import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
 import VibePlusModal from '../../src/components/VibePlusModal';
 import ScoutAuraCard from '../../src/components/ScoutAuraCard';
+import VibeTapCard from '../../src/components/VibeTapCard';
+import VibePassport from '../../src/components/VibePassport';
+import AfterHours from '../../src/components/AfterHours';
 import AvatarBuilder from '../../src/components/AvatarBuilder';
 import AvatarDisplay from '../../src/components/AvatarDisplay';
 import AchievementBadge, { Badge } from '../../src/components/AchievementBadge';
@@ -53,6 +56,8 @@ export default function ProfileScreen() {
   const [authLoading, setAuthLoading] = useState(false);
   const [showVibePlus, setShowVibePlus] = useState(false);
   const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
+  const [showPassport, setShowPassport] = useState(false);
+  const [showAfterParty, setShowAfterParty] = useState(false);
 
   useEffect(() => {
     // Check for existing session
@@ -320,9 +325,17 @@ export default function ProfileScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile</Text>
-          <TouchableOpacity onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={24} color="#FF3366" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <TouchableOpacity onPress={() => setShowAfterParty(true)} activeOpacity={0.8}>
+              <Ionicons name="moon-outline" size={22} color="#9933FF" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowPassport(true)} activeOpacity={0.8}>
+              <Ionicons name="id-card-outline" size={24} color="#6655FF" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={24} color="#FF3366" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* User Card */}
@@ -406,6 +419,9 @@ export default function ProfileScreen() {
 
         {/* Scout Aura */}
         <ScoutAuraCard isDemoMode={isDemoMode} />
+
+        {/* Vibe Tap History */}
+        <VibeTapCard isDemoMode={isDemoMode} />
 
         {/* Achievements */}
         <AchievementBadge badges={isDemoMode ? DEMO_BADGES : computeBadges(user)} />
@@ -586,6 +602,18 @@ export default function ProfileScreen() {
         visible={showVibePlus}
         onClose={() => setShowVibePlus(false)}
         onSuccess={() => setShowVibePlus(false)}
+      />
+
+      <VibePassport
+        visible={showPassport}
+        onClose={() => setShowPassport(false)}
+        isDemoMode={isDemoMode}
+      />
+
+      <AfterHours
+        visible={showAfterParty}
+        onClose={() => setShowAfterParty(false)}
+        isDemoMode={isDemoMode}
       />
     </SafeAreaView>
   );

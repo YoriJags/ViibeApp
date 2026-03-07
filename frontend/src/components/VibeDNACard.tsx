@@ -45,6 +45,12 @@ const DOMINANT_EMOJIS: Record<string, string> = {
   other:       '✨',
 };
 
+interface TapAffinity {
+  venue_type: string;
+  tap_count: number;
+  share: number;
+}
+
 interface VibeDNACardProps {
   userId: string;
 }
@@ -137,6 +143,31 @@ export default function VibeDNACard({ userId }: VibeDNACardProps) {
           );
         })}
       </View>
+
+      {/* Tap affinity — which scenes you electrify */}
+      {vibeDNA.tap_affinities && vibeDNA.tap_affinities.length > 0 && (
+        <View style={styles.tapSection}>
+          <View style={styles.tapHeader}>
+            <Text style={styles.tapIcon}>⚡</Text>
+            <Text style={styles.tapTitle}>BOLT AFFINITY</Text>
+            <Text style={styles.tapSub}>Where you electrify most</Text>
+          </View>
+          <View style={styles.tapBars}>
+            {(vibeDNA.tap_affinities as TapAffinity[]).slice(0, 4).map((aff) => {
+              const typeLabel = aff.venue_type.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+              return (
+                <View key={aff.venue_type} style={styles.tapBarRow}>
+                  <Text style={styles.tapBarLabel} numberOfLines={1}>{typeLabel}</Text>
+                  <View style={styles.tapBarTrack}>
+                    <View style={[styles.tapBarFill, { width: `${aff.share}%` }]} />
+                  </View>
+                  <Text style={styles.tapBarCount}>{aff.tap_count}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
 
       {/* AI Narrative — Vibe+ gated */}
       {narrative && isVibePlus() && (
@@ -351,6 +382,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: 'right',
   },
+  tapSection: {
+    backgroundColor: 'rgba(102,85,255,0.06)',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(102,85,255,0.18)',
+    gap: 8,
+  },
+  tapHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  tapIcon: { fontSize: 13 },
+  tapTitle: { color: '#6655FF', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  tapSub: { color: '#555', fontSize: 10, marginLeft: 'auto' },
+  tapBars: { gap: 5 },
+  tapBarRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  tapBarLabel: { color: '#777', fontSize: 10, width: 68, flexShrink: 0 },
+  tapBarTrack: { flex: 1, height: 4, backgroundColor: 'rgba(102,85,255,0.12)', borderRadius: 2, overflow: 'hidden' },
+  tapBarFill: { height: 4, backgroundColor: '#6655FF', borderRadius: 2 },
+  tapBarCount: { fontSize: 10, fontWeight: '700', color: '#6655FF', width: 26, textAlign: 'right' },
   narrativeLocked: {
     flexDirection: 'row',
     alignItems: 'center',

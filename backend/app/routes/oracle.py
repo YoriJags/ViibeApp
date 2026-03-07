@@ -6,7 +6,7 @@ Premium tier: Claude AI-powered prediction with narrative insight.
 """
 import os
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Request
 
 from app.config import db, logger
@@ -45,7 +45,7 @@ def _best_arrival(peak_start: str) -> str:
     return f"{arr_h}:{arr_m:02d}{arr_period}"
 
 
-def _heuristic_oracle(venue: dict) -> dict:
+def _heuristic_oracle(venue: dict, bolt_15min: int = 0) -> dict:
     """Rule-based oracle. Free for all users."""
     venue_type = venue.get("venue_type", "club")
     now = datetime.now(timezone.utc)
@@ -63,10 +63,19 @@ def _heuristic_oracle(venue: dict) -> dict:
     velocity_delta = {"heating_up": 8, "stable": 0, "cooling_down": -10}.get(velocity, 0)
     activity = venue.get("total_ratings_24h", 0)
     activity_delta = 5 if activity > 30 else (-5 if activity < 10 else 0)
-    confidence = max(50, min(95, base_conf + velocity_delta + activity_delta))
+    # Bolt surge delta — real-time tap velocity boosts confidence
+    bolt_delta = 12 if bolt_15min >= 20 else (6 if bolt_15min >= 10 else 0)
+    confidence = max(50, min(95, base_conf + velocity_delta + activity_delta + bolt_delta))
 
     energy_label = _ENERGY_LABELS.get(venue_type, "popping")
-    headline = f"{venue.get('name', 'This venue')} will be {energy_label} by {peak_start} tonight"
+
+    # Headline override when tap surge detected
+    if bolt_15min >= 20:
+        headline = f"Peak incoming at {venue.get('name', 'this venue')} — scouts are surging right now"
+    elif bolt_15min >= 10:
+        headline = f"{venue.get('name', 'This venue')} is heating up — bolt activity spiking"
+    else:
+        headline = f"{venue.get('name', 'This venue')} will be {energy_label} by {peak_start} tonight"
 
     signals = []
     signals.append({"icon": "🌙" if is_weekend else "📅", "label": f"{day_label} Night", "type": "day_of_week"})
@@ -76,6 +85,10 @@ def _heuristic_oracle(venue: dict) -> dict:
         signals.append({"icon": "📉", "label": "Energy cooling", "type": "momentum"})
     if activity > 20:
         signals.append({"icon": "⚡", "label": "High scout activity", "type": "activity"})
+    if bolt_15min >= 20:
+        signals.append({"icon": "⚡", "label": f"{bolt_15min} bolts in 15 min — peak incoming", "type": "bolt_surge"})
+    elif bolt_15min >= 10:
+        signals.append({"icon": "⚡", "label": f"{bolt_15min} bolts in 15 min — heating up", "type": "bolt_surge"})
 
     return {
         "headline": headline,
@@ -86,6 +99,7 @@ def _heuristic_oracle(venue: dict) -> dict:
         "signals": signals,
         "day_label": day_label,
         "energy_label": energy_label,
+        "bolt_velocity_15min": bolt_15min,
         "powered_by": "heuristic",
         "insufficient_data": False,
     }
@@ -97,7 +111,12 @@ async def get_oracle(venue_id: str):
     venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
-    return _heuristic_oracle(venue)
+    fifteen_ago = datetime.now(timezone.utc) - timedelta(minutes=15)
+    bolt_15min = await db.venue_bolts.count_documents({
+        "venue_id": venue_id,
+        "created_at": {"$gte": fifteen_ago},
+    })
+    return _heuristic_oracle(venue, bolt_15min=bolt_15min)
 
 
 @router.get("/venues/{venue_id}/oracle/premium")
@@ -127,8 +146,15 @@ async def get_oracle_premium(venue_id: str, request: Request):
         result["upgrade_message"] = "AI Oracle coming soon"
         return result
 
+    # Bolt velocity for context
+    fifteen_ago = datetime.now(timezone.utc) - timedelta(minutes=15)
+    bolt_15min = await db.venue_bolts.count_documents({
+        "venue_id": venue_id,
+        "created_at": {"$gte": fifteen_ago},
+    })
+
     # Build heuristic baseline to give Claude context
-    baseline = _heuristic_oracle(venue)
+    baseline = _heuristic_oracle(venue, bolt_15min=bolt_15min)
     now = datetime.now(timezone.utc)
     day_label = baseline["day_label"]
     current_hour = now.hour

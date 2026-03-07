@@ -710,11 +710,6 @@ export default function VenueDetailScreen() {
                 </View>
               </View>
 
-              {/* Scout signal notice — only when physically inside */}
-              {isWithinGeofence && (
-                <Text style={styles.yourSignalLabel}>⚡ Your reactions shape this score</Text>
-              )}
-
               {/* Energy Meter Bar */}
               <View style={{ marginBottom: 16 }}>
                 <EnergyMeter
@@ -1827,15 +1822,6 @@ const styles = StyleSheet.create({
   },
   lockedInTime: {
     fontSize: 13, fontWeight: '700', color: '#00E676',
-  },
-  yourSignalLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: 'rgba(0, 230, 118, 0.65)',
-    letterSpacing: 0.5,
-    marginTop: -4,
-    marginBottom: 8,
-    marginLeft: 2,
   },
 
   // ====== INFO TAB: ACTION BUTTONS ======

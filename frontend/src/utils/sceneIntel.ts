@@ -20,6 +20,7 @@ export interface SceneInput {
   gate_level: 'clear' | 'slow' | 'blocked';
   vibe_velocity: 'heating_up' | 'cooling_down' | 'stable';
   total_ratings_24h?: number;
+  bolt_velocity_15min?: number;
 }
 
 // ── Core sentence templates ─────────────────────────────────────────────────
@@ -136,7 +137,7 @@ function getArrivalLine(
 // ── Main export ─────────────────────────────────────────────────────────────
 
 export function getSceneIntel(venue: SceneInput): string {
-  const { name, venue_type, current_vibe_score, energy_level, capacity_level, gate_level, vibe_velocity } = venue;
+  const { name, venue_type, current_vibe_score, energy_level, capacity_level, gate_level, vibe_velocity, bolt_velocity_15min } = venue;
 
   const crowd = CROWD_DESC[capacity_level] ?? 'moderate crowd';
   const context = getVenueContext(venue_type, energy_level);
@@ -144,11 +145,19 @@ export function getSceneIntel(venue: SceneInput): string {
   const gate = GATE_DESC[gate_level] ?? '';
   const arrival = getArrivalLine(current_vibe_score, vibe_velocity, gate_level);
 
+  // Bolt surge signal — real-time tap velocity from scouts
+  const boltSignal = (bolt_velocity_15min ?? 0) >= 20
+    ? 'Scouts are surging — peak incoming.'
+    : (bolt_velocity_15min ?? 0) >= 10
+    ? 'High bolt activity — scene is picking up.'
+    : '';
+
   // Build sentence fragments and filter empty strings
   const parts = [
     `${name} — ${crowd}.`,
     context,
     velocity,
+    boltSignal,
     gate,
     arrival,
   ].filter(Boolean);

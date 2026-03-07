@@ -53,6 +53,11 @@ from app.routes.claims import router as claims_router
 from app.routes.bookings import router as bookings_router
 from app.routes.surge import router as surge_router
 from app.routes.aura import router as aura_router
+from app.routes.tap_history import router as tap_history_router
+from app.routes.dna import router as dna_router
+from app.routes.battles import router as battles_router
+from app.routes.heat_map import router as heat_map_router
+from app.routes.after_party import router as after_party_router
 
 # ===== Create FastAPI App =====
 app = FastAPI(title="Viibe App API", version="3.0.0")
@@ -102,6 +107,11 @@ api_router.include_router(claims_router)
 api_router.include_router(bookings_router)
 api_router.include_router(surge_router)
 api_router.include_router(aura_router)
+api_router.include_router(tap_history_router)
+api_router.include_router(dna_router)
+api_router.include_router(battles_router)
+api_router.include_router(heat_map_router)
+api_router.include_router(after_party_router)
 
 # Include the API router in the main app
 app.include_router(api_router)
