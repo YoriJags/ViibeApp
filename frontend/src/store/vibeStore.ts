@@ -1103,7 +1103,9 @@ export const useVibeStore = create<VibeStore>()(
           });
           if (res.ok) {
             const data = await res.json();
-            set({ vibeDNA: data });
+            if (Array.isArray(data.affinities)) {
+              set({ vibeDNA: data });
+            }
           }
         } catch (e) {
           console.error('fetchVibeDNA error:', e);
@@ -1551,6 +1553,7 @@ export const useVibeStore = create<VibeStore>()(
             streak: null,
             crew: null,
             activeCampaigns: [],
+            vibeDNA: null,
           });
           get().fetchVenues(get().selectedCity);
         }

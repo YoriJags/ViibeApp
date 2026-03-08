@@ -274,10 +274,10 @@ export default function MapScreen() {
   // DNA-powered VibeMatch: blend affinity (40%) + vibe score (60%) → top match
   const vibeMatchVenue = useMemo(() => {
     if (isDemoMode) return DEMO_VIBE_MATCH;
-    if (!vibeDNA || !venues.length) return null;
+    if (!vibeDNA?.affinities?.length || !venues.length) return null;
     const top = venues
       .map((v: any) => {
-        const affinity = vibeDNA.affinities.find((a) => a.venue_type === v.venue_type);
+        const affinity = vibeDNA.affinities.find((a: any) => a.venue_type === v.venue_type);
         const dnaScore = affinity?.score ?? 50;
         const matchPercent = Math.round(dnaScore * 0.4 + (v.current_vibe_score ?? 50) * 0.6);
         const reason = affinity
