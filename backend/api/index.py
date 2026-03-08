@@ -938,7 +938,8 @@ def handle_checkins_create(body, headers):
         "lng": body.get("lng", venue["coordinates"].get("lng", 0)),
         "status": "active",
         "created_at": datetime.now(timezone.utc),
-        "expires_at": datetime.now(timezone.utc) + timedelta(hours=4)
+        "expires_at": datetime.now(timezone.utc) + timedelta(hours=4),
+        "battery_level": body.get("battery_level"),
     }
     db.checkins.insert_one(checkin)
     checkin.pop("_id", None)
@@ -982,7 +983,8 @@ def handle_crew_locations(crew_id, headers):
                 "lng": checkin.get("lng", 0),
                 "avatar_config": member.get("avatar_config"),
                 "checked_in_at": checkin.get("created_at"),
-                "is_out": True
+                "is_out": True,
+                "battery_level": checkin.get("battery_level"),
             })
 
     return 200, result

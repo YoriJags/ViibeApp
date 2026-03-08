@@ -158,6 +158,7 @@ interface CrewMemberLocation {
   avatar_config?: { emoji: string; bgColor: string; accentColor: string } | null;
   checked_in_at?: string;
   is_out: boolean;
+  battery_level?: number; // 0.0–1.0
 }
 
 interface CrewVote {
@@ -998,10 +999,15 @@ export const useVibeStore = create<VibeStore>()(
           return { success: true, checkin };
         }
         try {
+          let batteryLevel: number | undefined;
+          try {
+            const Battery = require('expo-battery');
+            batteryLevel = await Battery.getBatteryLevelAsync();
+          } catch {}
           const response = await fetch(`${API_URL}/api/checkins`, {
             method: 'POST',
             headers: getAuthHeaders(),
-            body: JSON.stringify({ venue_id: venueId, lat, lng, latitude: lat, longitude: lng }),
+            body: JSON.stringify({ venue_id: venueId, lat, lng, latitude: lat, longitude: lng, battery_level: batteryLevel }),
           });
           const data = await response.json();
           if (!response.ok) throw new Error(data.detail || 'Check-in failed');

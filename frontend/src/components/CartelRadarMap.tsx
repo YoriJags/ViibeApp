@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useVibeStore } from '../store/vibeStore';
 import { MockMap } from './MockMap';
+import BatteryIndicator from './BatteryIndicator';
 
 interface CartelRadarMapProps {
   crewId: string;
@@ -158,10 +159,16 @@ const CartelRadarMap: React.FC<CartelRadarMapProps> = ({
 
       {/* Bottom bar */}
       <View style={styles.bottomBar}>
-        {/* Member list (scrollable text) */}
-        <Text style={styles.memberList} numberOfLines={1}>
-          {crewLocations.map((l) => `${l.avatar_config?.emoji || '👤'} ${l.username}`).join('  ·  ')}
-        </Text>
+        {/* Member list with battery */}
+        <View style={styles.memberList}>
+          {crewLocations.slice(0, 4).map((l) => (
+            <View key={l.user_id} style={styles.memberChip}>
+              <Text style={styles.memberEmoji}>{l.avatar_config?.emoji || '👤'}</Text>
+              <Text style={styles.memberName} numberOfLines={1}>{l.username}</Text>
+              <BatteryIndicator level={l.battery_level} size="sm" showPct={true} />
+            </View>
+          ))}
+        </View>
 
         {/* SOS pulse button */}
         <Animated.View style={{ transform: [{ scale: sosAnim }] }}>
@@ -304,9 +311,28 @@ const styles = StyleSheet.create({
   },
   memberList: {
     flex: 1,
-    fontSize: 11,
-    color: '#777',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    alignItems: 'center',
+  },
+  memberChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  memberEmoji: {
+    fontSize: 10,
+  },
+  memberName: {
+    fontSize: 10,
+    color: '#AAA',
     fontWeight: '600',
+    maxWidth: 52,
   },
   sosBtn: {
     borderRadius: 10,

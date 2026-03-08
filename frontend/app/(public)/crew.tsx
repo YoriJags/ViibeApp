@@ -23,6 +23,7 @@ import AvatarDisplay from '../../src/components/AvatarDisplay';
 import CartelRadarMap from '../../src/components/CartelRadarMap';
 import CartelPulse from '../../src/components/CartelPulse';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
+import { OwnBatteryIndicator } from '../../src/components/BatteryIndicator';
 
 export default function CrewScreen() {
   const user = useVibeStore(s => s.user);
@@ -141,8 +142,11 @@ export default function CrewScreen() {
 
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>CARTEL</Text>
-            <Text style={styles.headerSub}>Your crew. Your moves.</Text>
+            <View>
+              <Text style={styles.headerTitle}>CARTEL</Text>
+              <Text style={styles.headerSub}>Your crew. Your moves.</Text>
+            </View>
+            <OwnBatteryIndicator size="md" />
           </View>
 
           {/* Hero graphic */}
