@@ -2334,6 +2334,66 @@ def handle_create_battle(body):
     return handle_get_active_battle()
 
 
+# ── Vibe Brief (AI city briefing) ─────────────────────────────────────────────
+
+def handle_get_vibe_brief(city):
+    """GET /api/city/{city}/vibe-brief — daily AI nightlife briefing, cached 4h."""
+    db = get_db()
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    import os, json as _json
+    city = city.lower()
+    now = datetime.now(timezone.utc)
+    cache_key = f"vibe_brief_{city}"
+    cached = db.ai_cache.find_one({"key": cache_key})
+    if cached:
+        age = (now - cached["generated_at"].replace(tzinfo=timezone.utc)).total_seconds()
+        if age < 4 * 3600:
+            return 200, cached["data"]
+
+    venues = list(db.venues.find({"city": {"$regex": city, "$options": "i"}}, {"_id": 0}).sort("current_vibe_score", -1).limit(10))
+    if not venues:
+        return 200, {
+            "headline": f"Tonight in {city.title()}: the city is waking up",
+            "briefing": "Check the leaderboard for live scores.",
+            "top_pick": "",
+            "hot_area": city.title(),
+            "powered_by": "fallback",
+        }
+    hot_area = venues[0].get("area", "Victoria Island")
+    fallback = {
+        "headline": f"Tonight in {city.title()}: {venues[0]['name']} is leading the pack",
+        "briefing": "Top spots are heating up. Check the leaderboard for live scores.",
+        "top_pick": venues[0]["name"],
+        "hot_area": hot_area,
+        "powered_by": "fallback",
+    }
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        return 200, fallback
+    try:
+        import anthropic as _anthropic
+        day = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][now.weekday()]
+        top3 = [f"{v['name']} (score {v['current_vibe_score']}, {v['energy_level']})" for v in venues[:3]]
+        prompt = (
+            f"You are a nightlife journalist for {city.title()}, Nigeria. Tonight is {day}.\n"
+            f"Top venues right now: {', '.join(top3)}\n"
+            f"Write a punchy daily nightlife brief for the Vibe App. Nigerian-casual tone. Max 3 sentences.\n"
+            f"Respond JSON only: {{\"headline\": \"...\", \"briefing\": \"...\", \"top_pick\": \"venue name\", \"hot_area\": \"area name\"}}"
+        )
+        client = _anthropic.Anthropic(api_key=api_key)
+        resp = client.messages.create(model="claude-haiku-4-5-20251001", max_tokens=300, messages=[{"role": "user", "content": prompt}])
+        raw = resp.content[0].text.strip()
+        import re as _re
+        raw = _re.sub(r'^```(?:json)?\s*|\s*```$', '', raw, flags=_re.DOTALL).strip()
+        parsed = _json.loads(raw)
+        result = {**parsed, "powered_by": "claude", "city": city}
+        db.ai_cache.update_one({"key": cache_key}, {"$set": {"key": cache_key, "data": result, "generated_at": now}}, upsert=True)
+        return 200, result
+    except Exception:
+        return 200, fallback
+
+
 # ── City Heat Map ─────────────────────────────────────────────────────────────
 
 def handle_get_heat_map(city):
@@ -2552,6 +2612,10 @@ def route_get(path, query_params, headers):
     m = re.match(r'^/api/heat-map/([^/]+)$', path)
     if m:
         return handle_get_heat_map(m.group(1))
+    # Vibe Brief
+    m = re.match(r'^/api/city/([^/]+)/vibe-brief$', path)
+    if m:
+        return handle_get_vibe_brief(m.group(1))
 
     # Afterhours night recap
     if path == "/api/me/night-recap":

@@ -169,13 +169,13 @@ export default function MapScreen() {
     initializeApp();
   }, []);
 
-  // Single source of truth for venue fetching — handles initial load + city changes
+  // Single source of truth for venue fetching — handles initial load + city changes + demo toggle
   useEffect(() => {
     if (!isDemoMode) {
       fetchVenues(selectedCity);
     }
     fetchCityPulse(selectedCity);
-  }, [selectedCity]);
+  }, [selectedCity, isDemoMode]);
 
   const initializeApp = async () => {
     // In demo mode, use a fixed location (Victoria Island, Lagos) and skip API

@@ -1541,7 +1541,7 @@ export const useVibeStore = create<VibeStore>()(
             activeCampaigns: DEMO_ACTIVE_CAMPAIGNS as any[],
           });
         } else {
-          // Exiting demo mode - clear demo data
+          // Exiting demo mode - clear demo data then fetch live venues
           set({
             isDemoMode: false,
             user: null,
@@ -1552,6 +1552,7 @@ export const useVibeStore = create<VibeStore>()(
             crew: null,
             activeCampaigns: [],
           });
+          get().fetchVenues(get().selectedCity);
         }
       },
 
