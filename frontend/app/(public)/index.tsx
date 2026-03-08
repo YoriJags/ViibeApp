@@ -51,6 +51,7 @@ import VenueSpotlight from '../../src/components/VenueSpotlight';
 import VibeBriefCard from '../../src/components/VibeBriefCard';
 import VenueBattle from '../../src/components/VenueBattle';
 import HeatMapCard from '../../src/components/HeatMapCard';
+import SceneMoodSelector, { SceneMood } from '../../src/components/SceneMoodSelector';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [CityWelcomeCard, WeekendCard, InsiderFeed extracted to src/components/]
@@ -74,7 +75,7 @@ const CITIES = [
 export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string }>();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode, tabBarHidden, setTabBarHidden } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode, tabBarHidden, setTabBarHidden, sceneMood, sceneMoodSetAt, setSceneMood } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showList, setShowList] = useState(true); // List-first: content before map
@@ -88,6 +89,7 @@ export default function MapScreen() {
   const [showVibePlus, setShowVibePlus] = useState(false);
   const [spotlightVenue, setSpotlightVenue] = useState<any>(null);
   const [weekendDismissed, setWeekendDismissed] = useState(false);
+  const [showSceneMood, setShowSceneMood] = useState(false);
 
   // Friday 6PM onwards or all of Saturday
   const isWeekendActive = useMemo(() => {
@@ -120,12 +122,12 @@ export default function MapScreen() {
     )).start();
   }, [filteredVenues?.length, selectedCategory]);
 
-  // Animate header glow
+  // Animate header glow — slow, refined pulse
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(headerGlowAnim, { toValue: 1, duration: 2000, useNativeDriver: false }),
-        Animated.timing(headerGlowAnim, { toValue: 0.6, duration: 2000, useNativeDriver: false }),
+        Animated.timing(headerGlowAnim, { toValue: 1, duration: 3000, useNativeDriver: false }),
+        Animated.timing(headerGlowAnim, { toValue: 0.5, duration: 3000, useNativeDriver: false }),
       ])
     ).start();
 
@@ -141,6 +143,20 @@ export default function MapScreen() {
   useEffect(() => {
     if (isDemoMode) setShowList(true);
   }, [isDemoMode]);
+
+  // Scene Mood: prompt once per session during evening hours (6pm–4am) if not set today
+  useEffect(() => {
+    if (!user) return;
+    const hour = new Date().getHours();
+    const isEvening = hour >= 18 || hour < 4;
+    if (!isEvening) return;
+    const today = new Date().toDateString();
+    const setToday = sceneMoodSetAt ? new Date(sceneMoodSetAt).toDateString() : null;
+    if (setToday === today) return; // Already set this session
+    // Small delay — let the app load first
+    const timer = setTimeout(() => setShowSceneMood(true), 2500);
+    return () => clearTimeout(timer);
+  }, [user]);
 
   // Handle venue highlight from Trending page "Pull Up" button
   useEffect(() => {
@@ -409,22 +425,16 @@ export default function MapScreen() {
             }}
           >
             <Text style={styles.headerSubtitle}>
-              {CITIES.find(c => c.code === selectedCity)?.emoji} {CITIES.find(c => c.code === selectedCity)?.tagline}
+              {CITIES.find(c => c.code === selectedCity)?.name}
             </Text>
             <Animated.View style={{ transform: [{ rotate: chevronSpin }] }}>
-              <Ionicons name="chevron-down" size={14} color="#FF3366" />
+              <Ionicons name="chevron-down" size={12} color="rgba(255,255,255,0.35)" />
             </Animated.View>
           </TouchableOpacity>
         </View>
 
-        {/* RIGHT: Live energy + mode toggle + planner */}
+        {/* RIGHT: Mode toggle + planner */}
         <View style={styles.headerActions}>
-          {/* TheWave — live city energy visualizer */}
-          <TheWave
-            energy={cityPulse?.pulse_score ?? 40}
-            spotsLive={spotsLive}
-            cityName={cityName}
-          />
           {/* Mode toggle — Scout ↔ Insider */}
           <TouchableOpacity
             style={[styles.modePill, userMode === 'insider' && styles.modePillInsider]}
@@ -808,6 +818,13 @@ export default function MapScreen() {
         venue={spotlightVenue}
         onClose={() => setSpotlightVenue(null)}
       />
+
+      {/* Scene Mood — pre-session intent (once per evening) */}
+      <SceneMoodSelector
+        visible={showSceneMood}
+        onSelect={(mood: SceneMood) => { setSceneMood(mood); setShowSceneMood(false); }}
+        onSkip={() => setShowSceneMood(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -825,40 +842,42 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(10,10,15,0.92)',
   },
   headerCenter: {
     flex: 1,
     alignItems: 'center',
     paddingHorizontal: 8,
+    gap: 2,
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '900',
     color: '#FF3366',
-    letterSpacing: 6,
+    letterSpacing: 8,
   },
   headerGlow: {
     textShadowColor: '#FF3366',
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
+    textShadowRadius: 14,
   },
   citySelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-    backgroundColor: 'rgba(255,51,102,0.08)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,51,102,0.15)',
+    gap: 4,
+    paddingHorizontal: 2,
+    paddingVertical: 2,
   },
   headerSubtitle: {
-    fontSize: 12,
-    color: '#B0B0B0',
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.38)',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    fontWeight: '600',
   },
   headerActions: {
     flexDirection: 'row',
@@ -866,12 +885,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   plannerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,215,0,0.1)',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,215,0,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.25)',
+    borderColor: 'rgba(255,215,0,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -879,26 +898,26 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1,
-    borderColor: '#222',
+    borderColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modePillInsider: {
-    borderColor: '#9933FF44',
-    backgroundColor: 'rgba(153,51,255,0.08)',
+    borderColor: 'rgba(153,51,255,0.35)',
+    backgroundColor: 'rgba(153,51,255,0.07)',
   },
   modePillText: {
     fontSize: 16,
   },
   viewToggle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,51,102,0.1)',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(255,51,102,0.2)',
+    borderColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },

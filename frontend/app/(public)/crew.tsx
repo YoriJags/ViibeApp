@@ -155,11 +155,34 @@ export default function CrewScreen() {
             style={styles.heroCard}
           >
             <View style={styles.heroGlow} />
-            <View style={styles.heroIconRing}>
-              <LinearGradient colors={['#9933FF', '#FF3366']} style={styles.heroIconGrad}>
-                <Ionicons name="people" size={34} color="#FFF" />
-              </LinearGradient>
+
+            {/* 6-avatar constellation */}
+            <View style={styles.constellation}>
+              {/* Connecting lines */}
+              <View style={[styles.conLine, { width: 60, left: 52, top: 27, transform: [{ rotate: '0deg' }] }]} />
+              <View style={[styles.conLine, { width: 56, left: 16, top: 27, transform: [{ rotate: '55deg' }], transformOrigin: 'left center' }]} />
+              <View style={[styles.conLine, { width: 56, left: 92, top: 27, transform: [{ rotate: '-55deg' }], transformOrigin: 'right center' }]} />
+              <View style={[styles.conLine, { width: 60, left: 52, top: 71, transform: [{ rotate: '0deg' }] }]} />
+              <View style={[styles.conLine, { width: 40, left: 30, top: 71, transform: [{ rotate: '90deg' }], transformOrigin: 'left center' }]} />
+              <View style={[styles.conLine, { width: 40, left: 94, top: 71, transform: [{ rotate: '90deg' }], transformOrigin: 'left center' }]} />
+              {/* Avatars — 2 top, 2 mid, 2 bottom */}
+              {[
+                { top: 0,  left: 40, colors: ['#9933FF', '#FF3366'] as const, emoji: '🦁' },
+                { top: 0,  left: 96, colors: ['#FF3366', '#FF9933'] as const, emoji: '🐯' },
+                { top: 40, left: 10, colors: ['#3399FF', '#9933FF'] as const, emoji: '🦊' },
+                { top: 40, left: 124,colors: ['#FF9933', '#FF3366'] as const, emoji: '🐺' },
+                { top: 80, left: 40, colors: ['#00E676', '#3399FF'] as const, emoji: '🦅' },
+                { top: 80, left: 96, colors: ['#FF3366', '#9933FF'] as const, emoji: '🐉' },
+              ].map((a, i) => (
+                <View key={i} style={[styles.avatarNode, { top: a.top, left: a.left }]}>
+                  <LinearGradient colors={a.colors} style={styles.avatarNodeGrad}>
+                    <Text style={styles.avatarEmoji}>{a.emoji}</Text>
+                  </LinearGradient>
+                  {i === 0 && <View style={styles.captainCrown}><Text style={{ fontSize: 8 }}>👑</Text></View>}
+                </View>
+              ))}
             </View>
+
             <Text style={styles.heroTitle}>Build Your Cartel</Text>
             <Text style={styles.heroBody}>
               Move as a unit. Vote on where to go, track your squad live, and earn bonus clout for rolling deep.
@@ -478,6 +501,42 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 16, fontWeight: '900', color: '#FFF', letterSpacing: 2 },
   headerSub: { fontSize: 11, color: '#555', marginTop: 2, fontWeight: '500' },
+
+  // Constellation hero
+  constellation: {
+    position: 'relative',
+    width: 164,
+    height: 116,
+    marginBottom: 20,
+  },
+  conLine: {
+    position: 'absolute',
+    height: 1,
+    backgroundColor: 'rgba(153,51,255,0.25)',
+  },
+  avatarNode: {
+    position: 'absolute',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: 'rgba(153,51,255,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarNodeGrad: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarEmoji: { fontSize: 18 },
+  captainCrown: {
+    position: 'absolute',
+    top: -8,
+    right: -4,
+  },
 
   // Hero (no crew)
   heroCard: {

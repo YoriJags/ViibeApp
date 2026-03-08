@@ -755,6 +755,7 @@ export const DEMO_CREW_LOCATIONS = [
     avatar_config: { emoji: '🔥', bgColor: '#FF3366', accentColor: '#FF6B35' },
     checked_in_at: new Date().toISOString(),
     is_out: true,
+    battery_level: 0.87,
   },
   {
     user_id: 'demo_crew_2',
@@ -766,6 +767,7 @@ export const DEMO_CREW_LOCATIONS = [
     avatar_config: { emoji: '💎', bgColor: '#7C3AED', accentColor: '#A855F7' },
     checked_in_at: new Date().toISOString(),
     is_out: true,
+    battery_level: 0.54,
   },
   {
     user_id: 'demo_crew_3',
@@ -777,6 +779,31 @@ export const DEMO_CREW_LOCATIONS = [
     avatar_config: { emoji: '⚡', bgColor: '#059669', accentColor: '#34D399' },
     checked_in_at: new Date().toISOString(),
     is_out: true,
+    battery_level: 0.21,
+  },
+  {
+    user_id: 'demo_crew_4',
+    username: 'Kemi_Lux',
+    venue_name: 'Ocean View Lounge',
+    venue_id: 'demo_venue_ocean',
+    lat: 6.4318,
+    lng: 3.4261,
+    avatar_config: { emoji: '🌙', bgColor: '#0EA5E9', accentColor: '#38BDF8' },
+    checked_in_at: new Date().toISOString(),
+    is_out: true,
+    battery_level: 0.72,
+  },
+  {
+    user_id: 'demo_crew_5',
+    username: 'Nonso_Out',
+    venue_name: 'Rumors Bar',
+    venue_id: 'demo_venue_rumors',
+    lat: 6.4252,
+    lng: 3.4232,
+    avatar_config: { emoji: '👑', bgColor: '#B45309', accentColor: '#F59E0B' },
+    checked_in_at: new Date().toISOString(),
+    is_out: true,
+    battery_level: 0.13,
   },
 ];
 

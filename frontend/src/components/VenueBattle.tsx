@@ -3,13 +3,14 @@
  *
  * Two venues go head-to-head. Tap your side. Every bolt counts.
  * 30-minute window. One tap per scout per battle.
- * The crowd decides the winner.
+ * Expand button opens fullscreen arena mode.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, TouchableOpacity, Animated, StyleSheet,
-  ActivityIndicator,
+  ActivityIndicator, Modal, StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -66,6 +67,124 @@ function formatTime(secs: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+// ── Shared arena content ───────────────────────────────────────────────────────
+function BattleArena({
+  battle,
+  tapped,
+  tapping,
+  timeLeft,
+  colorA,
+  colorB,
+  barAnim,
+  pulseA,
+  pulseB,
+  onTap,
+  fullscreen = false,
+}: {
+  battle: Battle;
+  tapped: 'a' | 'b' | null;
+  timeLeft: number;
+  colorA: string;
+  colorB: string;
+  barAnim: Animated.Value;
+  pulseA: Animated.Value;
+  pulseB: Animated.Value;
+  onTap: (side: 'a' | 'b') => void;
+  fullscreen?: boolean;
+}) {
+  const isEnded = battle.status === 'ended' || timeLeft === 0;
+
+  return (
+    <View style={fullscreen ? fs.arenaWrap : undefined}>
+      {/* Arena row */}
+      <View style={[styles.arenaRow, fullscreen && fs.arenaRow]}>
+        {/* Venue A */}
+        <Animated.View style={[styles.venueBlock, { transform: [{ scale: pulseA }] }]}>
+          <TouchableOpacity
+            style={[
+              styles.venueTapBtn,
+              fullscreen && fs.tapBtn,
+              { borderColor: colorA + '55', backgroundColor: colorA + '12' },
+              tapped === 'a' && { borderColor: colorA, backgroundColor: colorA + '25' },
+            ]}
+            onPress={() => onTap('a')}
+            activeOpacity={0.7}
+            disabled={!!tapped || isEnded}
+          >
+            <Text style={[styles.venueTapNum, fullscreen && fs.tapNum, { color: colorA }]}>{battle.venue_a.taps}</Text>
+            <Ionicons name="flash" size={fullscreen ? 28 : 18} color={colorA} style={{ opacity: tapped === 'a' ? 1 : 0.5 }} />
+            {!tapped && !isEnded && <Text style={[styles.tapHintText, { color: colorA + 'AA' }]}>TAP</Text>}
+          </TouchableOpacity>
+          <Text style={[styles.venueName, fullscreen && fs.venueName]} numberOfLines={2}>{battle.venue_a.name}</Text>
+          <Text style={[styles.venueArea, fullscreen && fs.venueArea]}>{battle.venue_a.area}</Text>
+          {tapped === 'a' && <Text style={[styles.votedBadge, { color: colorA }]}>YOUR PICK ⚡</Text>}
+        </Animated.View>
+
+        {/* VS block */}
+        <View style={styles.vsBlock}>
+          <Text style={[styles.vsText, fullscreen && fs.vsText]}>VS</Text>
+          <Text style={[styles.totalTaps, fullscreen && { color: '#555', fontSize: 12 }]}>
+            {battle.total_taps} bolts
+          </Text>
+          {isEnded && battle.winner && (
+            <View style={fs.winnerBadge}>
+              <Text style={fs.winnerText}>
+                {battle.winner === 'tie' ? '🤝 TIE' : battle.winner === 'a' ? '🏆 A WINS' : '🏆 B WINS'}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Venue B */}
+        <Animated.View style={[styles.venueBlock, { transform: [{ scale: pulseB }] }]}>
+          <TouchableOpacity
+            style={[
+              styles.venueTapBtn,
+              fullscreen && fs.tapBtn,
+              { borderColor: colorB + '55', backgroundColor: colorB + '12' },
+              tapped === 'b' && { borderColor: colorB, backgroundColor: colorB + '25' },
+            ]}
+            onPress={() => onTap('b')}
+            activeOpacity={0.7}
+            disabled={!!tapped || isEnded}
+          >
+            <Text style={[styles.venueTapNum, fullscreen && fs.tapNum, { color: colorB }]}>{battle.venue_b.taps}</Text>
+            <Ionicons name="flash" size={fullscreen ? 28 : 18} color={colorB} style={{ opacity: tapped === 'b' ? 1 : 0.5 }} />
+            {!tapped && !isEnded && <Text style={[styles.tapHintText, { color: colorB + 'AA' }]}>TAP</Text>}
+          </TouchableOpacity>
+          <Text style={[styles.venueName, fullscreen && fs.venueName]} numberOfLines={2}>{battle.venue_b.name}</Text>
+          <Text style={[styles.venueArea, fullscreen && fs.venueArea]}>{battle.venue_b.area}</Text>
+          {tapped === 'b' && <Text style={[styles.votedBadge, { color: colorB }]}>YOUR PICK ⚡</Text>}
+        </Animated.View>
+      </View>
+
+      {/* Progress bar */}
+      <View style={[styles.progressTrack, fullscreen && fs.progressTrack]}>
+        <Animated.View style={[
+          styles.progressFillA,
+          {
+            width: barAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+            backgroundColor: colorA,
+          },
+        ]} />
+      </View>
+
+      <View style={styles.shareRow}>
+        <Text style={[styles.shareText, fullscreen && fs.shareText, { color: colorA }]}>
+          {battle.venue_a.name.split(' ')[0]} {battle.venue_a.share}%
+        </Text>
+        <Text style={[styles.shareText, fullscreen && fs.shareText, { color: colorB }]}>
+          {battle.venue_b.share}% {battle.venue_b.name.split(' ')[0]}
+        </Text>
+      </View>
+
+      {!tapped && !isEnded && (
+        <Text style={[styles.cta, fullscreen && fs.cta]}>Tap a venue to cast your bolt ⚡</Text>
+      )}
+    </View>
+  );
+}
+
 export default function VenueBattle({ isDemoMode }: Props) {
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const [battle, setBattle] = useState<Battle | null>(null);
@@ -73,6 +192,7 @@ export default function VenueBattle({ isDemoMode }: Props) {
   const [tapped, setTapped] = useState<'a' | 'b' | null>(null);
   const [tapping, setTapping] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
 
   const barAnim = useRef(new Animated.Value(0.5)).current;
   const pulseA  = useRef(new Animated.Value(1)).current;
@@ -89,24 +209,17 @@ export default function VenueBattle({ isDemoMode }: Props) {
     Animated.spring(barAnim, { toValue: shareA, tension: 50, friction: 12, useNativeDriver: false }).start();
   }, [battle?.venue_a.share]);
 
-  // Countdown timer
   useEffect(() => {
     if (!battle || battle.status === 'ended') return;
     setTimeLeft(battle.seconds_left);
     const interval = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 1) { clearInterval(interval); return 0; }
-        return t - 1;
-      });
+      setTimeLeft(t => { if (t <= 1) { clearInterval(interval); return 0; } return t - 1; });
     }, 1000);
     return () => clearInterval(interval);
   }, [battle?.id]);
 
-  // Re-fetch when countdown hits zero
   useEffect(() => {
-    if (timeLeft === 0 && battle && battle.status !== 'ended') {
-      fetchBattle();
-    }
+    if (timeLeft === 0 && battle && battle.status !== 'ended') fetchBattle();
   }, [timeLeft]);
 
   const fetchBattle = async () => {
@@ -122,7 +235,7 @@ export default function VenueBattle({ isDemoMode }: Props) {
   };
 
   const tap = async (side: 'a' | 'b') => {
-    if (tapped || tapping || !battle || isDemoMode) return;
+    if (tapped || tapping || !battle) return;
     if (isDemoMode) { setTapped(side); return; }
     setTapping(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -133,145 +246,124 @@ export default function VenueBattle({ isDemoMode }: Props) {
     ]).start();
     try {
       const res = await fetch(`${API_URL}/api/battles/${battle.id}/tap/${side}`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
+        method: 'POST', headers: getAuthHeaders(),
       });
-      if (res.ok) {
-        const d = await res.json();
-        setBattle(d.battle);
-        setTapped(side);
-      } else if (res.status === 429) {
-        setTapped(side); // already tapped
-      }
+      if (res.ok) { const d = await res.json(); setBattle(d.battle); setTapped(side); }
+      else if (res.status === 429) { setTapped(side); }
     } catch {}
     setTapping(false);
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingCard}>
-        <ActivityIndicator size="small" color="#FF3366" />
-      </View>
-    );
-  }
-
+  if (loading) return (
+    <View style={styles.loadingCard}><ActivityIndicator size="small" color="#FF3366" /></View>
+  );
   if (!battle) return null;
 
   const isEnded = battle.status === 'ended' || timeLeft === 0;
   const colorA = ENERGY_COLORS[battle.venue_a.energy_level] ?? '#FF3366';
   const colorB = ENERGY_COLORS[battle.venue_b.energy_level] ?? '#3399FF';
 
+  const timerLabel = isEnded
+    ? (battle.winner === 'tie' ? 'TIE' : battle.winner === 'a' ? battle.venue_a.name.split(' ')[0] + ' WINS' : battle.venue_b.name.split(' ')[0] + ' WINS')
+    : formatTime(timeLeft);
+
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Ionicons name="flash" size={13} color="#FF3366" />
-          <Text style={styles.headerLabel}>VENUE BATTLE</Text>
-        </View>
-        <View style={styles.timerPill}>
-          <Ionicons name={isEnded ? 'checkmark-circle' : 'time'} size={11} color={isEnded ? '#00E676' : '#FF9933'} />
-          <Text style={[styles.timerText, { color: isEnded ? '#00E676' : '#FF9933' }]}>
-            {isEnded ? (battle.winner === 'tie' ? 'TIE' : battle.winner === 'a' ? battle.venue_a.name.split(' ')[0] + ' WINS' : battle.venue_b.name.split(' ')[0] + ' WINS') : formatTime(timeLeft)}
-          </Text>
-        </View>
-      </View>
-
-      {/* Battle arena */}
-      <View style={styles.arenaRow}>
-        {/* Venue A */}
-        <Animated.View style={[styles.venueBlock, { transform: [{ scale: pulseA }] }]}>
-          <TouchableOpacity
-            style={[
-              styles.venueTapBtn,
-              { borderColor: colorA + '55', backgroundColor: colorA + '12' },
-              tapped === 'a' && { borderColor: colorA, backgroundColor: colorA + '25' },
-            ]}
-            onPress={() => tap('a')}
-            activeOpacity={0.7}
-            disabled={!!tapped || isEnded}
-          >
-            <Text style={[styles.venueTapNum, { color: colorA }]}>{battle.venue_a.taps}</Text>
-            <Ionicons name="flash" size={18} color={colorA} style={{ opacity: tapped === 'a' ? 1 : 0.5 }} />
-          </TouchableOpacity>
-          <Text style={styles.venueName} numberOfLines={2}>{battle.venue_a.name}</Text>
-          <Text style={styles.venueArea}>{battle.venue_a.area}</Text>
-          {tapped === 'a' && <Text style={[styles.votedBadge, { color: colorA }]}>YOUR PICK</Text>}
-        </Animated.View>
-
-        {/* VS */}
-        <View style={styles.vsBlock}>
-          <Text style={styles.vsText}>VS</Text>
-          <Text style={styles.totalTaps}>{battle.total_taps} bolts</Text>
+    <>
+      <View style={styles.container}>
+        {/* Card header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Ionicons name="flash" size={13} color="#FF3366" />
+            <Text style={styles.headerLabel}>VENUE BATTLE</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <View style={styles.timerPill}>
+              <Ionicons name={isEnded ? 'checkmark-circle' : 'time'} size={11} color={isEnded ? '#00E676' : '#FF9933'} />
+              <Text style={[styles.timerText, { color: isEnded ? '#00E676' : '#FF9933' }]}>{timerLabel}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.expandBtn}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setFullscreen(true); }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="expand-outline" size={15} color="#555" />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Venue B */}
-        <Animated.View style={[styles.venueBlock, { transform: [{ scale: pulseB }] }]}>
-          <TouchableOpacity
-            style={[
-              styles.venueTapBtn,
-              { borderColor: colorB + '55', backgroundColor: colorB + '12' },
-              tapped === 'b' && { borderColor: colorB, backgroundColor: colorB + '25' },
-            ]}
-            onPress={() => tap('b')}
-            activeOpacity={0.7}
-            disabled={!!tapped || isEnded}
-          >
-            <Text style={[styles.venueTapNum, { color: colorB }]}>{battle.venue_b.taps}</Text>
-            <Ionicons name="flash" size={18} color={colorB} style={{ opacity: tapped === 'b' ? 1 : 0.5 }} />
-          </TouchableOpacity>
-          <Text style={styles.venueName} numberOfLines={2}>{battle.venue_b.name}</Text>
-          <Text style={styles.venueArea}>{battle.venue_b.area}</Text>
-          {tapped === 'b' && <Text style={[styles.votedBadge, { color: colorB }]}>YOUR PICK</Text>}
-        </Animated.View>
+        {/* Mini arena */}
+        <BattleArena
+          battle={battle} tapped={tapped} timeLeft={timeLeft}
+          colorA={colorA} colorB={colorB} barAnim={barAnim} pulseA={pulseA} pulseB={pulseB}
+          onTap={tap}
+        />
       </View>
 
-      {/* Progress bar */}
-      <View style={styles.progressTrack}>
-        <Animated.View style={[
-          styles.progressFillA,
-          {
-            width: barAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-            backgroundColor: colorA,
-          },
-        ]} />
-      </View>
+      {/* Fullscreen Modal */}
+      <Modal visible={fullscreen} animationType="slide" presentationStyle="fullScreen" statusBarTranslucent onRequestClose={() => setFullscreen(false)}>
+        <LinearGradient colors={['#0A0010', '#04000A', '#000010']} style={{ flex: 1 }}>
+          <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+          <SafeAreaView style={{ flex: 1 }}>
+            {/* FS Header */}
+            <View style={fs.header}>
+              <View style={styles.headerLeft}>
+                <Ionicons name="flash" size={16} color="#FF3366" />
+                <Text style={fs.headerLabel}>VENUE BATTLE</Text>
+              </View>
+              <View style={styles.headerRight}>
+                <View style={styles.timerPill}>
+                  <Ionicons name={isEnded ? 'checkmark-circle' : 'time'} size={12} color={isEnded ? '#00E676' : '#FF9933'} />
+                  <Text style={[fs.timerText, { color: isEnded ? '#00E676' : '#FF9933' }]}>{timerLabel}</Text>
+                </View>
+                <TouchableOpacity style={fs.closeBtn} onPress={() => setFullscreen(false)}>
+                  <Ionicons name="close" size={18} color="#FFF" />
+                </TouchableOpacity>
+              </View>
+            </View>
 
-      <View style={styles.shareRow}>
-        <Text style={[styles.shareText, { color: colorA }]}>{battle.venue_a.share}%</Text>
-        <Text style={[styles.shareText, { color: colorB }]}>{battle.venue_b.share}%</Text>
-      </View>
+            {/* Full arena */}
+            <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20 }}>
+              <BattleArena
+                battle={battle} tapped={tapped} timeLeft={timeLeft}
+                colorA={colorA} colorB={colorB} barAnim={barAnim} pulseA={pulseA} pulseB={pulseB}
+                onTap={tap} fullscreen
+              />
+            </View>
 
-      {!tapped && !isEnded && (
-        <Text style={styles.cta}>Tap a venue to cast your bolt</Text>
-      )}
-    </View>
+            {/* Footer */}
+            <View style={fs.footer}>
+              <Text style={fs.footerText}>VIIBE BATTLE · City decides the winner · {battle.total_taps} total bolts cast</Text>
+            </View>
+          </SafeAreaView>
+        </LinearGradient>
+      </Modal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0C0C15',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#1C1C2C',
-    padding: 14,
-    marginHorizontal: 16,
-    marginTop: 12,
+    backgroundColor: '#0C0C15', borderRadius: 16, borderWidth: 1,
+    borderColor: '#1C1C2C', padding: 14, marginHorizontal: 16, marginTop: 12,
   },
   loadingCard: {
-    marginHorizontal: 16, marginTop: 12, padding: 20,
-    alignItems: 'center', backgroundColor: '#0C0C15',
-    borderRadius: 16, borderWidth: 1, borderColor: '#1C1C2C',
+    marginHorizontal: 16, marginTop: 12, padding: 20, alignItems: 'center',
+    backgroundColor: '#0C0C15', borderRadius: 16, borderWidth: 1, borderColor: '#1C1C2C',
   },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerLabel: { fontSize: 9, color: '#FF3366', fontWeight: '800', letterSpacing: 1.5 },
   timerPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: '#111120', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
   },
   timerText: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
+  expandBtn: {
+    width: 28, height: 28, borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    justifyContent: 'center', alignItems: 'center',
+  },
   arenaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   venueBlock: { flex: 1, alignItems: 'center', gap: 6 },
   venueTapBtn: {
@@ -279,18 +371,53 @@ const styles = StyleSheet.create({
     paddingVertical: 14, alignItems: 'center', gap: 4,
   },
   venueTapNum: { fontSize: 26, fontWeight: '900', lineHeight: 28 },
+  tapHintText: { fontSize: 8, fontWeight: '900', letterSpacing: 1.5, marginTop: 2 },
   venueName: { fontSize: 11, fontWeight: '700', color: '#DDD', textAlign: 'center', lineHeight: 14 },
   venueArea: { fontSize: 9, color: '#444', fontWeight: '500', textAlign: 'center' },
   votedBadge: { fontSize: 8, fontWeight: '900', letterSpacing: 1 },
   vsBlock: { alignItems: 'center', gap: 4 },
   vsText: { fontSize: 16, fontWeight: '900', color: '#3A3A4E' },
   totalTaps: { fontSize: 8, color: '#2A2A4A', fontWeight: '600' },
-  progressTrack: {
-    height: 4, backgroundColor: '#0E0E1C', borderRadius: 2,
-    overflow: 'hidden', marginBottom: 6,
-  },
+  progressTrack: { height: 4, backgroundColor: '#0E0E1C', borderRadius: 2, overflow: 'hidden', marginBottom: 6 },
   progressFillA: { height: 4, borderRadius: 2 },
   shareRow: { flexDirection: 'row', justifyContent: 'space-between' },
   shareText: { fontSize: 10, fontWeight: '800' },
   cta: { fontSize: 10, color: '#2A2A4A', fontWeight: '600', textAlign: 'center', marginTop: 8 },
+});
+
+// Fullscreen-specific overrides
+const fs = StyleSheet.create({
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(255,51,102,0.15)',
+  },
+  headerLabel: { fontSize: 14, color: '#FF3366', fontWeight: '900', letterSpacing: 2 },
+  timerText: { fontSize: 14, fontWeight: '900', letterSpacing: 0.5 },
+  closeBtn: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  arenaWrap: { paddingVertical: 20 },
+  arenaRow: { gap: 16, marginBottom: 32 },
+  tapBtn: { paddingVertical: 36, borderRadius: 20, borderWidth: 2 },
+  tapNum: { fontSize: 48, lineHeight: 52 },
+  venueName: { fontSize: 15, lineHeight: 20, fontWeight: '800' },
+  venueArea: { fontSize: 11, color: '#555' },
+  vsText: { fontSize: 26, fontWeight: '900', letterSpacing: 2 },
+  progressTrack: { height: 8, borderRadius: 4, marginBottom: 10, marginHorizontal: 0 },
+  shareText: { fontSize: 14, fontWeight: '900' },
+  cta: { fontSize: 14, color: '#444', textAlign: 'center', marginTop: 16, fontWeight: '600', letterSpacing: 0.5 },
+  winnerBadge: {
+    marginTop: 8, backgroundColor: 'rgba(0,230,118,0.1)',
+    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4,
+    borderWidth: 1, borderColor: 'rgba(0,230,118,0.3)',
+  },
+  winnerText: { fontSize: 11, fontWeight: '800', color: '#00E676', letterSpacing: 0.5 },
+  footer: {
+    paddingVertical: 16, alignItems: 'center',
+    borderTopWidth: 1, borderTopColor: 'rgba(255,51,102,0.1)',
+  },
+  footerText: { fontSize: 9, color: '#333', fontWeight: '700', letterSpacing: 1 },
 });

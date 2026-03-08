@@ -210,6 +210,8 @@ interface PersistedState {
   locationSharingEnabled: boolean;
   vibePersona: 'turn_up' | 'grown_sexy' | 'culture' | 'chill_set' | null;
   userMode: 'scout' | 'insider' | null;
+  sceneMood: 'easy_flow' | 'high_energy' | 'mixed_scene' | 'low_key' | null;
+  sceneMoodSetAt: string | null; // ISO date — set once per session (time-gated)
 }
 
 interface LobbyVenue extends Venue {
@@ -295,6 +297,7 @@ export interface VenueAffinity { venue_type: string; score: number; rating_count
 export interface VibeDNA {
   user_id: string;
   affinities: VenueAffinity[];
+  tap_affinities?: { venue_type: string; tap_count: number; share: number }[];
   dominant_type: string;
   night_style: 'early_bird' | 'night_owl' | 'midnight_crew';
   night_style_label: string;
@@ -382,6 +385,7 @@ interface VibeStoreActions {
   toggleLocationSharing: () => void;
   setVibePersona: (persona: 'turn_up' | 'grown_sexy' | 'culture' | 'chill_set') => void;
   setUserMode: (mode: 'scout' | 'insider') => void;
+  setSceneMood: (mood: 'easy_flow' | 'high_energy' | 'mixed_scene' | 'low_key') => void;
   setTabBarHidden: (hidden: boolean) => void;
   // Cooldown
   cooldownSkip: (venueId: string, method: 'clout' | 'payment') => Promise<{ success: boolean; clout_remaining?: number; error?: string }>;
@@ -430,6 +434,8 @@ export const useVibeStore = create<VibeStore>()(
       locationSharingEnabled: true,
       vibePersona: null,
       userMode: null,
+      sceneMood: null,
+      sceneMoodSetAt: null,
 
       // Transient state (not persisted)
       venues: [],
@@ -678,7 +684,7 @@ export const useVibeStore = create<VibeStore>()(
             set({ cities });
           }
         } catch (error) {
-          console.error('Error fetching cities:', error);
+          console.warn('fetchCities: network unavailable', error);
         }
       },
 
@@ -1578,6 +1584,7 @@ export const useVibeStore = create<VibeStore>()(
       },
       setVibePersona: (persona) => set({ vibePersona: persona }),
       setUserMode: (mode) => set({ userMode: mode }),
+      setSceneMood: (mood) => set({ sceneMood: mood, sceneMoodSetAt: new Date().toISOString() }),
       setTabBarHidden: (hidden) => set({ tabBarHidden: hidden }),
 
       // ===== Campaign Actions =====
@@ -1766,6 +1773,8 @@ export const useVibeStore = create<VibeStore>()(
         locationSharingEnabled: state.locationSharingEnabled,
         vibePersona: state.vibePersona,
         userMode: state.userMode,
+        sceneMood: state.sceneMood,
+        sceneMoodSetAt: state.sceneMoodSetAt,
       }),
       onRehydrateStorage: () => (state) => {
         // Called when store is rehydrated from storage
