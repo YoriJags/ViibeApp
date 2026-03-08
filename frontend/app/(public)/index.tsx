@@ -52,6 +52,7 @@ import VibeBriefCard from '../../src/components/VibeBriefCard';
 import VenueBattle from '../../src/components/VenueBattle';
 import HeatMapCard from '../../src/components/HeatMapCard';
 import SceneMoodSelector, { SceneMood } from '../../src/components/SceneMoodSelector';
+import VariableRewardOverlay, { VariableRewardRef } from '../../src/components/VariableRewardOverlay';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [CityWelcomeCard, WeekendCard, InsiderFeed extracted to src/components/]
@@ -90,6 +91,7 @@ export default function MapScreen() {
   const [spotlightVenue, setSpotlightVenue] = useState<any>(null);
   const [weekendDismissed, setWeekendDismissed] = useState(false);
   const [showSceneMood, setShowSceneMood] = useState(false);
+  const rewardRef = useRef<VariableRewardRef>(null);
 
   // Friday 6PM onwards or all of Saturday
   const isWeekendActive = useMemo(() => {
@@ -629,20 +631,24 @@ export default function MapScreen() {
 
           {/* NoDulling — Quick pulse drop when near a venue */}
           {nearbyVenue && nearbyVenueFullData && (
-            <NoDulling
-              venueName={nearbyVenue.name}
-              venueId={nearbyVenue.id}
-              pulseTier={nearbyVenueFullData.pulse?.tier ?? 'stirring'}
-              onDrop={async (id) => {
-                const loc = userLocation ?? { lat: 6.4316, lng: 3.4223 };
-                await dropQuickPulse(id, loc.lat, loc.lng);
-              }}
-              onFullRate={() => router.push({
-                pathname: '/venue/[id]',
-                params: { id: nearbyVenue.id, openRateModal: 'true' },
-              })}
-              disabled={!!demoPulsedVenues?.[nearbyVenue.id]}
-            />
+            <View style={{ position: 'relative' }}>
+              <NoDulling
+                venueName={nearbyVenue.name}
+                venueId={nearbyVenue.id}
+                pulseTier={nearbyVenueFullData.pulse?.tier ?? 'stirring'}
+                onDrop={async (id) => {
+                  const loc = userLocation ?? { lat: 6.4316, lng: 3.4223 };
+                  await dropQuickPulse(id, loc.lat, loc.lng);
+                }}
+                onFullRate={() => router.push({
+                  pathname: '/venue/[id]',
+                  params: { id: nearbyVenue.id, openRateModal: 'true' },
+                })}
+                onVariableReward={(type) => rewardRef.current?.trigger(type)}
+                disabled={!!demoPulsedVenues?.[nearbyVenue.id]}
+              />
+              <VariableRewardOverlay ref={rewardRef} />
+            </View>
           )}
 
           {/* ── VENUE LIST: Category filter → cards → inline VibeMatch ── */}

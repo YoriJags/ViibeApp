@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { rollVariableReward, RewardType } from './VariableRewardOverlay';
 
 interface Props {
   venueName: string;
@@ -24,6 +25,7 @@ interface Props {
   pulseTier: 'source' | 'max_pulse' | 'electric' | 'charged' | 'stirring' | 'dormant';
   onDrop: (venueId: string) => Promise<void>; // caller fires the API call
   onFullRate?: () => void;                     // open the full RateVibeModal
+  onVariableReward?: (type: RewardType) => void; // parent fires animation
   disabled?: boolean;                          // already dropped a pulse this session
 }
 
@@ -45,7 +47,7 @@ const TIER_LABELS: Record<string, string> = {
   dormant: 'DORMANT',
 };
 
-export default function NoDulling({ venueName, venueId, pulseTier, onDrop, onFullRate, disabled }: Props) {
+export default function NoDulling({ venueName, venueId, pulseTier, onDrop, onFullRate, onVariableReward, disabled }: Props) {
   const [dropped, setDropped] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -69,6 +71,10 @@ export default function NoDulling({ venueName, venueId, pulseTier, onDrop, onFul
     try {
       await onDrop(venueId);
       setDropped(true);
+
+      // Roll variable reward — fire callback if something hit
+      const reward = rollVariableReward();
+      if (reward && onVariableReward) onVariableReward(reward);
 
       // Flash celebration
       Animated.sequence([

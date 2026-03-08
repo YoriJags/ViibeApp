@@ -46,6 +46,7 @@ import BookingModal from '../../src/components/BookingModal';
 import VibeSurgeBar from '../../src/components/VibeSurgeBar';
 import SurgeCelebration from '../../src/components/SurgeCelebration';
 import FirstScoutCelebration from '../../src/components/FirstScoutCelebration';
+import ResonancePrompt from '../../src/components/ResonancePrompt';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -116,6 +117,8 @@ export default function VenueDetailScreen() {
   const [showSurgeCelebration, setShowSurgeCelebration] = useState(false);
   const [surgeTapCount, setSurgeTapCount] = useState(0);
   const [showFirstScout, setShowFirstScout] = useState(false);
+  const [showResonance, setShowResonance] = useState(false);
+  const [sessionBoltCount, setSessionBoltCount] = useState(0);
   const [activeTab, setActiveTab] = useState<'now' | 'intel' | 'crew' | 'info'>('now');
 
   // Animations
@@ -403,6 +406,9 @@ export default function VenueDetailScreen() {
       setLastHadPhoto(hasPhoto);
       setShowRateModal(false);
       setShowSuccessAnimation(true);
+      setSessionBoltCount(prev => prev + 1);
+      // Show ResonancePrompt 2s after success animation clears
+      setTimeout(() => setShowResonance(true), 2000);
 
       // Refresh rating status so modal shows cooldown next open
       const updatedStatus = await getUserRatingStatus(venue.id);
@@ -1135,6 +1141,18 @@ export default function VenueDetailScreen() {
           });
         }}
         onDeleted={(id) => setVenueAlerts(prev => prev.filter(a => a.id !== id))}
+      />
+
+      {/* Resonance Prompt — post-rating quality annotation */}
+      <ResonancePrompt
+        visible={showResonance}
+        venueName={venue?.name || ''}
+        boltCount={sessionBoltCount}
+        onSelect={(score) => {
+          setShowResonance(false);
+          // TODO: POST /api/venues/:id/resonance { score }
+        }}
+        onDismiss={() => setShowResonance(false)}
       />
 
       {/* Rate Vibe Modal */}
