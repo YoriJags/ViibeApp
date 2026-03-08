@@ -2623,6 +2623,15 @@ def route_get(path, query_params, headers):
     if path == "/api/me/night-recap":
         return handle_get_night_recap(headers)
 
+    # VIIBE Score
+    if path == "/api/me/viibe-score":
+        return handle_get_viibe_score(headers)
+
+    # Venue resonance stats
+    m = re.match(r'^/api/venues/([^/]+)/resonance$', path)
+    if m:
+        return handle_get_venue_resonance(m.group(1))
+
     return 404, {"detail": "Not found"}
 
 def route_put(path, body, headers):
@@ -2710,6 +2719,11 @@ def route_post(path, body, headers):
     m = re.match(r'^/api/battles/([^/]+)/tap/([ab])$', path)
     if m:
         return handle_tap_battle(m.group(1), m.group(2), headers)
+
+    # Resonance
+    m = re.match(r'^/api/venues/([^/]+)/resonance$', path)
+    if m:
+        return handle_submit_resonance(m.group(1), body, headers)
 
     return 404, {"detail": "Not found"}
 
@@ -2831,6 +2845,112 @@ def handle_fund_reward_pool(venue_id, body, headers):
                                            "coin_rate": coin_rate, "active": True,
                                            "funded_at": now.isoformat(), "expires_at": expires_at.isoformat()})
     return 200, {"ok": True, "pool_id": pool_id, "coins_funded": coins_funded, "coin_rate": coin_rate, "expires_at": expires_at.isoformat()}
+
+
+# ── Resonance ────────────────────────────────────────────────────────────────
+
+def handle_submit_resonance(venue_id, body, headers):
+    """POST /api/venues/:id/resonance — submit post-venue quality annotation."""
+    db = get_db()
+    if not db: return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user: return 401, {"detail": "Not authenticated"}
+    score = int(body.get("score", 0))
+    if score < 1 or score > 5: return 400, {"detail": "Score must be 1–5"}
+    venue = db.venues.find_one({"id": venue_id})
+    if not venue: return 404, {"detail": "Venue not found"}
+    user_id = user["id"]
+    now = datetime.now(timezone.utc)
+    # Night date key (5PM rolling window)
+    if now.hour < 7:
+        night_date = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+    else:
+        night_date = now.strftime("%Y-%m-%d")
+    existing = db.resonance.find_one({"user_id": user_id, "venue_id": venue_id, "night_date": night_date})
+    doc_id = existing["id"] if existing else str(uuid.uuid4())
+    if existing:
+        db.resonance.update_one({"_id": existing["_id"]}, {"$set": {
+            "score": score,
+            "bolt_count": int(body.get("bolt_count", 0)),
+            "scene_mood": body.get("scene_mood"),
+            "updated_at": now,
+        }})
+    else:
+        db.resonance.insert_one({"id": doc_id, "user_id": user_id, "venue_id": venue_id,
+            "score": score, "bolt_count": int(body.get("bolt_count", 0)),
+            "scene_mood": body.get("scene_mood"), "night_date": night_date, "created_at": now})
+    # Update venue resonance aggregate (last 7 days)
+    cutoff = now - timedelta(days=7)
+    docs = list(db.resonance.find({"venue_id": venue_id, "created_at": {"$gte": cutoff}}, {"score": 1}))
+    if docs:
+        avg = round(sum(d["score"] for d in docs) / len(docs), 2)
+        pure_pct = round(sum(1 for d in docs if d["score"] == 5) / len(docs) * 100)
+        db.venues.update_one({"id": venue_id}, {"$set": {
+            "resonance_avg": avg, "resonance_count": len(docs), "pure_resonance_pct": pure_pct
+        }})
+    return 200, {"id": doc_id, "score": score, "night_date": night_date}
+
+
+def handle_get_venue_resonance(venue_id):
+    """GET /api/venues/:id/resonance — public resonance stats for a venue."""
+    db = get_db()
+    if not db: return 503, {"detail": "Database unavailable"}
+    venue = db.venues.find_one({"id": venue_id})
+    if not venue: return 404, {"detail": "Venue not found"}
+    cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+    docs = list(db.resonance.find({"venue_id": venue_id, "created_at": {"$gte": cutoff}}, {"score": 1}))
+    dist = {}
+    for d in docs:
+        dist[str(d["score"])] = dist.get(str(d["score"]), 0) + 1
+    return 200, {
+        "venue_id": venue_id,
+        "avg_score": venue.get("resonance_avg"),
+        "total_responses": venue.get("resonance_count", 0),
+        "pure_resonance_pct": venue.get("pure_resonance_pct", 0),
+        "distribution": dist,
+        "total_7d": len(docs),
+    }
+
+
+def handle_get_viibe_score(headers):
+    """GET /api/me/viibe-score — personal VIIBE composite score."""
+    db = get_db()
+    if not db: return 503, {"detail": "Database unavailable"}
+    user = get_current_user(headers)
+    if not user: return 401, {"detail": "Not authenticated"}
+    user_id = user["id"]
+    now = datetime.now(timezone.utc)
+    cutoff_30d = now - timedelta(days=30)
+    if now.hour < 7:
+        night_start = (now - timedelta(days=1)).replace(hour=17, minute=0, second=0, microsecond=0)
+    else:
+        night_start = now.replace(hour=17, minute=0, second=0, microsecond=0)
+    # Resonance stats
+    res_docs = list(db.resonance.find({"user_id": user_id, "created_at": {"$gte": cutoff_30d}}, {"score": 1}))
+    avg_res = sum(d["score"] for d in res_docs) / len(res_docs) if res_docs else 0
+    pure_count = sum(1 for d in res_docs if d["score"] == 5)
+    # Nights out
+    nights = db.ratings.distinct("timestamp", {"user_id": user_id, "timestamp": {"$gte": cutoff_30d}})
+    nights_out = len(set(n.strftime("%Y-%m-%d") for n in nights)) if nights else 0
+    # Bolts tonight
+    bolts_tonight = db.venue_bolts.count_documents({"user_id": user_id, "created_at": {"$gte": night_start}})
+    quality_pts = min(round(avg_res * 20), 100) if avg_res else 0
+    consistency_pts = min(nights_out, 30)
+    bolt_pts = min(bolts_tonight * 2, 20)
+    pure_pts = min(pure_count * 2, 10)
+    viibe_score = quality_pts + consistency_pts + bolt_pts + pure_pts
+    if viibe_score >= 120: tier, tier_label = "legendary", "Legendary Scout"
+    elif viibe_score >= 80: tier, tier_label = "elite", "Elite Scout"
+    elif viibe_score >= 50: tier, tier_label = "active", "Active Scout"
+    elif viibe_score >= 20: tier, tier_label = "rising", "Rising Scout"
+    else: tier, tier_label = "new", "New Scout"
+    return 200, {
+        "viibe_score": viibe_score, "tier": tier, "tier_label": tier_label,
+        "components": {"quality": quality_pts, "consistency": consistency_pts,
+                       "bolts_tonight": bolt_pts, "pure_resonance": pure_pts},
+        "stats": {"avg_resonance": round(avg_res, 2) if avg_res else None, "resonance_count": len(res_docs),
+                  "pure_resonance_nights": pure_count, "nights_out_30d": nights_out, "bolts_tonight": bolts_tonight},
+    }
 
 
 # ========================

@@ -58,6 +58,7 @@ from app.routes.dna import router as dna_router
 from app.routes.battles import router as battles_router
 from app.routes.heat_map import router as heat_map_router
 from app.routes.after_party import router as after_party_router
+from app.routes.resonance import router as resonance_router
 
 # ===== Create FastAPI App =====
 app = FastAPI(title="Viibe App API", version="3.0.0")
@@ -112,6 +113,7 @@ api_router.include_router(dna_router)
 api_router.include_router(battles_router)
 api_router.include_router(heat_map_router)
 api_router.include_router(after_party_router)
+api_router.include_router(resonance_router)
 
 # Include the API router in the main app
 app.include_router(api_router)

@@ -1150,7 +1150,16 @@ export default function VenueDetailScreen() {
         boltCount={sessionBoltCount}
         onSelect={(score) => {
           setShowResonance(false);
-          // TODO: POST /api/venues/:id/resonance { score }
+          if (!venue) return;
+          fetch(`${API_URL}/api/venues/${venue.id}/resonance`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+            body: JSON.stringify({
+              score,
+              bolt_count: sessionBoltCount,
+              scene_mood: useVibeStore.getState().sceneMood ?? undefined,
+            }),
+          }).catch(() => {}); // fire-and-forget
         }}
         onDismiss={() => setShowResonance(false)}
       />
