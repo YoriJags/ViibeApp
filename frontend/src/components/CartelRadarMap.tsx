@@ -17,8 +17,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
 import { useVibeStore } from '../store/vibeStore';
 import { MockMap } from './MockMap';
+import VibeMap from './VibeMap';
 import BatteryIndicator from './BatteryIndicator';
 
 interface CartelRadarMapProps {
@@ -149,12 +151,22 @@ const CartelRadarMap: React.FC<CartelRadarMapProps> = ({
 
       {/* Mini map */}
       <View style={[styles.mapContainer, { height: height - 48 - 44 }]}>
-        <MockMap
-          venues={[]}
-          userLocation={null}
-          onVenuePress={() => {}}
-          crewPins={crewPins}
-        />
+        {Platform.OS === 'web' ? (
+          <MockMap
+            venues={[]}
+            userLocation={null}
+            onVenuePress={() => {}}
+            crewPins={crewPins}
+          />
+        ) : (
+          <VibeMap
+            venues={[]}
+            userLocation={null}
+            onVenuePress={() => {}}
+            crewPins={crewPins}
+            zoomLevel={12}
+          />
+        )}
       </View>
 
       {/* Bottom bar */}

@@ -17,6 +17,7 @@ import * as Location from 'expo-location';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVibeStore } from '../../src/store/vibeStore';
 import { MockMap } from '../../src/components/MockMap';
+import VibeMap from '../../src/components/VibeMap';
 import { VenueCard } from '../../src/components/VenueCard';
 import CloutReward from '../../src/components/CloutReward';
 import { SkeletonLoader } from '../../src/components/SkeletonLoader';
@@ -684,13 +685,22 @@ export default function MapScreen() {
       ) : (
         <View style={styles.mapContainer}>
           <ErrorBoundary label="Map">
-            <MockMap
-              venues={venues}
-              userLocation={userLocation}
-              onVenuePress={(venue) => router.push(`/venue/${venue.id}`)}
-              highlightedVenueId={highlightedVenueId}
-              ratedGlowVenueId={ratedGlowVenueId}
-            />
+            {Platform.OS === 'web' ? (
+              <MockMap
+                venues={venues}
+                userLocation={userLocation}
+                onVenuePress={(venue) => router.push(`/venue/${venue.id}`)}
+                highlightedVenueId={highlightedVenueId}
+                ratedGlowVenueId={ratedGlowVenueId}
+              />
+            ) : (
+              <VibeMap
+                venues={venues}
+                userLocation={userLocation}
+                onVenuePress={(venue) => router.push(`/venue/${venue.id}`)}
+                highlightedVenueId={highlightedVenueId}
+              />
+            )}
           </ErrorBoundary>
           {/* Legend — bottom-left, compact */}
           <View style={styles.legendOverlay}>
