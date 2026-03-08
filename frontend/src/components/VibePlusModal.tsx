@@ -30,7 +30,7 @@ interface VibePlusModalProps {
 
 const AI_FEATURES = [
   { icon: 'cash', label: 'Earn cashable coins', desc: 'Rate at participating venues, cash out direct to your bank' },
-  { icon: 'ribbon', label: 'Verified Scout badge', desc: 'Venues recognise you — early access, priority at the door' },
+  { icon: 'flash-outline', label: 'Venue Battle', desc: 'Tap-off battles between venues — cast bolts and shape the city ranking' },
   { icon: 'flash', label: 'No rating cooldowns', desc: 'Rate venues back-to-back, build your reputation faster' },
   { icon: 'eye', label: 'Oracle AI Prediction', desc: 'Claude-powered peak time forecast' },
   { icon: 'newspaper', label: 'Vibe Brief', desc: 'Daily AI city briefing at home' },
