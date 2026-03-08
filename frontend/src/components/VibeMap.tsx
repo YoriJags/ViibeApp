@@ -1,27 +1,15 @@
 /**
- * VibeMap — Real Mapbox map replacing MockMap.
+ * VibeMap — Mapbox GL JS map via WebView.
+ * Works with Expo Go — no native build required.
  *
- * Dark nightlife style map with:
- * - Venue pins showing vibe % score + energy ring color
- * - Crew member pins with emoji avatars
- * - User location dot
- * - Mapbox dark style matching Vibe's aesthetic
- *
- * Falls back to MockMap on web (Mapbox GL requires WebGL which may not always work).
+ * Passes venue + crew data as embedded JSON into a Mapbox GL JS HTML page.
+ * Venue taps are received via WebView postMessage → onVenuePress callback.
  */
-import React, { useRef, useEffect } from 'react';
-import { View, StyleSheet, Platform, Text } from 'react-native';
-import Mapbox, { MapView, Camera, UserLocation, ShapeSource, CircleLayer, SymbolLayer } from '@rnmapbox/maps';
+import React, { useMemo, useRef } from 'react';
+import { View, StyleSheet, Platform } from 'react-native';
+import { WebView } from 'react-native-webview';
 
 const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN || '';
-
-// Initialize token once
-if (MAPBOX_TOKEN) {
-  Mapbox.setAccessToken(MAPBOX_TOKEN);
-}
-
-// Dark Mapbox style URL — matches Vibe's dark theme
-const DARK_STYLE = 'mapbox://styles/mapbox/dark-v11';
 
 interface Venue {
   id: string;
@@ -29,7 +17,6 @@ interface Venue {
   coordinates: { lat: number; lng: number };
   current_vibe_score?: number;
   energy_level?: string;
-  pulse?: { tier: string };
 }
 
 interface CrewPin {
@@ -39,7 +26,6 @@ interface CrewPin {
   lng: number;
   emoji: string;
   color: string;
-  battery_level?: number;
 }
 
 interface Props {
@@ -62,8 +48,174 @@ const ENERGY_COLORS: Record<string, string> = {
   quiet:    '#3A3A4E',
 };
 
-function venueColor(venue: Venue): string {
-  return ENERGY_COLORS[venue.energy_level ?? 'quiet'] ?? '#9933FF';
+function buildHTML(
+  venues: Venue[],
+  crewPins: CrewPin[],
+  center: { lat: number; lng: number },
+  userLocation: { lat: number; lng: number } | null,
+  zoomLevel: number,
+  token: string,
+): string {
+  const venueGeoJSON = {
+    type: 'FeatureCollection',
+    features: venues.map((v) => ({
+      type: 'Feature',
+      id: v.id,
+      geometry: { type: 'Point', coordinates: [v.coordinates.lng, v.coordinates.lat] },
+      properties: {
+        id: v.id,
+        name: v.name,
+        score: Math.round(v.current_vibe_score ?? 0),
+        color: ENERGY_COLORS[v.energy_level ?? 'quiet'] ?? '#9933FF',
+      },
+    })),
+  };
+
+  const crewGeoJSON = {
+    type: 'FeatureCollection',
+    features: crewPins.map((c) => ({
+      type: 'Feature',
+      id: c.id,
+      geometry: { type: 'Point', coordinates: [c.lng, c.lat] },
+      properties: { id: c.id, emoji: c.emoji, color: c.color },
+    })),
+  };
+
+  const userMarker = userLocation
+    ? `new mapboxgl.Marker({ color: '#00D4FF', scale: 0.8 })
+         .setLngLat([${userLocation.lng}, ${userLocation.lat}])
+         .addTo(map);`
+    : '';
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background: #0A0A0F; overflow: hidden; }
+    #map { width: 100%; height: 100%; }
+    .mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    mapboxgl.accessToken = '${token}';
+
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/dark-v11',
+      center: [${center.lng}, ${center.lat}],
+      zoom: ${zoomLevel},
+      attributionControl: false,
+      logoPosition: 'bottom-right',
+      pitchWithRotate: false,
+      dragRotate: false,
+    });
+
+    const venues = ${JSON.stringify(venueGeoJSON)};
+    const crew   = ${JSON.stringify(crewGeoJSON)};
+
+    map.on('load', function () {
+      // ── Venues ────────────────────────────────────────────────────────
+      map.addSource('venues', { type: 'geojson', data: venues });
+
+      // Outer glow
+      map.addLayer({
+        id: 'venue-glow',
+        type: 'circle',
+        source: 'venues',
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 14, 15, 28],
+          'circle-color': ['get', 'color'],
+          'circle-opacity': 0.15,
+          'circle-blur': 1.2,
+        },
+      });
+
+      // Main pin
+      map.addLayer({
+        id: 'venue-circle',
+        type: 'circle',
+        source: 'venues',
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 9, 15, 18],
+          'circle-color': ['get', 'color'],
+          'circle-opacity': 0.92,
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#FFFFFF',
+          'circle-stroke-opacity': 0.45,
+        },
+      });
+
+      // Score label
+      map.addLayer({
+        id: 'venue-score',
+        type: 'symbol',
+        source: 'venues',
+        layout: {
+          'text-field': ['concat', ['to-string', ['get', 'score']], '%'],
+          'text-size': 10,
+          'text-font': ['DIN Offc Pro Bold', 'Arial Unicode MS Bold'],
+          'text-anchor': 'center',
+          'text-allow-overlap': true,
+        },
+        paint: {
+          'text-color': '#FFFFFF',
+          'text-halo-color': 'rgba(0,0,0,0.65)',
+          'text-halo-width': 1,
+        },
+      });
+
+      // Tap handler
+      map.on('click', 'venue-circle', function (e) {
+        var id = e.features[0].properties.id;
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'venue_press', id: id }));
+        }
+      });
+      map.on('mouseenter', 'venue-circle', function () { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'venue-circle', function () { map.getCanvas().style.cursor = ''; });
+
+      // ── Crew pins ─────────────────────────────────────────────────────
+      if (crew.features.length > 0) {
+        map.addSource('crew', { type: 'geojson', data: crew });
+        map.addLayer({
+          id: 'crew-ring',
+          type: 'circle',
+          source: 'crew',
+          paint: {
+            'circle-radius': 16,
+            'circle-color': ['get', 'color'],
+            'circle-opacity': 0.95,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#FFFFFF',
+            'circle-stroke-opacity': 0.6,
+          },
+        });
+        map.addLayer({
+          id: 'crew-emoji',
+          type: 'symbol',
+          source: 'crew',
+          layout: {
+            'text-field': ['get', 'emoji'],
+            'text-size': 13,
+            'text-anchor': 'center',
+            'text-allow-overlap': true,
+          },
+        });
+      }
+
+      // ── User location ─────────────────────────────────────────────────
+      ${userMarker}
+    });
+  </script>
+</body>
+</html>`;
 }
 
 export default function VibeMap({
@@ -71,191 +223,46 @@ export default function VibeMap({
   userLocation,
   onVenuePress,
   crewPins = [],
-  highlightedVenueId,
   center,
   zoomLevel = 13,
 }: Props) {
-  const cameraRef = useRef<Camera>(null);
+  const mapCenter = center ?? userLocation ?? { lat: 6.4316, lng: 3.4223 };
 
-  const mapCenter = center ?? userLocation ?? { lat: 6.4316, lng: 3.4223 }; // Default: VI Lagos
+  const html = useMemo(
+    () => buildHTML(venues, crewPins, mapCenter, userLocation, zoomLevel, MAPBOX_TOKEN),
+    [venues, crewPins, userLocation?.lat, userLocation?.lng, zoomLevel],
+  );
 
-  // Build GeoJSON for venues
-  const venueFeatures: GeoJSON.FeatureCollection = {
-    type: 'FeatureCollection',
-    features: venues.map((v) => ({
-      type: 'Feature',
-      id: v.id,
-      geometry: {
-        type: 'Point',
-        coordinates: [v.coordinates.lng, v.coordinates.lat],
-      },
-      properties: {
-        id: v.id,
-        name: v.name,
-        score: v.current_vibe_score ?? 0,
-        color: venueColor(v),
-        isHighlighted: v.id === highlightedVenueId ? 1 : 0,
-      },
-    })),
+  const handleMessage = (event: any) => {
+    try {
+      const msg = JSON.parse(event.nativeEvent.data);
+      if (msg.type === 'venue_press') {
+        const venue = venues.find((v) => v.id === msg.id);
+        if (venue) onVenuePress(venue);
+      }
+    } catch {}
   };
-
-  // Build GeoJSON for crew pins
-  const crewFeatures: GeoJSON.FeatureCollection = {
-    type: 'FeatureCollection',
-    features: crewPins.map((c) => ({
-      type: 'Feature',
-      id: c.id,
-      geometry: {
-        type: 'Point',
-        coordinates: [c.lng, c.lat],
-      },
-      properties: {
-        id: c.id,
-        label: c.emoji,
-        color: c.color,
-      },
-    })),
-  };
-
-  if (!MAPBOX_TOKEN) {
-    return (
-      <View style={styles.noToken}>
-        <Text style={styles.noTokenText}>Mapbox token not configured</Text>
-        <Text style={styles.noTokenSub}>Set EXPO_PUBLIC_MAPBOX_TOKEN in .env</Text>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
-      <MapView
-        style={styles.map}
-        styleURL={DARK_STYLE}
-        logoEnabled={false}
-        attributionEnabled={false}
-        compassEnabled={false}
-        scaleBarEnabled={false}
-        onPress={() => {}}
-      >
-        <Camera
-          ref={cameraRef}
-          centerCoordinate={[mapCenter.lng, mapCenter.lat]}
-          zoomLevel={zoomLevel}
-          animationMode="flyTo"
-          animationDuration={800}
-        />
-
-        {/* User location dot */}
-        <UserLocation
-          visible={true}
-          showsUserHeadingIndicator={true}
-          renderMode="native"
-        />
-
-        {/* Venue pins */}
-        {venues.length > 0 && (
-          <ShapeSource
-            id="venues"
-            shape={venueFeatures}
-            onPress={(e) => {
-              const feat = e.features?.[0];
-              if (feat?.properties?.id) {
-                const v = venues.find((x) => x.id === feat.properties!.id);
-                if (v) onVenuePress(v);
-              }
-            }}
-          >
-            {/* Outer glow ring */}
-            <CircleLayer
-              id="venue-glow"
-              style={{
-                circleRadius: ['interpolate', ['linear'], ['zoom'], 10, 10, 15, 22],
-                circleColor: ['get', 'color'],
-                circleOpacity: 0.15,
-                circleBlur: 1,
-              }}
-            />
-            {/* Main circle */}
-            <CircleLayer
-              id="venue-circle"
-              style={{
-                circleRadius: ['interpolate', ['linear'], ['zoom'], 10, 7, 15, 16],
-                circleColor: ['get', 'color'],
-                circleOpacity: 0.85,
-                circleStrokeWidth: 1.5,
-                circleStrokeColor: '#FFF',
-                circleStrokeOpacity: 0.4,
-              }}
-            />
-            {/* Score label */}
-            <SymbolLayer
-              id="venue-score"
-              style={{
-                textField: ['concat', ['to-string', ['get', 'score']], '%'],
-                textSize: 10,
-                textColor: '#FFF',
-                textHaloColor: 'rgba(0,0,0,0.7)',
-                textHaloWidth: 1,
-                textFont: ['DIN Offc Pro Bold', 'Arial Unicode MS Bold'],
-                textAnchor: 'center',
-                textAllowOverlap: true,
-              }}
-            />
-          </ShapeSource>
-        )}
-
-        {/* Crew pins */}
-        {crewPins.length > 0 && (
-          <ShapeSource id="crew" shape={crewFeatures}>
-            <CircleLayer
-              id="crew-ring"
-              style={{
-                circleRadius: 18,
-                circleColor: ['get', 'color'],
-                circleOpacity: 0.9,
-                circleStrokeWidth: 2,
-                circleStrokeColor: '#FFF',
-                circleStrokeOpacity: 0.6,
-              }}
-            />
-            <SymbolLayer
-              id="crew-emoji"
-              style={{
-                textField: ['get', 'label'],
-                textSize: 14,
-                textAnchor: 'center',
-                textAllowOverlap: true,
-              }}
-            />
-          </ShapeSource>
-        )}
-      </MapView>
+      <WebView
+        source={{ html }}
+        style={styles.webview}
+        onMessage={handleMessage}
+        scrollEnabled={false}
+        bounces={false}
+        javaScriptEnabled
+        domStorageEnabled
+        startInLoadingState={false}
+        originWhitelist={['*']}
+        allowsInlineMediaPlayback
+        mediaPlaybackRequiresUserAction={false}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    overflow: 'hidden',
-  },
-  map: {
-    flex: 1,
-  },
-  noToken: {
-    flex: 1,
-    backgroundColor: '#0D1117',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  noTokenText: {
-    color: '#FF3366',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  noTokenSub: {
-    color: '#555',
-    fontSize: 12,
-  },
+  container: { flex: 1 },
+  webview: { flex: 1, backgroundColor: '#0A0A0F' },
 });
