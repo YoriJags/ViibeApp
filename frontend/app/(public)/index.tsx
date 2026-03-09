@@ -849,7 +849,7 @@ export default function MapScreen() {
           <ErrorBoundary label="Map">
             {Platform.OS === 'web' ? (
               <MockMap
-                venues={venues}
+                venues={isDemoMode ? (require('../../src/data/demoData').DEMO_VENUES as any[]) : venues}
                 userLocation={userLocation}
                 onVenuePress={(venue) => router.push(`/venue/${venue.id}`)}
                 highlightedVenueId={highlightedVenueId}
@@ -857,7 +857,7 @@ export default function MapScreen() {
               />
             ) : (
               <VibeMap
-                venues={venues}
+                venues={isDemoMode ? (require('../../src/data/demoData').DEMO_VENUES as any[]) : venues}
                 userLocation={userLocation}
                 onVenuePress={(venue) => router.push(`/venue/${venue.id}`)}
                 highlightedVenueId={highlightedVenueId}

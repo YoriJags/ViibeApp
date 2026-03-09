@@ -194,6 +194,8 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
     const next = cardIdx + 1;
     if (next >= shuffled.length) {
       setDone(true);
+      // Auto-dismiss after 2.5s so the overlay never blocks the main UI
+      setTimeout(() => onComplete(), 2500);
     } else {
       setCardIdx(next);
     }
