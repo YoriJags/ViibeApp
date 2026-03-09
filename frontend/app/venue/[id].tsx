@@ -49,6 +49,7 @@ import FirstScoutCelebration from '../../src/components/FirstScoutCelebration';
 import ResonancePrompt from '../../src/components/ResonancePrompt';
 import AIPulseComment from '../../src/components/AIPulseComment';
 import EmojiPulse from '../../src/components/EmojiPulse';
+import ScoutPressureChip from '../../src/components/ScoutPressureChip';
 import VibeMomentum from '../../src/components/VibeMomentum';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -65,6 +66,8 @@ const CLUB_PLACEHOLDERS = [
 export default function VenueDetailScreen() {
   const { id, openRateModal } = useLocalSearchParams<{ id: string; openRateModal?: string }>();
   const router = useRouter();
+  const vibePersona = useVibeStore(s => s.vibePersona);
+
   const {
     fetchVenue,
     getUserRatingStatus,
@@ -119,6 +122,8 @@ export default function VenueDetailScreen() {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showSurgeCelebration, setShowSurgeCelebration] = useState(false);
   const [surgeTapCount, setSurgeTapCount] = useState(0);
+  const [personaToast, setPersonaToast] = useState<string | null>(null);
+  const personaToastAnim = useRef(new Animated.Value(0)).current;
   const [showFirstScout, setShowFirstScout] = useState(false);
   const [showResonance, setShowResonance] = useState(false);
   const [sessionBoltCount, setSessionBoltCount] = useState(0);
@@ -357,6 +362,26 @@ export default function VenueDetailScreen() {
     Linking.openURL(url as string);
   };
 
+  // Persona identity reinforcement — fires after a successful rating
+  const PERSONA_MESSAGES: Record<string, Record<string, string>> = {
+    turn_up:    { club: "Turn Up certified 🔥", bar: "The scene knows you 🔥", concert: "You caught the wave ⚡", default: "Turn Up sensor activated 🔥" },
+    grown_sexy: { lounge: "Classic Luxe taste 🥂", restaurant: "Refined as always 🥂", bar: "Curated. That's the Luxe way 🥂", default: "The Luxe eye never misses 🥂" },
+    culture:    { concert: "Pure culture alignment 🎵", default: "Culture documented 🎵" },
+    chill_set:  { restaurant: "Smooth operator 😌", lounge: "Easy living 😌", default: "Low-key, high taste 😌" },
+  };
+  const showPersonaToast = (persona: string | null, venueType: string | null) => {
+    const map = persona ? PERSONA_MESSAGES[persona] : null;
+    const msg = map ? (map[venueType ?? ''] ?? map['default'] ?? null) : "Your signal is live 📡";
+    if (!msg) return;
+    setPersonaToast(msg);
+    personaToastAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(personaToastAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.delay(2000),
+      Animated.timing(personaToastAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+    ]).start(() => setPersonaToast(null));
+  };
+
   const handleSubmitRating = async (data: {
     energy: 'chill' | 'buzzing' | 'popping' | 'electric';
     capacity: 'sparse' | 'vibrant' | 'full';
@@ -409,6 +434,8 @@ export default function VenueDetailScreen() {
       setShowRateModal(false);
       setShowSuccessAnimation(true);
       setSessionBoltCount(prev => prev + 1);
+      // Persona identity reinforcement
+      showPersonaToast(vibePersona, venue?.venue_type ?? null);
       // Show ResonancePrompt 2s after success animation clears
       setTimeout(() => setShowResonance(true), 2000);
 
@@ -737,6 +764,15 @@ export default function VenueDetailScreen() {
                   vibeScore={venue.current_vibe_score}
                   capacityLevel={(venue as any).capacity_level}
                   isDemoMode={isDemoMode}
+                />
+              </ErrorBoundary>
+
+              {/* Scout Pressure Chip — social proof "X scouts heading here" */}
+              <ErrorBoundary label="Scout Pressure">
+                <ScoutPressureChip
+                  venueId={venue.id}
+                  isDemoMode={isDemoMode}
+                  style={{ marginHorizontal: 16, marginBottom: 10 }}
                 />
               </ErrorBoundary>
 
@@ -1252,6 +1288,28 @@ export default function VenueDetailScreen() {
         emoji={'\u{1F525}'}
         onComplete={() => setShowCelebration(false)}
       />
+
+      {/* Persona Identity Reinforcement Toast */}
+      {personaToast && (
+        <Animated.View
+          style={[{
+            position: 'absolute',
+            bottom: 100,
+            alignSelf: 'center',
+            backgroundColor: '#0D0D1E',
+            borderWidth: 1,
+            borderColor: '#FF336640',
+            borderRadius: 24,
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            opacity: personaToastAnim,
+            transform: [{ translateY: personaToastAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }],
+          }]}
+          pointerEvents="none"
+        >
+          <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '700' }}>{personaToast}</Text>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }

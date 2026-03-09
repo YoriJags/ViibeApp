@@ -60,6 +60,10 @@ import VenueBattle from '../../src/components/VenueBattle';
 import HeatMapCard from '../../src/components/HeatMapCard';
 import SceneMoodSelector, { SceneMood } from '../../src/components/SceneMoodSelector';
 import VariableRewardOverlay, { VariableRewardRef } from '../../src/components/VariableRewardOverlay';
+import VenueDiscoverFlow from '../../src/components/VenueDiscoverFlow';
+import NightArcStrip from '../../src/components/NightArcStrip';
+import StreakFireModal from '../../src/components/StreakFireModal';
+import OracleTease from '../../src/components/OracleTease';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [CityWelcomeCard, WeekendCard, InsiderFeed extracted to src/components/]
@@ -104,6 +108,11 @@ export default function MapScreen() {
   const [showAfterHours, setShowAfterHours] = useState(false);
   const [showSwipeRate, setShowSwipeRate] = useState(false);
   const [showScoutOfNight, setShowScoutOfNight] = useState(false);
+  const [showDiscoverFlow, setShowDiscoverFlow] = useState(false);
+  const discoverShownRef = useRef(false);
+  const [showStreakModal, setShowStreakModal] = useState(false);
+  const [streakData, setStreakData] = useState({ streak: 3, cloutBonus: 50 });
+  const [hasRatedThisSession, setHasRatedThisSession] = useState(false);
   const prevVenueTiers = useRef<Record<string, string>>({});
   const rewardRef = useRef<VariableRewardRef>(null);
 
@@ -160,6 +169,16 @@ export default function MapScreen() {
     if (isDemoMode) setShowList(true);
   }, [isDemoMode]);
 
+  // Demo: show streak modal after 4s in demo mode (to showcase the feature)
+  useEffect(() => {
+    if (!isDemoMode) return;
+    const timer = setTimeout(() => {
+      setStreakData({ streak: 7, cloutBonus: 150 });
+      setShowStreakModal(true);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [isDemoMode]);
+
   // Scene Mood: prompt once per session during evening hours (6pm–4am) if not set today
   useEffect(() => {
     if (!user) return;
@@ -209,6 +228,15 @@ export default function MapScreen() {
     }
     fetchCityPulse(selectedCity);
   }, [selectedCity, isDemoMode]);
+
+  // Venue Discover Flow — show once per session when venues first load
+  useEffect(() => {
+    if (!discoverShownRef.current && venues.length > 0 && user) {
+      discoverShownRef.current = true;
+      const timer = setTimeout(() => setShowDiscoverFlow(true), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [venues.length, user]);
 
   // Detect vibe tier shifts when venues update
   useEffect(() => {
@@ -453,6 +481,18 @@ export default function MapScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Venue Discover Flow — fullscreen Netflix-style on session open */}
+      {showDiscoverFlow && (
+        <VenueDiscoverFlow
+          venues={isDemoMode ? (require('../../src/data/demoData').DEMO_VENUES as any[]) : venues}
+          onFire={(venueId) => {
+            dropQuickPulse(venueId, userLocation?.lat ?? 6.4281, userLocation?.lng ?? 3.4219);
+            setHasRatedThisSession(true);
+          }}
+          onComplete={() => setShowDiscoverFlow(false)}
+        />
+      )}
+
       <DemoModeBanner />
       {/* Header with neon glow */}
       <View style={styles.header}>
@@ -604,6 +644,31 @@ export default function MapScreen() {
 
           {/* Live activity ribbon — subtle ticker, not a blocking card */}
           <ActivityTicker items={DEMO_ACTIVITY_FEED} />
+
+          {/* Night Arc — tonight's journey progress */}
+          <ErrorBoundary label="Night Arc">
+            <NightArcStrip
+              hasSetMood={!!sceneMood}
+              hasRatedVenue={hasRatedThisSession || !!activeCheckin}
+              hasCheckedIn={!!activeCheckin}
+              hasCrewActive={!!((crew as any)?.member_details?.length && (crew as any).member_details.length > 1)}
+              onStepPress={(step) => {
+                if (step === 'mood') setShowSceneMood(true);
+                else if (step === 'rate') setShowSwipeRate(true);
+                else if (step === 'checkin') router.push('/venue/' + (venues[0]?.id ?? ''));
+                else if (step === 'crew') router.push('/(public)/crew');
+              }}
+            />
+          </ErrorBoundary>
+
+          {/* Oracle Tease — pulls users back with a cliffhanger */}
+          <ErrorBoundary label="Oracle Tease">
+            <OracleTease
+              venues={isDemoMode ? (require('../../src/data/demoData').DEMO_VENUES as any[]) : venues}
+              onVenuePress={(id) => router.push(`/venue/${id}`)}
+              isDemoMode={isDemoMode}
+            />
+          </ErrorBoundary>
 
           {/* Missed Peaks — FOMO card for followed venues that peaked while you were away */}
           <ErrorBoundary label="Missed Peaks">
@@ -968,6 +1033,15 @@ export default function MapScreen() {
         onClose={() => setShowScoutOfNight(false)}
         isDemoMode={isDemoMode}
         city={selectedCity}
+      />
+
+      {/* Streak Fire Modal — milestone celebration at 3/7/14/30 nights */}
+      <StreakFireModal
+        visible={showStreakModal}
+        streak={streakData.streak}
+        cloutBonus={streakData.cloutBonus}
+        onClaim={() => { setShowStreakModal(false); setShowCloutReward(true); }}
+        onDismiss={() => setShowStreakModal(false)}
       />
     </SafeAreaView>
   );

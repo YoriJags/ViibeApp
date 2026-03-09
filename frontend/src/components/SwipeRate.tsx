@@ -166,7 +166,7 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
         <TouchableOpacity style={StyleSheet.absoluteFill} onPress={dismiss} activeOpacity={1} />
       </Animated.View>
 
-      <Animated.View style={[styles.sheet, { transform: [{ translateY: slideY }] }]}>
+      <Animated.View style={[styles.sheet, { transform: [{ translateY: slideY }] }]} {...panResponder.panHandlers}>
         {/* Handle */}
         <View style={styles.handle} />
 
@@ -234,7 +234,6 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
                   { rotate },
                 ],
               }]}
-              {...panResponder.panHandlers}
             >
               <LinearGradient colors={['#151526', '#0D0D1C', '#080812']} style={styles.cardGrad}>
 

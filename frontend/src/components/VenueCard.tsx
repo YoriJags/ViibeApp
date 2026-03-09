@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, ScrollView } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import { hapticVibe } from '../utils/hapticVibe';
 import { LinearGradient } from 'expo-linear-gradient';
 import PulseStrip, { PulseData } from './PulseStrip';
 import PulseBottomSheet from './PulseBottomSheet';
@@ -148,7 +149,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
       <TouchableOpacity
         style={[styles.card, isPulseBoosted && styles.cardBoosted]}
         onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          hapticVibe(venue.energy_level);
           onPress();
         }}
         onPressIn={onPressIn}
@@ -259,6 +260,22 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
                 <Text style={[styles.chipText, { color: '#D4AF37' }]}>
                   {venue.icon_spotted.icon_label || 'Icon'} spotted
                 </Text>
+              </View>
+            )}
+            {/* Momentum urgency — only shows when the signal is worth acting on */}
+            {momentum === 'rising' && (
+              <View style={[styles.chip, styles.chipRising]}>
+                <Text style={styles.chipRisingText}>⚡ RISING</Text>
+              </View>
+            )}
+            {momentum === 'fading' && venue.current_vibe_score >= 55 && (
+              <View style={[styles.chip, styles.chipFading]}>
+                <Text style={styles.chipFadingText}>📉 FADING</Text>
+              </View>
+            )}
+            {momentum === 'peaking' && (
+              <View style={[styles.chip, styles.chipPeaking]}>
+                <Text style={styles.chipPeakingText}>🔥 PEAK NOW</Text>
               </View>
             )}
           </ScrollView>
@@ -437,6 +454,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(212,175,55,0.07)',
     borderColor: 'rgba(212,175,55,0.2)',
   },
+  chipRising: { backgroundColor: '#00E67610', borderColor: '#00E67630' },
+  chipRisingText: { fontSize: 11, fontWeight: '800', color: '#00E676' },
+  chipFading: { backgroundColor: '#FF8C0010', borderColor: '#FF8C0030' },
+  chipFadingText: { fontSize: 11, fontWeight: '800', color: '#FF8C00' },
+  chipPeaking: { backgroundColor: '#FF336612', borderColor: '#FF336635' },
+  chipPeakingText: { fontSize: 11, fontWeight: '800', color: '#FF3366' },
   openDot: {
     width: 5,
     height: 5,
