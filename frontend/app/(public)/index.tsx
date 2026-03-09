@@ -465,7 +465,6 @@ export default function MapScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <View>
-            <Text style={[styles.headerTitle, styles.headerGlow]}>VIIBE</Text>
             <Text style={styles.headerSubtitle}>Loading...</Text>
           </View>
         </View>
@@ -512,32 +511,22 @@ export default function MapScreen() {
           />
         </TouchableOpacity>
 
-        {/* CENTER: Brand + city selector */}
-        <View style={styles.headerCenter}>
-          <Animated.Text
-            style={[
-              styles.headerTitle,
-              styles.headerGlow,
-              { textShadowRadius: headerGlowAnim.interpolate({ inputRange: [0.6, 1], outputRange: [8, 20] }) },
-            ]}
-          >
-            VIIBE
-          </Animated.Text>
-          <TouchableOpacity
-            style={styles.citySelector}
-            onPress={() => {
-              Haptics.selectionAsync();
-              setShowCityPicker(true);
-            }}
-          >
-            <Text style={styles.headerSubtitle}>
-              {CITIES.find(c => c.code === selectedCity)?.name}
-            </Text>
-            <Animated.View style={{ transform: [{ rotate: chevronSpin }] }}>
-              <Ionicons name="chevron-down" size={12} color="rgba(255,255,255,0.35)" />
-            </Animated.View>
-          </TouchableOpacity>
-        </View>
+        {/* CENTER: City selector only */}
+        <TouchableOpacity
+          style={styles.headerCenter}
+          onPress={() => {
+            Haptics.selectionAsync();
+            setShowCityPicker(true);
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.cityNameLarge}>
+            {CITIES.find(c => c.code === selectedCity)?.name ?? 'Lagos'}
+          </Text>
+          <Animated.View style={{ transform: [{ rotate: chevronSpin }] }}>
+            <Ionicons name="chevron-down" size={13} color="rgba(255,255,255,0.4)" />
+          </Animated.View>
+        </TouchableOpacity>
 
         {/* RIGHT: Mode toggle + planner */}
         <View style={styles.headerActions}>
@@ -1089,6 +1078,12 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 2,
     paddingVertical: 2,
+  },
+  cityNameLarge: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.88)',
+    letterSpacing: 0.3,
   },
   headerSubtitle: {
     fontSize: 11,

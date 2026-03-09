@@ -1,12 +1,19 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useVibeStore } from '../store/vibeStore';
 
 export default function DemoModeBanner() {
+  const router = useRouter();
   const { isDemoMode, toggleDemoMode } = useVibeStore();
 
   if (!isDemoMode) return null;
+
+  const handleExit = () => {
+    toggleDemoMode();
+    router.replace('/(public)');
+  };
 
   return (
     <View style={styles.banner}>
@@ -14,8 +21,8 @@ export default function DemoModeBanner() {
         <Ionicons name="flask" size={14} color="#FFF" />
         <Text style={styles.text}>DEMO MODE</Text>
       </View>
-      <TouchableOpacity onPress={toggleDemoMode} style={styles.exitBtn}>
-        <Text style={styles.exitText}>Exit</Text>
+      <TouchableOpacity onPress={handleExit} style={styles.exitBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+        <Text style={styles.exitText}>Exit Demo</Text>
         <Ionicons name="close" size={14} color="#FFF" />
       </TouchableOpacity>
     </View>

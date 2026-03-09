@@ -276,6 +276,13 @@ export default function VenueDetailScreen() {
 
   const loadVenueData = async () => {
     setLoading(true);
+    if (isDemoMode) {
+      const { DEMO_VENUES } = require('../../src/data/demoData');
+      const demoVenue = DEMO_VENUES.find((v: any) => v.id === id);
+      setVenue(demoVenue ?? null);
+      setLoading(false);
+      return;
+    }
     const venueData = await fetchVenue(id || '');
     setVenue(venueData);
 
