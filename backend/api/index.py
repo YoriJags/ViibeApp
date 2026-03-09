@@ -2558,6 +2558,15 @@ def route_get(path, query_params, headers):
     m = re.match(r'^/api/venues/([^/]+)/live-pushes$', path)
     if m:
         return handle_get_venue_live_pushes(m.group(1))
+    m = re.match(r'^/api/venues/([^/]+)/emoji-pulse$', path)
+    if m:
+        return handle_get_emoji_pulse(m.group(1))
+    m = re.match(r'^/api/venues/([^/]+)/momentum$', path)
+    if m:
+        return handle_get_venue_momentum(m.group(1))
+    m = re.match(r'^/api/crews/([^/]+)/rolling-deep$', path)
+    if m:
+        return handle_get_rolling_deep(m.group(1))
     if path == "/api/admin/config":
         return handle_admin_get_config()
     if path == "/api/admin/economy-config":
@@ -2724,6 +2733,32 @@ def route_post(path, body, headers):
     m = re.match(r'^/api/venues/([^/]+)/resonance$', path)
     if m:
         return handle_submit_resonance(m.group(1), body, headers)
+
+    # AI Pulse Commentary
+    m = re.match(r'^/api/venues/([^/]+)/ai-pulse$', path)
+    if m:
+        return handle_venue_ai_pulse(m.group(1), body)
+
+    # Emoji Pulse — POST reaction
+    m = re.match(r'^/api/venues/([^/]+)/emoji-pulse$', path)
+    if m:
+        return handle_post_emoji_pulse(m.group(1), body, headers)
+
+    # Crew AI Intel
+    if path == '/api/crew/ai-intel':
+        return handle_crew_ai_intel(body, headers)
+
+    # AI Scout Briefing
+    if path == '/api/ai/scout-briefing':
+        return handle_scout_briefing(body, headers)
+
+    # Rolling Deep — start + join
+    m = re.match(r'^/api/crews/([^/]+)/rolling-deep/join$', path)
+    if m:
+        return handle_join_rolling_deep(m.group(1), headers)
+    m = re.match(r'^/api/crews/([^/]+)/rolling-deep$', path)
+    if m:
+        return handle_start_rolling_deep(m.group(1), body, headers)
 
     return 404, {"detail": "Not found"}
 
@@ -3034,3 +3069,502 @@ class handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         """Suppress default stderr logging."""
         pass
+
+
+# ── AI Venue Pulse Commentary ─────────────────────────────────────────────────
+
+_PULSE_FALLBACKS = {
+    "peak":    "The crowd don reach maximum. Energy dey scatter everywhere — if you no dey here, you go regret am.",
+    "lit":     "E dey build nicely. Dance floor warming up, DJ dey switch gear — slide through before e full up.",
+    "charged": "Charged and ready to go off. You can feel the pressure building — this could be the one tonight.",
+    "warming": "Still finding its rhythm. Early crowd has good energy — give it 30 minutes.",
+    "chill":   "Calm vibes tonight. Good for conversation, not for turn-up.",
+    "quiet":   "Not much happening here right now. Your energy is better used elsewhere.",
+}
+
+def handle_venue_ai_pulse(venue_id, body):
+    """POST /api/venues/:id/ai-pulse — real-time AI Pidgin commentary, cached 15 min."""
+    import os, re as _re, json as _json
+    db = get_db()
+    venue_name     = body.get("venue_name", "the venue")
+    energy_level   = body.get("energy_level", "warming")
+    vibe_score     = body.get("vibe_score", 50)
+    capacity_level = body.get("capacity_level", "vibrant")
+
+    fallback_text = _PULSE_FALLBACKS.get(energy_level, _PULSE_FALLBACKS["warming"])
+
+    # Check cache in MongoDB (15-minute TTL per energy tier)
+    if db:
+        cache_key = f"ai_pulse_{venue_id}_{energy_level}"
+        now = datetime.now(timezone.utc)
+        cached = db.ai_cache.find_one({"key": cache_key})
+        if cached:
+            age = (now - cached["generated_at"].replace(tzinfo=timezone.utc)).total_seconds()
+            if age < 900:  # 15 minutes
+                return 200, cached["data"]
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        result = {"comment": fallback_text, "ai_powered": False}
+        if db:
+            db.ai_cache.update_one({"key": cache_key}, {"$set": {"key": cache_key, "data": result, "generated_at": datetime.now(timezone.utc)}}, upsert=True)
+        return 200, result
+
+    capacity_desc = {"sparse": "light crowd", "vibrant": "good crowd", "full": "packed to the walls"}.get(capacity_level, "moderate crowd")
+    energy_desc   = {"peak": "absolutely electric", "lit": "buzzing and lit", "charged": "charged and building",
+                     "warming": "warming up", "chill": "calm and relaxed", "quiet": "quiet tonight"}.get(energy_level, "moderate")
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        prompt = (
+            f"You write live vibe commentary for Lagos nightlife scouts. Mix Pidgin English and street slang naturally.\n"
+            f"Keep it SHORT — 1-2 punchy sentences max. Be raw and real, like a friend texting from inside the venue.\n\n"
+            f"Venue: {venue_name}\n"
+            f"Vibe score: {vibe_score}/100 ({energy_desc})\n"
+            f"Crowd: {capacity_desc}\n\n"
+            f"Write the commentary now. No quotes, no labels, just the text:"
+        )
+        resp = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=120,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = resp.content[0].text.strip()
+        result = {"comment": text, "ai_powered": True}
+        if db:
+            db.ai_cache.update_one({"key": cache_key}, {"$set": {"key": cache_key, "data": result, "generated_at": datetime.now(timezone.utc)}}, upsert=True)
+        return 200, result
+    except Exception as e:
+        logger.warning(f"AI Pulse failed for {venue_id}: {e}")
+        result = {"comment": fallback_text, "ai_powered": False}
+        return 200, result
+
+
+def handle_crew_ai_intel(body, headers):
+    """POST /api/crew/ai-intel — AI venue picks for a cartel's persona mix, cached 20 min."""
+    import os, json as _json
+    db = get_db()
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+
+    member_personas = body.get("member_personas", [])
+    user_id = user["id"]
+    cache_key = f"crew_intel_{user_id}"
+    now = datetime.now(timezone.utc)
+
+    # Check cache (20 min TTL)
+    if db:
+        cached = db.ai_cache.find_one({"key": cache_key})
+        if cached:
+            age = (now - cached["generated_at"].replace(tzinfo=timezone.utc)).total_seconds()
+            if age < 1200:
+                return 200, cached["data"]
+
+    # Fetch top venues
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+    venues_list = list(db.venues.find({}, {"_id": 0}).sort("current_vibe_score", -1).limit(8))
+    if not venues_list:
+        return 200, {"picks": [], "crew_read": "No venue data right now.", "ai_powered": False}
+
+    persona_labels = {
+        "turn_up":    "Turn Up (loves clubs, high energy, dancing)",
+        "grown_sexy": "The Luxe (upscale lounges, Afrobeats, VIP)",
+        "culture":    "Culture (concerts, events, live music)",
+        "chill_set":  "Chill Set (bars, low-key spots, conversation)",
+    }
+    personas_str = ", ".join([persona_labels.get(p, p) for p in member_personas]) if member_personas else "mixed preferences"
+    venue_summaries = "\n".join([
+        f"- {v.get('name')} ({v.get('area', 'Lagos')}): {v.get('energy_level', 'warming').upper()}, "
+        f"vibe score {v.get('current_vibe_score', 50)}/100, "
+        f"capacity: {v.get('capacity_level', 'vibrant')}, entry: {v.get('entry_fee', 'unknown')}"
+        for v in venues_list
+    ])
+
+    def _fallback_picks():
+        return [
+            {
+                "venue_id": v.get("id", ""), "venue_name": v.get("name", ""),
+                "area": v.get("area", ""), "energy_level": v.get("energy_level", "warming"),
+                "vibe_score": v.get("current_vibe_score", 50),
+                "match_score": max(40, v.get("current_vibe_score", 50) - 10),
+                "reason": f"{v.get('name')} is {v.get('energy_level', 'warming')} tonight with a {v.get('current_vibe_score', 50)}/100 vibe score.",
+                "best_for": "Full cartel",
+            }
+            for v in venues_list[:3]
+        ]
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        result = {
+            "picks": _fallback_picks(),
+            "crew_read": f"Your cartel ({len(member_personas)} members) has mixed vibes. These spots have the best energy tonight.",
+            "ai_powered": False,
+        }
+        db.ai_cache.update_one({"key": cache_key}, {"$set": {"key": cache_key, "data": result, "generated_at": now}}, upsert=True)
+        return 200, result
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        prompt = (
+            f"You are a Lagos nightlife intelligence system. A crew of {len(member_personas)} scouts needs tonight's best venue picks.\n\n"
+            f"CREW PERSONAS: {personas_str}\n\n"
+            f"TONIGHT'S VENUES:\n{venue_summaries}\n\n"
+            f"Task: Pick the top 3 venues for this crew. Consider the persona mix — find spots that work for everyone or explain the tradeoffs.\n"
+            f"Be direct, use Lagos nightlife slang where natural.\n\n"
+            f"Respond with valid JSON only:\n"
+            f'{{"crew_read": "1 sentence reading the cartel vibe", '
+            f'"picks": [{{"venue_name": "...", "match_score": 0-100, "reason": "2 sentence explanation", "best_for": "brief label"}}]}}'
+        )
+        resp = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=600,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        parsed = _json.loads(resp.content[0].text.strip())
+
+        enriched_picks = []
+        for p in parsed.get("picks", [])[:3]:
+            matched = next(
+                (v for v in venues_list if v.get("name", "").lower() in p.get("venue_name", "").lower()
+                 or p.get("venue_name", "").lower() in v.get("name", "").lower()),
+                venues_list[len(enriched_picks)] if len(enriched_picks) < len(venues_list) else venues_list[0]
+            )
+            enriched_picks.append({
+                "venue_id":     matched.get("id", ""),
+                "venue_name":   matched.get("name", p.get("venue_name", "")),
+                "area":         matched.get("area", "Lagos"),
+                "energy_level": matched.get("energy_level", "warming"),
+                "vibe_score":   matched.get("current_vibe_score", 50),
+                "match_score":  p.get("match_score", 70),
+                "reason":       p.get("reason", ""),
+                "best_for":     p.get("best_for", "Full cartel"),
+            })
+
+        result = {"picks": enriched_picks, "crew_read": parsed.get("crew_read", ""), "ai_powered": True}
+        db.ai_cache.update_one({"key": cache_key}, {"$set": {"key": cache_key, "data": result, "generated_at": now}}, upsert=True)
+        return 200, result
+    except Exception as e:
+        logger.warning(f"Crew Intel Claude failed: {e}")
+        result = {
+            "picks": _fallback_picks(),
+            "crew_read": "Top energy spots picked for your cartel tonight.",
+            "ai_powered": False,
+        }
+        return 200, result
+
+
+# ── Emoji Pulse ───────────────────────────────────────────────────────────────
+
+_VALID_EMOJIS = {"fire", "music", "sleep", "dead", "bottle"}
+
+
+def handle_post_emoji_pulse(venue_id, body, headers):
+    """POST /api/venues/:id/emoji-pulse — record a scout's ambient reaction."""
+    db = get_db()
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+
+    emoji = body.get("emoji", "")
+    if emoji not in _VALID_EMOJIS:
+        return 400, {"detail": "Invalid emoji"}
+
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(hours=2)
+
+    if db:
+        db.venue_emoji_pulses.update_one(
+            {"venue_id": venue_id, "user_id": user["id"]},
+            {"$set": {
+                "venue_id":   venue_id,
+                "user_id":    user["id"],
+                "emoji":      emoji,
+                "ts":         now,
+                "expires_at": expires_at,
+            }},
+            upsert=True,
+        )
+
+    return 200, {"ok": True, "emoji": emoji}
+
+
+def handle_get_emoji_pulse(venue_id):
+    """GET /api/venues/:id/emoji-pulse — 30-min rolling counts. No auth required."""
+    db = get_db()
+    counts = {e: 0 for e in _VALID_EMOJIS}
+    total = 0
+
+    if db:
+        cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+        pipeline = [
+            {"$match": {"venue_id": venue_id, "ts": {"$gte": cutoff}}},
+            {"$group": {"_id": "$emoji", "count": {"$sum": 1}}},
+        ]
+        for row in db.venue_emoji_pulses.aggregate(pipeline):
+            if row["_id"] in counts:
+                counts[row["_id"]] = row["count"]
+        total = sum(counts.values())
+
+    return 200, {"counts": counts, "total": total, "window_minutes": 30}
+
+
+# ── Vibe Momentum (per-venue) ─────────────────────────────────────────────────
+
+def handle_get_venue_momentum(venue_id):
+    """GET /api/venues/:id/momentum — crowd velocity + vibe decay. No auth required."""
+    db = get_db()
+    now = datetime.now(timezone.utc)
+
+    # ── Crowd Velocity ──────────────────────────────────────────────────────
+    win_a_start = now - timedelta(minutes=20)
+    win_a_end   = now - timedelta(minutes=10)
+    win_b_start = now - timedelta(minutes=10)
+
+    count_a    = db.checkins.count_documents({"venue_id": venue_id, "created_at": {"$gte": win_a_start, "$lt": win_a_end}}) if db else 0
+    count_b    = db.checkins.count_documents({"venue_id": venue_id, "created_at": {"$gte": win_b_start}}) if db else 0
+    fire_recent = db.venue_emoji_pulses.count_documents({"venue_id": venue_id, "emoji": "fire", "ts": {"$gte": win_b_start}}) if db else 0
+
+    if count_b > count_a + 1 or (count_b >= 2 and fire_recent >= 3):
+        velocity = "rising"
+    elif count_a > count_b + 1:
+        velocity = "falling"
+    else:
+        velocity = "flat"
+
+    if count_a > 0:
+        velocity_pct = round((count_b - count_a) / count_a * 100)
+    elif count_b > 0:
+        velocity_pct = 100
+    else:
+        velocity_pct = 0
+
+    # ── Vibe Decay ──────────────────────────────────────────────────────────
+    DECAY_GRACE_MIN = 45
+    DECAY_RATE      = 0.5
+    DECAY_MAX       = 25
+
+    is_decaying   = False
+    decay_minutes = 0
+    decay_points  = 0
+    freshness     = "fresh"
+
+    if db:
+        candidates = []
+        ci = db.checkins.find_one({"venue_id": venue_id}, sort=[("created_at", -1)])
+        rt = db.ratings.find_one({"venue_id": venue_id}, sort=[("timestamp", -1)])
+        ep = db.venue_emoji_pulses.find_one({"venue_id": venue_id}, sort=[("ts", -1)])
+
+        for doc, key in [(ci, "created_at"), (rt, "timestamp"), (ep, "ts")]:
+            if doc and doc.get(key):
+                t = doc[key]
+                candidates.append(t if t.tzinfo else t.replace(tzinfo=timezone.utc))
+
+        if candidates:
+            last_activity  = max(candidates)
+            stale_minutes  = (now - last_activity).total_seconds() / 60
+            if stale_minutes > DECAY_GRACE_MIN:
+                is_decaying   = True
+                decay_minutes = stale_minutes - DECAY_GRACE_MIN
+                decay_points  = min(round(decay_minutes * DECAY_RATE), DECAY_MAX)
+                freshness     = "cold" if decay_minutes > 60 else "cooling"
+
+    return 200, {
+        "velocity":          velocity,
+        "velocity_pct":      velocity_pct,
+        "checkins_last_10m": count_b,
+        "is_decaying":       is_decaying,
+        "decay_minutes":     round(decay_minutes),
+        "decay_points":      decay_points,
+        "freshness":         freshness,
+    }
+
+
+# ── AI Scout Briefing ─────────────────────────────────────────────────────────
+
+_BRIEFING_FALLBACKS_V = {
+    "morning": "Oga scout, good morning! Lagos nightlife is recharging for tonight — check back from 7PM to catch the venues heating up. Your vibe radar is always on point.",
+    "evening": "The city is waking up. Energy is building across Lagos — your scouting eye is needed tonight. Drop a rating when you hit a venue and watch your clout stack up.",
+    "night":   "It's peak hour! Venues are live, the crowd is out. Move smart, rate fast, and let your crew know where the energy is highest tonight.",
+}
+
+
+def handle_scout_briefing(body, headers):
+    """POST /api/ai/scout-briefing — personalised morning/evening/night briefing."""
+    import os, json as _json
+    db = get_db()
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+
+    now = datetime.now(timezone.utc)
+    hour_wat = (now.hour + 1) % 24
+    time_context = "morning" if 6 <= hour_wat < 14 else "evening" if 14 <= hour_wat < 20 else "night"
+    fallback_text = _BRIEFING_FALLBACKS_V[time_context]
+
+    city    = body.get("city", "lagos")
+    user_id = user["id"]
+    cache_key = f"scout_briefing_{user_id}"
+
+    if db:
+        cached = db.ai_cache.find_one({"key": cache_key})
+        if cached:
+            age = (now - cached["generated_at"].replace(tzinfo=timezone.utc)).total_seconds()
+            if age < 1800:  # 30 min
+                return 200, cached["data"]
+
+    clout    = user.get("clout_points", 0)
+    username = user.get("username", "Scout")
+    persona_map = {"turn_up": "Turn Up", "grown_sexy": "The Luxe", "culture": "Culture", "chill_set": "Chill Set"}
+    persona  = persona_map.get(user.get("vibe_persona", ""), "mixed")
+
+    top_venues = list(db.venues.find({"city": city}, {"_id": 0, "name": 1, "area": 1, "current_vibe_score": 1, "energy_level": 1}).sort("current_vibe_score", -1).limit(3)) if db else []
+    since_7d   = now - timedelta(days=7)
+    ratings_7d = db.ratings.count_documents({"user_id": user_id, "timestamp": {"$gte": since_7d}}) if db else 0
+
+    crew_doc = db.crews.find_one({"members": user_id}) if db else None
+    crew_name = crew_doc.get("name", "") if crew_doc else ""
+    crew_out  = db.checkins.count_documents({"user_id": {"$in": crew_doc.get("members", [])}, "status": "active"}) if crew_doc and db else 0
+
+    venue_lines = "\n".join([
+        f"- {v.get('name')} ({v.get('area', 'Lagos')}): {v.get('energy_level', 'warming').upper()}, score {v.get('current_vibe_score', 0)}/100"
+        for v in top_venues
+    ]) if top_venues else "No live venue data yet"
+    crew_line = f"Your cartel '{crew_name}' has {crew_out} members out tonight." if crew_name else "You're rolling solo tonight."
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        result = {"briefing": fallback_text, "ai_powered": False, "time_context": time_context}
+        if db:
+            db.ai_cache.update_one({"key": cache_key}, {"$set": {"key": cache_key, "data": result, "generated_at": now}}, upsert=True)
+        return 200, result
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        prompt = (
+            f"You are a Lagos nightlife intelligence assistant. Write a short personal briefing for a scout.\n\n"
+            f"SCOUT: @{username} | Persona: {persona} | Clout: {clout} pts | Ratings this week: {ratings_7d}\n"
+            f"TIME: {time_context.upper()} in Lagos (WAT)\n"
+            f"CREW: {crew_line}\n\n"
+            f"TONIGHT'S TOP VENUES:\n{venue_lines}\n\n"
+            f"Write 2-3 punchy sentences. Use Lagos street energy. Mix Pidgin naturally where it fits. "
+            f"Mention their clout or crew if relevant. End with a specific venue recommendation or action. "
+            f"No labels, no quotes — just the text:"
+        )
+        resp = client.messages.create(model="claude-haiku-4-5-20251001", max_tokens=200, messages=[{"role": "user", "content": prompt}])
+        text = resp.content[0].text.strip()
+        result = {"briefing": text, "ai_powered": True, "time_context": time_context}
+        if db:
+            db.ai_cache.update_one({"key": cache_key}, {"$set": {"key": cache_key, "data": result, "generated_at": now}}, upsert=True)
+        return 200, result
+    except Exception as e:
+        logger.warning(f"Scout Briefing Claude failed: {e}")
+        return 200, {"briefing": fallback_text, "ai_powered": False, "time_context": time_context}
+
+
+# ── Rolling Deep ──────────────────────────────────────────────────────────────
+
+def handle_start_rolling_deep(crew_id, body, headers):
+    """POST /api/crews/:id/rolling-deep — start a group check-in session."""
+    db = get_db()
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+
+    crew = db.crews.find_one({"id": crew_id}) if db else None
+    if not crew:
+        return 404, {"detail": "Crew not found"}
+    if user["id"] not in crew.get("members", []):
+        return 403, {"detail": "Not a crew member"}
+
+    venue_id   = body.get("venue_id", "")
+    venue_name = body.get("venue_name", "")
+    if not venue_id:
+        return 400, {"detail": "venue_id required"}
+
+    if not venue_name and db:
+        vd = db.venues.find_one({"id": venue_id}, {"name": 1})
+        venue_name = vd.get("name", "Unknown Venue") if vd else "Unknown Venue"
+
+    now = datetime.now(timezone.utc)
+    session = {
+        "crew_id":              crew_id,
+        "crew_name":            crew.get("name", ""),
+        "venue_id":             venue_id,
+        "venue_name":           venue_name,
+        "initiator_id":         user["id"],
+        "initiator_username":   user.get("username", ""),
+        "members_in":           [user["id"]],
+        "started_at":           now,
+        "expires_at":           now + timedelta(hours=2),
+        "status":               "building",
+    }
+    if db:
+        db.rolling_deep_sessions.replace_one({"crew_id": crew_id}, session, upsert=True)
+
+    return 200, {"ok": True, "session": session, "message": f"Rolling Deep started at {venue_name}. Pull in the crew!"}
+
+
+def handle_join_rolling_deep(crew_id, headers):
+    """POST /api/crews/:id/rolling-deep/join — join an active session."""
+    db = get_db()
+    user = get_current_user(headers)
+    if not user:
+        return 401, {"detail": "Not authenticated"}
+    if not db:
+        return 503, {"detail": "Database unavailable"}
+
+    session = db.rolling_deep_sessions.find_one({"crew_id": crew_id})
+    if not session:
+        return 404, {"detail": "No active Rolling Deep"}
+
+    now = datetime.now(timezone.utc)
+    exp = session["expires_at"]
+    if (exp if exp.tzinfo else exp.replace(tzinfo=timezone.utc)) < now:
+        return 410, {"detail": "Session expired"}
+
+    user_id = user["id"]
+    if user_id not in session.get("members_in", []):
+        db.rolling_deep_sessions.update_one({"crew_id": crew_id}, {"$addToSet": {"members_in": user_id}})
+
+    session = db.rolling_deep_sessions.find_one({"crew_id": crew_id})
+    confirmed_count = len(session.get("members_in", []))
+    bonus_awarded = False
+
+    if confirmed_count >= 2 and session.get("status") == "building":
+        db.rolling_deep_sessions.update_one({"crew_id": crew_id}, {"$set": {"status": "rolling"}})
+        for uid in session.get("members_in", []):
+            db.users.update_one({"id": uid}, {"$inc": {"clout_points": 10}})
+        bonus_awarded = True
+
+    return 200, {
+        "ok":               True,
+        "status":           "rolling" if confirmed_count >= 2 else "building",
+        "members_confirmed": confirmed_count,
+        "venue_name":       session.get("venue_name", ""),
+        "bonus_awarded":    bonus_awarded,
+        "bonus_clout":      10 if bonus_awarded else 0,
+    }
+
+
+def handle_get_rolling_deep(crew_id):
+    """GET /api/crews/:id/rolling-deep — get active session."""
+    db = get_db()
+    if not db:
+        return 200, {"session": None}
+
+    session = db.rolling_deep_sessions.find_one({"crew_id": crew_id}, {"_id": 0})
+    if not session:
+        return 200, {"session": None}
+
+    exp = session.get("expires_at")
+    if exp:
+        exp_tz = exp if exp.tzinfo else exp.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > exp_tz:
+            return 200, {"session": None}
+
+    return 200, {"session": session}

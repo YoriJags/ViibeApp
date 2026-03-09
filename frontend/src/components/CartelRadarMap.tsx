@@ -10,13 +10,12 @@ import {
   View,
   Text,
   StyleSheet,
+  Dimensions,
   TouchableOpacity,
   Animated,
   Modal,
-  StatusBar,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -226,22 +225,20 @@ const CartelRadarMap: React.FC<CartelRadarMapProps> = ({
         )}
       </View>
 
-      {/* Fullscreen Modal */}
+      {/* 82% bottom-sheet modal */}
       <Modal
         visible={fullscreen}
+        transparent
         animationType="slide"
-        presentationStyle="fullScreen"
-        statusBarTranslucent
         onRequestClose={() => setFullscreen(false)}
       >
-        <View style={styles.fsContainer}>
-          <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <View style={styles.fsOverlay}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setFullscreen(false)} activeOpacity={1} />
+          <View style={styles.fsSheet}>
+            {/* Handle */}
+            <View style={styles.fsHandle} />
 
-          {/* Full map */}
-          <MapView />
-
-          {/* Floating top bar */}
-          <SafeAreaView style={styles.fsTopSafe} pointerEvents="box-none">
+            {/* Top bar */}
             <View style={styles.fsTopBar}>
               <View style={styles.fsTopLeft}>
                 <View style={styles.liveDotLg} />
@@ -263,24 +260,30 @@ const CartelRadarMap: React.FC<CartelRadarMapProps> = ({
                   style={styles.closeBtn}
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setFullscreen(false); }}
                   activeOpacity={0.8}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Ionicons name="close" size={18} color="#FFF" />
+                  <Ionicons name="close" size={20} color="#FFF" />
                 </TouchableOpacity>
               </View>
             </View>
-          </SafeAreaView>
 
-          {/* Floating bottom bar */}
-          <View style={styles.fsBottomBar} pointerEvents="box-none">
-            <BottomControls overlay />
-          </View>
-
-          {ghostMode && (
-            <View style={[styles.ghostBanner, styles.fsGhostBanner]}>
-              <Ionicons name="moon" size={12} color="#00D4FF" />
-              <Text style={styles.ghostBannerText}>Ghost Mode — your pin is hidden</Text>
+            {/* Map fills remaining space */}
+            <View style={{ flex: 1 }}>
+              <MapView />
             </View>
-          )}
+
+            {/* Bottom controls */}
+            <View style={styles.fsBottomBar}>
+              <BottomControls overlay />
+            </View>
+
+            {ghostMode && (
+              <View style={styles.ghostBanner}>
+                <Ionicons name="moon" size={12} color="#00D4FF" />
+                <Text style={styles.ghostBannerText}>Ghost Mode — your pin is hidden</Text>
+              </View>
+            )}
+          </View>
         </View>
       </Modal>
     </>
@@ -491,6 +494,16 @@ const styles = StyleSheet.create({
   },
 
   // ── Fullscreen modal ───────────────────────────────────────────────────────
+  fsOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  fsSheet: {
+    height: Dimensions.get('window').height * 0.82,
+    backgroundColor: '#0A0A0F',
+    borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden',
+  },
+  fsHandle: {
+    width: 40, height: 4, backgroundColor: '#333', borderRadius: 2,
+    alignSelf: 'center', marginTop: 10, marginBottom: 4,
+  },
   fsContainer: {
     flex: 1,
     backgroundColor: '#0A0A0F',

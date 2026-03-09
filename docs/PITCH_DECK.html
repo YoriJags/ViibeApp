@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Viibe — Investor Pitch Deck 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --red: #FF3366;
+    --red-dark: #CC0044;
+    --gold: #FFD700;
+    --bg: #06060F;
+    --card: #0F0F1E;
+    --border: #1E1E35;
+    --text: #FFFFFF;
+    --muted: #6B7280;
+    --sub: #9CA3AF;
+    --green: #22C55E;
+    --blue: #3B82F6;
+    --orange: #F97316;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #1a1a2e;
+    color: var(--text);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Each slide is a page */
+  .slide {
+    width: 297mm;
+    min-height: 167mm;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    padding: 36px 48px;
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  /* Decorative background glow */
+  .slide::before {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,51,102,0.08) 0%, transparent 70%);
+    top: -100px;
+    right: -100px;
+    pointer-events: none;
+  }
+
+  /* ── Slide number ── */
+  .slide-num {
+    position: absolute;
+    bottom: 18px;
+    right: 36px;
+    font-size: 10px;
+    color: var(--border);
+    letter-spacing: 2px;
+    font-weight: 600;
+  }
+
+  /* ── Logo mark ── */
+  .logo {
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: var(--red);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  /* ── Labels ── */
+  .label {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 10px;
+  }
+
+  .label-muted {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  /* ── Headlines ── */
+  h1 { font-size: 52px; font-weight: 900; line-height: 1.05; }
+  h2 { font-size: 32px; font-weight: 800; line-height: 1.15; }
+  h3 { font-size: 18px; font-weight: 700; }
+  h4 { font-size: 13px; font-weight: 700; }
+
+  .grad {
+    background: linear-gradient(135deg, #FF3366, #FF9933);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  p { font-size: 13px; line-height: 1.65; color: var(--sub); }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+
+  .card-red { border-color: rgba(255,51,102,0.3); background: rgba(255,51,102,0.05); }
+  .card-gold { border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.04); }
+  .card-green { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.05); }
+
+  /* ── Grid ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+
+  /* ── Stat big ── */
+  .stat-big { font-size: 36px; font-weight: 900; color: var(--text); line-height: 1; }
+  .stat-label { font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: 0.5px; margin-top: 4px; }
+  .stat-sub { font-size: 11px; color: var(--sub); margin-top: 2px; }
+
+  /* ── Divider ── */
+  .divider { width: 100%; height: 1px; background: var(--border); margin: 20px 0; }
+
+  /* ── Tags / Chips ── */
+  .chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .chip-red { background: rgba(255,51,102,0.15); color: var(--red); border: 1px solid rgba(255,51,102,0.3); }
+  .chip-green { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .chip-gold { background: rgba(255,215,0,0.15); color: var(--gold); border: 1px solid rgba(255,215,0,0.3); }
+  .chip-blue { background: rgba(59,130,246,0.15); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
+
+  /* ── Check list ── */
+  .check-list { display: flex; flex-direction: column; gap: 10px; }
+  .check-item { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--sub); line-height: 1.5; }
+  .check-dot { width: 20px; height: 20px; border-radius: 50%; background: rgba(255,51,102,0.15); border: 1px solid rgba(255,51,102,0.4); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .check-dot-green { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.4); }
+  .dot-inner { width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+  .dot-inner-green { background: var(--green); }
+
+  /* ── Table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 10px 12px; font-size: 9px; font-weight: 800; letter-spacing: 2px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; color: var(--sub); border-bottom: 1px solid rgba(255,255,255,0.04); }
+  tr:last-child td { border-bottom: none; }
+  .td-highlight { color: var(--text); font-weight: 700; }
+  .td-red { color: var(--red); font-weight: 700; }
+  .td-green { color: var(--green); font-weight: 700; }
+  .td-gold { color: var(--gold); font-weight: 700; }
+
+  /* ── Bar chart ── */
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .bar-label { font-size: 11px; color: var(--sub); width: 80px; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-val { font-size: 11px; font-weight: 700; width: 50px; text-align: right; }
+
+  /* ── Funnel ── */
+  .funnel { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .funnel-step {
+    width: 100%;
+    text-align: center;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 3px;
+    position: relative;
+  }
+  .funnel-step::after {
+    content: '▼';
+    position: absolute;
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: var(--muted);
+    z-index: 1;
+  }
+  .funnel-step:last-child::after { display: none; }
+
+  /* ── Timeline / roadmap ── */
+  .timeline { display: flex; gap: 0; position: relative; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--border);
+  }
+  .tl-item { flex: 1; text-align: center; position: relative; padding-top: 36px; }
+  .tl-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--red);
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 2px solid var(--bg);
+    z-index: 1;
+  }
+  .tl-dot-done { background: var(--green); }
+  .tl-dot-future { background: var(--border); }
+  .tl-quarter { font-size: 9px; font-weight: 800; color: var(--red); letter-spacing: 1px; }
+  .tl-quarter-done { color: var(--green); }
+  .tl-text { font-size: 10px; color: var(--sub); margin-top: 4px; line-height: 1.4; }
+
+  /* ── Cover specific ── */
+  .cover-tagline {
+    font-size: 15px;
+    color: var(--sub);
+    max-width: 420px;
+    line-height: 1.6;
+    margin-top: 16px;
+  }
+  .cover-meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .cover-bottom {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  /* ── Quote ── */
+  .quote {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.3;
+    border-left: 3px solid var(--red);
+    padding-left: 20px;
+  }
+
+  /* ── Icon circles ── */
+  .icon-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+
+  /* ── Competitor comp row ── */
+  .comp-row { display: flex; gap: 12px; }
+  .comp-card {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .comp-name { font-size: 13px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+  .comp-val { font-size: 22px; font-weight: 900; }
+  .comp-desc { font-size: 9px; color: var(--muted); margin-top: 4px; letter-spacing: 0.5px; }
+
+  /* ── Print ── */
+  @media print {
+    body { background: white; }
+    .slide {
+      width: 297mm;
+      min-height: 167mm;
+      page-break-after: always;
+    }
+    @page { size: A4 landscape; margin: 0; }
+  }
+
+  @media screen {
+    body { padding: 20px; display: flex; flex-direction: column; gap: 20px; align-items: center; }
+    .slide { border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     SLIDE 1 — COVER
+════════════════════════════════════════════ -->
+<div class="slide" style="justify-content: space-between;">
+  <!-- Top accent line -->
+  <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#FF3366,#FF9933,#FFD700);"></div>
+
+  <div>
+    <div class="logo">Viibe</div>
+    <div style="width:32px;height:3px;background:var(--red);border-radius:2px;margin-bottom:28px;"></div>
+
+    <h1>Where's the<br/><span class="grad">vibe tonight?</span></h1>
+
+    <p class="cover-tagline">
+      Nigeria's real-time social intelligence platform —<br/>
+      removing friction from going out, one scout at a time.
+    </p>
+  </div>
+
+  <div class="cover-bottom">
+    <div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Pre-Seed Round</div>
+      <div style="font-size:28px;font-weight:900;color:var(--text);">$75,000</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">Seed · Q2 2026</div>
+    </div>
+
+    <div style="text-align:right;">
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:8px;">
+        <span class="chip chip-red">Live Product</span>
+        <span class="chip chip-green">Paystack Integrated</span>
+        <span class="chip chip-gold">Nigeria</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);">Lagos · Abuja · Port Harcourt</div>
+    </div>
+  </div>
+
+  <div class="slide-num">01 / 11</div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SLIDE 2 — THE PROBLEM
+════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="label">The Problem</div>
+  <h2 style="max-width:500px;">Going out in Nigeria is<br/><span class="grad">expensive friction.</span></h2>
+
+  <div style="margin-top:28px;" class="grid-2">
+    <div>
+      <div class="check-list">
+        <div class="check-item">
+          <div class="check-dot"><div class="dot-inner"></div></div>
+          <div><strong style="color:var(--text);">6 WhatsApp chats</strong> to find where's actually popping tonight</div>
+        </div>
+        <div class="check-item">
+          <div class="check-dot"><div class="dot-inner"></div></div>
+          <div><strong style="color:var(--text);">45-minute drive</strong> to a venue that turned out dead at 11pm</div>
+        </div>
+        <div class="check-item">
+          <div class="check-dot"><div class="dot-inner"></div></div>
+          <div><strong style="color:var(--text);">₦50,000+ wasted</strong> on a slow night — entry, transport, drinks</div>
+        </div>
+        <div class="check-item">
+          <div class="check-dot"><div class="dot-inner"></div></div>
+          <div><strong style="color:var(--text);">Zero real-time data</strong> — venues rely on WhatsApp and guesswork</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card card-red">
+        <div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:6px;">FOR SCOUTS</div>
+        <p>No reliable way to know if a venue is worth going to <em>right now.</em> Static Google reviews are 6 months old.</p>
+      </div>
+      <div class="card card-red">
+        <div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:6px;">FOR VENUES</div>
+        <p>No tools to understand their own crowd, communicate live updates, or influence foot traffic on slow nights.</p>
+      </div>
+      <div class="card" style="border-color:rgba(255,215,0,0.2);background:rgba(255,215,0,0.04);">
+        <div style="font-size:22px;font-weight:900;color:var(--gold);">₦2.8T+</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;">Nigerian nightlife & hospitality annual spend</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-num">02 / 11</div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SLIDE 3 — THE SOLUTION
+════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="label">The Solution</div>
+  <h2><span class="grad">Viibe</span> removes friction from going out.</h2>
+
+  <div style="margin-top:10px;margin-bottom:24px;">
+    <p style="font-size:14px;max-width:560px;">Real-time venue intelligence, powered by scouts on the ground. Open the app — know exactly which venues are alive, verified by people already there.</p>
+  </div>
+
+  <div class="grid-3">
+    <div class="card" style="text-align:center;">
+      <div style="font-size:32px;margin-bottom:10px;">📡</div>
+      <h4 style="color:var(--text);margin-bottom:6px;">Live Ratings</h4>
+      <p style="font-size:11px;">Scouts rate energy, crowd, queue & vibe in real-time from inside the venue. GPS-verified.</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:32px;margin-bottom:10px;">🏆</div>
+      <h4 style="color:var(--text);margin-bottom:6px;">Scout Clout</h4>
+      <p style="font-size:11px;">Gamified reputation system. Scouts earn Clout for ratings. Top scouts get perks, recognition, leaderboard spots.</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:32px;margin-bottom:10px;">📊</div>
+      <h4 style="color:var(--text);margin-bottom:6px;">Merchant Intel</h4>
+      <p style="font-size:11px;">Venues see their live foot traffic, send blasts to followers, track bookings and scout-verified ROI.</p>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;" class="quote">
+    "Uber removed friction from taxis. Stripe removed friction from payments.<br/>
+    <span style="color:var(--red);">Viibe removes friction from going out.</span>"
+  </div>
+
+  <div class="slide-num">03 / 11</div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SLIDE 4 — HOW IT WORKS (FLYWHEEL)
+════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="label">How It Works</div>
+  <h2>The Scout <span class="grad">Flywheel</span></h2>
+
+  <div style="margin-top:24px;display:flex;gap:24px;align-items:stretch;">
+
+    <!-- Flywheel steps -->
+    <div style="flex:1.4;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,51,102,0.15);border:1px solid rgba(255,51,102,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--red);flex-shrink:0;">1</div>
+        <div>
+          <h4 style="color:var(--text);margin-bottom:3px;">Scouts rate venues in real-time</h4>
+          <p style="font-size:11px;">GPS-verified from inside the venue. Energy, crowd, queue, music, vibe score.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,153,51,0.15);border:1px solid rgba(255,153,51,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#FF9933;flex-shrink:0;">2</div>
+        <div>
+          <h4 style="color:var(--text);margin-bottom:3px;">Scouts earn Clout & status</h4>
+          <p style="font-size:11px;">Leaderboards, persona badges, streak rewards. They rate because it's useful AND fun.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,215,0,0.15);border:1px solid rgba(255,215,0,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--gold);flex-shrink:0;">3</div>
+        <div>
+          <h4 style="color:var(--text);margin-bottom:3px;">Better data → better experience</h4>
+          <p style="font-size:11px;">More scouts = more accurate intel = more users choosing Viibe to decide where to go.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--green);flex-shrink:0;">4</div>
+        <div>
+          <h4 style="color:var(--text);margin-bottom:3px;">Venues pay for the audience</h4>
+          <p style="font-size:11px;">Analytics SaaS + blast tools + bookings. Scout data is free to collect; venue monetisation is the business.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: the data moat -->
+    <div style="flex:1;display:flex;flex-direction:column;gap:12px;">
+      <div class="card card-red">
+        <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px;">DATA MOAT</div>
+        <div class="bar-row">
+          <div class="bar-label">Ratings</div>
+          <div class="bar-track"><div class="bar-fill" style="width:85%;background:linear-gradient(90deg,#FF3366,#FF9933);"></div></div>
+          <div class="bar-val" style="color:var(--red);">High</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Foot traffic</div>
+          <div class="bar-track"><div class="bar-fill" style="width:70%;background:linear-gradient(90deg,#FF9933,#FFD700);"></div></div>
+          <div class="bar-val" style="color:#FF9933;">Med</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Crowd patterns</div>
+          <div class="bar-track"><div class="bar-fill" style="width:90%;background:linear-gradient(90deg,#FFD700,#22C55E);"></div></div>
+          <div class="bar-val" style="color:var(--green);">High</div>
+        </div>
+        <div class="bar-row" style="margin-bottom:0;">
+          <div class="bar-label">Peak windows</div>
+          <div class="bar-track"><div class="bar-fill" style="width:75%;background:linear-gradient(90deg,#3B82F6,#FF3366);"></div></div>
+          <div class="bar-val" style="color:var(--blue);">Med</div>
+        </div>
+      </div>
+      <div class="card card-gold">
+        <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;">THE EXIT STORY</div>
+        <p style="font-size:11px;">At scale: the most granular real-time venue intelligence dataset in West Africa. Foursquare sold its data business for <strong style="color:var(--gold);">$3B+</strong>. We collect this data natively.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-num">04 / 11</div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SLIDE 5 — PRODUCT (5 FEATURES)
+════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="label">Product — Live Today</div>
+  <h2>5 revenue-generating <span class="grad">features, built.</span></h2>
+  <p style="margin-bottom:22px;font-size:12px;">Live at vibe-app-hc83.vercel.app · FastAPI + MongoDB + Socket.IO · Paystack integrated</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Feature</th>
+        <th>What it does</th>
+        <th>Revenue model</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td class="td-highlight">Analytics Dashboard</td>
+        <td>Real-time scout traffic, hourly patterns, 30-day vibe score history</td>
+        <td class="td-red">Monthly SaaS ₦15k–₦50k</td>
+        <td><span class="chip chip-green">Live</span></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td class="td-highlight">Blast Attribution</td>
+        <td>Send live push → track scout visits in 2h window → see verified ROI</td>
+        <td class="td-red">Premium tier add-on</td>
+        <td><span class="chip chip-green">Live</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td class="td-highlight">Booking System</td>
+        <td>Reserve-a-table with Paystack. ₦500 platform fee per confirmed booking</td>
+        <td class="td-red">₦500 / booking</td>
+        <td><span class="chip chip-green">Live</span></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td class="td-highlight">Venue Claim Flow</td>
+        <td>Self-serve merchant onboarding with admin approval queue</td>
+        <td class="td-red">Acquisition funnel</td>
+        <td><span class="chip chip-green">Live</span></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td class="td-highlight">City Intelligence API</td>
+        <td>Aggregated crowd patterns, top areas, peak nights per city</td>
+        <td class="td-red">B2B data licensing</td>
+        <td><span class="chip chip-green">Live</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Icons callout -->
+  <div style="margin-top:14px;padding:14px 18px;background:linear-gradient(135deg,rgba(255,215,0,0.06),rgba(255,51,102,0.06));border:1px solid rgba(255,215,0,0.25);border-radius:12px;display:flex;align-items:center;gap:14px;">
+    <div style="font-size:28px;flex-shrink:0;">👑</div>
+    <div>
+      <div style="font-size:10px;font-weight:800;color:var(--gold);letter-spacing:2px;margin-bottom:4px;">ICONS — COMING SOON</div>
+      <p style="font-size:12px;color:var(--text);font-weight:600;line-height:1.5;">When a celebrity checks in on Viibe, it triggers a real-time notification to thousands of people deciding where to go tonight. <span style="color:var(--gold);">We're the first platform to make celebrity presence a live, actionable data point.</span></p>
+    </div>
+  </div>
+
+  <div style="margin-top:12px;" class="grid-3">
+    <div class="card" style="padding:12px 16px;">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">ALSO BUILT</div>
+      <p style="font-size:11px;">Scout leaderboards, Vibe DNA profiles, Night Planner (AI), Squad mode, Arrival Intel, Vibe Oracle</p>
+    </div>
+    <div class="card card-red" style="padding:12px 16px;">
+      <div style="font-size:10px;color:var(--red);margin-bottom:4px;">TECH STACK</div>
+      <p style="font-size:11px;">React Native (Expo) · FastAPI · MongoDB · Socket.IO · Paystack · Railway · Vercel</p>
+    </div>
+    <div class="card card-green" style="padding:12px 16px;">
+      <div style="font-size:10px;color:var(--green);margin-bottom:4px;">NEXT 90 DAYS</div>
+      <p style="font-size:11px;">App Store launch · First 50 paying merchants · 10,000 scouts in Lagos</p>
+    </div>
+  </div>
+
+  <div class="slide-num">05 / 11</div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SLIDE 6 — MARKET SIZE
+════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="label">Market Size</div>
+  <h2>A massive market with <span class="grad">no real tools.</span></h2>
+
+  <div style="margin-top:24px;" class="grid-2">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card">
+        <div style="font-size:32px;font-weight:900;color:var(--red);">200M+</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">Nigeria population · median age 18</div>
+        <p style="font-size:11px;margin-top:6px;">The youngest large economy on earth. Nightlife & social spending is a core identity.</p>
+      </div>
+      <div class="card">
+        <div style="font-size:32px;font-weight:900;color:var(--gold);">5,000+</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">Paying venues in Lagos alone</div>
+        <p style="font-size:11px;margin-top:6px;">Clubs, lounges, restaurants, beach clubs, event centres, rooftops. None have real-time intelligence tools.</p>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;gap:14px;">
+        <div class="card" style="flex:1;text-align:center;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">TAM</div>
+          <div style="font-size:24px;font-weight:900;color:var(--text);">$4.2B</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px;">West Africa hospitality tech</div>
+        </div>
+        <div class="card" style="flex:1;text-align:center;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">SAM</div>
+          <div style="font-size:24px;font-weight:900;color:var(--red);">$420M</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px;">Nigeria venue SaaS & bookings</div>
+        </div>
+        <div class="card" style="flex:1;text-align:center;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">SOM Y1</div>
+          <div style="font-size:24px;font-weight:900;color:var(--green);">$1.2M</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px;">50 venues × $2k/yr</div>
+        </div>
+      </div>
+
+      <div class="card card-gold">
+        <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:8px;">EXPANSION PATH</div>
+        <div class="bar-row">
+          <div class="bar-label" style="width:120px;">Lagos (NOW)</div>
+          <div class="bar-track"><div class="bar-fill" style="width:30%;background:var(--red);"></div></div>
+          <div class="bar-val" style="color:var(--red);">50 venues</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" style="width:120px;">Abuja + PH (Y1)</div>
+          <div class="bar-track"><div class="bar-fill" style="width:55%;background:var(--orange);"></div></div>
+          <div class="bar-val" style="color:var(--orange);">300 venues</div>
+        </div>
+        <div class="bar-row" style="margin-bottom:0;">
+          <div class="bar-label" style="width:120px;">Accra + Nairobi (Y2)</div>
+          <div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--gold);"></div></div>
+          <div class="bar-val" style="color:var(--gold);">1,200+ venues</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-num">06 / 11</div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SLIDE 7 — BUSINESS MODEL
+════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="label">Business Model</div>
+  <h2>Three revenue streams. <span class="grad">All compounding.</span></h2>
+
+  <div style="margin-top:22px;" class="grid-3">
+    <div class="card" style="border-color:rgba(255,51,102,0.3);">
+      <div style="font-size:28px;margin-bottom:10px;">💳</div>
+      <h3 style="color:var(--red);margin-bottom:6px;">SaaS</h3>
+      <div style="font-size:20px;font-weight:900;color:var(--text);margin-bottom:4px;">₦15k–₦50k</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px;">per venue / month</div>
+      <div class="check-list">
+        <div class="check-item" style="font-size:11px;">
+          <div class="check-dot"><div class="dot-inner"></div></div>
+          Analytics dashboard
+        </div>
+        <div class="check-item" style="font-size:11px;">
+          <div class="check-dot"><div class="dot-inner"></div></div>
+          Live push blasts
+        </div>
+        <div class="check-item" style="font-size:11px;">
+          <div class="check-dot"><div class="dot-inner"></div></div>
+          Blast attribution ROI
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:rgba(255,215,0,0.3);">
+      <div style="font-size:28px;margin-bottom:10px;">🎟️</div>
+      <h3 style="color:var(--gold);margin-bottom:6px;">Transactions</h3>
+      <div style="font-size:20px;font-weight:900;color:var(--text);margin-bottom:4px;">₦500</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px;">per confirmed booking</div>
+      <div class="check-list">
+        <div class="check-item" style="font-size:11px;">
+          <div class="check-dot" style="background:rgba(255,215,0,0.15);border-color:rgba(255,215,0,0.4);"><div class="dot-inner" style="background:var(--gold);"></div></div>
+          Table reservations
+        </div>
+        <div class="check-item" style="font-size:11px;">
+          <div class="check-dot" style="background:rgba(255,215,0,0.15);border-color:rgba(255,215,0,0.4);"><div class="dot-inner" style="background:var(--gold);"></div></div>
+          Paystack integration
+        </div>
+        <div class="check-item" style="font-size:11px;">
+          <div class="check-dot" style="background:rgba(255,215,0,0.15);border-color:rgba(255,215,0,0.4);"><div class="dot-inner" style="background:var(--gold);"></div></div>
+          Zero venue setup cost
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:rgba(34,197,94,0.3);">
+      <div style="font-size:28px;margin-bottom:10px;">🗃️</div>
+      <h3 style="color:var(--green);margin-bottom:6px;">Data Licensing</h3>
+      <div style="font-size:20px;font-weight:900;color:var(--text);margin-bottom:4px;">B2B</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px;">aggregated city intelligence</div>
+      <div class="check-list">
+        <div class="check-item" style="font-size:11px;">
+          <div class="check-dot check-dot-green"><div class="dot-inner dot-inner-green"></div></div>
+          FMCG brands
+        </div>
+        <div class="check-item" style="font-size:11px;">
+          <div class="check-dot check-dot-green"><div class="dot-inner dot-inner-green"></div></div>
+          Event promoters
+        </div>
+        <div class="check-item" style="font-size:11px;">
+          <div class="check-dot check-dot-green"><div class="dot-inner dot-inner-green"></div></div>
+          Tourism boards
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:18px;" class="card" style="background:rgba(255,51,102,0.04);border-color:rgba(255,51,102,0.15);">
+    <div style="display:flex;gap:32px;align-items:center;">
+      <div style="text-align:center;">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">50 VENUES @ ₦30k/MO</div>
+        <div style="font-size:22px;font-weight:900;color:var(--red);">₦18M ARR</div>
+        <div style="font-size:9px;color:var(--muted);">Year 1 · Lagos only</div>
+      </div>
+      <div style="width:1px;height:40px;background:var(--border);"></div>
+      <div style="text-align:center;">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">300 VENUES @ ₦30k/MO</div>
+        <div style="font-size:22px;font-weight:900;color:var(--gold);">₦108M ARR</div>
+        <div style="font-size:9px;color:var(--muted);">Year 2 · 3 cities</div>
+      </div>
+      <div style="width:1px;height:40px;background:var(--border);"></div>
+      <div style="text-align:center;">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">1,200 VENUES + DATA</div>
+        <div style="font-size:22px;font-weight:900;color:var(--green);">₦600M ARR</div>
+        <div style="font-size:9px;color:var(--muted);">Year 3 · West Africa</div>
+      </div>
+      <div style="width:1px;height:40px;background:var(--border);"></div>
+      <div style="flex:1;">
+        <p style="font-size:11px;">Scouts never pay. Venues pay because Viibe sends them real customers and proves it with data.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-num">07 / 11</div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SLIDE 8 — COMPARABLES
+════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="label">Comparable Exits</div>
+  <h2>We're building the <span class="grad">African layer</span> of three proven global businesses.</h2>
+
+  <div style="margin-top:24px;" class="comp-row">
+    <div class="comp-card">
+      <div style="font-size:24px;margin-bottom:8px;">⭐</div>
+      <div class="comp-name">Yelp</div>
+      <div class="comp-val" style="color:var(--red);">$1.5B</div>
+      <div class="comp-desc">USER REVIEWS → VENUE DISCOVERY</div>
+      <div class="divider" style="margin:10px 0;"></div>
+      <p style="font-size:10px;">Static reviews. We do real-time, verified, gamified ratings.</p>
+    </div>
+    <div class="comp-card" style="border-color:rgba(255,215,0,0.3);">
+      <div style="font-size:24px;margin-bottom:8px;">📍</div>
+      <div class="comp-name">Foursquare</div>
+      <div class="comp-val" style="color:var(--gold);">$3B+</div>
+      <div class="comp-desc">CHECK-IN DATA → B2B INTELLIGENCE</div>
+      <div class="divider" style="margin:10px 0;"></div>
+      <p style="font-size:10px;">Sold aggregated location data. We collect richer signal — energy, mood, crowd.</p>
+    </div>
+    <div class="comp-card" style="border-color:rgba(34,197,94,0.3);">
+      <div style="font-size:24px;margin-bottom:8px;">🍽️</div>
+      <div class="comp-name">OpenTable</div>
+      <div class="comp-val" style="color:var(--green);">$2.6B</div>
+      <div class="comp-desc">RESERVATIONS → TRANSACTION FEES</div>
+      <div class="divider" style="margin:10px 0;"></div>
+      <p style="font-size:10px;">Charged per booking. We do the same via Paystack, with real-time intel built in.</p>
+    </div>
+    <div class="comp-card" style="border-color:rgba(255,51,102,0.4);background:rgba(255,51,102,0.06);">
+      <div style="font-size:24px;margin-bottom:8px;">🌍</div>
+      <div class="comp-name" style="color:var(--red);">Viibe</div>
+      <div class="comp-val" style="background:linear-gradient(135deg,#FF3366,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">All 3</div>
+      <div class="comp-desc">IN ONE PRODUCT · BUILT FOR NIGERIA</div>
+      <div class="divider" style="margin:10px 0;"></div>
+      <p style="font-size:10px;">Real-time ratings + city intelligence + bookings. Native to West Africa.</p>
+    </div>
+  </div>
+
+  <div style="margin-top:18px;padding:14px 18px;background:rgba(255,215,0,0.04);border:1px solid rgba(255,215,0,0.2);border-radius:10px;">
+    <p style="font-size:12px;color:var(--sub);">
+      <strong style="color:var(--gold);">Key insight:</strong> All three comparables built in markets with far less mobile-first, social-native behaviour than Lagos. Nigeria is a leapfrog market — people skipped desktop entirely. Viibe is built for how Nigerians actually live.
+    </p>
+  </div>
+
+  <div class="slide-num">08 / 11</div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SLIDE 9 — FINANCIALS
+════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="label">Financial Projections</div>
+  <h2>Conservative path to <span class="grad">₦600M ARR.</span></h2>
+
+  <div style="margin-top:18px;" class="grid-2">
+    <div>
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Year 1 (2026)</th>
+            <th>Year 2 (2027)</th>
+            <th>Year 3 (2028)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Cities</td>
+            <td class="td-highlight">1 (Lagos)</td>
+            <td class="td-highlight">3</td>
+            <td class="td-highlight">6+</td>
+          </tr>
+          <tr>
+            <td>Paying Venues</td>
+            <td class="td-red">50</td>
+            <td class="td-red">300</td>
+            <td class="td-red">1,200</td>
+          </tr>
+          <tr>
+            <td>Active Scouts</td>
+            <td>10,000</td>
+            <td>80,000</td>
+            <td>500,000</td>
+          </tr>
+          <tr>
+            <td>Avg Rev / Venue</td>
+            <td>₦30k/mo</td>
+            <td>₦35k/mo</td>
+            <td>₦42k/mo</td>
+          </tr>
+          <tr>
+            <td>SaaS Revenue</td>
+            <td class="td-gold">₦18M</td>
+            <td class="td-gold">₦126M</td>
+            <td class="td-gold">₦605M</td>
+          </tr>
+          <tr>
+            <td>Booking Revenue</td>
+            <td>₦3M</td>
+            <td>₦24M</td>
+            <td>₦120M</td>
+          </tr>
+          <tr>
+            <td>Data Revenue</td>
+            <td>—</td>
+            <td>₦12M</td>
+            <td>₦80M</td>
+          </tr>
+          <tr>
+            <td style="border-top:1px solid var(--border);"><strong style="color:var(--text);">Total ARR</strong></td>
+            <td class="td-green" style="border-top:1px solid var(--border);font-weight:800;">₦21M</td>
+            <td class="td-green" style="border-top:1px solid var(--border);font-weight:800;">₦162M</td>
+            <td class="td-green" style="border-top:1px solid var(--border);font-weight:800;">₦805M</td>
+          </tr>
+          <tr>
+            <td>ARR (USD equiv)</td>
+            <td style="color:var(--muted);">~$13k</td>
+            <td style="color:var(--muted);">~$100k</td>
+            <td class="td-green">~$500k</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:9px;color:var(--muted);margin-top:8px;">Projections based on ₦1,600/$1. Conservative venue acquisition assumptions (10 venues/month Y1, growing to 50/month Y3).</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="card card-red">
+        <div style="font-size:10px;color:var(--red);margin-bottom:8px;font-weight:700;">USE OF FUNDS — $75,000</div>
+        <div class="bar-row">
+          <div class="bar-label" style="width:140px;">Product & App Store</div>
+          <div class="bar-track"><div class="bar-fill" style="width:33%;background:var(--red);"></div></div>
+          <div class="bar-val" style="color:var(--red);">$25k</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" style="width:140px;">Merchant BD (50 venues)</div>
+          <div class="bar-track"><div class="bar-fill" style="width:27%;background:var(--orange);"></div></div>
+          <div class="bar-val" style="color:var(--orange);">$20k</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label" style="width:140px;">Scout Growth (10k users)</div>
+          <div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--gold);"></div></div>
+          <div class="bar-val" style="color:var(--gold);">$15k</div>
+        </div>
+        <div class="bar-row" style="margin-bottom:0;">
+          <div class="bar-label" style="width:140px;">Ops + Infrastructure</div>
+          <div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--green);"></div></div>
+          <div class="bar-val" style="color:var(--green);">$15k</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-weight:700;">KEY MILESTONES (18 months)</div>
+        <div class="check-list">
+          <div class="check-item" style="font-size:11px;">
+            <div class="check-dot"><div class="dot-inner"></div></div>
+            App on iOS + Android App Stores (Q2 2026)
+          </div>
+          <div class="check-item" style="font-size:11px;">
+            <div class="check-dot"><div class="dot-inner"></div></div>
+            50 paying merchants in Lagos (Q3 2026)
+          </div>
+          <div class="check-item" style="font-size:11px;">
+            <div class="check-dot"><div class="dot-inner"></div></div>
+            10,000 active scouts (Q4 2026)
+          </div>
+          <div class="check-item" style="font-size:11px;">
+            <div class="check-dot check-dot-green"><div class="dot-inner dot-inner-green"></div></div>
+            Expand to Abuja + Port Harcourt (Q1 2027)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-num">09 / 11</div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SLIDE 10 — TRACTION & STAGE
+════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="label">Current Stage</div>
+  <h2>Pre-seed. <span class="grad">Working product. Zero fluff.</span></h2>
+
+  <div style="margin-top:22px;" class="grid-2">
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--green);letter-spacing:2px;margin-bottom:12px;">WHAT'S BUILT ✓</div>
+      <div class="check-list">
+        <div class="check-item">
+          <div class="check-dot check-dot-green"><div class="dot-inner dot-inner-green"></div></div>
+          Full-stack platform: React Native + FastAPI + MongoDB
+        </div>
+        <div class="check-item">
+          <div class="check-dot check-dot-green"><div class="dot-inner dot-inner-green"></div></div>
+          Real-time Socket.IO connections (live on web)
+        </div>
+        <div class="check-item">
+          <div class="check-dot check-dot-green"><div class="dot-inner dot-inner-green"></div></div>
+          Paystack payments (bookings + merchant wallet)
+        </div>
+        <div class="check-item">
+          <div class="check-dot check-dot-green"><div class="dot-inner dot-inner-green"></div></div>
+          GPS-verified scout rating system
+        </div>
+        <div class="check-item">
+          <div class="check-dot check-dot-green"><div class="dot-inner dot-inner-green"></div></div>
+          Merchant analytics dashboard (live)
+        </div>
+        <div class="check-item">
+          <div class="check-dot check-dot-green"><div class="dot-inner dot-inner-green"></div></div>
+          Venue claim + admin approval flow
+        </div>
+        <div class="check-item">
+          <div class="check-dot check-dot-green"><div class="dot-inner dot-inner-green"></div></div>
+          10 seeded Lagos venues (real data)
+        </div>
+        <div class="check-item">
+          <div class="check-dot check-dot-green"><div class="dot-inner dot-inner-green"></div></div>
+          3 user tiers: Scout / Merchant / Admin
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--red);letter-spacing:2px;margin-bottom:12px;">WHAT SEED UNLOCKS →</div>
+      <div class="check-list">
+        <div class="check-item">
+          <div class="check-dot"><div class="dot-inner"></div></div>
+          iOS + Android App Store launch
+        </div>
+        <div class="check-item">
+          <div class="check-dot"><div class="dot-inner"></div></div>
+          First 50 paying merchant venues
+        </div>
+        <div class="check-item">
+          <div class="check-dot"><div class="dot-inner"></div></div>
+          10,000 active scouts in Lagos
+        </div>
+        <div class="check-item">
+          <div class="check-dot"><div class="dot-inner"></div></div>
+          BD hire for merchant onboarding
+        </div>
+        <div class="check-item">
+          <div class="check-dot"><div class="dot-inner"></div></div>
+          Data to raise a proper Series A
+        </div>
+      </div>
+
+      <div style="margin-top:20px;" class="card card-gold">
+        <div style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:8px;">THE HONEST CASE</div>
+        <p style="font-size:11px;">The product works. The model is proven in other markets. What we need is distribution — getting scouts on the ground and merchants on the platform. That's what this raise funds.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-num">10 / 11</div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SLIDE 11 — THE ASK + CLOSE
+════════════════════════════════════════════ -->
+<div class="slide" style="justify-content:space-between;">
+  <div>
+    <div class="label">The Ask</div>
+    <h2>Join us in removing<br/><span class="grad">friction from going out</span><br/>across Africa.</h2>
+  </div>
+
+  <div class="grid-2" style="margin-top:0;">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card" style="border-color:rgba(255,51,102,0.4);background:rgba(255,51,102,0.06);">
+        <div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:8px;">RAISING</div>
+        <div style="font-size:40px;font-weight:900;color:var(--text);">$75,000</div>
+        <div style="font-size:12px;color:var(--muted);">Pre-seed · Q2 2026</div>
+        <div style="font-size:12px;color:var(--sub);margin-top:8px;">Convertible note or SAFE · 20% discount</div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:8px;">RIGHT INVESTORS</div>
+        <div class="check-list">
+          <div class="check-item" style="font-size:11px;">
+            <div class="check-dot"><div class="dot-inner"></div></div>
+            African angel investors
+          </div>
+          <div class="check-item" style="font-size:11px;">
+            <div class="check-dot"><div class="dot-inner"></div></div>
+            Microtraction · Future Africa · Ventures Platform
+          </div>
+          <div class="check-item" style="font-size:11px;">
+            <div class="check-dot"><div class="dot-inner"></div></div>
+            Diaspora investors with Nigerian ties
+          </div>
+          <div class="check-item" style="font-size:11px;">
+            <div class="check-dot"><div class="dot-inner"></div></div>
+            Hospitality & consumer brand angels
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card card-green">
+        <div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:8px;">TRY IT NOW</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">vibe-app-hc83.vercel.app</div>
+        <p style="font-size:11px;">Live platform. Demo mode enabled. See the merchant dashboard, scout feed, and booking flow.</p>
+      </div>
+
+      <div class="card" style="flex:1;">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:12px;">FOUNDER</div>
+        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;">Ajagun Oluwaseun Oluyori</div>
+        <div style="font-size:12px;color:var(--sub);margin-bottom:2px;">Yoriajagun08@gmail.com</div>
+        <div style="font-size:12px;color:var(--sub);margin-bottom:12px;">+234 901 465 8611</div>
+        <p style="font-size:11px;">Solo technical founder. Built the entire platform — backend, frontend, payments, real-time infrastructure — in weeks, not months. Fast execution is the unfair advantage.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:auto;padding-top:18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-size:11px;color:var(--muted);">Viibe · Confidential · 2026</div>
+    <div style="display:flex;gap:8px;">
+      <span class="chip chip-red">Pre-Seed Round</span>
+      <span class="chip chip-green">Working Product</span>
+      <span class="chip chip-gold">Nigeria First</span>
+    </div>
+  </div>
+
+  <div class="slide-num">11 / 11</div>
+</div>
+
+</body>
+</html>

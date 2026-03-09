@@ -8,9 +8,8 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ActivityIndicator, ScrollView,
-  TouchableOpacity, Modal, StatusBar,
+  TouchableOpacity, Modal, Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -158,11 +157,13 @@ export default function HeatMapCard({ city = 'lagos', isDemoMode }: Props) {
         </View>
       </View>
 
-      {/* Fullscreen Modal */}
-      <Modal visible={fullscreen} animationType="slide" presentationStyle="fullScreen" statusBarTranslucent onRequestClose={() => setFullscreen(false)}>
-        <View style={fs.container}>
-          <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-          <SafeAreaView style={{ flex: 1 }}>
+      {/* 82% bottom-sheet modal */}
+      <Modal visible={fullscreen} transparent animationType="slide" onRequestClose={() => setFullscreen(false)}>
+        <View style={fs.overlay}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setFullscreen(false)} activeOpacity={1} />
+          <View style={fs.sheet}>
+            {/* Handle */}
+            <View style={fs.handle} />
             {/* FS Header */}
             <View style={fs.header}>
               <View style={styles.headerLeft}>
@@ -170,8 +171,8 @@ export default function HeatMapCard({ city = 'lagos', isDemoMode }: Props) {
                 <Text style={fs.title}>CITY HEAT MAP</Text>
                 <Text style={fs.cityChip}>{city.toUpperCase()}</Text>
               </View>
-              <TouchableOpacity style={fs.closeBtn} onPress={() => setFullscreen(false)}>
-                <Ionicons name="close" size={18} color="#FFF" />
+              <TouchableOpacity style={fs.closeBtn} onPress={() => setFullscreen(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name="close" size={20} color="#FFF" />
               </TouchableOpacity>
             </View>
 
@@ -202,7 +203,7 @@ export default function HeatMapCard({ city = 'lagos', isDemoMode }: Props) {
                 ))}
               </View>
             </ScrollView>
-          </SafeAreaView>
+          </View>
         </View>
       </Modal>
     </>
@@ -250,7 +251,18 @@ const styles = StyleSheet.create({
   areaMeta: { fontSize: 9, color: '#3A3A4E', fontWeight: '500' },
 });
 
+const SCREEN_H = Dimensions.get('window').height;
+
 const fs = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  sheet: {
+    height: SCREEN_H * 0.82, backgroundColor: '#08080F',
+    borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden',
+  },
+  handle: {
+    width: 40, height: 4, backgroundColor: '#333', borderRadius: 2,
+    alignSelf: 'center', marginTop: 10, marginBottom: 4,
+  },
   container: { flex: 1, backgroundColor: '#08080F' },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

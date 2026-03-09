@@ -44,19 +44,13 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
   const screenWidth = Dimensions.get('window').width;
   const tabWidth = screenWidth / tabs.length;
 
-  const tabBarHidden = useVibeStore(s => s.tabBarHidden);
   const setTabBarHidden = useVibeStore(s => s.setTabBarHidden);
 
-  // Slide tab bar in/out
+  // Always ensure tab bar is visible on mount
   const slideAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.spring(slideAnim, {
-      toValue: tabBarHidden ? 120 : 0,
-      tension: 80,
-      friction: 14,
-      useNativeDriver: true,
-    }).start();
-  }, [tabBarHidden]);
+    setTabBarHidden(false);
+  }, []);
 
   // Pill indicator slides under the active tab
   const pillAnim = useRef(new Animated.Value(0)).current;
@@ -92,18 +86,10 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
 
   return (
     <Animated.View style={[styles.wrapper, { transform: [{ translateY: slideAnim }] }]}>
-      {/* Collapse handle — tap to hide/show tab bar */}
-      <TouchableOpacity
-        style={styles.collapseHandle}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          setTabBarHidden(!tabBarHidden);
-        }}
-        activeOpacity={0.7}
-        hitSlop={{ top: 8, bottom: 0, left: 60, right: 60 }}
-      >
+      {/* Decorative nub */}
+      <View style={styles.collapseHandle}>
         <View style={[styles.collapseNub, { backgroundColor: glowColor + '60' }]} />
-      </TouchableOpacity>
+      </View>
 
       <BlurView intensity={60} tint="dark" style={styles.blur}>
         {/* Top hairline */}

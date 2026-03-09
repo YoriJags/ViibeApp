@@ -2,7 +2,7 @@
  * PUBLIC FLOOR - Crew (Viibez Cartel)
  * First-class tab. Premium dark glass design to match the Explore/Intel aesthetic.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
 import VoteCard from '../../src/components/VoteCard';
 import AvatarDisplay from '../../src/components/AvatarDisplay';
@@ -24,10 +25,16 @@ import CartelRadarMap from '../../src/components/CartelRadarMap';
 import CartelPulse from '../../src/components/CartelPulse';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
 import { OwnBatteryIndicator } from '../../src/components/BatteryIndicator';
+import CrewIntelligence from '../../src/components/CrewIntelligence';
+import RollingDeepBanner from '../../src/components/RollingDeepBanner';
 
 export default function CrewScreen() {
+  const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
+  const radarY = useRef(0);
   const user = useVibeStore(s => s.user);
   const crew = useVibeStore(s => s.crew);
+  const isDemoMode = useVibeStore(s => s.isDemoMode);
   const activeVote = useVibeStore(s => s.activeVote);
   const lobbyVenues = useVibeStore(s => s.lobbyVenues);
   const fetchCrew = useVibeStore(s => s.fetchCrew);
@@ -44,6 +51,8 @@ export default function CrewScreen() {
   const [showVotePicker, setShowVotePicker] = useState(false);
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([]);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [myNightPlan, setMyNightPlan] = useState<'out' | 'maybe' | 'skip' | null>(null);
+  const [showCrewIntel, setShowCrewIntel] = useState(false);
 
   useEffect(() => {
     fetchCrew();
@@ -156,31 +165,28 @@ export default function CrewScreen() {
           >
             <View style={styles.heroGlow} />
 
-            {/* 6-avatar constellation */}
-            <View style={styles.constellation}>
-              {/* Connecting lines */}
-              <View style={[styles.conLine, { width: 60, left: 52, top: 27, transform: [{ rotate: '0deg' }] }]} />
-              <View style={[styles.conLine, { width: 56, left: 16, top: 27, transform: [{ rotate: '55deg' }], transformOrigin: 'left center' }]} />
-              <View style={[styles.conLine, { width: 56, left: 92, top: 27, transform: [{ rotate: '-55deg' }], transformOrigin: 'right center' }]} />
-              <View style={[styles.conLine, { width: 60, left: 52, top: 71, transform: [{ rotate: '0deg' }] }]} />
-              <View style={[styles.conLine, { width: 40, left: 30, top: 71, transform: [{ rotate: '90deg' }], transformOrigin: 'left center' }]} />
-              <View style={[styles.conLine, { width: 40, left: 94, top: 71, transform: [{ rotate: '90deg' }], transformOrigin: 'left center' }]} />
-              {/* Avatars — 2 top, 2 mid, 2 bottom */}
-              {[
-                { top: 0,  left: 40, colors: ['#9933FF', '#FF3366'] as const, emoji: '🦁' },
-                { top: 0,  left: 96, colors: ['#FF3366', '#FF9933'] as const, emoji: '🐯' },
-                { top: 40, left: 10, colors: ['#3399FF', '#9933FF'] as const, emoji: '🦊' },
-                { top: 40, left: 124,colors: ['#FF9933', '#FF3366'] as const, emoji: '🐺' },
-                { top: 80, left: 40, colors: ['#00E676', '#3399FF'] as const, emoji: '🦅' },
-                { top: 80, left: 96, colors: ['#FF3366', '#9933FF'] as const, emoji: '🐉' },
-              ].map((a, i) => (
-                <View key={i} style={[styles.avatarNode, { top: a.top, left: a.left }]}>
-                  <LinearGradient colors={a.colors} style={styles.avatarNodeGrad}>
-                    <Text style={styles.avatarEmoji}>{a.emoji}</Text>
-                  </LinearGradient>
-                  {i === 0 && <View style={styles.captainCrown}><Text style={{ fontSize: 8 }}>👑</Text></View>}
-                </View>
-              ))}
+            {/* 6-person unity icon */}
+            <View style={styles.heroIconRing}>
+              <LinearGradient colors={['#9933FF', '#FF3366']} style={styles.heroIconGrad}>
+                {[
+                  { angle: 0,   color: '#FF3366' },
+                  { angle: 60,  color: '#9933FF' },
+                  { angle: 120, color: '#FF9933' },
+                  { angle: 180, color: '#3399FF' },
+                  { angle: 240, color: '#00E676' },
+                  { angle: 300, color: '#FFD700' },
+                ].map(({ angle, color }, i) => {
+                  const rad = (angle * Math.PI) / 180;
+                  const x = 33 + 18 * Math.sin(rad);
+                  const y = 33 - 18 * Math.cos(rad);
+                  return (
+                    <View key={i} style={[styles.handNode, { left: x - 7, top: y - 7, backgroundColor: color + '33', borderColor: color + '88' }]}>
+                      <Ionicons name="person" size={8} color={color} />
+                    </View>
+                  );
+                })}
+                <View style={styles.handCenter} />
+              </LinearGradient>
             </View>
 
             <Text style={styles.heroTitle}>Build Your Cartel</Text>
@@ -287,7 +293,7 @@ export default function CrewScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
         {/* Header — crew name + leave */}
         <View style={styles.header}>
@@ -308,8 +314,73 @@ export default function CrewScreen() {
         <CartelPulse
           cartelName={crew.name}
           members={crew.member_details ?? []}
-          onPress={() => {}}
+          onPress={() => scrollRef.current?.scrollTo({ y: radarY.current, animated: true })}
         />
+
+        {/* Rolling Deep — group check-in coordination banner */}
+        <ErrorBoundary label="Rolling Deep">
+          <RollingDeepBanner
+            crewId={crew.id}
+            currentUserId={user?.id ?? ''}
+            isDemoMode={isDemoMode}
+            onVenuePress={(id) => router.push(`/venue/${id}` as any)}
+          />
+        </ErrorBoundary>
+
+        {/* AI Cartel Intel button */}
+        <TouchableOpacity
+          style={styles.intelBtn}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowCrewIntel(true); }}
+          activeOpacity={0.8}
+        >
+          <LinearGradient colors={['#1A0A2E', '#120A24']} style={styles.intelBtnGrad}>
+            <Ionicons name="sparkles" size={16} color="#9933FF" />
+            <View style={styles.intelBtnText}>
+              <Text style={styles.intelBtnTitle}>CARTEL INTEL</Text>
+              <Text style={styles.intelBtnSub}>AI picks for your squad tonight</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={14} color="#9933FF" />
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Night Confirmed — squad readiness */}
+        <View style={styles.section}>
+          <View style={styles.sectionLabelRow}>
+            <View style={[styles.sectionDot, { backgroundColor: '#FF9933' }]} />
+            <Text style={styles.sectionLabel}>TONIGHT'S PLANS</Text>
+          </View>
+
+          {/* My status */}
+          <View style={styles.nightPlanRow}>
+            {([
+              { key: 'out',   label: "I'm Out",  icon: 'checkmark-circle', color: '#00E676' },
+              { key: 'maybe', label: 'Maybe',     icon: 'help-circle',      color: '#FF9933' },
+              { key: 'skip',  label: 'Staying In',icon: 'close-circle',     color: '#555'    },
+            ] as const).map(opt => (
+              <TouchableOpacity
+                key={opt.key}
+                style={[styles.nightPlanBtn, myNightPlan === opt.key && { borderColor: opt.color, backgroundColor: opt.color + '18' }]}
+                onPress={() => { Haptics.selectionAsync(); setMyNightPlan(opt.key); }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name={opt.icon} size={16} color={myNightPlan === opt.key ? opt.color : '#444'} />
+                <Text style={[styles.nightPlanBtnText, myNightPlan === opt.key && { color: opt.color }]}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Squad readiness bar */}
+          {myNightPlan && (
+            <View style={styles.readinessWrap}>
+              <View style={styles.readinessBar}>
+                <View style={[styles.readinessFill, { width: `${myNightPlan === 'out' ? 100 : myNightPlan === 'maybe' ? 50 : 10}%` as any, backgroundColor: myNightPlan === 'out' ? '#00E676' : myNightPlan === 'maybe' ? '#FF9933' : '#333' }]} />
+              </View>
+              <Text style={styles.readinessText}>
+                {myNightPlan === 'out' ? 'You\'re locked in 🔥' : myNightPlan === 'maybe' ? 'Keeping options open' : 'Sitting this one out'}
+              </Text>
+            </View>
+          )}
+        </View>
 
         {/* Invite code card */}
         <TouchableOpacity onPress={handleCopyCode} activeOpacity={0.8}>
@@ -376,7 +447,7 @@ export default function CrewScreen() {
         </View>
 
         {/* Cartel Radar */}
-        <View style={styles.section}>
+        <View style={styles.section} onLayout={(e) => { radarY.current = e.nativeEvent.layout.y; }}>
           <View style={styles.sectionLabelRow}>
             <View style={[styles.sectionDot, { backgroundColor: '#00E676' }]} />
             <Text style={styles.sectionLabel}>CARTEL RADAR</Text>
@@ -483,6 +554,14 @@ export default function CrewScreen() {
 
         <View style={{ height: 120 }} />
       </ScrollView>
+
+      <CrewIntelligence
+        visible={showCrewIntel}
+        onClose={() => setShowCrewIntel(false)}
+        crewName={crew.name}
+        memberPersonas={(crew.member_details ?? []).map((m: any) => m.persona ?? 'turn_up')}
+        isDemoMode={isDemoMode}
+      />
     </SafeAreaView>
   );
 }
@@ -502,40 +581,24 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 16, fontWeight: '900', color: '#FFF', letterSpacing: 2 },
   headerSub: { fontSize: 11, color: '#555', marginTop: 2, fontWeight: '500' },
 
-  // Constellation hero
-  constellation: {
-    position: 'relative',
-    width: 164,
-    height: 116,
-    marginBottom: 20,
-  },
-  conLine: {
+  // 6-person unity icon
+  handNode: {
     position: 'absolute',
-    height: 1,
-    backgroundColor: 'rgba(153,51,255,0.25)',
-  },
-  avatarNode: {
-    position: 'absolute',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: 'rgba(153,51,255,0.35)',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarNodeGrad: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarEmoji: { fontSize: 18 },
-  captainCrown: {
+  handCenter: {
     position: 'absolute',
-    top: -8,
-    right: -4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    top: 29,
+    left: 29,
   },
 
   // Hero (no crew)
@@ -667,6 +730,19 @@ const styles = StyleSheet.create({
   },
   leaveBtnText: { fontSize: 11, color: '#FF5252', fontWeight: '700' },
 
+  // Night Confirmed
+  nightPlanRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  nightPlanBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 5, paddingVertical: 11, borderRadius: 12,
+    borderWidth: 1, borderColor: '#1E1E2A', backgroundColor: '#0D0D16',
+  },
+  nightPlanBtnText: { fontSize: 11, fontWeight: '700', color: '#444' },
+  readinessWrap: { gap: 8 },
+  readinessBar: { height: 3, backgroundColor: '#111', borderRadius: 2 },
+  readinessFill: { height: 3, borderRadius: 2 },
+  readinessText: { fontSize: 11, color: '#555', fontWeight: '500' },
+
   // Section
   section: { marginBottom: 24 },
   sectionLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
@@ -752,4 +828,14 @@ const styles = StyleSheet.create({
   },
   venuePickSelected: { borderColor: '#FF336655', backgroundColor: '#FF33660A' },
   venuePickName: { fontSize: 14, fontWeight: '600', color: '#CCC' },
+
+  // Cartel Intel button
+  intelBtn: { marginBottom: 16, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#9933FF33' },
+  intelBtnGrad: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 15, paddingHorizontal: 18, gap: 12,
+  },
+  intelBtnText: { flex: 1 },
+  intelBtnTitle: { fontSize: 12, fontWeight: '900', color: '#9933FF', letterSpacing: 1.5 },
+  intelBtnSub: { fontSize: 11, color: '#555', fontWeight: '500', marginTop: 1 },
 });

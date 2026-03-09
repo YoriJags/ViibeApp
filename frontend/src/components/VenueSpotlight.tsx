@@ -99,11 +99,14 @@ export default function VenueSpotlight({ visible, venue, onClose }: Props) {
       contentY.setValue(40);
       bgOpac.setValue(0);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      Animated.parallel([
-        Animated.spring(slideAnim, { toValue: 0, tension: 65, friction: 14, useNativeDriver: true }),
-        Animated.timing(bgOpac, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.spring(contentY, { toValue: 0, tension: 55, friction: 12, delay: 150, useNativeDriver: true }),
-      ]).start();
+      // Let the Modal fully mount before starting the animation
+      requestAnimationFrame(() => {
+        Animated.parallel([
+          Animated.spring(slideAnim, { toValue: 0, tension: 65, friction: 14, useNativeDriver: true }),
+          Animated.timing(bgOpac, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.spring(contentY, { toValue: 0, tension: 55, friction: 12, delay: 150, useNativeDriver: true }),
+        ]).start();
+      });
     }
   }, [visible]);
 
@@ -116,6 +119,7 @@ export default function VenueSpotlight({ visible, venue, onClose }: Props) {
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={dismiss} statusBarTranslucent>
+      <View style={styles.modalRoot} pointerEvents="box-none">
       {/* Dim background — tap to close */}
       <Animated.View style={[styles.backdrop, { opacity: bgOpac }]}>
         <TouchableOpacity style={StyleSheet.absoluteFill} onPress={dismiss} activeOpacity={1} />
@@ -217,14 +221,16 @@ export default function VenueSpotlight({ visible, venue, onClose }: Props) {
 
         </Animated.View>
       </Animated.View>
+      </View>
     </Modal>
   );
 }
 
-const SHEET_H = H * 0.72;
-const HERO_H  = SHEET_H * 0.48;
+const SHEET_H = H * 0.90;
+const HERO_H  = SHEET_H * 0.44;
 
 const styles = StyleSheet.create({
+  modalRoot:     { flex: 1 },
   backdrop:      { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.75)' },
   sheet:         {
     position: 'absolute', bottom: 0, left: 0, right: 0,

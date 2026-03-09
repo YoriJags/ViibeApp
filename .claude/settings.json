@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx expo start:*)",
+      "Read(//c/Users/OAJAGUN/.claude/commands/gsd/**)",
+      "Read(//c/Users/OAJAGUN/.claude/get-shit-done/references/**)",
+      "Read(//c/Users/OAJAGUN/.claude/plugins/marketplaces/claude-plugins-official/plugins/frontend-design/skills/**)",
+      "Bash(comm -23 /tmp/all_components.txt /tmp/imported_components.txt)",
+      "Bash(curl -s \"https://vibe-app-hc83.vercel.app/api/area-pulse/lagos\")",
+      "Bash(node --input-type=module -e \":*)",
+      "Bash(grep -n \"bolt\\\\|Bolt\\\\|react\\\\|React\\\\|footer\\\\|Footer\" frontend/app/venue/[id].tsx)",
+      "Bash(node -e \":*)",
+      "Bash(ls app/\\\\\\(tabs\\\\\\)/)",
+      "Bash(head -20 \"app/\\(tabs\\)/index.tsx\")",
+      "Bash(cat \"app/\\(tabs\\)/_layout.tsx\")",
+      "Bash(cat \"app/\\(public\\)/_layout.tsx\")",
+      "Bash(grep -l \"fullscreen\\\\|Modal.*fullScreen\" c:/Users/OAJAGUN/OneDrive/Documents/Code/VibeApp/frontend/src/components/*.tsx)",
+      "Bash(xargs -I{} basename {} .tsx)"
+    ]
+  }
+}

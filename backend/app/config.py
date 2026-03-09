@@ -169,6 +169,17 @@ async def ensure_indexes():
     # certifications: certified venues sorted by score
     await db.venues.create_index([("vibe_certified", 1), ("current_vibe_score", -1)])
 
+    # rolling deep sessions: TTL 2h, one session per crew
+    await db.rolling_deep_sessions.create_index("expires_at", expireAfterSeconds=0)
+    await db.rolling_deep_sessions.create_index("crew_id", unique=True)
+
+    # emoji pulse: TTL 2h, query by venue + time window
+    await db.venue_emoji_pulses.create_index("expires_at", expireAfterSeconds=0)
+    await db.venue_emoji_pulses.create_index([("venue_id", 1), ("ts", -1)])
+    await db.venue_emoji_pulses.create_index(
+        [("venue_id", 1), ("user_id", 1)], unique=True
+    )
+
     logger.info("MongoDB indexes ensured")
 
 

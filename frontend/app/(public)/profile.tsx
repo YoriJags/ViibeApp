@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,13 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Modal,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
 import VibePlusModal from '../../src/components/VibePlusModal';
@@ -23,7 +26,17 @@ import AvatarBuilder from '../../src/components/AvatarBuilder';
 import AvatarDisplay from '../../src/components/AvatarDisplay';
 import AchievementBadge, { Badge } from '../../src/components/AchievementBadge';
 import CrewCard from '../../src/components/CrewCard';
+import AuraLevelUp from '../../src/components/AuraLevelUp';
 import { DEMO_BADGES, DEMO_CREW } from '../../src/data/demoData';
+
+const { width: W } = Dimensions.get('window');
+
+const AURA_CONFIG: Record<string, { level: string; label: string; color: string; perks: string[] }> = {
+  newbie:  { level: 'shadow',      label: 'Shadow',      color: '#666666', perks: [] },
+  regular: { level: 'rising',      label: 'Rising',      color: '#9933FF', perks: ['Clout multiplier +1.2x', 'Cartel eligible', 'Trending feed access'] },
+  scout:   { level: 'scene_maker', label: 'Scene Maker', color: '#FF3366', perks: ['Vibe Oracle predictions', 'Clout multiplier +1.5x', 'Scout radar visible'] },
+  elite:   { level: 'vibe_god',    label: 'Vibe God',    color: '#FFD700', perks: ['VIBE GOD status', 'Elite 2x clout multiplier', 'All Viibe+ perks free'] },
+};
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -58,6 +71,9 @@ export default function ProfileScreen() {
   const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
   const [showPassport, setShowPassport] = useState(false);
   const [showAfterParty, setShowAfterParty] = useState(false);
+  const [showAuraLevelUp, setShowAuraLevelUp] = useState(false);
+  const [showNightSummary, setShowNightSummary] = useState(false);
+  const prevScoutStatus = useRef<string | null>(null);
 
   useEffect(() => {
     // Check for existing session
@@ -80,6 +96,18 @@ export default function ProfileScreen() {
       .then(d => { if (d.debrief) setDebrief(d); })
       .catch(() => {});
   }, [user?.id, isDemoMode]);
+
+  // Detect scout_status upgrade → fire AuraLevelUp ceremony
+  useEffect(() => {
+    const status = user?.scout_status;
+    if (!status) return;
+    const prev = prevScoutStatus.current;
+    const ORDER = ['newbie', 'regular', 'scout', 'elite'];
+    if (prev && ORDER.indexOf(status) > ORDER.indexOf(prev)) {
+      setShowAuraLevelUp(true);
+    }
+    prevScoutStatus.current = status;
+  }, [user?.scout_status]);
 
   const handleLocalSignup = async () => {
     if (!username.trim() || !phone.trim()) {
@@ -440,25 +468,50 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* Night Debrief */}
-        {isFeatureEnabled('night_debrief') && (
-          isVibePlus() ? (
-            debrief && (
-              <View style={{ marginHorizontal: 16, marginBottom: 16, backgroundColor: 'rgba(255,153,51,0.08)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,153,51,0.2)', gap: 8 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ color: '#FF9933', fontSize: 10, fontWeight: '800', letterSpacing: 1 }}>NIGHT DEBRIEF</Text>
-                  {debrief.night_title && <Text style={{ color: '#FF9933', fontSize: 11, fontWeight: '700' }}>{debrief.night_title}</Text>}
-                </View>
-                <Text style={{ color: '#EEE', fontSize: 14, lineHeight: 21, fontStyle: 'italic' }}>{debrief.debrief}</Text>
-                {debrief.stats && (
-                  <View style={{ flexDirection: 'row', gap: 16, marginTop: 4 }}>
-                    <Text style={{ color: '#888', fontSize: 11 }}>{debrief.stats.spots_visited} spots</Text>
-                    <Text style={{ color: '#888', fontSize: 11 }}>{debrief.stats.ratings_dropped} ratings</Text>
-                    {debrief.stats.avg_vibe_given > 0 && <Text style={{ color: '#888', fontSize: 11 }}>avg {debrief.stats.avg_vibe_given}/100</Text>}
+        {/* Night Summary card — always visible, locks behind Viibe+ */}
+        {(isDemoMode || isFeatureEnabled('night_debrief')) && (
+          isVibePlus() || isDemoMode ? (
+            debrief ? (
+              <TouchableOpacity
+                style={styles.nightSummaryCard}
+                onPress={() => setShowNightSummary(true)}
+                activeOpacity={0.85}
+              >
+                <LinearGradient colors={['#1A0F00', '#1A0A00']} style={styles.nightSummaryInner}>
+                  <View style={styles.nightSummaryHeader}>
+                    <View style={styles.nightSummaryLeft}>
+                      <View style={styles.nightSummaryDot} />
+                      <Text style={styles.nightSummaryLabel}>NIGHT DEBRIEF</Text>
+                    </View>
+                    {debrief.night_title && (
+                      <Text style={styles.nightSummaryTitle}>{debrief.night_title}</Text>
+                    )}
                   </View>
-                )}
-              </View>
-            )
+                  {debrief.stats && (
+                    <View style={styles.nightSummaryStats}>
+                      <View style={styles.nightSummaryStat}>
+                        <Text style={styles.nightSummaryStatVal}>{debrief.stats.spots_visited}</Text>
+                        <Text style={styles.nightSummaryStatLbl}>spots</Text>
+                      </View>
+                      <View style={styles.nightSummaryStat}>
+                        <Text style={styles.nightSummaryStatVal}>{debrief.stats.ratings_dropped}</Text>
+                        <Text style={styles.nightSummaryStatLbl}>ratings</Text>
+                      </View>
+                      {debrief.stats.avg_vibe_given > 0 && (
+                        <View style={styles.nightSummaryStat}>
+                          <Text style={styles.nightSummaryStatVal}>{debrief.stats.avg_vibe_given}</Text>
+                          <Text style={styles.nightSummaryStatLbl}>avg vibe</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                  <View style={styles.nightSummaryFooter}>
+                    <Text style={styles.nightSummaryPreview} numberOfLines={1}>{debrief.debrief}</Text>
+                    <Ionicons name="chevron-forward" size={14} color="#FF9933" />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            ) : null
           ) : (
             <TouchableOpacity
               style={styles.debriefLocked}
@@ -475,6 +528,18 @@ export default function ProfileScreen() {
               </View>
             </TouchableOpacity>
           )
+        )}
+
+        {/* Demo: trigger AuraLevelUp ceremony */}
+        {isDemoMode && (
+          <TouchableOpacity
+            style={styles.demoTriggerBtn}
+            onPress={() => setShowAuraLevelUp(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="flash" size={14} color="#9933FF" />
+            <Text style={styles.demoTriggerText}>Demo: Trigger Aura Level Up</Text>
+          </TouchableOpacity>
         )}
 
         {/* Dashboard Access Section - Only show if user has permissions */}
@@ -615,6 +680,68 @@ export default function ProfileScreen() {
         onClose={() => setShowAfterParty(false)}
         isDemoMode={isDemoMode}
       />
+
+      {/* Aura Level Up ceremony */}
+      <AuraLevelUp
+        visible={showAuraLevelUp}
+        newLevel={AURA_CONFIG[user?.scout_status ?? 'newbie']?.level ?? 'rising'}
+        newLabel={AURA_CONFIG[user?.scout_status ?? 'newbie']?.label ?? 'Rising'}
+        color={AURA_CONFIG[user?.scout_status ?? 'newbie']?.color ?? '#9933FF'}
+        perks={AURA_CONFIG[user?.scout_status ?? 'newbie']?.perks ?? []}
+        onDismiss={() => setShowAuraLevelUp(false)}
+      />
+
+      {/* Night Summary full-screen modal */}
+      <Modal
+        visible={showNightSummary}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowNightSummary(false)}
+        statusBarTranslucent
+      >
+        <View style={styles.nightModalRoot}>
+          <LinearGradient colors={['#0A0600', '#0A0A0F']} style={styles.nightModalBg}>
+            {/* Header */}
+            <View style={styles.nightModalHeader}>
+              <View>
+                <Text style={styles.nightModalLabel}>NIGHT DEBRIEF</Text>
+                {debrief?.night_title && (
+                  <Text style={styles.nightModalNightTitle}>{debrief.night_title}</Text>
+                )}
+              </View>
+              <TouchableOpacity onPress={() => setShowNightSummary(false)} activeOpacity={0.8}>
+                <Ionicons name="close" size={22} color="#888" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Stats row */}
+            {debrief?.stats && (
+              <View style={styles.nightModalStats}>
+                {[
+                  { val: debrief.stats.spots_visited, lbl: 'Spots Hit', icon: 'location', color: '#FF3366' },
+                  { val: debrief.stats.ratings_dropped, lbl: 'Ratings', icon: 'star', color: '#FFD700' },
+                  { val: debrief.stats.avg_vibe_given > 0 ? debrief.stats.avg_vibe_given : '—', lbl: 'Avg Vibe', icon: 'pulse', color: '#9933FF' },
+                ].map((s, i) => (
+                  <View key={i} style={styles.nightModalStat}>
+                    <Ionicons name={s.icon as any} size={20} color={s.color} />
+                    <Text style={[styles.nightModalStatVal, { color: s.color }]}>{s.val}</Text>
+                    <Text style={styles.nightModalStatLbl}>{s.lbl}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Divider */}
+            <View style={styles.nightModalDivider} />
+
+            {/* Debrief text */}
+            <ScrollView style={styles.nightModalScroll} showsVerticalScrollIndicator={false}>
+              <Text style={styles.nightModalDebrief}>{debrief?.debrief}</Text>
+              <View style={{ height: 60 }} />
+            </ScrollView>
+          </LinearGradient>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1092,6 +1219,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  // Night Summary card
+  nightSummaryCard: { marginHorizontal: 16, marginBottom: 16 },
+  nightSummaryInner: {
+    borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,153,51,0.25)',
+    padding: 16, gap: 10,
+  },
+  nightSummaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  nightSummaryLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  nightSummaryDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF9933' },
+  nightSummaryLabel: { color: '#FF9933', fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
+  nightSummaryTitle: { color: '#FF9933', fontSize: 12, fontWeight: '700' },
+  nightSummaryStats: { flexDirection: 'row', gap: 20 },
+  nightSummaryStat: { alignItems: 'center', gap: 2 },
+  nightSummaryStatVal: { color: '#FFF', fontSize: 22, fontWeight: '900' },
+  nightSummaryStatLbl: { color: '#666', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 },
+  nightSummaryFooter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  nightSummaryPreview: { flex: 1, color: '#666', fontSize: 12, fontStyle: 'italic' },
+  // Demo trigger
+  demoTriggerBtn: {
+    marginHorizontal: 16, marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#9933FF11', borderRadius: 10, borderWidth: 1,
+    borderColor: '#9933FF33', paddingHorizontal: 14, paddingVertical: 10,
+  },
+  demoTriggerText: { color: '#9933FF', fontSize: 12, fontWeight: '600' },
+  // Night Summary modal
+  nightModalRoot: { flex: 1 },
+  nightModalBg: { flex: 1, paddingTop: 60, paddingHorizontal: 20 },
+  nightModalHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+    marginBottom: 28,
+  },
+  nightModalLabel: { color: '#FF9933', fontSize: 10, fontWeight: '800', letterSpacing: 2, marginBottom: 4 },
+  nightModalNightTitle: { color: '#FFF', fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
+  nightModalStats: {
+    flexDirection: 'row', justifyContent: 'space-around',
+    backgroundColor: '#111108', borderRadius: 16,
+    borderWidth: 1, borderColor: '#FF993322', padding: 20, marginBottom: 20,
+  },
+  nightModalStat: { alignItems: 'center', gap: 6 },
+  nightModalStatVal: { fontSize: 32, fontWeight: '900' },
+  nightModalStatLbl: { color: '#555', fontSize: 10, fontWeight: '600', letterSpacing: 0.5 },
+  nightModalDivider: { height: 1, backgroundColor: '#1A1A1A', marginBottom: 20 },
+  nightModalScroll: { flex: 1 },
+  nightModalDebrief: { color: '#CCC', fontSize: 16, lineHeight: 26, fontStyle: 'italic' },
+
   debriefLocked: {
     marginHorizontal: 16,
     marginBottom: 16,

@@ -48,7 +48,14 @@ import WeekendCard from '../../src/components/WeekendCard';
 import InsiderFeed from '../../src/components/InsiderFeed';
 import ScoutAuraChip from '../../src/components/ScoutAuraChip';
 import VenueSpotlight from '../../src/components/VenueSpotlight';
+import VibeShiftToast from '../../src/components/VibeShiftToast';
+import LastCallStrip from '../../src/components/LastCallStrip';
+import MissedPeaksBanner from '../../src/components/MissedPeaksBanner';
+import AfterHours from '../../src/components/AfterHours';
+import SwipeRate from '../../src/components/SwipeRate';
+import ScoutOfTheNight from '../../src/components/ScoutOfTheNight';
 import VibeBriefCard from '../../src/components/VibeBriefCard';
+import AIScoutBriefing from '../../src/components/AIScoutBriefing';
 import VenueBattle from '../../src/components/VenueBattle';
 import HeatMapCard from '../../src/components/HeatMapCard';
 import SceneMoodSelector, { SceneMood } from '../../src/components/SceneMoodSelector';
@@ -77,6 +84,7 @@ export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string }>();
   const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode, tabBarHidden, setTabBarHidden, sceneMood, sceneMoodSetAt, setSceneMood } = useVibeStore();
+  const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showList, setShowList] = useState(true); // List-first: content before map
@@ -91,6 +99,12 @@ export default function MapScreen() {
   const [spotlightVenue, setSpotlightVenue] = useState<any>(null);
   const [weekendDismissed, setWeekendDismissed] = useState(false);
   const [showSceneMood, setShowSceneMood] = useState(false);
+  const [vibeShift, setVibeShift] = useState<{ venueName: string; newTier: string; prevTier: string; venueId: string } | null>(null);
+  const [showLastCall, setShowLastCall] = useState(false);
+  const [showAfterHours, setShowAfterHours] = useState(false);
+  const [showSwipeRate, setShowSwipeRate] = useState(false);
+  const [showScoutOfNight, setShowScoutOfNight] = useState(false);
+  const prevVenueTiers = useRef<Record<string, string>>({});
   const rewardRef = useRef<VariableRewardRef>(null);
 
   // Friday 6PM onwards or all of Saturday
@@ -195,6 +209,56 @@ export default function MapScreen() {
     }
     fetchCityPulse(selectedCity);
   }, [selectedCity, isDemoMode]);
+
+  // Detect vibe tier shifts when venues update
+  useEffect(() => {
+    if (!venues.length) return;
+    venues.forEach(v => {
+      const prev = prevVenueTiers.current[v.id];
+      if (prev && prev !== v.energy_level) {
+        // Tier changed — show toast for upgrades (or notable drops)
+        const RANK: Record<string, number> = { quiet: 0, chill: 1, warming: 2, charged: 3, lit: 4, peak: 5 };
+        const rankPrev = RANK[prev] ?? 0;
+        const rankNew  = RANK[v.energy_level] ?? 0;
+        if (Math.abs(rankNew - rankPrev) >= 1) {
+          setVibeShift({ venueName: v.name, newTier: v.energy_level, prevTier: prev, venueId: v.id });
+        }
+      }
+      prevVenueTiers.current[v.id] = v.energy_level;
+    });
+  }, [venues]);
+
+  // Last Call — after 1:30 AM if there are still peak/lit venues
+  useEffect(() => {
+    const hour = new Date().getHours();
+    const isLateNight = hour >= 1 && hour <= 5;
+    if (!isLateNight) return;
+    const hotVenues = venues.filter(v => v.energy_level === 'peak' || v.energy_level === 'lit');
+    if (hotVenues.length > 0) {
+      const timer = setTimeout(() => setShowLastCall(true), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [venues]);
+
+  // After Hours — 6AM to 10AM, auto-pop your night recap once
+  useEffect(() => {
+    if (!user) return;
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour <= 10) {
+      const timer = setTimeout(() => setShowAfterHours(true), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
+
+  // Scout of the Night — midnight to 3AM, pop after a short delay
+  useEffect(() => {
+    if (!user) return;
+    const hour = new Date().getHours();
+    if (hour >= 0 && hour <= 3) {
+      const timer = setTimeout(() => setShowScoutOfNight(true), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   const initializeApp = async () => {
     // In demo mode, use a fixed location (Victoria Island, Lagos) and skip API
@@ -541,6 +605,20 @@ export default function MapScreen() {
           {/* Live activity ribbon — subtle ticker, not a blocking card */}
           <ActivityTicker items={DEMO_ACTIVITY_FEED} />
 
+          {/* Missed Peaks — FOMO card for followed venues that peaked while you were away */}
+          <ErrorBoundary label="Missed Peaks">
+            <MissedPeaksBanner
+              isDemoMode={isDemoMode}
+              authToken={(getAuthHeaders() as any)?.Authorization?.replace('Bearer ', '')}
+              onVenuePress={(id) => router.push(`/venue/${id}`)}
+            />
+          </ErrorBoundary>
+
+          {/* AI Scout Briefing — personalised Claude morning/evening/night message */}
+          <ErrorBoundary label="Scout Briefing">
+            <AIScoutBriefing city={selectedCity} isDemoMode={isDemoMode} />
+          </ErrorBoundary>
+
           {/* AI Daily Brief — star feature, Vibe+ full brief */}
           <ErrorBoundary label="Vibe Brief">
             <VibeBriefCard city={selectedCity} isDemoMode={isDemoMode} />
@@ -649,6 +727,20 @@ export default function MapScreen() {
               />
               <VariableRewardOverlay ref={rewardRef} />
             </View>
+          )}
+
+          {/* ── Quick Rate strip — swipe-to-rate entry point ── */}
+          {filteredVenues.length > 0 && (
+            <TouchableOpacity
+              style={styles.quickRateStrip}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowSwipeRate(true); }}
+              activeOpacity={0.8}
+            >
+              <View style={styles.quickRateDot} />
+              <Text style={styles.quickRateLabel}>QUICK RATE</Text>
+              <Text style={styles.quickRateSub}>Swipe through tonight's spots</Text>
+              <Ionicons name="chevron-forward" size={14} color="#FF3366" />
+            </TouchableOpacity>
           )}
 
           {/* ── VENUE LIST: Category filter → cards → inline VibeMatch ── */}
@@ -830,6 +922,52 @@ export default function MapScreen() {
         visible={showSceneMood}
         onSelect={(mood: SceneMood) => { setSceneMood(mood); setShowSceneMood(false); }}
         onSkip={() => setShowSceneMood(false)}
+      />
+
+      {/* Vibe Shift toast — venue tier change alert */}
+      <VibeShiftToast
+        visible={vibeShift !== null}
+        venueName={vibeShift?.venueName ?? ''}
+        newTier={vibeShift?.newTier ?? ''}
+        prevTier={vibeShift?.prevTier}
+        onPress={() => { if (vibeShift?.venueId) router.push(`/venue/${vibeShift.venueId}`); }}
+        onDismiss={() => setVibeShift(null)}
+      />
+
+      {/* Last Call strip — late night peak venues still active */}
+      {showLastCall && (
+        <LastCallStrip
+          peakCount={venues.filter(v => v.energy_level === 'peak' || v.energy_level === 'lit').length}
+          onPress={() => { setShowLastCall(false); setShowList(true); }}
+          onDismiss={() => setShowLastCall(false)}
+        />
+      )}
+
+      {/* After Hours — night recap modal, auto-pops at 6AM */}
+      <AfterHours
+        visible={showAfterHours}
+        onClose={() => setShowAfterHours(false)}
+        isDemoMode={isDemoMode}
+      />
+
+      {/* Swipe Rate — Tinder-style quick venue rating */}
+      <SwipeRate
+        visible={showSwipeRate}
+        venues={filteredVenues}
+        onFire={(venueId) => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          dropQuickPulse(venueId, userLocation?.lat ?? 6.4316, userLocation?.lng ?? 3.4223);
+        }}
+        onClose={() => setShowSwipeRate(false)}
+        isDemoMode={isDemoMode}
+      />
+
+      {/* Scout of the Night — midnight leaderboard ceremony */}
+      <ScoutOfTheNight
+        visible={showScoutOfNight}
+        onClose={() => setShowScoutOfNight(false)}
+        isDemoMode={isDemoMode}
+        city={selectedCity}
       />
     </SafeAreaView>
   );
@@ -1097,6 +1235,37 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
+  },
+  quickRateStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 4,
+    marginBottom: 14,
+    backgroundColor: '#0D0D1A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FF336622',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  quickRateDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#FF3366',
+  },
+  quickRateLabel: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#FF3366',
+    letterSpacing: 1.5,
+  },
+  quickRateSub: {
+    fontSize: 11,
+    color: '#444',
+    fontWeight: '500',
+    flex: 1,
   },
 });

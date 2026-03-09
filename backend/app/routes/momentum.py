@@ -166,6 +166,100 @@ async def get_missed_peaks(user: dict = Depends(require_auth)):
     return {"missed": missed[:5]}  # cap at 5
 
 
+@router.get("/venues/{venue_id}/momentum")
+async def get_venue_momentum_detail(venue_id: str):
+    """
+    Per-venue momentum signal — two measures:
+
+    1. Crowd Velocity: compare check-in count in last 10 min vs prior 10 min.
+       Emoji fire reactions boost the signal.
+       Returns: velocity ("rising"|"flat"|"falling"), velocity_pct, checkins_last_10m
+
+    2. Vibe Decay: time since last meaningful activity (check-in, rating, emoji pulse).
+       After 45-min grace period, score starts shedding 0.5 pts/min, max 25 pts.
+       Returns: is_decaying, decay_minutes, decay_points, freshness ("fresh"|"cooling"|"cold")
+
+    No auth required — used on venue cards and detail page.
+    """
+    now = datetime.now(timezone.utc)
+
+    # ── Crowd Velocity ────────────────────────────────────────────────────────
+    win_a_start = now - timedelta(minutes=20)
+    win_a_end   = now - timedelta(minutes=10)
+    win_b_start = now - timedelta(minutes=10)
+
+    count_a, count_b, fire_recent = await _asyncio_gather(
+        db.checkins.count_documents({"venue_id": venue_id, "created_at": {"$gte": win_a_start, "$lt": win_a_end}}),
+        db.checkins.count_documents({"venue_id": venue_id, "created_at": {"$gte": win_b_start}}),
+        db.venue_emoji_pulses.count_documents({"venue_id": venue_id, "emoji": "fire", "ts": {"$gte": win_b_start}}),
+    )
+
+    if count_b > count_a + 1 or (count_b >= 2 and fire_recent >= 3):
+        velocity = "rising"
+    elif count_a > count_b + 1:
+        velocity = "falling"
+    else:
+        velocity = "flat"
+
+    if count_a > 0:
+        velocity_pct = round((count_b - count_a) / count_a * 100)
+    elif count_b > 0:
+        velocity_pct = 100
+    else:
+        velocity_pct = 0
+
+    # ── Vibe Decay ────────────────────────────────────────────────────────────
+    DECAY_GRACE_MIN = 45
+    DECAY_RATE      = 0.5   # pts/min after grace period
+    DECAY_MAX       = 25    # cap
+
+    latest_ci, latest_rt, latest_ep = await _asyncio_gather(
+        db.checkins.find_one({"venue_id": venue_id}, sort=[("created_at", -1)]),
+        db.ratings.find_one({"venue_id": venue_id}, sort=[("timestamp", -1)]),
+        db.venue_emoji_pulses.find_one({"venue_id": venue_id}, sort=[("ts", -1)]),
+    )
+
+    candidates = []
+    if latest_ci and latest_ci.get("created_at"):
+        t = latest_ci["created_at"]
+        candidates.append(t if t.tzinfo else t.replace(tzinfo=timezone.utc))
+    if latest_rt and latest_rt.get("timestamp"):
+        t = latest_rt["timestamp"]
+        candidates.append(t if t.tzinfo else t.replace(tzinfo=timezone.utc))
+    if latest_ep and latest_ep.get("ts"):
+        t = latest_ep["ts"]
+        candidates.append(t if t.tzinfo else t.replace(tzinfo=timezone.utc))
+
+    is_decaying   = False
+    decay_minutes = 0
+    decay_points  = 0
+    freshness     = "fresh"
+
+    if candidates:
+        last_activity  = max(candidates)
+        stale_minutes  = (now - last_activity).total_seconds() / 60
+        if stale_minutes > DECAY_GRACE_MIN:
+            is_decaying   = True
+            decay_minutes = stale_minutes - DECAY_GRACE_MIN
+            decay_points  = min(round(decay_minutes * DECAY_RATE), DECAY_MAX)
+            freshness     = "cold" if decay_minutes > 60 else "cooling"
+
+    return {
+        "velocity":        velocity,
+        "velocity_pct":    velocity_pct,
+        "checkins_last_10m": count_b,
+        "is_decaying":     is_decaying,
+        "decay_minutes":   round(decay_minutes),
+        "decay_points":    decay_points,
+        "freshness":       freshness,
+    }
+
+
+async def _asyncio_gather(*coros):
+    import asyncio
+    return await asyncio.gather(*coros)
+
+
 @router.get("/scene-report")
 async def get_scene_report():
     """

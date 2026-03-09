@@ -260,6 +260,304 @@ async def get_ai_advisor(venue_id: str, request: Request):
 
 # ── 5. Night Debrief ──────────────────────────────────────────────────────────
 
+# ── 6. AI Venue Pulse Commentary ──────────────────────────────────────────────
+
+PULSE_FALLBACKS: dict = {
+    "peak":    "The crowd don reach maximum. Energy dey scatter everywhere — if you no dey here, you go regret am.",
+    "lit":     "E dey build nicely. Dance floor warming up, DJ dey switch gear — slide through before e full up.",
+    "charged": "Charged and ready to go off. You can feel the pressure building — this could be the one tonight.",
+    "warming": "Still finding its rhythm. Early crowd has good energy — give it 30 minutes.",
+    "chill":   "Calm vibes tonight. Good for conversation, not for turn-up.",
+    "quiet":   "Not much happening here right now. Your energy is better used elsewhere.",
+}
+
+@router.post("/venues/{venue_id}/ai-pulse")
+async def get_venue_ai_pulse(venue_id: str, request: Request):
+    """
+    Real-time AI Pidgin commentary for a venue.
+    Cached 15 minutes per venue (energy changes invalidate via energy_level key).
+    POST body: { venue_name, energy_level, vibe_score, capacity_level }
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    venue_name     = body.get("venue_name", "the venue")
+    energy_level   = body.get("energy_level", "warming")
+    vibe_score     = body.get("vibe_score", 50)
+    capacity_level = body.get("capacity_level", "vibrant")
+
+    # Cache key includes energy_level so commentary refreshes when vibe changes
+    cache_key = f"ai_pulse_{venue_id}_{energy_level}"
+    cached = await _get_cache(cache_key, ttl_seconds=15 * 60)
+    if cached:
+        return cached
+
+    api_key = _get_api_key()
+    if not api_key:
+        result = {"comment": PULSE_FALLBACKS.get(energy_level, PULSE_FALLBACKS["warming"]), "ai_powered": False}
+        await _set_cache(cache_key, result)
+        return result
+
+    capacity_desc = {"sparse": "light crowd", "vibrant": "good crowd", "full": "packed to the walls"}.get(capacity_level, "moderate crowd")
+    energy_desc   = {"peak": "absolutely electric", "lit": "buzzing and lit", "charged": "charged and building",
+                     "warming": "warming up", "chill": "calm and relaxed", "quiet": "quiet tonight"}.get(energy_level, "moderate")
+
+    try:
+        prompt = (
+            f"You write live vibe commentary for Lagos nightlife scouts. Mix Pidgin English and street slang naturally.\n"
+            f"Keep it SHORT — 1-2 punchy sentences max. Be raw and real, like a friend texting from inside the venue.\n\n"
+            f"Venue: {venue_name}\n"
+            f"Vibe score: {vibe_score}/100 ({energy_desc})\n"
+            f"Crowd: {capacity_desc}\n\n"
+            f"Write the commentary now. No quotes, no labels, just the text:"
+        )
+        text = _claude(prompt, max_tokens=120)
+        result = {"comment": text, "ai_powered": True}
+        await _set_cache(cache_key, result)
+        return result
+    except Exception as e:
+        logger.warning(f"AI Pulse Claude failed for {venue_id}: {e}")
+        result = {"comment": PULSE_FALLBACKS.get(energy_level, PULSE_FALLBACKS["warming"]), "ai_powered": False}
+        await _set_cache(cache_key, result)
+        return result
+
+# ── 7. Crew Intelligence ──────────────────────────────────────────────────────
+
+@router.post("/crew/ai-intel")
+async def get_crew_ai_intel(request: Request):
+    """
+    AI venue picks tailored to the whole cartel's persona mix.
+    POST body: { member_personas: ["turn_up", "chill_set", ...] }
+    Fetches top venues and asks Claude to rank + explain picks.
+    Cached 20 min per crew (user-scoped).
+    """
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    member_personas: list = body.get("member_personas", [])
+    user_id = user["id"]
+
+    cache_key = f"crew_intel_{user_id}"
+    cached = await _get_cache(cache_key, ttl_seconds=20 * 60)
+    if cached:
+        return cached
+
+    # Fetch tonight's top venues
+    venues_cursor = db.venues.find({}, {"_id": 0}).sort("current_vibe_score", -1).limit(8)
+    venues_list = await venues_cursor.to_list(8)
+
+    if not venues_list:
+        return {"picks": [], "crew_read": "No venue data available right now.", "ai_powered": False}
+
+    persona_labels = {
+        "turn_up": "Turn Up (loves clubs, high energy, dancing)",
+        "grown_sexy": "The Luxe (prefers upscale lounges, Afrobeats, VIP)",
+        "culture": "Culture (concerts, events, live music)",
+        "chill_set": "Chill Set (bars, low-key spots, conversation)",
+    }
+    personas_str = ", ".join([persona_labels.get(p, p) for p in member_personas]) if member_personas else "mixed preferences"
+
+    venue_summaries = "\n".join([
+        f"- {v.get('name')} ({v.get('area', 'Lagos')}): {v.get('energy_level', 'warming').upper()}, "
+        f"vibe score {v.get('current_vibe_score', 50)}/100, "
+        f"capacity: {v.get('capacity_level', 'vibrant')}, entry: {v.get('entry_fee', 'unknown')}"
+        for v in venues_list
+    ])
+
+    api_key = _get_api_key()
+    if not api_key:
+        # Fallback: just return top 3 venues without AI reasoning
+        picks = [
+            {
+                "venue_id": v.get("id", ""),
+                "venue_name": v.get("name", ""),
+                "area": v.get("area", ""),
+                "energy_level": v.get("energy_level", "warming"),
+                "vibe_score": v.get("current_vibe_score", 50),
+                "match_score": max(40, v.get("current_vibe_score", 50) - 10),
+                "reason": f"{v.get('name')} is {v.get('energy_level', 'warming')} tonight with a {v.get('current_vibe_score', 50)}/100 vibe score.",
+                "best_for": "Full cartel",
+            }
+            for v in venues_list[:3]
+        ]
+        result = {"picks": picks, "crew_read": f"Your cartel ({len(member_personas)} members) has mixed vibes. These spots have the best energy tonight.", "ai_powered": False}
+        await _set_cache(cache_key, result)
+        return result
+
+    try:
+        prompt = (
+            f"You are a Lagos nightlife intelligence system. A crew of {len(member_personas)} scouts needs tonight's best venue picks.\n\n"
+            f"CREW PERSONAS: {personas_str}\n\n"
+            f"TONIGHT'S VENUES:\n{venue_summaries}\n\n"
+            f"Task: Pick the top 3 venues for this crew. Consider the persona mix — find spots that work for everyone or explain the tradeoffs.\n"
+            f"Be direct, use Lagos nightlife slang where natural.\n\n"
+            f"Respond with valid JSON only:\n"
+            f'{{"crew_read": "1 sentence reading the cartel vibe", '
+            f'"picks": [{{"venue_name": "...", "match_score": 0-100, "reason": "2 sentence explanation", "best_for": "brief label"}}]}}'
+        )
+        raw = _claude(prompt, max_tokens=600)
+        parsed = json.loads(raw)
+
+        # Merge with live venue data
+        venue_map = {v.get("name", ""): v for v in venues_list}
+        enriched_picks = []
+        for p in parsed.get("picks", [])[:3]:
+            matched_venue = next((v for v in venues_list if v.get("name", "").lower() in p.get("venue_name", "").lower() or p.get("venue_name", "").lower() in v.get("name", "").lower()), venues_list[len(enriched_picks)] if len(enriched_picks) < len(venues_list) else venues_list[0])
+            enriched_picks.append({
+                "venue_id":     matched_venue.get("id", ""),
+                "venue_name":   matched_venue.get("name", p.get("venue_name", "")),
+                "area":         matched_venue.get("area", "Lagos"),
+                "energy_level": matched_venue.get("energy_level", "warming"),
+                "vibe_score":   matched_venue.get("current_vibe_score", 50),
+                "match_score":  p.get("match_score", 70),
+                "reason":       p.get("reason", ""),
+                "best_for":     p.get("best_for", "Full cartel"),
+            })
+
+        result = {"picks": enriched_picks, "crew_read": parsed.get("crew_read", ""), "ai_powered": True}
+        await _set_cache(cache_key, result)
+        return result
+
+    except Exception as e:
+        logger.warning(f"Crew Intel Claude failed: {e}")
+        picks = [
+            {
+                "venue_id": v.get("id", ""), "venue_name": v.get("name", ""),
+                "area": v.get("area", ""), "energy_level": v.get("energy_level", "warming"),
+                "vibe_score": v.get("current_vibe_score", 50),
+                "match_score": max(40, v.get("current_vibe_score", 50) - 5),
+                "reason": f"Top energy venue tonight. Strong {v.get('energy_level', 'warming')} vibes — worth the move.",
+                "best_for": "Full cartel",
+            }
+            for v in venues_list[:3]
+        ]
+        result = {"picks": picks, "crew_read": "The data is clear — these three have the strongest energy tonight.", "ai_powered": False}
+        await _set_cache(cache_key, result)
+        return result
+
+
+# ── Endpoint 8: AI Scout Briefing ─────────────────────────────────────────────
+
+_BRIEFING_FALLBACKS = {
+    "morning": (
+        "Oga scout, good morning! Lagos nightlife is recharging for tonight — check back from 7PM "
+        "to catch the venues heating up. Your vibe radar is always on point."
+    ),
+    "evening": (
+        "The city is waking up. Energy is building across Lagos — your scouting eye is needed "
+        "tonight. Drop a rating when you hit a venue and watch your clout stack up."
+    ),
+    "night": (
+        "It's peak hour! Venues are live, the crowd is out. Move smart, rate fast, "
+        "and let your crew know where the energy is highest tonight."
+    ),
+}
+
+
+@router.post("/ai/scout-briefing")
+async def get_scout_briefing(request: Request):
+    """
+    Personalised AI briefing for a scout — morning, evening, or night context.
+    Pulls scout stats + top venues + crew status → Claude writes 3-4 sentence Lagos-style message.
+    Cached 30 min per user.
+    POST body: { "city": "lagos" }  (optional)
+    """
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    city = body.get("city", "lagos")
+    user_id = user["id"]
+
+    cache_key = f"scout_briefing_{user_id}"
+    cached = await _get_cache(cache_key, ttl_seconds=30 * 60)
+    if cached:
+        return cached
+
+    now = datetime.now(timezone.utc)
+    hour_wat = (now.hour + 1) % 24  # WAT = UTC+1
+    if 6 <= hour_wat < 14:
+        time_context = "morning"
+    elif 14 <= hour_wat < 20:
+        time_context = "evening"
+    else:
+        time_context = "night"
+
+    fallback_text = _BRIEFING_FALLBACKS[time_context]
+
+    # Gather context in parallel
+    clout       = user.get("clout_points", 0)
+    username    = user.get("username", "Scout")
+    persona_map = {"turn_up": "Turn Up", "grown_sexy": "The Luxe", "culture": "Culture", "chill_set": "Chill Set"}
+    persona     = persona_map.get(user.get("vibe_persona", ""), "mixed")
+
+    # Top 3 venues by vibe score
+    top_venues = await db.venues.find(
+        {"city": city}, {"_id": 0, "name": 1, "area": 1, "current_vibe_score": 1, "energy_level": 1}
+    ).sort("current_vibe_score", -1).limit(3).to_list(3)
+
+    # Recent activity: ratings given in last 7 days
+    since_7d = now - timedelta(days=7)
+    ratings_7d = await db.ratings.count_documents({"user_id": user_id, "timestamp": {"$gte": since_7d}})
+
+    # Crew status: how many crew members are checked in tonight
+    crew_doc = await db.crews.find_one({"members": user_id})
+    crew_name = crew_doc.get("name", "") if crew_doc else ""
+    crew_out = 0
+    if crew_doc:
+        tonight_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        crew_out = await db.checkins.count_documents({
+            "user_id": {"$in": crew_doc.get("members", [])},
+            "status": "active",
+        })
+
+    venue_lines = "\n".join([
+        f"- {v.get('name')} ({v.get('area', 'Lagos')}): {v.get('energy_level', 'warming').upper()}, score {v.get('current_vibe_score', 0)}/100"
+        for v in top_venues
+    ]) if top_venues else "No live venue data yet"
+
+    crew_line = f"Your cartel '{crew_name}' has {crew_out} members out tonight." if crew_name else "You're rolling solo tonight."
+
+    api_key = _get_api_key()
+    if not api_key:
+        result = {"briefing": fallback_text, "ai_powered": False, "time_context": time_context}
+        await _set_cache(cache_key, result)
+        return result
+
+    try:
+        prompt = (
+            f"You are a Lagos nightlife intelligence assistant. Write a short personal briefing for a scout.\n\n"
+            f"SCOUT: @{username} | Persona: {persona} | Clout: {clout} pts | Ratings this week: {ratings_7d}\n"
+            f"TIME: {time_context.upper()} in Lagos (WAT)\n"
+            f"CREW: {crew_line}\n\n"
+            f"TONIGHT'S TOP VENUES:\n{venue_lines}\n\n"
+            f"Write 2-3 punchy sentences. Use Lagos street energy. Mix Pidgin naturally where it fits. "
+            f"Mention their clout or crew if relevant. End with a specific venue recommendation or action. "
+            f"No labels, no quotes — just the text:"
+        )
+        text = _claude(prompt, max_tokens=200)
+        result = {"briefing": text, "ai_powered": True, "time_context": time_context}
+        await _set_cache(cache_key, result)
+        return result
+    except Exception as e:
+        logger.warning(f"Scout Briefing Claude failed: {e}")
+        result = {"briefing": fallback_text, "ai_powered": False, "time_context": time_context}
+        return result
+
+
 @router.get("/users/{user_id}/night-debrief")
 async def get_night_debrief(user_id: str):
     """AI personalised night recap from last 12 hours — cached 2 hours."""

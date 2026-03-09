@@ -80,6 +80,9 @@ export default function RootLayout() {
                 headerShown: false,
                 contentStyle: { backgroundColor: '#0A0A0F' },
                 animation: 'slide_from_right',
+                gestureEnabled: true,
+                gestureDirection: 'horizontal',
+                fullScreenGestureEnabled: true,
               }}
             >
               {/* 3-Storey Architecture */}

@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(npm install:*)",
+      "Bash(EXPO_NO_DOCTOR=1 npx expo start:*)",
+      "Bash(netsh advfirewall firewall add rule:*)",
+      "Bash(dir:*)",
+      "Bash(python -c:*)",
+      "Bash(python:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(npx tsc:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(timeout:*)",
+      "Bash(Select-String -Pattern \"trending|EnergyMeter|error\")",
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:vibe-app-oljk.vercel.app)",
+      "WebFetch(domain:vibe-app-v85a.vercel.app)",
+      "Bash(/c/Users/OAJAGUN/OneDrive/Documents/Code/VibeApp/frontend/src/data/demoData.ts:*)",
+      "WebFetch(domain:vibeapp-production.up.railway.app)",
+      "WebFetch(domain:vibe-app-theta.vercel.app)"
+    ]
+  }
+}

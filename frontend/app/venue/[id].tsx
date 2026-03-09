@@ -47,6 +47,9 @@ import VibeSurgeBar from '../../src/components/VibeSurgeBar';
 import SurgeCelebration from '../../src/components/SurgeCelebration';
 import FirstScoutCelebration from '../../src/components/FirstScoutCelebration';
 import ResonancePrompt from '../../src/components/ResonancePrompt';
+import AIPulseComment from '../../src/components/AIPulseComment';
+import EmojiPulse from '../../src/components/EmojiPulse';
+import VibeMomentum from '../../src/components/VibeMomentum';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -194,11 +197,10 @@ export default function VenueDetailScreen() {
 
   // Auto-open rate modal when navigated with ?openRateModal=true
   useEffect(() => {
-    const canOpen = openRateModal === 'true' && venue && ratingStatus?.can_rate;
-    if (canOpen && (isWithinGeofence || isDemoMode)) {
+    if (openRateModal === 'true' && venue && (isWithinGeofence || isDemoMode)) {
       setShowRateModal(true);
     }
-  }, [openRateModal, venue, isWithinGeofence, ratingStatus, isDemoMode]);
+  }, [openRateModal, venue, isWithinGeofence, isDemoMode]);
 
   const handleShare = async () => {
     if (!venue) return;
@@ -726,6 +728,34 @@ export default function VenueDetailScreen() {
                 />
               </View>
 
+              {/* AI Pulse Commentary — live scene blurb */}
+              <ErrorBoundary label="AI Pulse">
+                <AIPulseComment
+                  venueId={venue.id}
+                  venueName={venue.name}
+                  energyLevel={venue.energy_level}
+                  vibeScore={venue.current_vibe_score}
+                  capacityLevel={(venue as any).capacity_level}
+                  isDemoMode={isDemoMode}
+                />
+              </ErrorBoundary>
+
+              {/* Emoji Pulse — ambient one-tap reactions */}
+              <ErrorBoundary label="Emoji Pulse">
+                <EmojiPulse
+                  venueId={venue.id}
+                  isDemoMode={isDemoMode}
+                />
+              </ErrorBoundary>
+
+              {/* Vibe Momentum — crowd velocity + decay freshness */}
+              <ErrorBoundary label="Vibe Momentum">
+                <VibeMomentum
+                  venueId={venue.id}
+                  isDemoMode={isDemoMode}
+                />
+              </ErrorBoundary>
+
               {/* Utility Stats Row */}
               <View style={styles.utilityStatsRow}>
                 {/* Entry Fee */}
@@ -1059,7 +1089,7 @@ export default function VenueDetailScreen() {
               >
                 <LinearGradient
                   colors={
-                    user && isWithinGeofence && ratingStatus?.can_rate
+                    user && (isWithinGeofence || isDemoMode) && (ratingStatus?.can_rate || isDemoMode)
                       ? ['#FF3366', '#FF6B35']
                       : ['#2A2A3E', '#1A1A2E']
                   }
@@ -1068,16 +1098,16 @@ export default function VenueDetailScreen() {
                   style={styles.stickyRateGradient}
                 >
                   <Ionicons
-                    name={!user ? 'person' : !isWithinGeofence ? 'location-outline' : 'star'}
+                    name={!user ? 'person' : (!isWithinGeofence && !isDemoMode) ? 'location-outline' : 'star'}
                     size={20}
                     color="#FFF"
                   />
                   <Text style={styles.stickyRateText}>
                     {!user
                       ? 'Sign in to Rate'
-                      : !isWithinGeofence
+                      : !isWithinGeofence && !isDemoMode
                       ? 'Get Closer to Rate'
-                      : ratingStatus?.can_rate
+                      : ratingStatus?.can_rate || isDemoMode
                       ? 'Rate the Vibe'
                       : 'Limit Reached'}
                   </Text>

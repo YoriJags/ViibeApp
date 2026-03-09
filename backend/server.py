@@ -59,6 +59,8 @@ from app.routes.battles import router as battles_router
 from app.routes.heat_map import router as heat_map_router
 from app.routes.after_party import router as after_party_router
 from app.routes.resonance import router as resonance_router
+from app.routes.emoji_pulse import router as emoji_pulse_router
+from app.routes.rolling_deep import router as rolling_deep_router
 
 # ===== Create FastAPI App =====
 app = FastAPI(title="Viibe App API", version="3.0.0")
@@ -114,6 +116,8 @@ api_router.include_router(battles_router)
 api_router.include_router(heat_map_router)
 api_router.include_router(after_party_router)
 api_router.include_router(resonance_router)
+api_router.include_router(emoji_pulse_router)
+api_router.include_router(rolling_deep_router)
 
 # Include the API router in the main app
 app.include_router(api_router)

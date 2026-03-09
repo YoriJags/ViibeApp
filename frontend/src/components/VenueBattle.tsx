@@ -8,9 +8,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, TouchableOpacity, Animated, StyleSheet,
-  ActivityIndicator, Modal, StatusBar,
+  ActivityIndicator, Modal, Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
+
+const { height: SCREEN_H } = Dimensions.get('window');
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -299,11 +301,13 @@ export default function VenueBattle({ isDemoMode }: Props) {
         />
       </View>
 
-      {/* Fullscreen Modal */}
-      <Modal visible={fullscreen} animationType="slide" presentationStyle="fullScreen" statusBarTranslucent onRequestClose={() => setFullscreen(false)}>
-        <LinearGradient colors={['#0A0010', '#04000A', '#000010']} style={{ flex: 1 }}>
-          <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-          <SafeAreaView style={{ flex: 1 }}>
+      {/* 82% bottom-sheet modal */}
+      <Modal visible={fullscreen} transparent animationType="slide" onRequestClose={() => setFullscreen(false)}>
+        <View style={fs.overlay}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setFullscreen(false)} activeOpacity={1} />
+          <LinearGradient colors={['#0A0010', '#04000A', '#000010']} style={fs.sheet}>
+            {/* Handle */}
+            <View style={fs.handle} />
             {/* FS Header */}
             <View style={fs.header}>
               <View style={styles.headerLeft}>
@@ -315,8 +319,8 @@ export default function VenueBattle({ isDemoMode }: Props) {
                   <Ionicons name={isEnded ? 'checkmark-circle' : 'time'} size={12} color={isEnded ? '#00E676' : '#FF9933'} />
                   <Text style={[fs.timerText, { color: isEnded ? '#00E676' : '#FF9933' }]}>{timerLabel}</Text>
                 </View>
-                <TouchableOpacity style={fs.closeBtn} onPress={() => setFullscreen(false)}>
-                  <Ionicons name="close" size={18} color="#FFF" />
+                <TouchableOpacity style={fs.closeBtn} onPress={() => setFullscreen(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Ionicons name="close" size={20} color="#FFF" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -334,8 +338,8 @@ export default function VenueBattle({ isDemoMode }: Props) {
             <View style={fs.footer}>
               <Text style={fs.footerText}>VIIBE BATTLE · City decides the winner · {battle.total_taps} total bolts cast</Text>
             </View>
-          </SafeAreaView>
-        </LinearGradient>
+          </LinearGradient>
+        </View>
       </Modal>
     </>
   );
@@ -387,6 +391,17 @@ const styles = StyleSheet.create({
 
 // Fullscreen-specific overrides
 const fs = StyleSheet.create({
+  overlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end',
+  },
+  sheet: {
+    height: SCREEN_H * 0.82,
+    borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden',
+  },
+  handle: {
+    width: 40, height: 4, backgroundColor: '#333', borderRadius: 2,
+    alignSelf: 'center', marginTop: 10, marginBottom: 4,
+  },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 14,
