@@ -32,45 +32,28 @@ interface Props {
 export default function OracleTease({ venues, onVenuePress, isDemoMode }: Props) {
   const glowAnim = useRef(new Animated.Value(0.5)).current;
 
-  // Only show after 6pm (or always in demo mode)
+  // Compute derived values (before any early returns — hooks must always run first)
   const hour = new Date().getHours();
-  if (hour < 18 && !isDemoMode) return null;
-
-  // Pick venue with highest energy_level
   const eligible = venues.filter((v) => ENERGY_PRIORITY[v.energy_level] != null);
-  if (eligible.length === 0) return null;
+  const venue = eligible.length > 0
+    ? eligible.reduce((best, v) =>
+        (ENERGY_PRIORITY[v.energy_level] ?? 0) > (ENERGY_PRIORITY[best.energy_level] ?? 0) ? v : best
+      )
+    : null;
+  const teaseTime = (isDemoMode || hour >= 22) ? 'before 2AM' : 'after midnight';
 
-  const venue = eligible.reduce((best, v) =>
-    (ENERGY_PRIORITY[v.energy_level] ?? 0) > (ENERGY_PRIORITY[best.energy_level] ?? 0) ? v : best
-  );
-
-  // Determine tease time
-  let teaseTime: string;
-  if (isDemoMode) {
-    teaseTime = 'after midnight';
-  } else if (hour < 22) {
-    teaseTime = 'after midnight';
-  } else {
-    teaseTime = 'before 2AM';
-  }
-
-  // Purple glow pulse on accent bar
+  // Purple glow pulse — must run before any early returns (Rules of Hooks)
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(glowAnim, {
-          toValue: 1,
-          duration: 3000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0.5,
-          duration: 3000,
-          useNativeDriver: true,
-        }),
+        Animated.timing(glowAnim, { toValue: 1,   duration: 3000, useNativeDriver: true }),
+        Animated.timing(glowAnim, { toValue: 0.5, duration: 3000, useNativeDriver: true }),
       ])
     ).start();
   }, []);
+
+  // Only show after 6pm (or always in demo mode) and only when there's an eligible venue
+  if ((hour < 18 && !isDemoMode) || !venue) return null;
 
   return (
     <TouchableOpacity
