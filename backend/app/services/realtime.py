@@ -24,6 +24,23 @@ def _fresh_venue_kinetics():
 
 _venue_kinetics: dict = defaultdict(_fresh_venue_kinetics)
 
+# ─── Vibe Pulse Shadow State ──────────────────────────────────────────────────
+# Visual tap shadow-log: tracked per-venue in a 5-min rolling window.
+# Persisted to vibe_pulses collection (never touches vibe_score).
+
+def _fresh_pulse_state():
+    return {
+        "pulses": [],              # (unix_ts_float, user_id, intensity)
+        "surge_cooldown_until": None,
+    }
+
+_venue_pulses: dict = defaultdict(_fresh_pulse_state)
+
+PULSE_WINDOW_SECONDS = 300       # 5-min rolling window
+GLOBAL_SURGE_THRESHOLD = 1000    # pulses in window → global_surge
+GLOBAL_SURGE_COOLDOWN_MIN = 10   # minutes between global_surge events
+ENERGY_CRITICAL_THRESHOLD = 40   # vibe_score below this → energy_critical
+
 RESONANCE_BPM_MIN = 123
 RESONANCE_BPM_MAX = 133
 RESONANCE_MIN_SCOUTS = 3    # at least 3 unique scouts required
@@ -179,6 +196,63 @@ async def _award_quest_clout(venue_id: str, participant_ids: list):
     )
 
 
+@sio.event
+async def vibe_pulse(sid, data):
+    """
+    Shadow tap event from VibeCharge screen (SurgeFullScreen).
+    data: { venue_id, user_id, intensity: 'soft'|'power', ui_increment }
+
+    Counts pulses per venue in a 5-min rolling window.
+    On 1000 pulses → emit global_surge to venue room.
+    Persists to vibe_pulses collection (never touches vibe_score).
+    """
+    venue_id = data.get("venue_id")
+    user_id  = data.get("user_id")
+    intensity = data.get("intensity", "soft")
+
+    if not venue_id:
+        return
+
+    pulse_state = _venue_pulses[venue_id]
+    now = datetime.now(timezone.utc)
+    now_ts = now.timestamp()
+    cutoff = now_ts - PULSE_WINDOW_SECONDS
+
+    # Prune old pulses
+    pulse_state["pulses"] = [(ts, uid, i) for ts, uid, i in pulse_state["pulses"] if ts > cutoff]
+    pulse_state["pulses"].append((now_ts, user_id, intensity))
+    pulse_count = len(pulse_state["pulses"])
+
+    # Check global surge
+    cooldown_until = pulse_state["surge_cooldown_until"]
+    if pulse_count >= GLOBAL_SURGE_THRESHOLD and (not cooldown_until or now > cooldown_until):
+        pulse_state["surge_cooldown_until"] = now + timedelta(minutes=GLOBAL_SURGE_COOLDOWN_MIN)
+        pulse_state["pulses"] = []  # reset window after surge
+
+        await sio.emit("global_surge", {
+            "venue_id": venue_id,
+            "pulse_count": pulse_count,
+            "message": "1,000 taps hit — venue is ELECTRIC",
+        }, room=f"venue_{venue_id}")
+        logger.info(f"Global Surge at {venue_id} — {pulse_count} pulses in 5 min")
+
+    # Persist shadow log asynchronously (fire-and-forget)
+    asyncio.ensure_future(_persist_vibe_pulse(venue_id, user_id, intensity, now))
+
+
+async def _persist_vibe_pulse(venue_id: str, user_id: str, intensity: str, ts: datetime):
+    """Write one vibe_pulse shadow-log doc — never read for scoring."""
+    try:
+        await db.vibe_pulses.insert_one({
+            "venue_id": venue_id,
+            "user_id": user_id,
+            "intensity": intensity,
+            "timestamp": ts,
+        })
+    except Exception as exc:
+        logger.debug(f"vibe_pulse persist skipped: {exc}")
+
+
 # ===== Broadcast Functions =====
 
 async def broadcast_venue_update(venue_id: str):
@@ -190,7 +264,7 @@ async def broadcast_venue_update(venue_id: str):
         await sio.emit("venue_update", venue, room=f"venue_{venue_id}")
         await sio.emit("venue_update", venue, room=f"city_{venue.get('city', 'lagos')}")
 
-        # Danger zone: emit depletion alert when score is low
+        # Score-based alerts
         score = venue.get("current_vibe_score", 100)
         if score < CHARGE_LOW_SCORE:
             await sio.emit("global_charge_depletion", {
@@ -198,6 +272,14 @@ async def broadcast_venue_update(venue_id: str):
                 "current_score": score,
                 "threshold": CHARGE_LOW_SCORE,
                 "message": "Energy dropping — keep it alive!",
+            }, room=f"venue_{venue_id}")
+
+        # Energy critical: very low score → 5× clout incentive blast
+        if score < ENERGY_CRITICAL_THRESHOLD:
+            await sio.emit("energy_critical", {
+                "venue_id": venue_id,
+                "current_score": score,
+                "message": f"ENERGY CRITICAL — 5× CLOUT FOR NEXT 30 TAPS at {venue.get('name', 'this venue')}",
             }, room=f"venue_{venue_id}")
 
 

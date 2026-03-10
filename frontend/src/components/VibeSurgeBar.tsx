@@ -39,6 +39,7 @@ interface Props {
 export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectric, onReact }: Props) {
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const socket         = useVibeStore(s => s.socket);
+  const user           = useVibeStore(s => s.user);
   const [surge, setSurge]     = useState<SurgeState | null>(isDemoMode ? DEMO_SURGE : null);
   const [tapping, setTapping] = useState(false);
   const [cooldown, setCooldown] = useState(false);
@@ -253,10 +254,13 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
         visible={showFull}
         surge={surge}
         venueName={venueName}
+        venueId={venueId}
         onClose={() => setShowFull(false)}
         onTap={handleCharge}
         tapping={tapping}
         cooldown={cooldown}
+        socket={socket}
+        userId={user?.id}
       />
     </>
   );
