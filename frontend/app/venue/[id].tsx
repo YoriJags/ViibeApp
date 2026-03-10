@@ -43,7 +43,7 @@ import VenueIntentBar from '../../src/components/VenueIntentBar';
 import ArrivalIntelCard from '../../src/components/ArrivalIntelCard';
 import CrowdCompositionBar from '../../src/components/CrowdCompositionBar';
 import BookingModal from '../../src/components/BookingModal';
-import VibeSurgeBar from '../../src/components/VibeSurgeBar';
+import VibeReactor from '../../src/components/VibeReactor';
 import SurgeCelebration from '../../src/components/SurgeCelebration';
 import FirstScoutCelebration from '../../src/components/FirstScoutCelebration';
 import ResonancePrompt from '../../src/components/ResonancePrompt';
@@ -51,7 +51,6 @@ import AIPulseComment from '../../src/components/AIPulseComment';
 import EmojiPulse from '../../src/components/EmojiPulse';
 import ScoutPressureChip from '../../src/components/ScoutPressureChip';
 import VibeMomentum from '../../src/components/VibeMomentum';
-import KineticTap from '../../src/components/KineticTap';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -99,6 +98,7 @@ export default function VenueDetailScreen() {
     socket,
     getAuthHeaders,
     setVenueGeofence,
+    isInsideVenue,
   } = useVibeStore();
   const [venue, setVenue] = useState<any>(null);
   const [ratingStatus, setRatingStatus] = useState<any>(null);
@@ -131,6 +131,10 @@ export default function VenueDetailScreen() {
   const [sessionBoltCount, setSessionBoltCount] = useState(0);
   const [activeTab, setActiveTab] = useState<'now' | 'intel' | 'crew' | 'info'>('now');
 
+  // ── Reactor auto-scroll refs ─────────────────────────────────────────────
+  const scrollViewRef    = useRef<any>(null);
+  const reactorLayoutY   = useRef<number>(0);
+
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -140,6 +144,15 @@ export default function VenueDetailScreen() {
   const checkinDotAnim = useRef(new Animated.Value(1)).current;
   const readyBannerAnim = useRef(new Animated.Value(0)).current;
   const readyDotAnim = useRef(new Animated.Value(1)).current;
+
+  // ── Auto-scroll: bring VibeReactor to top when entering geofence on NOW tab
+  useEffect(() => {
+    if (isInsideVenue && activeTab === 'now' && reactorLayoutY.current > 0) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ y: reactorLayoutY.current - 12, animated: true });
+      }, 400); // brief delay lets spring animation settle
+    }
+  }, [isInsideVenue]);
 
   // ── Check-in mode: triggers when geofence confirmed ──────────────────────
   useEffect(() => {
@@ -628,8 +641,9 @@ export default function VenueDetailScreen() {
         )}
       </View>
 
-      <ScrollView 
-        style={styles.scrollView} 
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         bounces={true}
@@ -1083,25 +1097,24 @@ export default function VenueDetailScreen() {
 
         </>}
 
-        {/* ── Vibe Surge Bar — always visible, near Rate the Vibe ── */}
-        {id && <ErrorBoundary label="Vibe Surge"><VibeSurgeBar venueId={id} venueName={venue?.name ?? ''} isDemoMode={isDemoMode} onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }} onReact={handleReact} /></ErrorBoundary>}
-
-        {/* ── Kinetic Tap — haptic velocity + collective quest ── */}
-        {id && venue?.coordinates && (
-          <ErrorBoundary label="Kinetic Tap">
-            <KineticTap
-              venueId={id}
-              venueCoordinates={venue.coordinates}
-              userLocation={userLocation}
-              socket={socket}
-              user={user}
-              isDemoMode={isDemoMode}
-              onQuestSucceeded={(participants) => {
-                // Reuse surge celebration for quest success
-                setSurgeTapCount(participants);
-                setShowSurgeCelebration(true);
-              }}
-            />
+        {/* ── Vibe Reactor — merged charge ring + kinetic tap ── */}
+        {id && (
+          <ErrorBoundary label="Vibe Reactor">
+            <View onLayout={e => { reactorLayoutY.current = e.nativeEvent.layout.y; }}>
+              <VibeReactor
+                venueId={id}
+                venueName={venue?.name ?? ''}
+                venueCoordinates={venue?.coordinates ?? null}
+                userLocation={userLocation}
+                isDemoMode={isDemoMode}
+                onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }}
+                onReact={handleReact}
+                onQuestSucceeded={(participants) => {
+                  setSurgeTapCount(participants);
+                  setShowSurgeCelebration(true);
+                }}
+              />
+            </View>
           </ErrorBoundary>
         )}
 
