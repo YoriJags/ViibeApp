@@ -9,6 +9,7 @@ import OnboardingFlow from '../src/components/OnboardingFlow';
 import SplashAnimation from '../src/components/SplashAnimation';
 import DemoTutorial from '../src/components/DemoTutorial';
 import ErrorBoundary from '../src/components/ErrorBoundary';
+import GlobalVibePill from '../src/components/GlobalVibePill';
 
 // Keep native splash visible until we're ready to show our animated one
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -95,6 +96,10 @@ export default function RootLayout() {
               <Stack.Screen name="rate/[id]" options={{ headerShown: false }} />
             </Stack>
             <DemoTutorial />
+            {/* Global Vibe Charge pill — appears when user is inside a venue geofence */}
+            <ErrorBoundary label="Vibe Pill">
+              <GlobalVibePill />
+            </ErrorBoundary>
           </View>
         </AppInitializer>
       </SafeAreaProvider>

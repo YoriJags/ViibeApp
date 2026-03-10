@@ -98,6 +98,7 @@ export default function VenueDetailScreen() {
     isFeatureEnabled,
     socket,
     getAuthHeaders,
+    setVenueGeofence,
   } = useVibeStore();
   const [venue, setVenue] = useState<any>(null);
   const [ratingStatus, setRatingStatus] = useState<any>(null);
@@ -315,6 +316,7 @@ export default function VenueDetailScreen() {
       setIsWithinGeofence(true);
       setGpsLocked(true);
       setUserLocation({ lat: 6.4316, lng: 3.4223 });
+      setVenueGeofence(id ?? null, venue?.name ?? null, venue?.coordinates ?? null, true);
       return;
     }
 
@@ -345,6 +347,7 @@ export default function VenueDetailScreen() {
         const within = distance <= venueRadius;
         setIsWithinGeofence(within);
         setGpsLocked(within);
+        setVenueGeofence(venue.id, venue.name, venue.coordinates, within);
       }
     } catch (error) {
       console.error('Error getting location:', error);

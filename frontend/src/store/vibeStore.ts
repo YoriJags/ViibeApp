@@ -51,6 +51,7 @@ interface User {
   phone: string;
   email?: string;
   name?: string;
+  display_name?: string;
   picture?: string;
   auth_provider: 'local' | 'google' | 'apple';
   clout_points: number;
@@ -66,6 +67,9 @@ interface User {
   // Vibe+ subscription
   is_vibe_plus: boolean;
   vibe_plus_expires_at?: string;  // ISO date string
+  // Extended profile fields
+  persona?: 'turn_up' | 'grown_sexy' | 'culture' | 'chill_set';
+  token?: string;
 }
 
 interface PendingRating {
@@ -119,6 +123,7 @@ interface StoryListItem {
   caption: string;
   views: number;
   created_at: string;
+  media_url?: string;
 }
 
 interface TimelinePoint {
@@ -239,6 +244,11 @@ interface TransientState {
   isOnline: boolean;
   gpsLocked: boolean;
   lastRatedVenueId: string | null;
+  // Global geofence HUD state — read cheaply by any component
+  isInsideVenue: boolean;
+  activeVenueId: string | null;
+  activeVenueName: string | null;
+  activeVenueCoords: { lat: number; lng: number } | null;
   hasHydrated: boolean;
   lobbyVenues: LobbyVenue[];
   lobbyNudge: LobbyNudge | null;
@@ -317,6 +327,7 @@ interface VibeStoreActions {
   setIsAuthenticated: (auth: boolean) => void;
   setIsOnline: (online: boolean) => void;
   setGpsLocked: (locked: boolean) => void;
+  setVenueGeofence: (venueId: string | null, venueName: string | null, coords: { lat: number; lng: number } | null, inside: boolean) => void;
   setLastRatedVenueId: (venueId: string | null) => void;
   updateUserClout: (cloutEarned: number) => void;
   setHasHydrated: (hydrated: boolean) => void;
@@ -447,6 +458,10 @@ export const useVibeStore = create<VibeStore>()(
       isOnline: true,
       gpsLocked: false,
       lastRatedVenueId: null,
+      isInsideVenue: false,
+      activeVenueId: null,
+      activeVenueName: null,
+      activeVenueCoords: null,
       hasHydrated: false,
       lobbyVenues: [],
       lobbyNudge: null,
@@ -513,6 +528,12 @@ export const useVibeStore = create<VibeStore>()(
         }
       },
       setGpsLocked: (locked) => set({ gpsLocked: locked }),
+      setVenueGeofence: (venueId, venueName, coords, inside) => set({
+        isInsideVenue: inside,
+        activeVenueId: inside ? venueId : null,
+        activeVenueName: inside ? venueName : null,
+        activeVenueCoords: inside ? coords : null,
+      }),
       setLastRatedVenueId: (venueId) => set({ lastRatedVenueId: venueId }),
       updateUserClout: (cloutEarned) => {
         const { user } = get();
@@ -664,7 +685,7 @@ export const useVibeStore = create<VibeStore>()(
           isDemoMode: false,
           activeCheckin: null,
           crew: null,
-          lobby: [],
+          lobbyVenues: [],
         });
         // Fire-and-forget server-side session deletion
         if (sessionToken) {
