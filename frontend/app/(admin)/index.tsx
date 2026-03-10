@@ -2016,6 +2016,12 @@ const styles = StyleSheet.create({
     color: adminColors.text,
     marginBottom: 16,
   },
+  cardSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: adminColors.textSecondary,
+    marginBottom: 12,
+  },
   subTitle: {
     fontSize: 14,
     fontWeight: '600',

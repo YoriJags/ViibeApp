@@ -321,11 +321,11 @@ export default function AdminTreasury() {
         <View style={styles.actionsSection}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionGrid}>
-            <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/admin/venues')}>
+            <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/admin/venues' as any)}>
               <Ionicons name="business" size={24} color={colors.primary} />
               <Text style={styles.actionText}>Manage Venues</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/admin/pricing')}>
+            <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/admin/pricing' as any)}>
               <Ionicons name="pricetag" size={24} color={colors.gold} />
               <Text style={styles.actionText}>Tier Pricing</Text>
             </TouchableOpacity>

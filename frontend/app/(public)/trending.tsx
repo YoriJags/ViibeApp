@@ -41,6 +41,7 @@ interface TrendingVenue {
     area: string;
     current_vibe_score: number;
     coordinates: { lat: number; lng: number };
+    spotlight_until?: string;
   };
   rank: number;
   trending_score: number;

@@ -71,7 +71,8 @@ function formatCountdown(expiresAt: string): string {
 }
 
 export default function MerchantPulse() {
-  const { user, token } = useVibeStore();
+  const { user, getAuthHeaders } = useVibeStore();
+  const token = (getAuthHeaders() as any)?.Authorization?.replace('Bearer ', '');
   const venueId = user?.merchant_venue_id;
 
   const [status, setStatus] = useState<PulseStatus | null>(null);

@@ -135,8 +135,8 @@ export default function MerchantDashboard() {
       setSentiment(DEMO_SENTIMENT as any);
       setPulseStatus(DEMO_PULSE_STATUS as any);
       setActiveCampaign(DEMO_ACTIVE_CAMPAIGN as any);
-      setEntryFee(DEMO_VENUE_STATS.venue.entry_fee || '5,000');
-      setMusicGenre(DEMO_VENUE_STATS.venue.music_genre || 'Afrobeats / Amapiano');
+      setEntryFee((DEMO_VENUE_STATS.venue as any).entry_fee || '5,000');
+      setMusicGenre((DEMO_VENUE_STATS.venue as any).music_genre || 'Afrobeats / Amapiano');
       setTablesAvailable(true);
       setGeofenceRadius(DEMO_VENUE_STATS.venue.geofence_radius_m || 150);
       setLoading(false);
@@ -393,7 +393,7 @@ export default function MerchantDashboard() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <Ionicons name="business" size={64} color={colors.textMuted} />
+          <Ionicons name="business" size={64} color={colors.text.muted} />
           <Text style={styles.errorTitle}>No Venue Linked</Text>
           <Text style={styles.errorText}>Your account is not linked to a venue.</Text>
         </View>
@@ -455,7 +455,7 @@ export default function MerchantDashboard() {
             colors={['#D4AF3730', '#D4AF3710']}
             style={styles.walletBadge}
           >
-            <Ionicons name="wallet" size={16} color={colors.success} />
+            <Ionicons name="wallet" size={16} color={colors.status.success} />
             <Text style={styles.walletBalance}>{'\u20A6'}{(stats?.wallet_balance || 0).toLocaleString()}</Text>
           </LinearGradient>
         </LinearGradient>
@@ -598,7 +598,7 @@ export default function MerchantDashboard() {
                   value={entryFee}
                   onChangeText={setEntryFee}
                   placeholder="e.g., ₦10,000, Free Entry"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.text.muted}
                 />
               </View>
               
@@ -610,7 +610,7 @@ export default function MerchantDashboard() {
                   value={musicGenre}
                   onChangeText={setMusicGenre}
                   placeholder="e.g., Amapiano, Afrobeats, House"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.text.muted}
                 />
               </View>
               
@@ -673,12 +673,12 @@ export default function MerchantDashboard() {
             <View style={styles.contentPreview}>
               <View style={styles.previewRow}>
                 <View style={styles.previewItem}>
-                  <Ionicons name="ticket-outline" size={16} color={colors.textMuted} />
+                  <Ionicons name="ticket-outline" size={16} color={colors.text.muted} />
                   <Text style={styles.previewLabel}>Entry</Text>
                   <Text style={styles.previewValue}>{stats?.venue?.entry_fee || 'Not set'}</Text>
                 </View>
                 <View style={styles.previewItem}>
-                  <Ionicons name="musical-notes" size={16} color={colors.textMuted} />
+                  <Ionicons name="musical-notes" size={16} color={colors.text.muted} />
                   <Text style={styles.previewLabel}>Music</Text>
                   <Text style={styles.previewValue}>{stats?.venue?.music_genre || 'Not set'}</Text>
                 </View>
@@ -697,7 +697,7 @@ export default function MerchantDashboard() {
                   </Text>
                 </View>
                 <View style={styles.previewItem}>
-                  <Ionicons name="locate-outline" size={16} color={colors.textMuted} />
+                  <Ionicons name="locate-outline" size={16} color={colors.text.muted} />
                   <Text style={styles.previewLabel}>Geofence</Text>
                   <Text style={styles.previewValue}>{stats?.venue?.geofence_radius_m || 100}m</Text>
                 </View>
@@ -913,7 +913,7 @@ export default function MerchantDashboard() {
                   {activeCampaign.multiplier}x CLOUT ACTIVE
                 </Text>
               </View>
-              <Text style={{ fontSize: 13, color: colors.textMuted }}>
+              <Text style={{ fontSize: 13, color: colors.text.muted }}>
                 Scouts earn {activeCampaign.multiplier}x Clout when they rate your venue. Campaign ends {new Date(activeCampaign.expires_at).toLocaleTimeString()}.
               </Text>
             </View>
@@ -923,10 +923,10 @@ export default function MerchantDashboard() {
               onPress={() => isDemoMode ? Alert.alert('Demo Mode', 'Campaign creation simulated in demo mode.') : setShowCampaignModal(true)}
             >
               <Ionicons name="flash-outline" size={32} color={colors.accent} />
-              <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text, marginTop: 8 }}>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text.primary, marginTop: 8 }}>
                 Launch Energy Campaign
               </Text>
-              <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 4, textAlign: 'center' }}>
+              <Text style={{ fontSize: 13, color: colors.text.muted, marginTop: 4, textAlign: 'center' }}>
                 Attract more scouts with Clout multipliers
               </Text>
             </TouchableOpacity>
@@ -1063,8 +1063,8 @@ export default function MerchantDashboard() {
                 }}
               >
                 <Ionicons name={row.icon as any} size={16} color={colors.accent} />
-                <Text style={{ flex: 1, fontSize: 13, color: colors.text, marginLeft: 10 }}>{row.label}</Text>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{row.value}</Text>
+                <Text style={{ flex: 1, fontSize: 13, color: colors.text.primary, marginLeft: 10 }}>{row.label}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text.primary }}>{row.value}</Text>
               </View>
             ))}
 
@@ -1078,8 +1078,8 @@ export default function MerchantDashboard() {
               gap: 8,
             }}>
               <Ionicons name="lock-closed" size={28} color={colors.accent} />
-              <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text }}>Unlock Advanced Analytics</Text>
-              <Text style={{ fontSize: 12, color: colors.textMuted, textAlign: 'center', paddingHorizontal: 20 }}>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text.primary }}>Unlock Advanced Analytics</Text>
+              <Text style={{ fontSize: 12, color: colors.text.muted, textAlign: 'center', paddingHorizontal: 20 }}>
                 Hourly breakdowns, competitor analysis, peak-time predictions + revenue forecasts
               </Text>
               <TouchableOpacity
@@ -1100,7 +1100,7 @@ export default function MerchantDashboard() {
 
         {/* Privacy Notice */}
         <View style={styles.privacyNotice}>
-          <Ionicons name="shield-checkmark" size={16} color={colors.textMuted} />
+          <Ionicons name="shield-checkmark" size={16} color={colors.text.muted} />
           <Text style={styles.privacyText}>
             Your data is private. Only you can see your venue's analytics.
           </Text>
@@ -1133,7 +1133,7 @@ export default function MerchantDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background.dark,
   },
   scrollView: {
     flex: 1,
@@ -1145,7 +1145,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: spacing.md,
-    color: colors.textMuted,
+    color: colors.text.muted,
     fontSize: typography.fontSize.md,
   },
   errorContainer: {
@@ -1157,12 +1157,12 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+    color: colors.text.primary,
     marginTop: spacing.lg,
   },
   errorText: {
     fontSize: typography.fontSize.md,
-    color: colors.textMuted,
+    color: colors.text.muted,
     marginTop: spacing.sm,
     textAlign: 'center',
   },
@@ -1175,18 +1175,18 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: typography.fontSize.sm,
-    color: colors.textMuted,
+    color: colors.text.muted,
   },
   venueName: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+    color: colors.text.primary,
     marginTop: spacing.xs,
   },
   walletBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.success + '20',
+    backgroundColor: colors.status.success + '20',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
@@ -1195,7 +1195,7 @@ const styles = StyleSheet.create({
   walletBalance: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
-    color: colors.success,
+    color: colors.status.success,
   },
   section: {
     paddingHorizontal: spacing.lg,
@@ -1278,18 +1278,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+    color: colors.text.primary,
     marginBottom: spacing.xs,
   },
   sectionSubtitle: {
     fontSize: typography.fontSize.sm,
-    color: colors.textMuted,
+    color: colors.text.muted,
     marginBottom: spacing.md,
   },
   
   // Score Card
   scoreCard: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.background.card,
     borderRadius: borderRadius.xl,
     padding: spacing.lg,
     borderWidth: 1,
@@ -1303,7 +1303,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background.dark,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.lg,
@@ -1314,7 +1314,7 @@ const styles = StyleSheet.create({
   },
   scoreLabel: {
     fontSize: 10,
-    color: colors.textMuted,
+    color: colors.text.muted,
     letterSpacing: 1,
     marginTop: 4,
   },
@@ -1329,13 +1329,13 @@ const styles = StyleSheet.create({
   metricValue: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+    color: colors.text.primary,
     marginLeft: spacing.sm,
     width: 50,
   },
   metricLabel: {
     fontSize: typography.fontSize.sm,
-    color: colors.textMuted,
+    color: colors.text.muted,
     marginLeft: spacing.sm,
   },
   deltaBadge: {
@@ -1360,7 +1360,7 @@ const styles = StyleSheet.create({
   },
   sentimentCard: {
     flex: 1,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.background.card,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     borderWidth: 1,
@@ -1374,22 +1374,22 @@ const styles = StyleSheet.create({
   },
   sentimentTitle: {
     fontSize: 10,
-    color: colors.textMuted,
+    color: colors.text.muted,
     fontWeight: typography.fontWeight.semibold,
   },
   sentimentValue: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+    color: colors.text.primary,
   },
   sentimentSubvalue: {
     fontSize: 10,
-    color: colors.textMuted,
+    color: colors.text.muted,
     marginTop: 2,
   },
   sentimentBar: {
     height: 4,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background.dark,
     borderRadius: 2,
     marginTop: spacing.sm,
   },
@@ -1410,7 +1410,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold,
   },
   editForm: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.background.card,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     borderWidth: 1,
@@ -1421,16 +1421,16 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: typography.fontSize.sm,
-    color: colors.text,
+    color: colors.text.primary,
     fontWeight: typography.fontWeight.semibold,
     marginBottom: spacing.sm,
   },
   textInput: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.background.dark,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    color: colors.text,
+    color: colors.text.primary,
     fontSize: typography.fontSize.md,
     borderWidth: 1,
     borderColor: colors.border,
@@ -1443,7 +1443,7 @@ const styles = StyleSheet.create({
   },
   switchSubtext: {
     fontSize: typography.fontSize.xs,
-    color: colors.textMuted,
+    color: colors.text.muted,
     marginTop: 2,
   },
   radiusOptions: {
@@ -1465,7 +1465,7 @@ const styles = StyleSheet.create({
   },
   radiusChipText: {
     fontSize: typography.fontSize.sm,
-    color: colors.textMuted,
+    color: colors.text.muted,
     fontWeight: typography.fontWeight.medium,
   },
   radiusChipTextActive: {
@@ -1489,7 +1489,7 @@ const styles = StyleSheet.create({
   
   // Content Preview
   contentPreview: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.background.card,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     borderWidth: 1,
@@ -1505,12 +1505,12 @@ const styles = StyleSheet.create({
   },
   previewLabel: {
     fontSize: 10,
-    color: colors.textMuted,
+    color: colors.text.muted,
     marginTop: spacing.xs,
   },
   previewValue: {
     fontSize: typography.fontSize.sm,
-    color: colors.text,
+    color: colors.text.primary,
     fontWeight: typography.fontWeight.semibold,
     marginTop: 2,
     textAlign: 'center',
@@ -1556,7 +1556,7 @@ const styles = StyleSheet.create({
   },
   countdownLabel: {
     fontSize: typography.fontSize.sm,
-    color: colors.textMuted,
+    color: colors.text.muted,
   },
   countdownValue: {
     fontSize: 32,
@@ -1576,7 +1576,7 @@ const styles = StyleSheet.create({
   },
   perkText: {
     fontSize: typography.fontSize.xs,
-    color: colors.text,
+    color: colors.text.primary,
   },
   pulseTiers: {
     flexDirection: 'row',
@@ -1584,7 +1584,7 @@ const styles = StyleSheet.create({
   },
   tierCard: {
     flex: 1,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.background.card,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     alignItems: 'center',
@@ -1598,11 +1598,11 @@ const styles = StyleSheet.create({
   tierName: {
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+    color: colors.text.primary,
   },
   tierDuration: {
     fontSize: typography.fontSize.xs,
-    color: colors.textMuted,
+    color: colors.text.muted,
     marginTop: spacing.xs,
   },
   tierPrice: {
@@ -1635,7 +1635,8 @@ const styles = StyleSheet.create({
   },
   privacyText: {
     fontSize: typography.fontSize.xs,
-    color: colors.textMuted,
+    color: colors.text.muted,
     textAlign: 'center',
   },
-});
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+}) as any;

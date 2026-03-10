@@ -134,19 +134,6 @@ export default function MapScreen() {
   const legendElectricPulse = useRef(new Animated.Value(1)).current;
   const chevronRotate = useRef(new Animated.Value(0)).current;
 
-  // Stagger venue cards on load
-  useEffect(() => {
-    if (!filteredVenues?.length) return;
-    // Reset animations before staggering
-    cardAnims.forEach(a => { a.opacity.setValue(0); a.translateY.setValue(28); });
-    Animated.stagger(60, cardAnims.slice(0, Math.min(filteredVenues.length, 12)).map(a =>
-      Animated.parallel([
-        Animated.timing(a.opacity,    { toValue: 1, duration: 350, useNativeDriver: true }),
-        Animated.spring(a.translateY, { toValue: 0, tension: 70, friction: 12, useNativeDriver: true }),
-      ])
-    )).start();
-  }, [filteredVenues?.length, selectedCategory]);
-
   // Animate header glow — slow, refined pulse
   useEffect(() => {
     Animated.loop(
@@ -381,6 +368,18 @@ export default function MapScreen() {
       return (b.vibe_score ?? 0) - (a.vibe_score ?? 0); // then by vibe score
     });
   }, [venues, selectedCategory, vibePersona]);
+
+  // Stagger venue cards on load
+  useEffect(() => {
+    if (!filteredVenues?.length) return;
+    cardAnims.forEach(a => { a.opacity.setValue(0); a.translateY.setValue(28); });
+    Animated.stagger(60, cardAnims.slice(0, Math.min(filteredVenues.length, 12)).map(a =>
+      Animated.parallel([
+        Animated.timing(a.opacity,    { toValue: 1, duration: 350, useNativeDriver: true }),
+        Animated.spring(a.translateY, { toValue: 0, tension: 70, friction: 12, useNativeDriver: true }),
+      ])
+    )).start();
+  }, [filteredVenues?.length, selectedCategory]);
 
   // DNA-powered VibeMatch: blend affinity (40%) + vibe score (60%) → top match
   const vibeMatchVenue = useMemo(() => {
@@ -644,7 +643,7 @@ export default function MapScreen() {
               onStepPress={(step) => {
                 if (step === 'mood') setShowSceneMood(true);
                 else if (step === 'rate') setShowSwipeRate(true);
-                else if (step === 'checkin') router.push('/venue/' + (venues[0]?.id ?? ''));
+                else if (step === 'checkin') router.push(('/venue/' + (venues[0]?.id ?? '')) as any);
                 else if (step === 'crew') router.push('/(public)/crew');
               }}
             />
@@ -700,7 +699,7 @@ export default function MapScreen() {
               phase={nightPhase}
               currentHour={isDemoMode ? DEMO_TONIGHT.currentHour : new Date().toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })}
               cityName={cityName}
-              cityEnergy={isDemoMode ? DEMO_TONIGHT.cityEnergy : 'popping'}
+              cityEnergy={(isDemoMode ? DEMO_TONIGHT.cityEnergy : 'popping') as 'chill' | 'moderate' | 'popping' | 'electric'}
               cityEnergyScore={isDemoMode ? DEMO_TONIGHT.cityEnergyScore : 70}
               matchVenue={isDemoMode ? DEMO_TONIGHT.matchVenue : undefined}
               matchPercent={isDemoMode ? DEMO_TONIGHT.matchPercent : undefined}
