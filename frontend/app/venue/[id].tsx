@@ -51,6 +51,7 @@ import AIPulseComment from '../../src/components/AIPulseComment';
 import EmojiPulse from '../../src/components/EmojiPulse';
 import ScoutPressureChip from '../../src/components/ScoutPressureChip';
 import VibeMomentum from '../../src/components/VibeMomentum';
+import KineticTap from '../../src/components/KineticTap';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -390,7 +391,7 @@ export default function VenueDetailScreen() {
   };
 
   const handleSubmitRating = async (data: {
-    energy: 'chill' | 'buzzing' | 'popping' | 'electric';
+    energy: 'quiet' | 'chill' | 'warming' | 'lit' | 'peak';
     capacity: 'sparse' | 'vibrant' | 'full';
     gate: 'clear' | 'slow' | 'blocked';
     venueSpecific?: string;
@@ -1082,6 +1083,25 @@ export default function VenueDetailScreen() {
         {/* ── Vibe Surge Bar — always visible, near Rate the Vibe ── */}
         {id && <ErrorBoundary label="Vibe Surge"><VibeSurgeBar venueId={id} venueName={venue?.name ?? ''} isDemoMode={isDemoMode} onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }} onReact={handleReact} /></ErrorBoundary>}
 
+        {/* ── Kinetic Tap — haptic velocity + collective quest ── */}
+        {id && venue?.coordinates && (
+          <ErrorBoundary label="Kinetic Tap">
+            <KineticTap
+              venueId={id}
+              venueCoordinates={venue.coordinates}
+              userLocation={userLocation}
+              socket={socket}
+              user={user}
+              isDemoMode={isDemoMode}
+              onQuestSucceeded={(participants) => {
+                // Reuse surge celebration for quest success
+                setSurgeTapCount(participants);
+                setShowSurgeCelebration(true);
+              }}
+            />
+          </ErrorBoundary>
+        )}
+
         <View style={{ height: 200 }} />
       </ScrollView>
 
@@ -1166,6 +1186,7 @@ export default function VenueDetailScreen() {
       <VibePlusModal
         visible={showVibePlusModal}
         onClose={() => setShowVibePlusModal(false)}
+        onSuccess={() => {}}
       />
 
       {/* Booking Modal */}
@@ -1175,7 +1196,7 @@ export default function VenueDetailScreen() {
           onClose={() => setShowBookingModal(false)}
           venueId={venue.id}
           venueName={venue.name}
-          authToken={user?.token}
+          authToken={user?.token ?? ''}
           isDemoMode={isDemoMode}
         />
       )}
