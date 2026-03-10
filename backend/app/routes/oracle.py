@@ -45,8 +45,35 @@ def _best_arrival(peak_start: str) -> str:
     return f"{arr_h}:{arr_m:02d}{arr_period}"
 
 
-def _heuristic_oracle(venue: dict, bolt_15min: int = 0) -> dict:
-    """Rule-based oracle. Free for all users."""
+# Weather impact on oracle confidence
+_WEATHER_CONF_DELTA = {
+    "ideal": +5, "neutral": 0, "warm": -3,
+    "soft": -8, "poor": -15, "dead": -25,
+}
+
+# Lagos traffic signal: heavy inbound on weekday evenings reduces confidence
+# (people stuck in traffic arrive later or not at all)
+def _traffic_delta(now: datetime) -> int:
+    """Return confidence delta based on Lagos weekday traffic heuristic."""
+    if now.weekday() >= 4:   # Fri–Sun: traffic hurts less (people expect it)
+        return 0
+    wat_hour = (now.hour + 1) % 24  # UTC+1
+    if 17 <= wat_hour <= 21:         # 5pm–9pm WAT rush hour
+        return -5
+    return 0
+
+
+def _heuristic_oracle(
+    venue: dict,
+    bolt_15min: int = 0,
+    weather_impact: str = "neutral",
+    traffic_signal: str = "auto",
+) -> dict:
+    """
+    Rule-based oracle. Accepts optional external signals:
+    - weather_impact: one of ideal/neutral/warm/soft/poor/dead
+    - traffic_signal: 'auto' (Lagos heuristic), 'heavy', 'clear', or 'normal'
+    """
     venue_type = venue.get("venue_type", "club")
     now = datetime.now(timezone.utc)
     day_of_week = now.weekday()
@@ -65,7 +92,17 @@ def _heuristic_oracle(venue: dict, bolt_15min: int = 0) -> dict:
     activity_delta = 5 if activity > 30 else (-5 if activity < 10 else 0)
     # Bolt surge delta — real-time tap velocity boosts confidence
     bolt_delta = 12 if bolt_15min >= 20 else (6 if bolt_15min >= 10 else 0)
-    confidence = max(50, min(95, base_conf + velocity_delta + activity_delta + bolt_delta))
+    # External signal deltas
+    weather_delta = _WEATHER_CONF_DELTA.get(weather_impact, 0)
+    if traffic_signal == "auto":
+        t_delta = _traffic_delta(now)
+    elif traffic_signal == "heavy":
+        t_delta = -8
+    elif traffic_signal == "clear":
+        t_delta = +3
+    else:
+        t_delta = 0
+    confidence = max(50, min(95, base_conf + velocity_delta + activity_delta + bolt_delta + weather_delta + t_delta))
 
     energy_label = _ENERGY_LABELS.get(venue_type, "popping")
 
@@ -107,7 +144,7 @@ def _heuristic_oracle(venue: dict, bolt_15min: int = 0) -> dict:
 
 @router.get("/venues/{venue_id}/oracle")
 async def get_oracle(venue_id: str):
-    """Free heuristic oracle — peak time prediction for any venue."""
+    """Free heuristic oracle — peak time prediction enriched with weather + traffic signals."""
     venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
@@ -116,7 +153,25 @@ async def get_oracle(venue_id: str):
         "venue_id": venue_id,
         "created_at": {"$gte": fifteen_ago},
     })
-    return _heuristic_oracle(venue, bolt_15min=bolt_15min)
+    # Pull live weather signal (non-blocking — falls back to neutral if key not set)
+    weather_impact = "neutral"
+    weather_note = None
+    try:
+        from app.routes.intelligence import _get_weather_data, WEATHER_IMPACT
+        city = venue.get("city", "lagos")
+        w = await _get_weather_data(city)
+        if w and w.get("weather"):
+            cond = w["weather"][0]["main"]
+            impact_info = WEATHER_IMPACT.get(cond, ("neutral", "=", ""))
+            weather_impact = impact_info[0]
+            weather_note = impact_info[2]
+    except Exception:
+        pass
+    result = _heuristic_oracle(venue, bolt_15min=bolt_15min, weather_impact=weather_impact)
+    if weather_note:
+        result["weather_note"] = weather_note
+        result["weather_impact"] = weather_impact
+    return result
 
 
 @router.get("/venues/{venue_id}/oracle/premium")

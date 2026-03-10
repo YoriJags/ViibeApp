@@ -3,11 +3,11 @@ Vibe App - User Routes
 User registration, login, and profile retrieval.
 Returns session tokens on signup/login for proper auth.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.config import db
-from app.models import User, UserCreate, UserLogin
-from app.services.auth import create_session_token
+from app.models import User, UserCreate, UserLogin, MusicPreferencesUpdate
+from app.services.auth import create_session_token, require_auth
 
 router = APIRouter(tags=["users"])
 
@@ -53,3 +53,25 @@ async def get_user(user_id: str):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@router.put("/users/me/music-preferences")
+async def update_music_preferences(
+    payload: MusicPreferencesUpdate,
+    user: dict = Depends(require_auth),
+):
+    """
+    Save music genre preferences for the authenticated user.
+    These are bridged into the Vibe DNA affinity engine and Night Planner
+    to prioritise venues matching the scout's musical taste.
+    Genres are free-form strings (e.g. "Afrobeats", "Amapiano", "House").
+    """
+    if not payload.genres:
+        raise HTTPException(status_code=400, detail="genres list cannot be empty")
+    # Normalise: strip whitespace, deduplicate, cap at 10
+    genres = list(dict.fromkeys(g.strip() for g in payload.genres if g.strip()))[:10]
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"music_preferences": genres}},
+    )
+    return {"success": True, "music_preferences": genres}

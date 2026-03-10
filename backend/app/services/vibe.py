@@ -277,6 +277,18 @@ async def update_user_clout(user_id: str, venue_id: str, rating_score: float):
     if is_pulse_boosted:
         clout_bonus = clout_bonus * 2
 
+    # 3x PRO QUEST — Dark Spot bonus (venue with < 5 ratings in last 48h)
+    # These are the blind spots in the intelligence map; scouts who light them up earn 3x.
+    if await _is_dark_spot(venue_id):
+        clout_bonus = int(clout_bonus * 3)
+
+    # 2.5x HIDDEN GEM HUNT — Mid-week only (Mon–Thu), low-score but heating-up venues
+    if _is_hidden_gem(venue):
+        clout_bonus = int(clout_bonus * 2.5)
+
+    # Hard cap: multipliers stack but total bonus cannot exceed 4x original
+    clout_bonus = min(clout_bonus, int(accuracy / 10) * 4 + 20)
+
     new_clout = user.get("clout_points", 0) + clout_bonus
     new_total = total_ratings + 1
 
@@ -363,3 +375,32 @@ def _minutes_since(timestamp, now: datetime) -> float:
     if timestamp.tzinfo is None:
         timestamp = timestamp.replace(tzinfo=timezone.utc)
     return (now - timestamp).total_seconds() / 60
+
+
+async def _is_dark_spot(venue_id: str) -> bool:
+    """
+    Pro Quest trigger: returns True if venue has fewer than 5 ratings in the last 48 hours.
+    These are intelligence blind spots — scouts who report from here earn 3x clout.
+    Anti-cheat: does NOT award dark spot bonus more than once per user per venue per day.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=48)
+    count = await db.ratings.count_documents({
+        "venue_id": venue_id,
+        "timestamp": {"$gte": cutoff},
+    })
+    return count < 5
+
+
+def _is_hidden_gem(venue: dict) -> bool:
+    """
+    Hidden Gem Hunt trigger (mid-week only, Mon–Thu).
+    Returns True if venue score is below 50 but momentum is heating_up.
+    These are emerging spots that scouts discover before the crowd arrives.
+    """
+    now = datetime.now(timezone.utc)
+    weekday = now.weekday()  # 0=Mon, 6=Sun
+    if weekday > 3:          # Fri/Sat/Sun excluded — already hot nights
+        return False
+    score = venue.get("current_vibe_score", 100)
+    velocity = venue.get("vibe_velocity", "stable")
+    return score < 50 and velocity == "heating_up"

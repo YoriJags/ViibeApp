@@ -1,8 +1,8 @@
 """
 Vibe App - Streak Routes
-View streak data and streak leaderboard.
+View streak data, leaderboard, and streak freeze management.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.config import db
 from app.services.auth import require_auth
@@ -16,6 +16,41 @@ async def get_my_streak(user: dict = Depends(require_auth)):
     """Get the current user's streak data."""
     streak = await get_streak(user["id"])
     return streak
+
+
+FREEZE_COST_CLOUT = 100   # clout points per freeze
+FREEZE_MAX_HELD = 3       # max freezes a scout can hold at once
+
+
+@router.post("/streaks/freeze/purchase")
+async def purchase_streak_freeze(user: dict = Depends(require_auth)):
+    """
+    Spend 100 clout to buy a Streak Freeze.
+    Freeze is consumed automatically when a 1-day gap is detected.
+    Max 3 freezes held at once.
+    """
+    user_doc = await db.users.find_one({"id": user["id"]}, {"clout_points": 1, "streak_freezes": 1})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    current_freezes = user_doc.get("streak_freezes", 0)
+    if current_freezes >= FREEZE_MAX_HELD:
+        raise HTTPException(status_code=400, detail=f"Already holding maximum {FREEZE_MAX_HELD} freezes")
+
+    clout = user_doc.get("clout_points", 0)
+    if clout < FREEZE_COST_CLOUT:
+        raise HTTPException(status_code=402, detail=f"Need {FREEZE_COST_CLOUT} clout — you have {clout}")
+
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$inc": {"clout_points": -FREEZE_COST_CLOUT, "streak_freezes": 1}},
+    )
+    return {
+        "success": True,
+        "freezes_held": current_freezes + 1,
+        "clout_spent": FREEZE_COST_CLOUT,
+        "clout_remaining": clout - FREEZE_COST_CLOUT,
+    }
 
 
 @router.get("/streaks/leaderboard")

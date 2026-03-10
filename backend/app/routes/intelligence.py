@@ -13,10 +13,11 @@ just careful aggregation of the signals we're already collecting.
 import os
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from typing import Optional
 
 from app.config import db
+from app.services.auth import require_auth
 
 router = APIRouter(tags=["intelligence"])
 
@@ -574,6 +575,134 @@ async def get_venue_reputation(venue_id: str):
             "momentum_delta": round(momentum_delta, 1),
         },
         "insight": _reputation_insight(tier, momentum_delta, consistency_score),
+    }
+
+
+@router.get("/v1/intelligence/attribution")
+async def get_attribution(
+    venue_id: str,
+    period_days: int = 7,
+    user: dict = Depends(require_auth),
+):
+    """
+    B2B Data Clean Room — Conversion-to-Venue attribution for merchants.
+    Calculates scout arrival and engagement lift following merchant actions
+    (pulse drops, live pushes, surge bookings).
+
+    Role-gated: requires is_merchant on the requesting user.
+    The merchant must own the requested venue.
+    """
+    if not user.get("is_merchant") and not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Merchant account required")
+
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    # Ownership check — admin can query any venue
+    if not user.get("is_admin") and venue.get("owner_id") != user["id"]:
+        raise HTTPException(status_code=403, detail="You don't own this venue")
+
+    now = datetime.now(timezone.utc)
+    window_start = now - timedelta(days=period_days)
+
+    # ── Merchant events in window ──────────────────────────────────────────────
+    pulse_drops = await db.pulse_drops.find(
+        {"venue_id": venue_id, "created_at": {"$gte": window_start}},
+        {"_id": 0, "created_at": 1, "tier": 1},
+    ).to_list(50)
+
+    live_pushes = await db.venue_live_pushes.find(
+        {"venue_id": venue_id, "sent_at": {"$gte": window_start}},
+        {"_id": 0, "sent_at": 1},
+    ).to_list(50)
+
+    surge_bookings = await db.surge_bookings.find(
+        {"venue_id": venue_id, "scheduled_at": {"$gte": window_start}, "status": {"$in": ["active", "expired"]}},
+        {"_id": 0, "scheduled_at": 1, "tier": 1},
+    ).to_list(50)
+
+    # ── Attribution calculation ────────────────────────────────────────────────
+    # For each merchant event: compare ratings+checkins in 2h BEFORE vs 2h AFTER
+    attribution_events = []
+    for event in [
+        *[{"type": "pulse_drop", "ts": e["created_at"], "tier": e.get("tier")} for e in pulse_drops],
+        *[{"type": "live_push", "ts": e["sent_at"], "tier": None} for e in live_pushes],
+        *[{"type": "surge_booking", "ts": e["scheduled_at"], "tier": e.get("tier")} for e in surge_bookings],
+    ]:
+        ts = event["ts"]
+        if isinstance(ts, str):
+            ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+
+        before_start = ts - timedelta(hours=2)
+        after_end = ts + timedelta(hours=2)
+
+        arrivals_before = await db.checkins.count_documents({
+            "venue_id": venue_id, "created_at": {"$gte": before_start, "$lt": ts},
+        })
+        arrivals_after = await db.checkins.count_documents({
+            "venue_id": venue_id, "created_at": {"$gte": ts, "$lte": after_end},
+        })
+        ratings_before = await db.ratings.count_documents({
+            "venue_id": venue_id, "timestamp": {"$gte": before_start, "$lt": ts},
+        })
+        ratings_after = await db.ratings.count_documents({
+            "venue_id": venue_id, "timestamp": {"$gte": ts, "$lte": after_end},
+        })
+
+        # Avg vibe score before vs after
+        score_before_agg = await db.ratings.aggregate([
+            {"$match": {"venue_id": venue_id, "timestamp": {"$gte": before_start, "$lt": ts}}},
+            {"$group": {"_id": None, "avg": {"$avg": "$vibe_score"}}},
+        ]).to_list(1)
+        score_after_agg = await db.ratings.aggregate([
+            {"$match": {"venue_id": venue_id, "timestamp": {"$gte": ts, "$lte": after_end}}},
+            {"$group": {"_id": None, "avg": {"$avg": "$vibe_score"}}},
+        ]).to_list(1)
+
+        score_before = round(score_before_agg[0]["avg"], 1) if score_before_agg else 0
+        score_after = round(score_after_agg[0]["avg"], 1) if score_after_agg else 0
+        lift = arrivals_after - arrivals_before
+        conversion_rate = round(lift / max(arrivals_before, 1) * 100, 1)
+
+        attribution_events.append({
+            "event_type": event["type"],
+            "tier": event["tier"],
+            "triggered_at": ts.isoformat(),
+            "arrivals_2h_before": arrivals_before,
+            "arrivals_2h_after": arrivals_after,
+            "arrival_lift": lift,
+            "ratings_before": ratings_before,
+            "ratings_after": ratings_after,
+            "score_before": score_before,
+            "score_after": score_after,
+            "score_delta": round(score_after - score_before, 1),
+            "conversion_rate_pct": conversion_rate,
+        })
+
+    # ── Period-level summary ───────────────────────────────────────────────────
+    total_events = len(attribution_events)
+    total_lift = sum(e["arrival_lift"] for e in attribution_events)
+    avg_score_delta = (
+        round(sum(e["score_delta"] for e in attribution_events) / total_events, 1)
+        if total_events else 0
+    )
+
+    return {
+        "venue_id": venue_id,
+        "venue_name": venue.get("name"),
+        "period_days": period_days,
+        "total_merchant_events": total_events,
+        "total_arrival_lift": total_lift,
+        "avg_score_delta": avg_score_delta,
+        "events": attribution_events,
+        "data_note": (
+            "Arrivals = check-ins within ±2h of each merchant event. "
+            "Score delta = vibe score change from pre- to post-event window."
+        ),
+        "generated_at": now.isoformat(),
     }
 
 

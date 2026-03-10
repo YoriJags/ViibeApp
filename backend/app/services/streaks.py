@@ -63,8 +63,19 @@ async def update_streak(user_id: str) -> dict:
     if days_gap == 1:
         # Consecutive day - extend streak
         new_count = streak_doc["current_streak"] + 1
+    elif days_gap == 2:
+        # One day missed — check for a streak freeze
+        user_doc = await db.users.find_one({"id": user_id}, {"streak_freezes": 1})
+        freezes_left = (user_doc or {}).get("streak_freezes", 0)
+        if freezes_left > 0:
+            # Consume one freeze, preserve streak
+            await db.users.update_one({"id": user_id}, {"$inc": {"streak_freezes": -1}})
+            new_count = streak_doc["current_streak"]
+            logger.info(f"Streak freeze consumed for {user_id} — streak preserved at {new_count}")
+        else:
+            new_count = 1
     else:
-        # Streak broken - reset to 1
+        # Gap too large — reset to 1 regardless
         new_count = 1
 
     longest = max(streak_doc.get("longest_streak", 0), new_count)

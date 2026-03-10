@@ -51,6 +51,9 @@ class User(BaseModel):
     icon_tier: Optional[Literal["verified", "icon", "legend"]] = None  # None = regular scout
     icon_label: Optional[str] = None  # e.g. "DJ", "Dancer", "Artist", "Socialite"
     icon_granted_at: Optional[datetime] = None
+    # ===== Scout Gamification =====
+    streak_freezes: int = 0           # clout-purchasable streak insurance
+    music_preferences: list[str] = [] # genre list bridged from music streaming mock
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -313,3 +316,31 @@ class AuraShieldConfig(BaseModel):
 class CampaignCreate(BaseModel):
     multiplier: int  # 2 or 3
     duration_hours: int  # 2, 4, or 8
+
+
+# ===== Surge Booking (Merchant Portal) =====
+
+class SurgeBooking(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    venue_id: str
+    merchant_id: str
+    scheduled_at: datetime
+    duration_hours: int = 2               # how long the surge window runs
+    tier: Literal["spark", "flare", "supernova"] = "spark"
+    price_ngn: float = 0.0
+    paystack_reference: Optional[str] = None
+    paystack_access_code: Optional[str] = None
+    status: Literal["pending_payment", "scheduled", "active", "expired", "cancelled"] = "pending_payment"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class SurgeBookingCreate(BaseModel):
+    scheduled_at: datetime
+    duration_hours: int = 2
+    tier: Literal["spark", "flare", "supernova"] = "spark"
+
+
+# ===== Music Preferences =====
+
+class MusicPreferencesUpdate(BaseModel):
+    genres: list[str]  # e.g. ["Afrobeats", "Amapiano", "House", "Afro-Pop"]
