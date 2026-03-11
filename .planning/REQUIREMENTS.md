@@ -84,36 +84,36 @@
 
 ## Traceability
 
-*(To be populated by roadmapper)*
+*(Populated by roadmapper — 2026-03-11)*
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BILL-01 | Phase 1 | Pending |
-| BILL-02 | Phase 1 | Pending |
-| BILL-03 | Phase 1 | Pending |
-| BILL-04 | Phase 1 | Pending |
-| DIST-01 | Phase 2 | Pending |
-| DIST-02 | Phase 2 | Pending |
-| NOTF-01 | Phase 3 | Pending |
-| NOTF-02 | Phase 3 | Pending |
-| NOTF-03 | Phase 3 | Pending |
-| NOTF-04 | Phase 3 | Pending |
-| GROW-01 | Phase 4 | Pending |
-| GROW-02 | Phase 4 | Pending |
-| GROW-03 | Phase 4 | Pending |
-| ANAL-01 | Phase 5 | Pending |
-| ANAL-02 | Phase 5 | Pending |
-| ANAL-03 | Phase 5 | Pending |
-| INVT-01 | Phase 6 | Pending |
-| INVT-02 | Phase 6 | Pending |
-| INVT-03 | Phase 6 | Pending |
-| INVT-04 | Phase 6 | Pending |
+| BILL-01 | Phase 1: Billing Foundation | Pending |
+| BILL-02 | Phase 1: Billing Foundation | Pending |
+| BILL-03 | Phase 1: Billing Foundation | Pending |
+| BILL-04 | Phase 1: Billing Foundation | Pending |
+| DIST-01 | Phase 2: EAS Build + Distribution | Pending |
+| DIST-02 | Phase 2: EAS Build + Distribution | Pending |
+| NOTF-01 | Phase 3: Push Notifications | Pending |
+| NOTF-02 | Phase 3: Push Notifications | Pending |
+| NOTF-03 | Phase 3: Push Notifications | Pending |
+| NOTF-04 | Phase 3: Push Notifications | Pending |
+| GROW-01 | Phase 4: Growth Loops | Pending |
+| GROW-02 | Phase 4: Growth Loops | Pending |
+| GROW-03 | Phase 4: Growth Loops | Pending |
+| ANAL-01 | Phase 5: Analytics + Merchant SaaS | Pending |
+| ANAL-02 | Phase 5: Analytics + Merchant SaaS | Pending |
+| ANAL-03 | Phase 5: Analytics + Merchant SaaS | Pending |
+| INVT-01 | Phase 6: Investor Deliverables | Pending |
+| INVT-02 | Phase 6: Investor Deliverables | Pending |
+| INVT-03 | Phase 6: Investor Deliverables | Pending |
+| INVT-04 | Phase 6: Investor Deliverables | Pending |
 
 **Coverage:**
 - v1 requirements: 20 total
 - Mapped to phases: 20
-- Unmapped: 0 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-11*
-*Last updated: 2026-03-11 after initial definition*
+*Last updated: 2026-03-11 — traceability populated after roadmap creation*
