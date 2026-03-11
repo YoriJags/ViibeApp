@@ -1,5 +1,5 @@
 # VIIBE — Complete App Overview
-*Platform Reference Document | v2.0 | February 2026*
+*Platform Reference Document | v3.0 | March 2026*
 
 ---
 
@@ -329,13 +329,57 @@ Live reaction mechanic exclusive to VIIBE+ subscribers:
 - Feeds the crew coordination map.
 
 ### 8.10 VIIBE+ Subscription
-Premium tier at ₦1,500/month (≈$1 USD):
+Premium tier at ₦2,000/month:
 - Bolt reactions
 - Priority feed placement
 - Exclusive persona badges
 - Early access to new features
 
-Powered by Paystack (Nigerian payment processor). Subscription state stored in MongoDB and verified at feature access points.
+iOS subscriptions processed via RevenueCat + Apple IAP (App Store Guideline 3.1.1). Android via RevenueCat + Google Play Billing. Web and merchant B2B via Paystack.
+
+---
+
+### 8.11 Dual Home Mode
+Two distinct app experiences selectable at onboarding and toggleable via a pill in the home header:
+
+- **Scout Mode** — The gamified experience. Clout display, rating prompts, VibeReactor collective charge, leaderboard position, achievement nudges. Designed for active scouts who want to earn status.
+- **Insider Mode** — Clean intelligence feed. AI-generated scene sentences per venue ("Quilox is electric right now — DJ just dropped, 300 inside, gate is clear"), no clout prompts, no gamification. Designed for users who just want to know where to go.
+
+`userMode: 'scout' | 'insider' | null` persisted in Zustand vibeStore. OnboardingFlow has 3 screens: info pages → persona picker → mode picker. Toggle pill shows 📡 (Scout) or 🔭 (Insider).
+
+`sceneIntel.ts` utility at `frontend/src/utils/sceneIntel.ts` converts raw venue data to Intel sentences.
+
+### 8.12 VibeReactor
+The collective real-time energy mechanic. Located on the venue detail page (NOW tab), auto-scrolls into view when a geofenced user is detected inside a venue.
+
+**Components:**
+- **Circular charge ring** — Two-half-circle arc technique (no SVG dependency). Right clip at `left: RING_SIZE/2` handles 0–50% progress; left clip at `left: 0` handles 50–100%. Both driven by `ringProgress` Animated.Value via `interpolate` to degree strings. Ring color shifts through 5 levels: steel → blue → purple → gold → red.
+- **Central tap target** — Pressable reads Expo Accelerometer G-force at tap time. Three intensity tiers: Chill (<1.5g, light haptic), Lit (1.5–2.5g, medium haptic), Peak (>2.5g, heavy haptic + screen shake + flare burst).
+- **Combo multiplier badge** — Driven by BPM rolling window: ×1 (<60 BPM), ×1.5 (60–100), ×2 (100–140), ×3 (>140). Displayed as badge overlaid on ring.
+- **Quest bar** — Shows collective BPM + scout count when `questState.unique_scouts > 0`.
+- **Danger glow** — Pulsing red ring animation when `vibe_score < 80` (danger zone).
+- **Quest burst** — Gold glow explosion on `quest_succeeded` socket event.
+
+**15s visual cooldown** (local state) separate from 30-min clout cooldown (server 429 rate limit).
+
+**Socket events emitted:** `tap_velocity` (per-tap kinetic data), `vibe_pulse` (once per 15s window).
+**Socket events received:** `surge_update`, `kinetics_update`, `quest_succeeded`, `global_charge_depletion`, `venue_update`.
+
+Accelerometer subscription only active when `isEligible = true` (battery safety).
+
+### 8.13 GlobalVibePill HUD
+Persistent floating HUD visible across all public floor screens. Displays:
+- Global collective charge level (0–100%)
+- Surge counter (number of active surges city-wide)
+- Animated pulse when charge is above 50%
+- Tapping expands to full surge detail
+
+State managed in Zustand `vibeStore` under `globalCharge`, `globalSurge`, `isInsideVenue`. `isInsideVenue` boolean drives the VibeReactor auto-scroll in venue detail.
+
+### 8.14 Venue Live System
+- **Follow/Unfollow venues** — Users can follow venues; stored in `venue_follows` collection. Followed venues surface higher in feed.
+- **"I Dey Road" intent** — Users signal intent to attend a venue: `enroute` / `maybe` / `pass`. 3-hour TTL on intent signals. Stored in `venue_headings` collection. Merchants can see aggregate intent counts on their dashboard.
+- **Merchant live push blasts** — Rate-limited to once per 30 minutes per venue. Stored in `venue_live_pushes` collection. Blast delivered to followers of the venue via Expo Push Notifications.
 
 ---
 
@@ -377,7 +421,7 @@ Configurable early warning system (see §7.2).
 
 ### 10.1 Frontend
 - **Framework:** React Native via Expo SDK 54 (Expo Router v5, file-based routing)
-- **Styling:** NativeWind + custom theme tokens
+- **Styling:** React Native StyleSheet with custom theme tokens
 - **State management:** Zustand v5 with `persist` middleware → AsyncStorage
 - **Real-time:** Socket.IO client for venue score updates and leaderboard broadcasts
 - **Navigation:** Expo Router file-based: `/(public)`, `/(merchant)`, `/(admin)`, `/venue/[id]`
@@ -395,6 +439,8 @@ Configurable early warning system (see §7.2).
 A separate `BaseHTTPRequestHandler` implementation (`backend/api/index.py`) that handles requests routed through Vercel's serverless Python runtime. It mirrors all Railway routes using synchronous pymongo. This exists because Vercel's Python runtime has issues with FastAPI's `issubclass` introspection — the handler pattern bypasses this.
 
 **Critical:** Both entry points must be kept in sync. `server.py` routes ↔ `api/index.py` handlers. Any new endpoint must be added to both.
+
+**Recommendation:** Freeze new routes in `api/index.py`. Route all new write operations through Railway only to reduce sync burden.
 
 ### 10.4 Routing Architecture
 ```
@@ -427,6 +473,9 @@ All `/api/*` traffic from the frontend goes to Railway via Vercel rewrites. The 
 | `stories` | Short-lived venue stories (24h TTL, media_url) |
 | `platform_config` | Global platform settings (clout rates, cooldowns) |
 | `config` | Economy config (Pulse Drop pricing, campaign pricing) |
+| `venue_follows` | Venue follow relationships (user → venue) |
+| `venue_headings` | "I Dey Road" intent signals (3h TTL) |
+| `venue_live_pushes` | Merchant live blast records (rate-limit tracking) |
 
 ### 10.6 Authentication
 - Phone-number based OTP flow for public users (Nigerian phone validation)
@@ -541,8 +590,11 @@ VIIBE supports 9 venue categories, each with type-specific scoring dimensions:
 | Crew avatar_config in DB | ARCH | Live crew members may show blank avatars if they authenticated before avatar_config field was added to user schema. |
 | vibeStore.ts size | ARCH | Single 64KB Zustand store. Should be split by domain (auth, venues, crew, subscriptions, DNA). |
 | Live data fallbacks | ARCH | Most public floor features (stories, oracle, DNA, city pulse, planner) fall back to demo constants when API returns empty. Live users see demo data until enough real data accumulates. |
+| Vercel api/index.py sync | ARCH | Keeping `api/index.py` in sync with `server.py` is a maintenance burden. Recommendation: freeze new routes in `index.py`; route all new write operations through Railway only. |
 | Merchant venue onboarding | MISSING | Merchants cannot self-register a venue. Admin must manually assign. Onboarding flow not built. |
 | Unit tests | MISSING | No automated tests for scoring logic, aggregation pipeline, or anti-cheat rules. |
+| expo-sensors install | RESOLVED | `expo-sensors` required npm install after package.json update — resolved March 2026. |
+| Referral system, push token registration, EAS Build | PLANNED | Planned Phase 2-4 of seed milestone. |
 
 ---
 
