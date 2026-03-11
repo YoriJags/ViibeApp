@@ -1,8 +1,8 @@
-# VIBEAPP — $250M EXIT STRATEGY BLUEPRINT
-## Real-Time Nightlife Intelligence Platform for Africa
+# VIIBE — $250M EXIT STRATEGY BLUEPRINT
+## Real-Time Experience Intelligence Platform for Africa
 
-**Document Version:** 2.0
-**Date:** February 2026 (Updated)
+**Document Version:** 3.0
+**Date:** March 2026 (Updated)
 **Confidential — For Internal Use Only**
 
 ---
@@ -28,15 +28,18 @@
 
 ## 1. EXECUTIVE SUMMARY
 
-VibeApp is building the real-time intelligence layer for human social behavior in Africa. Starting with nightlife, we answer one question nobody else can: **"Where is the energy RIGHT NOW?"**
+VIIBE is building the real-time intelligence layer for city experiences in Africa. Starting with nightlife, we answer one question nobody else can: **"Where is the energy RIGHT NOW?"**
 
-Unlike Yelp, Google Maps, or TripAdvisor — which show you where the energy WAS last week — VibeApp uses a network of on-the-ground scouts who report live vibe scores, crowd levels, and gate conditions from venues in real-time. This creates a dataset that doesn't exist anywhere else on the planet.
+Unlike Yelp, Google Maps, or TripAdvisor — which show you where the energy WAS last week — VIIBE uses a network of on-the-ground scouts who report live vibe scores, crowd levels, and gate conditions from venues in real-time. This creates a dataset that doesn't exist anywhere else on the planet.
 
 **The One-Liner for Investors:**
-> "VibeApp is the real-time Yelp for African nightlife — we tell you where the energy is RIGHT NOW, not where it was last month."
+> "VIIBE is the real-time intelligence layer for city experiences — what Google Maps is to navigation, VIIBE is to the experience economy. We tell you where the energy is RIGHT NOW, not where it was last month."
 
 **The Bigger Vision:**
 > "We're building the real-time intelligence layer for human social behavior in Africa. Our AI knows where 100,000 people will be tonight before they decide. We started with nightlife. Next: restaurants, events, retail, tourism."
+
+**Market Context:**
+> Nigeria is the #1 fastest-growing E&M market globally (PwC, 8.6% CAGR to 2028). Lagos ranked #6 globally for nightlife (Time Out 2024), rising. The Lagos nightlife economy generates ~₦1.5 trillion (~$930M) annually — ₦360M per day from clubs alone. Afrobeats global streams grew +34% in 2024. This cultural wave is the macro tailwind. VIIBE is the intelligence layer it's missing.
 
 ---
 
@@ -64,36 +67,46 @@ A full-stack mobile platform with three user layers:
 
 ### Key Features Already Built
 
-**For Scouts (Users):**
-- Real-time venue map with live vibe score pins
+**Phase 0 — Foundation (Built):**
+- Phone OTP authentication + 3-role system (Scout / Merchant / Admin)
+- Real-time venue map with live vibe score pins + energy state overlays
 - 3-dimension rating system: Energy / Capacity / Gate
-- Rating cooldown (prevents spam; enforces honest 1-per-session rating)
-- Scout ranking system: Newbie → Regular → Scout → Elite
-- Clout points & accuracy scoring
-- Check-in system with streaks & CheckInCelebration (30-particle confetti burst)
-- Crew/Cartel social features (squad up with friends, squad live locations)
-- Cartel Radar — find scouts nearby who match your vibe persona
-- "Tonight's Journey" — guided evening experience flow
-- Achievement badges & leaderboards (AchievementBadge component with 8 badges, progress tracking)
-- ActivityPulse "The Pulse" — live activity feed (check-ins, ratings, pulses, streaks)
-- Venue stories & timeline
-- VenueCategoryFilter — horizontal scrollable pills (All / Clubs / Lounges / Restaurants / Bars / Churches / Concerts / Events)
-- Smart Nudge recommendations
-- Good Vibes — positive community nudges
-- **Vibe Persona** — 4 archetypes (Turn Up / The Luxe / Culture Vulture / Chill Set) that reorder the venue feed automatically
-- **Top Scouts per venue** — ranked leaderboard of most active raters per location
-- **Vibe Oracle** — heuristic peak-time prediction ("Quilox will be electric by 12:30am · 87% confidence")
-- **Vibe DNA** — behavioral affinity fingerprint from rating history (affinity bars per venue type, dominant scene, night style)
-- **Ask Vibe** — natural language scene concierge (rule-based now; Claude API activates when ANTHROPIC_API_KEY is set)
-- **VibeMatch** — "Tonight's Match" card powered by DNA affinity (40%) + live vibe score (60%)
+- Time-decay weighted scoring engine (3×/2×/1× windows)
+- Rating cooldown system (30-min + 3/day cap, demo bypass)
+- Scout ranking: Newbie → Regular → Scout → Elite
+- Clout points + accuracy scoring
+- Check-in system + CheckInCelebration (30-particle confetti burst)
+- VenueCategoryFilter (9 venue types, horizontal pill filter)
+- Achievement badges (8 types with progress tracking)
+- ActivityPulse — live activity feed (check-ins, ratings, pulses, streaks)
+- Venue stories + 24-hour timeline
+- VIIBE Certified automatic badge (score ≥ 85 AND 80+ ratings simultaneously)
+- Burst detection + anti-manipulation (provisional rating holds)
+- Demo Mode — full production-quality demo; investor-ready without real scout density
 
-**UI & Experience Layer:**
-- GlassCard design system with theme tokens
-- AnimatedTabBar with custom public tab bar
-- VenueCard live borders — animated gradient glow pulsing at a rate proportional to vibe score
-- ElectricTransition — wipe / flash / pulse screen transition effects on category switch
-- Avatar system — AvatarDisplay + AvatarBuilder (emoji + color picker, persisted in store)
-- DemoModeBanner + isDemoMode toggle for investor presentations
+**Phase 1 — Intelligence Layer (Built):**
+- **Vibe Persona** — 4 archetypes (Turn Up / The Luxe / Culture Vulture / Chill Set); reorders venue feed; "Sorted for your vibe" chip
+- **Top Scouts per venue** — ranked leaderboard, MongoDB aggregation pipeline
+- **Vibe Oracle** — heuristic peak-time predictions (PEAK_WINDOWS tables × venue type × day of week); confidence score; signal chips; demo-ready with 12 venue predictions
+- **Vibe DNA** — behavioral affinity fingerprint from rating history; 6 scene types (affinity bars 0-100); dominant scene; night style (early_bird / night_owl / midnight_crew); powers VibeMatch (DNA 40% + live score 60%)
+- **Night Planner** — Claude-powered AI concierge (ANTHROPIC_API_KEY confirmed live on Railway); rule-based fallback; multi-turn conversation; venue result cards; follow-up chips
+- **Cartel Radar** — find nearby scouts by persona in real-time
+- **Crew/Squad features** — squad live locations, privacy toggle, AvatarDisplay + AvatarBuilder (emoji + color picker, persisted)
+- **VibeMatch** — "Tonight's Match" card (DNA affinity 40% + live vibe score 60%)
+- **Rating Cooldown UX** — RateVibeModal, RatePromptFAB, 1-per-session enforcement
+
+**Phase 2 — Engagement & Live Systems (Built):**
+- **VibeReactor** — Merged KineticTap + VibeSurgeBar into single component. Circular charge ring (two-half-circle arc, no SVG), accelerometer kinetic tap (G-force intensity tiers: Chill <1.5g / Lit 1.5-2.5g / Peak >2.5g), combo multiplier badge (BPM-driven ×1/×1.5/×2/×3), collective quest system, danger glow (pulsing red ring when score <80), quest burst (gold explosion on success). Auto-scrolls into view on geofence entry.
+- **GlobalVibePill HUD** — persistent floating HUD; global geofence state; surge counter; city-wide collective charge
+- **Dual Home Mode** — Scout (gamified) vs. Insider (clean AI intel); toggle pill; persisted in store; `sceneIntel.ts` converts venue data to Intel sentences
+- **Venue Live system** — follow/unfollow venues; "I Dey Road" intent (enroute/maybe/pass, 3h TTL); merchant live push blasts (30min rate-limit); `venue_follows`, `venue_headings`, `venue_live_pushes` collections
+
+**Deployment (Live):**
+- Frontend: https://vibe-app-hc83.vercel.app (Expo web, Vercel)
+- Backend: https://vibeapp-production-1835.up.railway.app (FastAPI, Railway)
+- MongoDB: MongoDB Atlas / vibe_app DB (10 seeded Lagos venues)
+- Socket.IO: confirmed connected on web
+- Claude API: ANTHROPIC_API_KEY confirmed live on Railway (Night Planner + Vibe Intelligence firing)
 
 **For Merchants (Venue Owners):**
 - Live analytics dashboard with vibe intelligence (gradient header, vibe-colored score glow)
@@ -136,7 +149,7 @@ Nobody owns real-time nightlife intelligence in Lagos. That's our moat. First mo
 5. Offer "Founding Venue Partner" badge — permanent premium listing
 
 **Step 2: Scout Recruitment (Weeks 2-6)**
-1. Recruit 200 "Elite Scouts" — Lagos influencers, party promoters, socialites
+1. Recruit 20–30 founding scouts — VI/Lekki corridor first (critical cold-start corridor)
 2. Target: DJ networks, event promoters, club photographers, socialite groups
 3. Pre-load their accounts with clout points
 4. Create WhatsApp groups for scout coordination
@@ -156,17 +169,18 @@ Nobody owns real-time nightlife intelligence in Lagos. That's our moat. First mo
 4. Partnerships with alcohol brands for sponsored Pulse Drops
 5. Event integration — festivals, concerts, pop-ups
 
-### Targets by Month 12
+### Targets by Month 12 (Seed Milestone Targets — Aligned with African VC Expectations)
 
 | Metric | Target |
 |--------|--------|
-| Venues onboarded | 50+ |
-| Monthly Active Users (MAU) | 10,000 |
-| Monthly Recurring Revenue (MRR) | ₦5,000,000 (~$3,300) |
+| Active scouts (MAU) | 5,000+ |
+| Live venues | 20+ |
+| Paying merchants | 10+ |
+| MRR | $1,000+ |
 | Ratings per week | 2,000+ |
-| Check-ins per week | 5,000+ |
-| Active scouts | 500+ |
-| Paying merchants | 15-20 |
+| App Store | TestFlight live |
+
+*Note: These are the SEED MILESTONE targets aligned with African VC expectations (5K MAU minimum).*
 
 ---
 
@@ -225,12 +239,12 @@ Nightlife culture is massive and underserved across Africa. Same playbook, local
 
 ### New Product Lines
 
-**VibeApp for Events:**
+**VIIBE for Events:**
 - Expand beyond permanent venues to festivals, concerts, pop-ups
 - Live crowd tracking at events
 - Artist/performer integration
 
-**VibeApp for Restaurants (Daytime Economy):**
+**VIIBE for Restaurants (Daytime Economy):**
 - Brunch culture is huge in Lagos/Nairobi
 - Real-time wait times, ambiance ratings
 - Lunch rush intelligence for office workers
@@ -263,6 +277,7 @@ Nightlife culture is massive and underserved across Africa. Same playbook, local
 | **Pulse Drops** | Promoted venue pins with 2x scout clout | ₦20,000 - ₦100,000 per drop | Month 4 |
 | **Aura Shield** | Premium merchant alert system | ₦100,000/month | Month 4 |
 | **Campaign Tools** | Event promotion, ticket integration | 10% of ticket/promo value | Month 6 |
+| **Vibe+** | Scout premium tier (iOS: RevenueCat + Apple IAP; Android: Paystack) | TBD | Month 6 |
 | **Brand Partnerships** | Sponsored vibes, venue takeovers | ₦2,000,000 - ₦10,000,000/quarter | Month 9 |
 | **Data Licensing** | Anonymized nightlife intelligence | ₦500,000 - ₦2,000,000/quarter | Month 9 |
 | **VIP Reservations** | In-app table booking | 10-15% commission | Month 12 |
@@ -367,23 +382,22 @@ You need ONE of these paths:
 
 | Stage | What You Need | Valuation Range |
 |-------|--------------|-----------------|
-| **Today (code only)** | What exists now | $80K - $250K |
-| **Pre-seed ready** | 20 real venues, 500 beta users, registered company, pitch deck | $500K - $1.5M |
-| **Post pre-seed** | 2,000 MAU, 50 venues, 5 paying merchants, small team | $2M - $4M |
-| **Seed ready** | 10K MAU, 100+ venues, $5K MRR, clear retention metrics | $6M - $12M |
-| **Series A** | 100K MAU, 3+ cities, $50K MRR, brand partnerships | $30M - $60M |
+| **Today (March 2026)** | Phase 0+1+2 fully built, deployed, demo-ready | $300K–$600K |
+| **Pre-seed / Seed ready** | 5K MAU, 20 venues, 10 merchants, TestFlight live | $2M–$5M |
+| **Post-seed** | 15K MAU, 50+ venues, $5K MRR | $6M–$12M |
+| **Series A** | 100K MAU, 3+ cities, $50K MRR, brand partnerships | $30M–$60M |
 
 ### What Adds Value Today
 
 | Factor | Estimate |
 |--------|----------|
-| Codebase (10-14 months equivalent dev work, 3 full user tiers) | $100-180K |
-| AI-tier feature pipes (Oracle, DNA, Ask Vibe — instantly upgradeable) | $30-60K |
-| Product design & UX (premium glass UI, animated borders, persona system) | $20-35K |
-| Demo-ready state with full demo mode + scripted investor walkthrough | $15-25K |
-| Domain/concept originality for Africa | $10-30K |
-| Deployed backend + infrastructure (Vercel + MongoDB + Paystack) | $5-10K |
-| **Total current value** | **$180K - $340K** |
+| Codebase (Phase 0+1+2, 15+ months equiv, 3 full user tiers) | $200K–$350K |
+| AI-tier features (Oracle, DNA, Night Planner, VibeReactor, Claude API live) | $60K–$100K |
+| Premium UX (GlassCard, VibeReactor animations, Dual Home Mode, GlobalVibePill) | $40K–$70K |
+| Deployed infrastructure (live in production, Socket.IO confirmed) | $10K–$20K |
+| Demo mode (investor-ready at 2pm on a Tuesday, not just midnight Friday) | $20K–$40K |
+| Market research + strategy blueprint + financial model | $15K–$25K |
+| **Total current value** | **$345K–$605K** |
 
 ### What's Missing (and Caps Valuation)
 
@@ -434,19 +448,20 @@ What's already built in the backend:
 | Geofence Verification | Haversine formula for location-based rating validation | ✅ Built |
 | Forecast Accuracy | Variance-based stability scoring | ✅ Built |
 | Vibe Intelligence | Hourly energy curves, peak detection, vibe killers | ✅ Built |
-| **Vibe Oracle** | PEAK_WINDOWS heuristic tables per venue_type × weekday/weekend; confidence = base + velocity delta + activity delta; signal chips (day / velocity / genre / certified) | ✅ Built (pipes ready) |
-| **Vibe DNA** | Aggregates user ratings by venue_type → affinity scores 0-100; dominant scene by frequency; night style from avg timestamp hour | ✅ Built (pipes ready) |
-| **Ask Vibe** | Keyword scoring on live venues (area +20, genre +15, budget +20, type +15, group +10); Claude API path activates automatically when `ANTHROPIC_API_KEY` env var is set | ✅ Built (rule-based active; Claude path ready) |
-| **Top Scouts** | MongoDB aggregation pipeline — top 5 raters per venue by rating count + accuracy | ✅ Built |
-| **Vibe Persona Feed** | Persona-to-venue-type boost mapping sorts the home feed to surface preferred venue types first | ✅ Built |
+| **Vibe Oracle** | PEAK_WINDOWS heuristic tables per venue_type × weekday/weekend; confidence = base + velocity delta + activity delta; signal chips (day / velocity / genre / certified) | ✅ Built (Phase 1) |
+| **Vibe DNA** | Aggregates user ratings by venue_type → affinity scores 0-100; dominant scene by frequency; night style from avg timestamp hour | ✅ Built (Phase 1) |
+| **Night Planner (Ask Vibe)** | Keyword scoring on live venues (area +20, genre +15, budget +20, type +15, group +10); Claude API confirmed live on Railway (ANTHROPIC_API_KEY active Feb 2026) | ✅ Built + Live (Phase 1) |
+| **Top Scouts** | MongoDB aggregation pipeline — top 5 raters per venue by rating count + accuracy | ✅ Built (Phase 1) |
+| **Vibe Persona Feed** | Persona-to-venue-type boost mapping sorts the home feed to surface preferred venue types first | ✅ Built (Phase 1) |
+| **VibeReactor Kinetics** | Accelerometer G-force tap events; BPM combo multiplier; collective quest aggregation; Socket.IO kinetics events | ✅ Built (Phase 2) |
 
-**Verdict:** We now have 15 custom algorithms plus AI-tier feature pipes (Oracle, DNA, Ask Vibe). The intelligence layer is scaffolded and demo-ready — switching from heuristics to real ML is a model swap, not a rebuild.
+**Verdict:** We now have 16 custom algorithms plus AI-tier feature pipes (Oracle, DNA, Night Planner with Claude API live). The intelligence layer is scaffolded and demo-ready — switching from heuristics to real ML is a model swap, not a rebuild.
 
 ---
 
 ## 10. AI FEATURES — BUILD STATUS
 
-### Feature 1: "VIBE ORACLE" — Predictive Intelligence ✅ PIPES BUILT
+### Feature 1: "VIBE ORACLE" — Predictive Intelligence ✅ BUILT (Phase 1)
 
 **What it does:** Predicts a venue's vibe score 2-4 hours into the future using live signals, not just history.
 
@@ -468,7 +483,7 @@ What's already built in the backend:
 
 **Technical Upgrade Path:** Replace heuristic tables with Prophet or LSTM time-series model trained on accumulated venue data. Add weather API + social media signals when 20K+ users are generating real ratings.
 
-### Feature 2: "VIBE DNA" — Personal Taste AI ✅ PIPES BUILT
+### Feature 2: "VIBE DNA" — Personal Taste AI ✅ BUILT (Phase 1)
 
 **What it does:** Learns what each user actually enjoys — not what they say they like — based on behavior patterns.
 
@@ -508,7 +523,7 @@ What's already built in the backend:
 
 **Technical Approach:** Fine-tuned image classification model (MobileNet or custom CNN) trained on crowd images labeled with vibe scores.
 
-### Feature 4: "ASK VIBE" — AI Concierge ✅ PIPES BUILT
+### Feature 4: "NIGHT PLANNER (ASK VIBE)" — AI Concierge ✅ BUILT + LIVE (Phase 1)
 
 **What it does:** Natural language interface for finding the right scene — clubs, restaurants, concerts, brunch spots, events.
 
@@ -527,11 +542,25 @@ What's already built in the backend:
 
 **Why AI Companies Salivate:** This is a vertical AI agent — like ChatGPT but with real-time location data that no foundation model has. OpenAI, Google, and every AI company want domain-specific agents with proprietary data.
 
-**Current Build:** NightPlannerModal — full-screen chat interface with typing indicators, venue result cards, and follow-up prompt chips. Backend scores live venues using keyword extraction (area, genre, budget, group size). `ANTHROPIC_API_KEY` env var in Vercel auto-switches to Claude haiku with compact venue JSON context + stateless history[] model. Demo-ready with 2-turn scripted conversation.
+**Current Build:** NightPlannerModal — full-screen chat interface with typing indicators, venue result cards, and follow-up prompt chips. Backend scores live venues using keyword extraction (area, genre, budget, group size). ANTHROPIC_API_KEY confirmed live on Railway (February 2026) — Claude API firing in production. Demo-ready with 2-turn scripted conversation.
 
-**Technical Upgrade Path:** Set `ANTHROPIC_API_KEY` in Vercel → Claude API activates instantly. Add function calling for real-time vibe score lookup during conversation. Fine-tune prompt with Lagos-specific nightlife knowledge.
+**Technical Upgrade Path:** Add function calling for real-time vibe score lookup during conversation. Fine-tune prompt with Lagos-specific nightlife knowledge.
 
-### Feature 5: "VIBE AUTOPILOT" — For Merchants
+### Feature 5: "VIBEREACTOR" — Kinetic Collective Energy ✅ BUILT (Phase 2)
+
+**What it does:** Turns physical motion into collective vibe energy. Scouts physically charge the venue's score through accelerometer-detected tap intensity.
+
+**How It Works:**
+- Accelerometer detects tap G-force: Chill (<1.5g) / Lit (1.5-2.5g) / Peak (>2.5g)
+- Circular charge ring fills as the crowd collectively charges up
+- BPM-driven combo multiplier badge (×1 / ×1.5 / ×2 / ×3) rewards sustained energy
+- Collective quest system — group milestone triggers gold burst explosion
+- Danger glow — pulsing red ring when vibe score drops below 80
+- Auto-scrolls into view on geofence entry
+
+**Why This Is Killer:** Scouts aren't just reporters — they're active participants in the energy. The kinetic data layer captures behavioral intensity that text ratings miss entirely.
+
+### Feature 6: "VIBE AUTOPILOT" — For Merchants
 
 **What it does:** AI runs the merchant's marketing automatically.
 
@@ -545,7 +574,7 @@ What's already built in the backend:
 
 **Technical Approach:** Rule engine initially, graduating to reinforcement learning model that optimizes for foot traffic outcomes.
 
-### Feature 6: "SCOUT CREDIBILITY AI" — Trust Scoring
+### Feature 7: "SCOUT CREDIBILITY AI" — Trust Scoring
 
 **What it does:** Determines which scouts to trust more — like Google PageRank but for nightlife intelligence.
 
@@ -566,9 +595,9 @@ What's already built in the backend:
 
 | Phase | What | When | Requirement | Status |
 |-------|------|------|-------------|--------|
-| **Pre-launch** | Rule-based algorithms (15 custom heuristics). Oracle + DNA + Ask Vibe pipes scaffolded. Ship the app. | Now | — | ✅ Done |
-| **Claude API** | Set `ANTHROPIC_API_KEY` in Vercel → Ask Vibe switches from keyword rules to Claude haiku instantly | When key available | API key | 🔑 Ready to activate |
-| **5K users** | Start logging EVERYTHING — every rating, check-in, search, tap. Build data pipeline. | Month 3 | Data infrastructure | ⬜ Planned |
+| **Pre-launch** | Rule-based algorithms (15 custom heuristics). Oracle + DNA + Ask Vibe pipes scaffolded. Ship the app. | Now | — | ✅ Done (Phase 0+1) |
+| **Claude API** | ANTHROPIC_API_KEY set on Railway → Night Planner switches from keyword rules to Claude haiku instantly | February 2026 | API key | ✅ LIVE — confirmed firing February 2026 |
+| **5K users** | Start logging EVERYTHING — every rating, check-in, search, tap. Build data pipeline. | Month 3 | Data infrastructure | ⬜ Planned (seed milestone target) |
 | **20K users** | Upgrade Vibe DNA from affinity bars to collaborative filtering recommendations | Month 6 | 6+ months of user behavior data | ⬜ Planned |
 | **50K users** | Upgrade Vibe Oracle from PEAK_WINDOWS tables to Prophet/LSTM time-series model | Month 9 | Sufficient venue history data | ⬜ Planned |
 | **100K users** | Computer vision for crowd analysis (Crowd Intelligence feature) | Month 12 | Training data from scout photos | ⬜ Planned |
@@ -598,7 +627,7 @@ Every AI company has access to internet data (text, images, code). Almost none h
 
 **OpenAI / Anthropic:**
 - Want: Vertical AI agents with proprietary data
-- Our value: Ask Vibe agent + real-time venue database
+- Our value: Night Planner agent + real-time venue database (Claude API already integrated)
 - Their gap: Foundation models can't answer "where should I go tonight in Lagos?" with real-time accuracy
 
 **Google (Maps + DeepMind):**
@@ -632,11 +661,19 @@ Every AI company has access to internet data (text, images, code). Almost none h
 - Legal trademark challenges
 - Weak brand identity
 
-### Recommended Names
+### Current Brand: VIIBE
+
+The brand has evolved to **VIIBE** — a deliberate double-I stylization that is:
+- Visually distinctive and trademarkable
+- Pronounceable globally (same as "vibe")
+- Not in conflict with the original "VibeApp" Play Store listing
+- Works as a verb ("VIIBE says Quilox is electric tonight")
+
+### Alternative Names Evaluated (Historical Reference)
 
 | Name | Rationale | Trademarkable? |
 |------|-----------|---------------|
-| **Gbedu** (TOP PICK) | "Where's the gbedu?" is literally the problem we solve. Deeply Nigerian, globally memorable (like "karaoke" is Japanese but universal) | Highly trademarkable — nobody owns it in tech |
+| **Gbedu** | "Where's the gbedu?" is literally the problem we solve. Deeply Nigerian, globally memorable | Highly trademarkable — nobody owns it in tech |
 | **Pulse** | Clean, universal, premium. Already embedded in product language (Pulse Drops, CartelPulse) | Common word — check conflicts first |
 | **Nocturn** | Latin root for "night" — premium, global, easy to spell | Likely clear |
 | **Turnup** | Self-explanatory — "TurnUp: Lagos" | Needs checking |
@@ -649,35 +686,34 @@ Every AI company has access to internet data (text, images, code). Almost none h
 - Trademarkable (check WIPO, USPTO, Nigerian IP office)
 - Domain available (.app, .com, .ng)
 - Cultural resonance with target audience
-- Works as a verb ("Let me check Gbedu" / "Gbedu says Quilox is electric")
+- Works as a verb ("Let me check VIIBE" / "VIIBE says Quilox is electric")
 
 ---
 
 ## 14. IMMEDIATE ACTION ITEMS
 
-### This Week
+### Now (March 2026)
 
-| # | Action | Priority | Timeline |
-|---|--------|----------|----------|
-| 1 | Register a company (Nigeria CAC or Delaware LLC) | Critical | This week |
-| 2 | Choose final app name + check trademark availability | Critical | This week |
-| 3 | Deploy frontend to Expo Go / TestFlight | High | This week |
-| 4 | Seed 20 real Lagos venues with real data (coordinates, photos) | High | This week |
-| 5 | Get 10 friends to use it next Friday night | High | This weekend |
+| # | Action | Priority |
+|---|--------|----------|
+| 1 | Execute seed milestone roadmap (6 phases — Billing, EAS Build, Push, Growth, Analytics, Investor Deliverables) | Critical |
+| 2 | CRITICAL: Use RevenueCat + Apple IAP for Vibe+ on iOS — NOT Paystack (App Store Guideline 3.1.1) | Critical |
+| 3 | EAS Build setup — run `eas init`, create `eas.json`, switch to development builds | Critical |
+| 4 | Submit App Store listing by mid-October 2026 for Detty December readiness | High |
+| 5 | Recruit 20–30 founding scouts in VI/Lekki corridor for cold-start | High |
 
 ### This Month
 
-| # | Action | Priority | Timeline |
-|---|--------|----------|----------|
-| 6 | Onboard 3 venue managers to merchant dashboard | High | 2 weeks |
-| 7 | Create 12-slide pitch deck | High | 2 weeks |
-| 8 | Record 2-minute demo video walkthrough | High | 2 weeks |
-| 9 | Screenshot real usage metrics | Medium | 3 weeks |
-| 10 | Apply to: Future Africa, Launch Africa, Y Combinator (W26) | High | 4 weeks |
+| # | Action | Priority |
+|---|--------|----------|
+| 6 | Partner with 5 anchor Lagos venues (free dashboard access, 3 months) | High |
+| 7 | Approach seed investors: Launch Africa, Microtraction, Future Africa, Voltron Capital | High |
+| 8 | Record 2-minute demo video using demo mode | High |
+| 9 | Create LinkedIn/Twitter presence for VIIBE brand | Medium |
 
 ### Pitch Deck Structure (12 Slides)
 
-1. **Cover:** App name + tagline + "Where's the energy?"
+1. **Cover:** VIIBE + tagline + "Where's the energy?"
 2. **Problem:** Nightlife in Africa is a $10B+ market with zero real-time intelligence
 3. **Solution:** Live vibe scores from on-the-ground scouts
 4. **Demo:** Screenshots of all three floors in action
@@ -739,5 +775,6 @@ Every AI company has access to internet data (text, images, code). Almost none h
 
 **v1.0 — February 2026:** Initial blueprint
 **v2.0 — February 2026:** Updated to reflect current build — 3 AI-tier feature pipes (Vibe Oracle, Vibe DNA, Ask Vibe), 15 backend algorithms, Vibe Persona feed, Top Scouts, Rating Cooldown, Cartel Radar, full demo mode, Ask Vibe Claude API path ready to activate
+**v3.0 — March 2026:** Updated to reflect Phase 2 completion — VibeReactor (kinetic tap + circular charge ring), GlobalVibePill HUD, Dual Home Mode, Venue Live system, Claude API confirmed live on Railway; market research updated with 2026 data; seed milestone roadmap defined (6 phases); brand standardized to VIIBE.
 
-**Document prepared by the VibeApp founding team, February 2026.**
+**Document prepared by the VIIBE founding team, March 2026.**
