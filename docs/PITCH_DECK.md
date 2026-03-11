@@ -1,5 +1,5 @@
 # VIIBE — Investor Pitch Deck
-*Seed Round | February 2026*
+*Seed Round | March 2026*
 
 ---
 
@@ -15,9 +15,9 @@ You're deciding between 6 venues. You've checked 3 Instagram pages — all of th
 
 ## SLIDE 2 — THE PROBLEM
 
-### The ₦2.3 Trillion Information Gap
+### The ₦1.5 Trillion Information Gap
 
-Nigeria's entertainment industry generates ₦2.3 trillion in annual spend. Lagos alone has 4,000+ active nightlife venues across VI, Lekki, Ikoyi, Ikeja, and Surulere.
+Lagos's nightlife economy generates approximately ₦1.5 trillion (~$930M) in annual spend. Lagos alone has 4,000+ active nightlife venues across VI, Lekki, Ikoyi, Ikeja, and Surulere.
 
 **But the information layer is broken:**
 
@@ -87,12 +87,12 @@ This produces 6 display states:
 
 | State | Trigger | Meaning |
 |---|---|---|
-| **PEAK** 🔥 | Score ≥ 85 | Maximum energy. Get there now. |
-| **LIT** ⚡ | Score ≥ 65 | High energy. Night is in full swing. |
-| **CHARGED** ⚡ | Score 45–64, crowd full/vibrant | Potential energy — packed, about to blow. |
-| **WARMING** 🌡 | Score 45–64, sparse crowd | Building slowly. Check back later. |
-| **CHILL** 😌 | Score 20–44 | Low key. Good for a quiet night. |
-| **QUIET** 🌙 | Score < 20 | Nearly empty. Not tonight. |
+| **PEAK** | Score ≥ 85 | Maximum energy. Get there now. |
+| **LIT** | Score ≥ 65 | High energy. Night is in full swing. |
+| **CHARGED** | Score 45–64, crowd full/vibrant | Potential energy — packed, about to blow. |
+| **WARMING** | Score 45–64, sparse crowd | Building slowly. Check back later. |
+| **CHILL** | Score 20–44 | Low key. Good for a quiet night. |
+| **QUIET** | Score < 20 | Nearly empty. Not tonight. |
 
 **CHARGED is our unique insight.** A packed venue at score 52 is fundamentally different from an empty venue at score 52. CHARGED tells you: 300 people are in the room, the DJ hasn't hit the first drop yet — get there before it blows.
 
@@ -122,17 +122,20 @@ A competitor launching today inherits zero of this. No scout network, no histori
 ### Nigeria Is the Playbook. Africa Is the Prize.
 
 **TAM — Total Addressable Market**
-Sub-Saharan Africa nightlife + entertainment economy:
-- Estimated market: $42B USD annually
-- Smartphone penetration growing 18% YoY
-- Primary markets: Nigeria, Ghana, Kenya, South Africa, Egypt
+Sub-Saharan Africa entertainment and media economy:
+- Nigeria is the #1 fastest-growing E&M market globally (PwC, 8.6% CAGR to 2028)
+- Nigeria E&M industry: ~$14.8–15B (2025 forecast)
+- Sub-Saharan Africa recorded music crossed $100M (2024); Afrobeats global streams +34% in 2024
+- Primary nightlife markets: Nigeria, Ghana, Kenya, South Africa, Egypt
 
 **SAM — Serviceable Addressable Market**
 Nigeria nightlife, events, and venue discovery:
 - 220 million population, median age 18.4
-- ₦2.3T ($1.5B) annual entertainment spend
+- Nigeria internet users: 107M (45.4% penetration); smartphones: 140M by end of 2025
+- Lagos nightlife economy: ~₦1.5 trillion (~$930M) annually
+- Lagos ranked #6 globally for nightlife (Time Out 2024), rising into top 15 in 2025
 - 4,000+ licensed venues across 6 major cities
-- Lagos alone: 15–20 million people, highest discretionary spend in SSA
+- Lagos top clubs average ₦360M in daily revenue; Detty December 2024 alone generated ₦4.32B across 12 days from clubs, with a total Lagos economic injection of $71.6M
 
 **SOM — Serviceable Obtainable Market (3-year target)**
 Lagos-first, expanding to Abuja + Port Harcourt + Ibadan:
@@ -140,7 +143,7 @@ Lagos-first, expanding to Abuja + Port Harcourt + Ibadan:
 - 500 active merchant venues by Month 24
 - ₦250M ($167K) ARR by end of Year 2
 
-**The Afrobeats angle:** Nigerian nightlife culture is globalising. VIIBE has a natural export story into the African diaspora markets in London, New York, and Toronto — cities where Afrobeats events are among the fastest-growing categories.
+**The Afrobeats angle:** Nigerian nightlife culture is globalising. VIIBE has a natural export story into African diaspora markets in London, New York, and Toronto — cities where Afrobeats events are among the fastest-growing live entertainment categories.
 
 ---
 
@@ -148,12 +151,17 @@ Lagos-first, expanding to Abuja + Port Harcourt + Ibadan:
 
 ### Four Revenue Streams, Two Compounding
 
-**1. VIIBE+ Subscriptions — ₦1,500/month (~$1 USD)**
+**1. VIIBE+ Subscriptions — ₦2,000/month (~$1.30 USD)**
 Consumer premium tier. Unlocks: bolt reactions, priority feed, exclusive persona badges, unlimited Night Planner conversations.
 - Target: 5% of MAU on VIIBE+
-- 50K MAU × 5% × ₦1,500 = **₦3.75M/month** at Year 2 scale
+- 50K MAU × 5% × ₦2,000 = **₦5M/month** at Year 2 scale
+- Platform note: iOS subscriptions use RevenueCat + Apple In-App Purchase (App Store Guideline 3.1.1 prohibits third-party processors like Paystack for iOS consumer subscriptions; Apple takes 15–30% platform fee). Paystack is used for web payments and all merchant B2B billing.
 
-**2. Pulse Drops — ₦5,000 to ₦50,000 per activation**
+**2. Merchant SaaS — ₦150,000/venue/month**
+Dedicated merchant dashboard tier: live performance analytics, crowd trend data, gate reports, historical timeline, and push-notification alerts. First 30 days free. No card required to trial.
+- Target: 300 active merchants by Month 24 → **₦45M/month** at Year 2 scale
+
+**3. Pulse Drops — ₦5,000 to ₦50,000 per activation**
 Merchant paid visibility boost. Appears at top of trending feed. 2× clout multiplier for scouts during activation window incentivises real reports.
 
 | Tier | Price | Duration | Radius | Score Boost |
@@ -164,15 +172,12 @@ Merchant paid visibility boost. Appears at top of trending feed. 2× clout multi
 
 - Target: 3 drops/month × 300 merchants × ₦15K avg = **₦13.5M/month** at Year 2 scale
 
-**3. Sponsored Campaigns — ₦3,000–₦20,000 per campaign**
-Clout multiplier campaigns (2× or 3×) tied to specific venues and time windows. Merchant buys real scout activity as a side effect of their spend.
-
 **4. Data API — ₦50,000/month per enterprise subscriber**
 Aggregated venue intelligence for event companies, taxi platforms, and F&B brands. Activates Month 18+ when data depth is B2B-sellable.
 
 **Unit Economics:**
-- VIIBE+ LTV: ₦27,000 | CAC: ₦800 → **LTV:CAC = 33.75:1**
-- Merchant LTV: ₦297,000 | CAC: ₦6,000 → **LTV:CAC = 49.5:1**
+- VIIBE+ LTV: ₦36,000 | CAC: ₦800 → **LTV:CAC = 45:1**
+- Merchant LTV: ₦1,800,000 | CAC: ₦6,000 → **LTV:CAC = 300:1**
 
 ---
 
@@ -185,17 +190,27 @@ Aggregated venue intelligence for event companies, taxi platforms, and F&B brand
 - Frontend: Vercel (`vibe-app-hc83.vercel.app`)
 - Backend: Railway (`vibeapp-production-1835.up.railway.app`)
 - Database: MongoDB Atlas — 10 Lagos venues seeded with live data
+- Demo Mode: investor-ready, full production quality at any time of day without requiring real scout density
 
-**Scoring Intelligence (Live):**
+**Phase 1 Intelligence Features (Built):**
 - 6-state energy model with the CHARGED state differentiation
 - Time-decay weighted aggregation (3× / 2× / 1× windows)
-- Vibe Oracle: heuristic peak-time prediction per venue type + day of week
-- Vibe DNA: personalised affinity fingerprints computed from rating history
-- Night Planner: AI concierge powered by Claude Haiku (Anthropic)
-- City Pulse: live city heartbeat with 30-minute sparkline
+- **Vibe Oracle** — heuristic peak-time prediction per venue type + day of week, with confidence scores; demo-ready for 12 venues
+- **Vibe DNA** — behavioural affinity fingerprint computed from rating history (6 scene types: block party, club, concert, lounge, bar, restaurant; dominant scene + night style profile)
+- **Night Planner** — AI concierge powered by Claude (Anthropic); confirmed firing in production (ANTHROPIC_API_KEY active on Railway); falls back to rule-based scoring if API unavailable
+- **Vibe Persona** — 4 archetypes (Turn Up / The Luxe / Culture Vulture / Chill Set) that reorder the venue feed to match user temperament
+- **Top Scouts per venue** — ranked leaderboard of most active raters per location, driving social competition
+- **Cartel Radar** — find nearby scouts by persona in real-time
+- **Achievement badges + clout leaderboard** — 8 badge types with progress tracking
+
+**Phase 2 Engagement Features (Built):**
+- **VibeReactor** — circular charge ring + kinetic tap (accelerometer-based, reads G-force intensity); combo multiplier badge driven by BPM tap velocity; collective quest system; danger glow + quest burst animations. This is VIIBE's most distinctive UX mechanic — nothing like it exists in any venue discovery app globally. See Appendix E.
+- **GlobalVibePill HUD** — persistent city-wide charge display, global geofence state, surge counter; the city becomes a collective organism
+- **Dual Home Mode** — Scout mode (gamified clout + rating feed) vs. Insider mode (clean AI-generated intel sentences, no clout prompts); toggle pill in header; preference persisted across sessions. Two distinct user psychographics served from one product.
+- **Venue Live System** — follow/unfollow venues, "I Dey Road" intent signal (enroute / maybe / pass, 3h TTL), merchant live push blasts (rate-limited to 30 minutes); real-time demand signalling between users and venues
 
 **Monetisation (Built, Pending GTM):**
-- VIIBE+ subscription flow via Paystack — end-to-end functional
+- VIIBE+ subscription flow — end-to-end functional (web via Paystack; iOS path via RevenueCat + Apple IAP)
 - Pulse Drop purchasing and activation — end-to-end functional
 - Merchant wallet top-up + spend tracking — functional
 
@@ -205,7 +220,7 @@ Aggregated venue intelligence for event companies, taxi platforms, and F&B brand
 - Burst detection with provisional rating holds
 - VIIBE Certified automatic badge logic
 
-**Next milestone:** First 100 paying VIIBE+ scouts + 10 merchant partnerships in Lagos Island.
+**Seed milestone:** 5,000 MAU, 20 venues with consistent data, 5 paying merchants, 3 months demonstrable retention — all targeted within 18 months of funding.
 
 ---
 
@@ -216,7 +231,7 @@ Aggregated venue intelligence for event companies, taxi platforms, and F&B brand
 **Phase 1 — The Island (Months 1–3)**
 Victoria Island, Lekki Phase 1, Ikoyi. Highest venue density, highest smartphone penetration, highest spend per capita.
 
-Activation: 3 "scout ambassador" nights per week. Select 10–15 early users per night, each assigned 2–3 venues. Compensate with VIIBE+ subscriptions (₦1,500/month value). We need their data more than their money in month 1.
+Activation: 3 "scout ambassador" nights per week. Select 10–15 early users per night, each assigned 2–3 venues. Compensate with VIIBE+ subscriptions (₦2,000/month value). We need their data more than their money in month 1.
 
 **Phase 2 — The Merchants (Months 3–6)**
 Once 20 venues have 30+ days of live data, the merchant sales conversation is immediate: show them their own dashboard. Live score, crowd trend, timeline. "This is your venue tonight. In real time." Free 30-day trial. No credit card required.
@@ -254,8 +269,8 @@ Abuja. Smaller geography, tight social scene, predictable patterns for Oracle pr
 | Backend | FastAPI (Python 3.11) | Async, fast, production-grade |
 | Database | MongoDB Atlas | Flexible schema + native aggregation for scoring |
 | Real-time | Socket.IO | Live score broadcasts, leaderboard updates |
-| AI | Claude Haiku 4.5 (Anthropic) | Night Planner + Vibe Intelligence. $0.25/M tokens. |
-| Payments | Paystack | Only processor with full NG bank + USSD coverage |
+| AI | Claude (Anthropic) | Night Planner + Vibe Intelligence. Degrades gracefully to rules if API unavailable. |
+| Payments | Paystack (web/B2B) + RevenueCat/Apple IAP (iOS) | Full NG bank + USSD coverage; App Store compliant |
 | Hosting | Vercel + Railway | Zero DevOps overhead. Scale to zero when idle. |
 
 **AI is a feature, not a dependency.** The platform runs without Claude. If the API is unavailable, Night Planner falls back to keyword-based rules. We never put a third-party API on the critical path.
@@ -287,37 +302,44 @@ Full-stack. Previously [X]. Responsible for all production architecture.
 |---|---|---|---|
 | MAU | 5,000 | 25,000 | 80,000 |
 | VIIBE+ Subscribers | 250 | 1,250 | 4,000 |
-| Active Merchants | 50 | 300 | 800 |
+| Active Merchants | 20 | 150 | 500 |
 | Revenue (₦) | ₦8.3M | ₦89M | ₦352M |
 | Revenue (USD) | $5.5K | $59K | $235K |
-| Gross Margin | 78% | 88% | 92% |
+| Gross Margin | 72% | 83% | 89% |
 | Break-Even | — | **Month 18 (Q3 2027)** | — |
 
-Revenue mix at Year 3 scale: Pulse Drops 55% · VIIBE+ 20% · Campaigns 15% · Data API 10%
+Revenue mix at Year 3 scale: Merchant SaaS 45% · Pulse Drops 30% · VIIBE+ 15% · Data API 10%
+
+Notes:
+- Year 1 MAU target of 5,000 is the seed milestone, not post-seed scale.
+- Gross margin reflects Apple IAP platform fee (15–30% on iOS consumer subscriptions) at Year 1; improves as web and Android mix grows.
 
 ---
 
 ## SLIDE 15 — THE ASK
 
-### Raising ₦112.5M ($75,000 USD) Seed Round
+### Raising $500K–$2M Seed Round
 
-**18-month runway to break-even.**
+**18-month runway to seed milestone.**
 
-| Use of Funds | % | Amount |
+Pre-money valuation: **$5M–$8M**
+
+| Use of Funds | % | Notes |
 |---|---|---|
-| Engineering (2 engineers × 12mo) | 35% | ₦39.4M |
-| Scout Network & Community | 25% | ₦28.1M |
-| Merchant Sales (1 AE + events) | 20% | ₦22.5M |
-| Infrastructure & AI | 12% | ₦13.5M |
-| Legal, compliance, admin | 8% | ₦9M |
+| Engineering (2 engineers × 12mo) | 35% | Roadmap velocity + iOS App Store submission |
+| Scout Network & Community | 25% | Ambassador program, Lagos Island activation |
+| Merchant Sales (1 AE + events) | 20% | Onboarding pipeline, free trial conversions |
+| Infrastructure & AI | 12% | Hosting, Claude API, RevenueCat, monitoring |
+| Legal, compliance, admin | 8% | Entity, IP, data privacy |
 
-**What this buys:**
-- 10,000 MAU in Lagos by Month 12
-- 150 active paying merchants by Month 12
-- Phase 1 Abuja expansion launched
-- Series A ready: live data moat established, paying cohorts proven, unit economics validated
+**What this buys — Seed Milestone (18 months):**
+- 5,000 MAU in Lagos (proving scout network is self-sustaining)
+- 20 venues with 90+ days of continuous live data (proving data moat)
+- 5 paying merchant accounts (proving B2B willingness-to-pay)
+- 3 months demonstrable retention (proving the product creates habit)
+- Series A ready: unit economics validated, cohort data in hand, Abuja expansion scoped
 
-**Terms:** ₦562.5M pre-money valuation (20% equity). SAFE with standard pro-rata rights.
+**Structure:** SAFE with standard pro-rata rights. MFN clause. No board seat at seed.
 
 ---
 
@@ -379,5 +401,37 @@ Night Planner is currently a feature. It is building toward a dedicated revenue 
 
 ---
 
+## APPENDIX E — VIBEREACTOR & KINETIC INTELLIGENCE
+
+### VIIBE's Most Distinctive UX Differentiator
+
+Nothing like VibeReactor exists in any venue app globally. It transforms passive rating into a full-body, real-time participation mechanic.
+
+**What it is:**
+VibeReactor is a collective energy mechanism built directly into the scout rating flow. A circular charge ring fills as scouts tap — but the intensity of each tap is measured physically, not just counted.
+
+**G-force tap intensity tiers:**
+| Tier | G-Force | Response |
+|---|---|---|
+| Chill | < 1.5g | Standard charge contribution |
+| Lit | 1.5g – 2.5g | Enhanced charge, haptic pulse |
+| Peak | > 2.5g | Maximum charge burst, full haptic feedback |
+
+The phone's accelerometer reads the velocity of the tap in real-time. A light tap from someone lukewarm about the room contributes less than a hard slam from someone who is genuinely in the moment. Physical intensity becomes a proxy for authentic energy — something no text-based rating system can capture.
+
+**Collective mechanics:**
+- Every scout in a geofenced venue contributes to a shared charge bar
+- When the collective bar reaches critical mass, a city-wide surge event triggers
+- The GlobalVibePill HUD displays the city's aggregate charge state in real-time — the entire city of Lagos becomes a single organism pulsing with collective energy
+- Combo multipliers reward sustained engagement (BPM-driven velocity chains)
+- Quest bursts unlock animated reward states
+
+**Why this matters for investors:**
+VibeReactor solves the cold-start engagement problem. New users in low-density markets have an intrinsic reason to tap — they are contributing to something larger than their individual rating. The mechanic creates emotional investment in the city's collective charge state. Retention is tied not just to "did I get useful information?" but "did I contribute to tonight's surge?"
+
+This is VIIBE's most defensible product moment. It cannot be replicated by a feature addition to an existing app — it requires the entire scout network, geofence infrastructure, collective state management, and real-time aggregation pipeline to exist first. Incumbents cannot bolt this on.
+
+---
+
 *Contact: [founder@viibe.app]*
-*Deck version: February 2026*
+*Deck version: March 2026*
