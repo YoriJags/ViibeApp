@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { useVibeStore } from '../../src/store/vibeStore';
 import { MockMap } from '../../src/components/MockMap';
@@ -43,6 +44,13 @@ export default function MapScreen() {
   // Default to list on web — MockMap is not useful in a browser
   const [showList, setShowList] = useState(Platform.OS === 'web');
   const [showCityPicker, setShowCityPicker] = useState(false);
+
+  // Show city picker every time the user navigates to this tab
+  useFocusEffect(
+    useCallback(() => {
+      setShowCityPicker(true);
+    }, []),
+  );
 
   useEffect(() => {
     initializeApp();
