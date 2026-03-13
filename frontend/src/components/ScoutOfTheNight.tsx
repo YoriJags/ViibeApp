@@ -286,7 +286,7 @@ export default function ScoutOfTheNight({ visible, onClose, isDemoMode, city }: 
                 <View style={styles.rankWrap}>
                   <Text style={[styles.rankNum, { color: '#FF3366' }]}>{myEntry.rank}</Text>
                 </View>
-                <AvatarDisplay config={undefined} username={user?.username ?? ''} size={38} showBorder borderColor="#FF3366" />
+                <AvatarDisplay config={null} username={user?.username ?? ''} size={38} showBorder borderColor="#FF3366" />
                 <View style={styles.rowInfo}>
                   <Text style={[styles.rowName, { color: '#FF3366' }]}>@{user?.username} (you)</Text>
                   <Text style={styles.rowMini}>{myEntry.bolts_tonight} bolts · {myEntry.venues_visited} venues</Text>

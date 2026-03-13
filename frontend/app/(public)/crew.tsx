@@ -313,7 +313,7 @@ export default function CrewScreen() {
         {/* Cartel Pulse — live crew activity */}
         <CartelPulse
           cartelName={crew.name}
-          members={crew.member_details ?? []}
+          members={(crew.member_details ?? []) as any[]}
           onPress={() => scrollRef.current?.scrollTo({ y: radarY.current, animated: true })}
         />
 
@@ -413,7 +413,7 @@ export default function CrewScreen() {
             <Text style={styles.sectionLabel}>MEMBERS</Text>
           </View>
 
-          {crew.member_details.map((member: any) => {
+          {(crew.member_details ?? []).map((member: any) => {
             const isLive = member.checked_in;
             const isCaptain = member.user_id === crew.captain_id;
             return (
@@ -472,12 +472,12 @@ export default function CrewScreen() {
               <Text style={styles.sectionLabel}>ACTIVE VOTE</Text>
             </View>
             <VoteCard
-              options={activeVote.options}
-              totalVotes={activeVote.total_votes}
+              options={(activeVote.options ?? []) as any}
+              totalVotes={activeVote.total_votes ?? 0}
               hasVoted={activeVote.has_voted || false}
               userId={user.id}
               onVote={handleCastVote}
-              winner={activeVote.status === 'completed' ? activeVote.winner : null}
+              winner={(activeVote.status === 'completed' ? activeVote.winner : null) as any}
             />
           </View>
         )}

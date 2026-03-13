@@ -1,6 +1,6 @@
 """
 Vibe App - Vibe+ Subscription Routes
-Handles Paystack payment for ₦1,500/month Vibe+ subscription.
+Handles Paystack payment for ₦2,000/month Vibe+ subscription.
 Follows the atomic claim pattern from merchant.py to prevent double-credits.
 """
 import os
@@ -17,7 +17,7 @@ from app.routes.platform_settings import get_platform_setting
 router = APIRouter(tags=["subscriptions"])
 
 PAYSTACK_BASE = "https://api.paystack.co"
-DEFAULT_PRICE_KOBO = 150000  # ₦1,500 fallback
+DEFAULT_PRICE_KOBO = 200000  # ₦2,000 fallback
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -155,7 +155,7 @@ class InitializeBody(BaseModel):
 @router.post("/subscription/initialize")
 async def initialize_subscription(body: InitializeBody, request: Request):
     """
-    Initialize a Paystack payment for Vibe+ subscription (₦1,500/month).
+    Initialize a Paystack payment for Vibe+ subscription (₦2,000/month).
     Returns authorization_url + reference for the frontend to open.
     Requires: Bearer token auth.
     """

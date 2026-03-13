@@ -30,7 +30,7 @@ interface Props {
 export default function VibeShiftToast({ visible, venueName, newTier, prevTier, onPress, onDismiss }: Props) {
   const slideY = useRef(new Animated.Value(-120)).current;
   const opac   = useRef(new Animated.Value(0)).current;
-  const timer  = useRef<ReturnType<typeof setTimeout>>();
+  const timer  = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const tier = TIER_CONFIG[newTier] ?? TIER_CONFIG['warming'];
   const isUpgrade = tier.up;

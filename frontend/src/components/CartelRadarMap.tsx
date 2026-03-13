@@ -90,14 +90,16 @@ const CartelRadarMap: React.FC<CartelRadarMapProps> = ({
     ? crewLocations.filter((loc) => loc.user_id !== user?.id)
     : crewLocations;
 
-  const crewPins = visibleLocations.map((loc) => ({
-    id: loc.user_id,
-    username: loc.username,
-    lat: loc.lat,
-    lng: loc.lng,
-    emoji: loc.avatar_config?.emoji || '👤',
-    color: loc.avatar_config?.bgColor || '#7C3AED',
-  }));
+  const crewPins = visibleLocations
+    .filter((loc) => loc.lat != null && loc.lng != null)
+    .map((loc) => ({
+      id: loc.user_id,
+      username: loc.username,
+      lat: loc.lat as number,
+      lng: loc.lng as number,
+      emoji: loc.avatar_config?.emoji || '👤',
+      color: loc.avatar_config?.bgColor || '#7C3AED',
+    }));
 
   const outCount = crewLocations.length;
   const totalCount = crewSize;

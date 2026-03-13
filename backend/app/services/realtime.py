@@ -199,15 +199,25 @@ async def _award_quest_clout(venue_id: str, participant_ids: list):
 @sio.event
 async def vibe_pulse(sid, data):
     """
-    Shadow tap event from VibeCharge screen (SurgeFullScreen).
-    data: { venue_id, user_id, intensity: 'soft'|'power', ui_increment }
+    Kinetic tap event from VibeReactor / VibeCharge.
+    data: {
+        venue_id, user_id,
+        intensity: 'soft'|'power',
+        ui_increment,
+        avg_g_force: float,       # average G-force across the 15s window
+        max_bpm: int,
+        tap_count: int,
+        peak_count: int,
+        stationary_peak_abuse: bool  # fraud signal: low G + claiming peak
+    }
 
     Counts pulses per venue in a 5-min rolling window.
     On 1000 pulses → emit global_surge to venue room.
-    Persists to vibe_pulses collection (never touches vibe_score).
+    Persists to vibe_pulses collection WITH kinetic fields — used by the
+    Oracle (calculate_venue_aggregate) for momentum persistence scoring.
     """
-    venue_id = data.get("venue_id")
-    user_id  = data.get("user_id")
+    venue_id  = data.get("venue_id")
+    user_id   = data.get("user_id")
     intensity = data.get("intensity", "soft")
 
     if not venue_id:
@@ -236,18 +246,42 @@ async def vibe_pulse(sid, data):
         }, room=f"venue_{venue_id}")
         logger.info(f"Global Surge at {venue_id} — {pulse_count} pulses in 5 min")
 
-    # Persist shadow log asynchronously (fire-and-forget)
-    asyncio.ensure_future(_persist_vibe_pulse(venue_id, user_id, intensity, now))
+    # Persist kinetic data asynchronously — read by Oracle for momentum scoring
+    asyncio.ensure_future(_persist_vibe_pulse(
+        venue_id=venue_id,
+        user_id=user_id,
+        intensity=intensity,
+        ts=now,
+        avg_g_force=data.get("avg_g_force", 1.0),
+        max_bpm=data.get("max_bpm", 0),
+        tap_count=data.get("tap_count", 1),
+        peak_count=data.get("peak_count", 0),
+        stationary_peak_abuse=bool(data.get("stationary_peak_abuse", False)),
+    ))
 
 
-async def _persist_vibe_pulse(venue_id: str, user_id: str, intensity: str, ts: datetime):
-    """Write one vibe_pulse shadow-log doc — never read for scoring."""
+async def _persist_vibe_pulse(
+    venue_id: str, user_id: str, intensity: str, ts: datetime,
+    avg_g_force: float = 1.0, max_bpm: int = 0,
+    tap_count: int = 1, peak_count: int = 0,
+    stationary_peak_abuse: bool = False,
+):
+    """
+    Persist vibe_pulse event with full kinetic fields.
+    Read by calculate_venue_aggregate for momentum-persistence scoring.
+    Abusive pulses (stationary_peak_abuse) are stored but discounted by Oracle.
+    """
     try:
         await db.vibe_pulses.insert_one({
-            "venue_id": venue_id,
-            "user_id": user_id,
-            "intensity": intensity,
-            "timestamp": ts,
+            "venue_id":              venue_id,
+            "user_id":               user_id,
+            "intensity":             intensity,
+            "avg_g_force":           avg_g_force,
+            "max_bpm":               max_bpm,
+            "tap_count":             tap_count,
+            "peak_count":            peak_count,
+            "stationary_peak_abuse": stationary_peak_abuse,
+            "timestamp":             ts,
         })
     except Exception as exc:
         logger.debug(f"vibe_pulse persist skipped: {exc}")

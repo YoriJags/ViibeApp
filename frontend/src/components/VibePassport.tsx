@@ -128,7 +128,7 @@ export default function VibePassport({ visible, onClose, isDemoMode }: Props) {
 
   if (!user) return null;
 
-  const persona      = user.persona ?? 'turn_up';
+  const persona      = (user as any).persona ?? (user as any).vibePersona ?? 'turn_up';
   const personaLabel = PERSONA_LABELS[persona] ?? persona;
   const personaColor = PERSONA_COLORS[persona] ?? '#6655FF';
   const heatColor    = data ? (HEAT_COLORS[data.heat_level] ?? '#6655FF') : '#6655FF';
@@ -167,7 +167,7 @@ export default function VibePassport({ visible, onClose, isDemoMode }: Props) {
 
             {/* Avatar + identity */}
             <View style={styles.identityRow}>
-              <AvatarDisplay config={avatarConfig} size={72} />
+              <AvatarDisplay config={avatarConfig} username={user.username} size={72} />
               <View style={styles.identityInfo}>
                 <Text style={styles.username}>@{user.username}</Text>
                 {user.display_name && (

@@ -21,7 +21,7 @@ SETTINGS_META: Dict[str, dict] = {
         "desc": "Monthly subscription price in kobo (100 kobo = ₦1)",
         "category": "Subscriptions",
         "type": "number",
-        "default": 150000,          # ₦1,500
+        "default": 200000,          # ₦2,000
     },
     # Pulse Drops
     "pulse_drop_spark_kobo": {

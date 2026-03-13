@@ -85,6 +85,7 @@ function BattleArena({
 }: {
   battle: Battle;
   tapped: 'a' | 'b' | null;
+  tapping?: boolean;
   timeLeft: number;
   colorA: string;
   colorB: string;

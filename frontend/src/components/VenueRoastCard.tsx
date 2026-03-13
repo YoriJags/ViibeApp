@@ -78,7 +78,7 @@ export default function VenueRoastCard({ venueId, venueName, isDemoMode }: Props
           </Text>
           <View style={styles.lockedRow}>
             <Ionicons name="lock-closed" size={13} color="#FFD700" />
-            <Text style={styles.lockedText}>Unlock full AI take — Viibe+ ₦1,500/mo</Text>
+            <Text style={styles.lockedText}>Unlock full AI take — Viibe+ ₦2,000/mo</Text>
           </View>
         </TouchableOpacity>
       )}

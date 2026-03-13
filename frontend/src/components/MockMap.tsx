@@ -417,7 +417,7 @@ export const MockMap: React.FC<MockMapProps> = ({
           <View
             style={[
               styles.userMarker,
-              coordsToPosition(userLocation.lat, userLocation.lng),
+              coordsToPosition(userLocation.lat, userLocation.lng) as any,
             ]}
           >
             <View style={styles.userMarkerPulse} />
@@ -813,8 +813,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     justifyContent: 'center',
     alignItems: 'center',
-    cursor: 'pointer',
-  },
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
+  } as any,
   ratedGlowRing: {
     position: 'absolute',
     borderWidth: 3,
@@ -879,7 +879,6 @@ const styles = StyleSheet.create({
   },
   markerGlow: {
     position: 'absolute',
-    transition: 'all 0.2s ease',
   },
   markerDot: {
     position: 'absolute',
@@ -888,7 +887,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 8,
     elevation: 5,
-    transition: 'all 0.2s ease',
   },
   highlightRing: {
     position: 'absolute',

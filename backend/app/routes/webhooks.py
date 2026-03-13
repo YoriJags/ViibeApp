@@ -32,7 +32,7 @@ async def paystack_webhook(request: Request):
         if reference.startswith("VIBE-TOPUP-"):
             await verify_wallet_topup(reference)
 
-        elif reference.startswith("VIBE-PLUS-"):
+        elif reference.startswith("VIIBE-PLUS-"):
             await verify_subscription_by_reference(reference)
 
     return JSONResponse(status_code=200, content={"status": "ok"})

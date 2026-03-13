@@ -110,7 +110,7 @@ export default function DailyPulseCard({ stats, onPress }: DailyPulseCardProps) 
         ]}
       >
         <LinearGradient
-          colors={getMoodGradient(pulse.mood)}
+          colors={getMoodGradient(pulse.mood) as any}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.gradient}

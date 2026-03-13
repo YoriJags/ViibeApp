@@ -138,7 +138,7 @@ export default function VibeDNACard({ userId }: VibeDNACardProps) {
         <Ionicons name="lock-closed" size={13} color="#FFD700" />
         <View style={{ flex: 1 }}>
           <Text style={styles.narrativeLockedTitle}>AI Narrative · Viibe+</Text>
-          <Text style={styles.narrativeLockedDesc}>Your full AI personality story unlocks at ₦1,500/mo</Text>
+          <Text style={styles.narrativeLockedDesc}>Your full AI personality story unlocks at ₦2,000/mo</Text>
         </View>
         <Ionicons name="chevron-forward" size={14} color="rgba(255,215,0,0.5)" />
       </TouchableOpacity>

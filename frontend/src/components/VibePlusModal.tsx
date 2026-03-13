@@ -164,7 +164,7 @@ export default function VibePlusModal({ visible, onClose, onSuccess }: VibePlusM
 
                 {/* Price block */}
                 <View style={styles.priceBlock}>
-                  <Text style={styles.priceAmount}>₦1,500</Text>
+                  <Text style={styles.priceAmount}>₦2,000</Text>
                   <Text style={styles.pricePeriod}>/ month</Text>
                   <View style={styles.claudeBadge}>
                     <Text style={styles.claudeBadgeText}>✦ Powered by Claude AI</Text>
@@ -179,7 +179,7 @@ export default function VibePlusModal({ visible, onClose, onSuccess }: VibePlusM
                     end={{ x: 1, y: 0 }}
                     style={styles.subscribeBtnGradient}
                   >
-                    <Text style={styles.subscribeBtnText}>Subscribe Now — ₦1,500</Text>
+                    <Text style={styles.subscribeBtnText}>Subscribe Now — ₦2,000</Text>
                   </LinearGradient>
                 </TouchableOpacity>
 
