@@ -73,7 +73,7 @@ export type {
   StoryListItem, TimelinePoint, Crew, CrewMember,
   CrewMemberLocation, CrewVote, AlertPrefs, ActiveCampaign,
   LobbyVenue, LobbyNudge, LivePush,
-  CityPulseData, CityPulseLabel,
+  CityPulseData, CityPulseLabel, VibeSignature,
   VenueAffinity, VibeDNA,
   NightPhase,
 } from './types';

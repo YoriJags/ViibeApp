@@ -45,10 +45,11 @@ async def compute_city_pulse(city: str) -> dict:
     active_ids = set(recent_ratings) | set(recent_reaction_venues)
     active_venues = [v for v in active_venues if v.get("id") or True]
 
-    # Re-fetch active venues properly
+    # Re-fetch active venues properly (include vibe_signature for DNA majority vote)
     active_venues = await db.venues.find(
         {"city": city, "id": {"$in": list(active_ids)}},
-        {"_id": 0, "id": 1, "name": 1, "current_vibe_score": 1, "vibe_state": 1, "total_ratings_24h": 1}
+        {"_id": 0, "id": 1, "name": 1, "current_vibe_score": 1,
+         "vibe_state": 1, "total_ratings_24h": 1, "vibe_signature": 1}
     ).to_list(200)
 
     # Weighted average: weight by total_ratings_24h (more active venues count more)
@@ -62,10 +63,21 @@ async def compute_city_pulse(city: str) -> dict:
         top_venue = max(active_venues, key=lambda v: v.get("current_vibe_score", 0))
         trending = {"name": top_venue["name"], "score": int(top_venue["current_vibe_score"])}
         hot_venues = sum(1 for v in active_venues if v.get("current_vibe_score", 0) >= 65)
+
+        # ── City Vibe DNA: majority vote across active venues ────────────────
+        # Weighted by current_vibe_score so hotter venues drive the city signature
+        sig_votes: dict[str, float] = {}
+        for v in active_venues:
+            sig = v.get("vibe_signature")
+            if sig:
+                weight = v.get("current_vibe_score", 1)
+                sig_votes[sig] = sig_votes.get(sig, 0) + weight
+        city_vibe_signature = max(sig_votes, key=sig_votes.get) if sig_votes else None
     else:
         pulse_score = 0
         trending = None
         hot_venues = 0
+        city_vibe_signature = None
 
     # Active scouts: unique raters OR reactors in the last hour
     rating_scouts = set(await db.ratings.distinct("user_id", {"timestamp": {"$gte": hour_ago}}))
@@ -116,17 +128,18 @@ async def compute_city_pulse(city: str) -> dict:
         trend = "stable"
 
     return {
-        "city": city,
-        "pulse_score": pulse_score,
-        "pulse_label": _pulse_label(pulse_score),
-        "trend": trend,
-        "active_scouts": active_scouts,
-        "live_venues": len(active_venues),
-        "hot_venues": hot_venues,
-        "pulses_tonight": pulses_tonight,
-        "trending_venue": trending,
-        "sparkline": sparkline,   # 6 values, oldest → newest, 5-min buckets
-        "updated_at": now.isoformat(),
+        "city":                city,
+        "pulse_score":         pulse_score,
+        "pulse_label":         _pulse_label(pulse_score),
+        "trend":               trend,
+        "active_scouts":       active_scouts,
+        "live_venues":         len(active_venues),
+        "hot_venues":          hot_venues,
+        "pulses_tonight":      pulses_tonight,
+        "trending_venue":      trending,
+        "sparkline":           sparkline,   # 6 values, oldest → newest, 5-min buckets
+        "city_vibe_signature": city_vibe_signature,  # HIGH_VELOCITY / STEADY_GROOVE / ATMOSPHERIC_CHILL
+        "updated_at":          now.isoformat(),
     }
 
 

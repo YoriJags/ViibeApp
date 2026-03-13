@@ -304,6 +304,7 @@ async def vibe_pulse(sid, data):
         ts=now,
         avg_g_force=data.get("avg_g_force", 1.0),
         max_bpm=data.get("max_bpm", 0),
+        tap_variance=data.get("tap_variance"),
         tap_count=data.get("tap_count", 1),
         peak_count=data.get("peak_count", 0),
         stationary_peak_abuse=bool(data.get("stationary_peak_abuse", False)),
@@ -315,14 +316,18 @@ async def _persist_vibe_pulse(
     avg_g_force: float = 1.0, max_bpm: int = 0,
     tap_count: int = 1, peak_count: int = 0,
     stationary_peak_abuse: bool = False,
+    tap_variance: float | None = None,
 ):
     """
     Persist vibe_pulse event with full kinetic fields.
     Read by calculate_venue_aggregate for momentum-persistence scoring.
+    tap_variance (std dev of inter-tap intervals in seconds) is used by
+    the VibeSignature classifier to detect HIGH_VELOCITY / STEADY_GROOVE /
+    ATMOSPHERIC_CHILL tap patterns.
     Abusive pulses (stationary_peak_abuse) are stored but discounted by Oracle.
     """
     try:
-        await db.vibe_pulses.insert_one({
+        doc = {
             "venue_id":              venue_id,
             "user_id":               user_id,
             "intensity":             intensity,
@@ -332,7 +337,10 @@ async def _persist_vibe_pulse(
             "peak_count":            peak_count,
             "stationary_peak_abuse": stationary_peak_abuse,
             "timestamp":             ts,
-        })
+        }
+        if tap_variance is not None:
+            doc["tap_variance"] = tap_variance
+        await db.vibe_pulses.insert_one(doc)
     except Exception as exc:
         logger.debug(f"vibe_pulse persist skipped: {exc}")
 

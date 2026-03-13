@@ -562,6 +562,19 @@ export default function VibeReactor({
           ? windowPeakCount.current / windowTapCount.current : 0;
         const stationaryPeakAbuse = avgG < STATIONARY_G_THRESHOLD && peakRatio > 0.5;
 
+        // Compute tap_variance: std dev of inter-tap intervals (seconds)
+        // within the LOCAL_COOLDOWN_MS window. Used by VibeSignature classifier.
+        const windowNow  = Date.now();
+        const recentTaps = tapTimestamps.current.filter(ts => windowNow - ts < LOCAL_COOLDOWN_MS);
+        let tapVariance  = 1.0; // default = ATMOSPHERIC_CHILL / unknown
+        if (recentTaps.length >= 3) {
+          const diffs    = recentTaps.slice(1).map((ts, i) => (ts - recentTaps[i]) / 1000);
+          const meanDiff = diffs.reduce((a, b) => a + b, 0) / diffs.length;
+          tapVariance    = Math.round(
+            Math.sqrt(diffs.reduce((sum, d) => sum + (d - meanDiff) ** 2, 0) / diffs.length) * 1000
+          ) / 1000;
+        }
+
         socket?.emit('vibe_pulse', {
           venue_id:   venueId, user_id: user?.id,
           tap_count:  windowTapCount.current,
@@ -571,6 +584,7 @@ export default function VibeReactor({
           intensity:   peakRatio > 0.5 ? 'power' : 'soft',
           ui_increment: windowTapCount.current,
           stationary_peak_abuse: stationaryPeakAbuse,
+          tap_variance: tapVariance,
         });
 
         if (stationaryPeakAbuse) {

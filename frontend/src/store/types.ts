@@ -217,6 +217,8 @@ export interface LivePush {
 
 export type CityPulseLabel = 'QUIET' | 'CHILL' | 'WARMING' | 'LIT' | 'PEAK';
 
+export type VibeSignature = 'HIGH_VELOCITY' | 'STEADY_GROOVE' | 'ATMOSPHERIC_CHILL';
+
 export interface CityPulseData {
   city: string;
   pulse_score: number;
@@ -228,6 +230,8 @@ export interface CityPulseData {
   pulses_tonight: number;
   trending_venue?: { name: string; score: number };
   sparkline: number[];
+  /** Majority-vote Vibe DNA from all active venues — drives Dynamic Island liquid color */
+  city_vibe_signature?: VibeSignature;
   updated_at?: string;
 }
 

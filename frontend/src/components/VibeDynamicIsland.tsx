@@ -46,6 +46,13 @@ const VIBE_COLORS: Record<string, [string, string]> = {
 
 const OBSIDIAN_COLORS: [string, string] = ['#888899', '#222233'];
 
+// Vibe DNA signature → liquid color (overrides energy label color when present)
+const DNA_COLORS: Record<string, string> = {
+  HIGH_VELOCITY:    '#FF5500',   // Red-Orange — burst energy, bottle service, hype
+  STEADY_GROOVE:    '#7700CC',   // Deep Purple — Afrobeats, locked-in dance floor
+  ATMOSPHERIC_CHILL: '#00AACC', // Cyan — lounge, conversation, chill energy
+};
+
 // ─── Canvas constants ─────────────────────────────────────────────────────────
 
 const CANVAS_W = 80;
@@ -105,10 +112,12 @@ export function VibeDynamicIsland({ onPress }: VibeDynamicIslandProps) {
   const label      = cityPulse?.pulse_label ?? 'CHILL';
   const score      = cityPulse?.pulse_score ?? 0;
   const scouts     = cityPulse?.active_scouts ?? 0;
+  const dnaSignature = cityPulse?.city_vibe_signature;
 
-  const [innerColor] = isVibePlus
-    ? OBSIDIAN_COLORS
-    : (VIBE_COLORS[label] ?? VIBE_COLORS.CHILL);
+  // DNA color overrides energy label color — VIIBE+ Obsidian overrides both
+  const innerColor = isVibePlus
+    ? OBSIDIAN_COLORS[0]
+    : (dnaSignature ? DNA_COLORS[dnaSignature] : (VIBE_COLORS[label] ?? VIBE_COLORS.CHILL)[0]);
 
   // ── Metaball composite layer paint (imperative, Skia.Paint API) ──────────────
   const metaballPaint = useMemo(() => {

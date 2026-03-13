@@ -306,66 +306,240 @@ async def get_live_score(
     }
 
 
+# ─── Vibe DNA — tap pattern signature ────────────────────────────────────────
+
+
+def _classify_vibe_signature(
+    tap_variance: float,
+    avg_g_force:  float,
+    avg_bpm:      float,
+) -> str:
+    """
+    Classify collective tap patterns into a Vibe DNA signature.
+
+      HIGH_VELOCITY    — rapid burst tapping, heavy body movement.
+                         tap_variance < 0.4 (tight timing) + avg_g_force ≥ 2.0g
+                         → Red-Orange energy: bottle service, hype moments.
+
+      STEADY_GROOVE    — rhythmic, dance-floor locked.
+                         tap_variance 0.3–0.9 in dance BPM range (85–150)
+                         → Deep Purple: Afrobeats, smooth DJ set.
+
+      ATMOSPHERIC_CHILL — sporadic or slow taps, low movement.
+                         tap_variance > 0.9 OR avg_g_force < 1.3 OR avg_bpm < 60
+                         → Cyan: lounge/conversation energy.
+
+    Priority: HIGH_VELOCITY > STEADY_GROOVE > ATMOSPHERIC_CHILL.
+    """
+    if avg_g_force >= 2.0 and tap_variance < 0.4:
+        return "HIGH_VELOCITY"
+    if 0.3 <= tap_variance <= 0.9 and 85 <= avg_bpm <= 150:
+        return "STEADY_GROOVE"
+    if tap_variance > 0.9 or avg_g_force < 1.3 or avg_bpm < 60:
+        return "ATMOSPHERIC_CHILL"
+    # Mid-range: dominant signal decides
+    if avg_g_force >= 1.8:
+        return "HIGH_VELOCITY"
+    if avg_bpm >= 90:
+        return "STEADY_GROOVE"
+    return "ATMOSPHERIC_CHILL"
+
+
+async def calculate_venue_signature(venue_id: str, now: datetime) -> dict:
+    """
+    Compute the Vibe DNA signature for a venue from recent tap pulses.
+
+    Reads vibe_pulses from the last 30 minutes (fraud-excluded pulses skipped).
+    Aggregates avg_g_force, max_bpm, and tap_variance from scout submissions
+    then classifies via _classify_vibe_signature.
+
+    Returns a dict suitable for inclusion in the venue aggregate and for
+    persistence on the venue document (consumed by compute_city_pulse).
+    """
+    cutoff = now - timedelta(minutes=30)
+    pulses = await db.vibe_pulses.find(
+        {
+            "venue_id":              venue_id,
+            "timestamp":             {"$gte": cutoff},
+            "stationary_peak_abuse": {"$ne": True},
+        },
+        {"avg_g_force": 1, "max_bpm": 1, "tap_variance": 1},
+    ).to_list(200)
+
+    if not pulses:
+        return {
+            "signature":       "ATMOSPHERIC_CHILL",
+            "confidence":      "low",
+            "pulse_count":     0,
+            "avg_g_force":     None,
+            "avg_bpm":         None,
+            "avg_tap_variance": None,
+        }
+
+    g_forces      = [float(p.get("avg_g_force", 1.0)) for p in pulses]
+    bpms          = [int(p["max_bpm"]) for p in pulses if p.get("max_bpm", 0) > 0]
+    tap_variances = [float(p["tap_variance"]) for p in pulses if p.get("tap_variance") is not None]
+
+    avg_g        = sum(g_forces) / len(g_forces)
+    avg_bpm      = sum(bpms) / len(bpms) if bpms else 0.0
+    avg_variance = sum(tap_variances) / len(tap_variances) if tap_variances else 1.0
+
+    signature = _classify_vibe_signature(avg_variance, avg_g, avg_bpm)
+
+    return {
+        "signature":        signature,
+        "confidence":       "high" if len(pulses) >= 10 else "medium" if len(pulses) >= 5 else "low",
+        "pulse_count":      len(pulses),
+        "avg_g_force":      round(avg_g, 2),
+        "avg_bpm":          round(avg_bpm),
+        "avg_tap_variance": round(avg_variance, 3),
+    }
+
+
 # ─── Oracle — forward prediction ──────────────────────────────────────────────
 
 # Estimated crowd capacity when no rated_capacity field exists on the venue doc
 _CAPACITY_ESTIMATE = {"sparse": 50, "vibrant": 120, "full": 250}
 
 
-async def vibe_oracle(venue_id: str, current_score: float, venue: dict, now: datetime) -> dict:
+async def vibe_oracle(
+    venue_id: str,
+    current_score: float,
+    venue: dict,
+    now: datetime,
+    kinetic_momentum: float = 0.0,
+    total_ratings: int = 0,
+) -> dict:
     """
     Predictive oracle — 15-minute forward score estimate.
 
-    Rules:
-      1. Enroute Multiplier — scouts heading to the venue exceed 20% of
-         estimated capacity → 'heating_up' velocity + predicted_score +10.
-         Enroute is measured from venue_headings in the last 30 minutes.
+    Five additive signals (applied in sequence, each capped at 100):
 
-      2. Lagos Island Timing — Fri/Sat between 23:00 and 02:00 for venues
-         in the 'Island' area: lower CHARGED threshold 45 → 35 to reflect
-         how quickly Island crowds hit critical mass after midnight.
+      1. Kinetic Momentum  — crowd is physically moving right now.
+                             momentum > 40 → +5 predicted score.
 
-    This is advisory data only — it does NOT overwrite the live score.
+      2. Enroute Multiplier (tiered) — scouts heading to venue:
+                             ≥ 20% capacity → +5
+                             ≥ 40% capacity → +10
+                             ≥ 70% capacity → +18
+
+      3. Night Arc         — universal Lagos peak window (Fri/Sat 22:00-01:00)
+                             adds +3 to any venue in the city.
+
+      4. Island Timing     — Fri/Sat 23:00-02:00 for Island-area venues:
+                             CHARGED threshold lowered 45 → 35.
+
+      5. Historical Anchor — compares current_score vs same-hour / same-day-type
+                             average over the last 4 weeks.
+                             Exposes above_historical_trend flag.
+
+    Confidence tier: "high" / "medium" / "low" based on total data richness.
+    Advisory only — does NOT overwrite the live score.
     """
-    # ── Enroute scouts ────────────────────────────────────────────────────────
+    predicted_score = current_score
+    weekday = now.weekday()   # 0 = Mon, 4 = Fri, 5 = Sat, 6 = Sun
+    hour    = now.hour
+
+    # ── Signal 1: Kinetic Momentum ────────────────────────────────────────────
+    kinetic_boost = 5 if kinetic_momentum > 40 else 0
+    predicted_score = min(100.0, predicted_score + kinetic_boost)
+
+    # ── Signal 2: Enroute Multiplier (tiered) ─────────────────────────────────
     heading_cutoff = now - timedelta(minutes=30)
     enroute_count  = await db.venue_headings.count_documents({
         "venue_id":   venue_id,
         "created_at": {"$gte": heading_cutoff},
     })
-
     rated_capacity = (
         venue.get("rated_capacity")
         or _CAPACITY_ESTIMATE.get(venue.get("capacity_level", "vibrant"), 120)
     )
     enroute_ratio   = enroute_count / rated_capacity if rated_capacity > 0 else 0.0
-    enroute_trigger = enroute_ratio > 0.20
+    enroute_trigger = enroute_ratio >= 0.20
 
-    score_boost     = 10 if enroute_trigger else 0
-    predicted_score = min(100.0, current_score + score_boost)
+    if enroute_ratio >= 0.70:
+        enroute_boost = 18
+    elif enroute_ratio >= 0.40:
+        enroute_boost = 10
+    elif enroute_ratio >= 0.20:
+        enroute_boost = 5
+    else:
+        enroute_boost = 0
+    predicted_score = min(100.0, predicted_score + enroute_boost)
 
-    # ── Lagos Island peak-night context ───────────────────────────────────────
-    weekday          = now.weekday()          # 0 = Mon, 4 = Fri, 5 = Sat
-    hour             = now.hour
-    is_island        = "island" in venue.get("area", "").lower()
-    is_peak_night    = weekday in (4, 5) and (hour >= 23 or hour < 2)
-    charged_thr      = 35 if (is_island and is_peak_night) else 45
+    # ── Signal 3: Night Arc (Fri/Sat 22:00-01:00 anywhere in Lagos) ───────────
+    is_peak_window = weekday in (4, 5) and (hour >= 22 or hour < 1)
+    night_boost    = 3 if is_peak_window else 0
+    predicted_score = min(100.0, predicted_score + night_boost)
 
-    predicted_velocity = "heating_up" if enroute_trigger else None
-    predicted_state    = get_venue_state(
+    # ── Signal 4: Lagos Island Timing ─────────────────────────────────────────
+    is_island       = "island" in venue.get("area", "").lower()
+    is_island_night = weekday in (4, 5) and (hour >= 23 or hour < 2)
+    charged_thr     = 35 if (is_island and is_island_night) else 45
+
+    # ── Signal 5: Historical Anchor (same hour ±2h, same day-type, last 4 wks) ─
+    is_weekend     = weekday >= 4
+    four_weeks_ago = now - timedelta(weeks=4)
+    raw_snaps = await db.vibe_snapshots.find(
+        {"venue_id": venue_id, "timestamp": {"$gte": four_weeks_ago, "$lt": now - timedelta(hours=1)}},
+        {"vibe_score": 1, "timestamp": 1},
+    ).to_list(500)
+
+    historical_scores = []
+    for snap in raw_snaps:
+        snap_ts = snap.get("timestamp", now)
+        if isinstance(snap_ts, str):
+            snap_ts = datetime.fromisoformat(snap_ts.replace("Z", "+00:00"))
+        if snap_ts.tzinfo is None:
+            snap_ts = snap_ts.replace(tzinfo=timezone.utc)
+        if (snap_ts.weekday() >= 4) == is_weekend and abs(snap_ts.hour - hour) <= 2:
+            historical_scores.append(snap.get("vibe_score", 0))
+
+    historical_avg         = round(sum(historical_scores) / len(historical_scores), 1) if historical_scores else None
+    above_historical_trend = historical_avg is not None and current_score > historical_avg + 10
+
+    # ── Confidence tier ───────────────────────────────────────────────────────
+    data_points = total_ratings + enroute_count
+    if data_points >= 10 and (total_ratings >= 5 or enroute_count >= 8):
+        confidence = "high"
+    elif data_points >= 4:
+        confidence = "medium"
+    else:
+        confidence = "low"
+
+    # ── Predicted velocity + state ────────────────────────────────────────────
+    if enroute_trigger or kinetic_momentum > 50:
+        predicted_velocity = "heating_up"
+    elif above_historical_trend:
+        predicted_velocity = "above_trend"
+    else:
+        predicted_velocity = None
+
+    predicted_state = get_venue_state(
         predicted_score, venue.get("capacity_level", "vibrant"), charged_thr
     )
 
     return {
-        "predicted_score":     round(predicted_score, 1),
-        "predicted_state":     predicted_state,
-        "predicted_velocity":  predicted_velocity,
-        "enroute_count":       enroute_count,
-        "enroute_ratio":       round(enroute_ratio, 3),
-        "enroute_triggered":   enroute_trigger,
-        "island_night_mode":   is_island and is_peak_night,
-        "charged_threshold":   charged_thr,
-        "score_boost_applied": score_boost,
+        "predicted_score":        round(predicted_score, 1),
+        "predicted_state":        predicted_state,
+        "predicted_velocity":     predicted_velocity,
+        # Enroute
+        "enroute_count":          enroute_count,
+        "enroute_ratio":          round(enroute_ratio, 3),
+        "enroute_triggered":      enroute_trigger,
+        "enroute_boost":          enroute_boost,
+        # Night arc
+        "peak_window_active":     is_peak_window,
+        "island_night_mode":      is_island and is_island_night,
+        "charged_threshold":      charged_thr,
+        # Kinetic
+        "kinetic_boost":          kinetic_boost,
+        # Historical
+        "historical_avg":         historical_avg,
+        "above_historical_trend": above_historical_trend,
+        # Meta
+        "total_boost":            kinetic_boost + enroute_boost + night_boost,
+        "confidence":             confidence,
     }
 
 
@@ -487,16 +661,25 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
     viibe_certified    = avg_score >= 85 and ratings_24h >= 80
     viibe_certified_at = now if viibe_certified else None
 
+    # ── Vibe DNA signature (tap pattern classification) ───────────────────────
+    sig = await calculate_venue_signature(venue_id, now)
+
     await db.venues.update_one(
         {"id": venue_id},
         {"$set": {
             "viibe_certified":    viibe_certified,
             "viibe_certified_at": viibe_certified_at,
+            # Persisted so compute_city_pulse can do a majority vote
+            "vibe_signature":     sig["signature"],
         }},
     )
 
-    # ── Oracle (15-min forward prediction) ───────────────────────────────────
-    oracle = await vibe_oracle(venue_id, avg_score, venue, now)
+    # ── Oracle (15-min forward prediction, momentum + rating aware) ─────────
+    oracle = await vibe_oracle(
+        venue_id, avg_score, venue, now,
+        kinetic_momentum=kinetic_momentum,
+        total_ratings=len(ratings),
+    )
 
     result = {
         "current_vibe_score": round(avg_score, 1),
@@ -507,10 +690,12 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         "vibe_velocity":      velocity,
         "total_ratings_24h":  ratings_24h,
         "viibe_certified":    viibe_certified,
-        # Kinetic metadata (surfaced for debug / merchant dashboard)
+        # Kinetic metadata
         "kinetic_momentum":   live["momentum_floor"],
         "decay_protected":    live["decay_protected"],
         "fraud_excluded":     live["excluded_fraud"],
+        # Vibe DNA
+        "vibe_signature":     sig,
         # Oracle forward prediction
         "oracle":             oracle,
     }
