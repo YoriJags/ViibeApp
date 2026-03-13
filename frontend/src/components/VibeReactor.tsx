@@ -230,6 +230,7 @@ export default function VibeReactor({
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const socket         = useVibeStore(s => s.socket);
   const user           = useVibeStore(s => s.user);
+  const activeSurge    = useVibeStore(s => s.activeSurge);
 
   // ── Surge state ─────────────────────────────────────────────────────────────
   const [surge,       setSurge]     = useState<SurgeState | null>(isDemoMode ? DEMO_SURGE : null);
@@ -303,16 +304,21 @@ export default function VibeReactor({
   }, [tickSparks]);
 
   // ── Reanimated shared values ─────────────────────────────────────────────────
-  const ringProgress  = useSharedValue(0);
-  const shakeX        = useSharedValue(0);
-  const pressScale    = useSharedValue(1);
-  const dangerOpacity = useSharedValue(0);
-  const questGlow     = useSharedValue(0);
-  const flareOpacity  = useSharedValue(0);
-  const glowOpacity   = useSharedValue(0.85);
-  const breathPhase   = useSharedValue(0);
-  const bpmShared     = useSharedValue(0);
-  const levelIdx      = useSharedValue(1);  // 0–4 level index
+  const ringProgress     = useSharedValue(0);
+  const shakeX           = useSharedValue(0);
+  const pressScale       = useSharedValue(1);
+  const dangerOpacity    = useSharedValue(0);
+  const questGlow        = useSharedValue(0);
+  const flareOpacity     = useSharedValue(0);
+  const glowOpacity      = useSharedValue(0.85);
+  const breathPhase      = useSharedValue(0);
+  const bpmShared        = useSharedValue(0);
+  const levelIdx         = useSharedValue(1);  // 0–4 level index
+
+  // ── Collective Surge — secondary ghost ring + SURGE ACTIVE badge ─────────────
+  const surgeRingScale   = useSharedValue(1);
+  const surgeRingOpacity = useSharedValue(0);
+  const surgeBadgeOp     = useSharedValue(0);
 
   // Smooth level color transition
   const coreColor = useDerivedValue<string>(() =>
@@ -434,6 +440,37 @@ export default function VibeReactor({
       -1, false,
     );
   }, [dangerZone]);
+
+  // ── Collective surge reaction ─────────────────────────────────────────────────
+  // Fires when a venue_surge event arrives from the server (via store).
+  // Secondary ghost ring expands outward (offset from main ring) to represent
+  // "someone else's" collective energy. Haptic heartbeat: heavy → light.
+  useEffect(() => {
+    if (!activeSurge || activeSurge.venue_id !== venueId) return;
+
+    // Haptic heartbeat succession: impactHeavy then impactLight 120ms later
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 120);
+    }
+
+    // Ghost ring: flash in then expand outward
+    surgeRingOpacity.value = withSequence(
+      withTiming(0.65, { duration: 120 }),
+      withTiming(0,    { duration: 700 }),
+    );
+    surgeRingScale.value = withSequence(
+      withTiming(1.0,  { duration: 0 }),
+      withTiming(1.28, { duration: 700, easing: Easing.out(Easing.ease) }),
+    );
+
+    // SURGE ACTIVE badge: fade in, hold 4.5s, fade out
+    surgeBadgeOp.value = withSequence(
+      withTiming(1,   { duration: 200 }),
+      withTiming(1,   { duration: 4500 }),
+      withTiming(0,   { duration: 500 }),
+    );
+  }, [activeSurge]);
 
   // ── Cleanup ──────────────────────────────────────────────────────────────────
   useEffect(() => () => {
@@ -633,6 +670,15 @@ export default function VibeReactor({
     opacity: dangerOpacity.value,
   }));
 
+  const surgeRingStyle = useAnimatedStyle(() => ({
+    opacity:   surgeRingOpacity.value,
+    transform: [{ scale: surgeRingScale.value }],
+  }));
+
+  const surgeBadgeStyle = useAnimatedStyle(() => ({
+    opacity: surgeBadgeOp.value,
+  }));
+
   // ── Early return ──────────────────────────────────────────────────────────────
   if (!surge) return null;
 
@@ -668,6 +714,9 @@ export default function VibeReactor({
           coreColor={coreColor}
           sparks={sparksRef.current}
         />
+
+        {/* Ghost surge ring — secondary pulse offset from main ring */}
+        <Animated.View style={[styles.surgeGhostRing, surgeRingStyle, { borderColor: color }]} />
 
         {/* Central orb (tap target) */}
         <Pressable onPress={handleTap} style={styles.orbPressable}>
@@ -746,6 +795,11 @@ export default function VibeReactor({
         )}
         {bpmNow > 0 && <Text style={styles.subText}>{Math.round(bpmNow)} BPM</Text>}
       </View>
+
+      {/* SURGE ACTIVE 2× CLOUT badge */}
+      <Animated.View style={[styles.surgeActiveBadge, surgeBadgeStyle]}>
+        <Text style={styles.surgeActiveText}>⚡ SURGE ACTIVE 2× CLOUT</Text>
+      </Animated.View>
 
       {/* Danger callout */}
       {dangerZone && (
@@ -885,5 +939,35 @@ const styles = StyleSheet.create({
   stationaryNudge: {
     textAlign: 'center', fontSize: 11, color: '#FFD60A',
     fontWeight: '600', marginTop: 4, opacity: 0.9,
+  },
+
+  // ── Collective Surge UI ──────────────────────────────────
+  // Ghost ring: slightly larger than RING_R, centered on canvas, expands outward
+  surgeGhostRing: {
+    position:     'absolute',
+    width:        (RING_R + 14) * 2,
+    height:       (RING_R + 14) * 2,
+    borderRadius: RING_R + 14,
+    borderWidth:  2,
+    top:          CY - RING_R - 14,
+    left:         CX - RING_R - 14,
+    opacity:      0,  // controlled by animation
+  },
+  surgeActiveBadge: {
+    alignSelf:         'center',
+    marginTop:          8,
+    backgroundColor:   'rgba(255,214,10,0.10)',
+    borderRadius:       8,
+    borderWidth:        1,
+    borderColor:       'rgba(255,214,10,0.38)',
+    paddingHorizontal: 12,
+    paddingVertical:    5,
+    opacity:            0,  // controlled by animation
+  },
+  surgeActiveText: {
+    fontSize:     11,
+    fontWeight:  '800',
+    color:       '#FFD60A',
+    letterSpacing: 1.4,
   },
 } as any);

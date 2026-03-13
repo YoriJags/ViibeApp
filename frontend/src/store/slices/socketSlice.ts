@@ -26,6 +26,13 @@ export interface SocketSlice {
   alertPrefs: AlertPrefs | null;
   /** True when city-wide pulse_score crosses CITY_CHARGE_THRESHOLD — drives GlobalVibePill pulse animation */
   cityChargeActive: boolean;
+  /** Active collective surge at the current venue (null when inactive) */
+  activeSurge: {
+    venue_id: string;
+    surge_intensity: number;  // 0..1
+    contributing_scout_ids: string[];
+    active_scouts: number;
+  } | null;
 
   // ── Actions ──────────────────────────────────────────────────────────────────
   setLoading: (loading: boolean) => void;
@@ -63,6 +70,7 @@ export const createSocketSlice: StateCreator<
   tabBarHidden: false,
   alertPrefs: null,
   cityChargeActive: false,
+  activeSurge: null,
 
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
@@ -109,6 +117,21 @@ export const createSocketSlice: StateCreator<
 
     newSocket.on('venue_live_push', (push: LivePush) => {
       set((state) => ({ livePushFeed: [push, ...state.livePushFeed].slice(0, 50) }));
+    });
+
+    newSocket.on('venue_surge', (data: {
+      venue_id: string;
+      surge_intensity: number;
+      contributing_scout_ids: string[];
+      active_scouts: number;
+    }) => {
+      // Only surface the surge if the user is currently at this venue
+      const { activeVenueId } = get();
+      if (data.venue_id === activeVenueId) {
+        set({ activeSurge: data });
+        // Auto-clear after 6 seconds so the badge fades without manual intervention
+        setTimeout(() => set({ activeSurge: null }), 6000);
+      }
     });
 
     newSocket.on('disconnect', () => {

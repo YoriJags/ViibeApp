@@ -36,6 +36,20 @@ def _fresh_pulse_state():
 
 _venue_pulses: dict = defaultdict(_fresh_pulse_state)
 
+# ─── Collective Surge Windows ─────────────────────────────────────────────────
+# In-memory 5-second tap buckets per venue.
+# Keyed by venue_id → { "taps": [(unix_ts, user_id)], "cooldown_until": datetime | None }
+# Resets on server restart; never persisted — surge is a live ephemeral signal.
+
+SURGE_WINDOW_SECONDS  = 5      # sliding bucket width
+SURGE_SCOUT_MULTIPLIER = 5     # taps_per_second must exceed active_scouts × this
+SURGE_COOLDOWN_SECONDS = 8     # minimum gap between consecutive surge events
+
+def _fresh_surge_window():
+    return {"taps": [], "cooldown_until": None}
+
+_venue_surge_windows: dict = defaultdict(_fresh_surge_window)
+
 PULSE_WINDOW_SECONDS = 300       # 5-min rolling window
 GLOBAL_SURGE_THRESHOLD = 1000    # pulses in window → global_surge
 GLOBAL_SURGE_COOLDOWN_MIN = 10   # minutes between global_surge events
@@ -246,6 +260,42 @@ async def vibe_pulse(sid, data):
         }, room=f"venue_{venue_id}")
         logger.info(f"Global Surge at {venue_id} — {pulse_count} pulses in 5 min")
 
+    # ── Collective Surge check (5-second sliding window) ─────────────────────
+    # Runs synchronously before persist so the surge fires on the same tick.
+    if user_id:
+        surge_window = _venue_surge_windows[venue_id]
+        surge_cutoff = now_ts - SURGE_WINDOW_SECONDS
+
+        # Prune stale taps from the window
+        surge_window["taps"] = [(ts, uid) for ts, uid in surge_window["taps"] if ts > surge_cutoff]
+        surge_window["taps"].append((now_ts, user_id))
+
+        # Count unique active scouts and taps_per_second
+        window_taps     = surge_window["taps"]
+        active_scouts   = len({uid for _, uid in window_taps})
+        taps_per_second = len(window_taps) / SURGE_WINDOW_SECONDS
+        surge_threshold = active_scouts * SURGE_SCOUT_MULTIPLIER
+
+        cooldown_until = surge_window.get("cooldown_until")
+        surge_ready    = (not cooldown_until) or (now > cooldown_until)
+
+        if taps_per_second > surge_threshold and active_scouts >= 2 and surge_ready:
+            surge_window["cooldown_until"] = now + timedelta(seconds=SURGE_COOLDOWN_SECONDS)
+
+            # surge_intensity: 0..1 ratio of how far above threshold we are (cap at 1)
+            surge_intensity = min(1.0, round(
+                (taps_per_second - surge_threshold) / max(surge_threshold, 1), 3
+            ))
+            contributing_scout_ids = list({uid for _, uid in window_taps})
+
+            asyncio.ensure_future(_emit_venue_surge(
+                venue_id=venue_id,
+                surge_intensity=surge_intensity,
+                contributing_scout_ids=contributing_scout_ids,
+                taps_per_second=round(taps_per_second, 2),
+                active_scouts=active_scouts,
+            ))
+
     # Persist kinetic data asynchronously — read by Oracle for momentum scoring
     asyncio.ensure_future(_persist_vibe_pulse(
         venue_id=venue_id,
@@ -285,6 +335,40 @@ async def _persist_vibe_pulse(
         })
     except Exception as exc:
         logger.debug(f"vibe_pulse persist skipped: {exc}")
+
+
+async def _emit_venue_surge(
+    venue_id: str,
+    surge_intensity: float,
+    contributing_scout_ids: list,
+    taps_per_second: float,
+    active_scouts: int,
+):
+    """
+    Collective Surge — emitted when scouts' collective tap rate exceeds the
+    dynamic threshold (active_scouts × 5 taps/second).
+
+    Payload delivered to all clients in the venue_{id} room:
+      surge_intensity        0..1 (how far above threshold the surge is)
+      contributing_scout_ids list of user_ids fueling the surge
+      taps_per_second        raw tap rate at time of trigger
+      active_scouts          unique scouts in the 5-second window
+    """
+    try:
+        await sio.emit("venue_surge", {
+            "venue_id":               venue_id,
+            "surge_intensity":        surge_intensity,
+            "contributing_scout_ids": contributing_scout_ids,
+            "taps_per_second":        taps_per_second,
+            "active_scouts":          active_scouts,
+        }, room=f"venue_{venue_id}")
+        logger.info(
+            f"Collective surge at {venue_id} — "
+            f"{active_scouts} scouts @ {taps_per_second:.1f} tps, "
+            f"intensity {surge_intensity:.2f}"
+        )
+    except Exception as exc:
+        logger.warning(f"venue_surge emit failed: {exc}")
 
 
 # ===== Broadcast Functions =====
