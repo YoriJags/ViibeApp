@@ -31,10 +31,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Merchant can subscribe to the SaaS dashboard tier via Paystack at ₦150,000/month with auto-renewing billing; the subscription survives a browser refresh and backend restart
   4. Merchant can purchase Pulse Drop boosts (Spark / Flare / Supernova) only after their SaaS subscription is active; attempting to buy a boost without a subscription is blocked with a clear upsell prompt
   5. Paystack webhook handler verifies HMAC-SHA512 signature on every event; a fake `charge.success` POST with wrong signature returns 401 and grants no subscription access
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD
+- [ ] 01-01-PLAN.md — Document existing billing implementation (file inventory, constants, routes, gates)
+- [ ] 01-02-PLAN.md — Audit implementation against BILL-01 through BILL-04 (gap analysis with verdicts)
 
 ### Phase 2: EAS Build + Distribution
 **Goal**: VIIBE runs as a real native app on physical iOS and Android devices, distributed via TestFlight, with App Store listing ready for review submission
@@ -111,7 +112,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Billing Foundation | 0/TBD | Not started | - |
+| 1. Billing Foundation | 0/2 | In progress | - |
 | 2. EAS Build + Distribution | 0/TBD | Not started | - |
 | 3. Push Notifications | 0/TBD | Not started | - |
 | 4. Growth Loops | 0/TBD | Not started | - |
