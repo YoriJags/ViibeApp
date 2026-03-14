@@ -71,7 +71,12 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
     extrapolate: 'clamp',
   });
 
-  const advance = (fired: boolean) => {
+  // Use refs so panResponder's stale closure always calls the latest version
+  const advanceRef   = useRef<(fired: boolean) => void>(() => {});
+  const swipeFireRef = useRef<() => void>(() => {});
+  const swipeSkipRef = useRef<() => void>(() => {});
+
+  advanceRef.current = (fired: boolean) => {
     if (fired) {
       const venue = displayVenues[currentIndex];
       if (venue) onFire(venue.id);
@@ -85,7 +90,7 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
     }
   };
 
-  const swipeFire = () => {
+  swipeFireRef.current = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Animated.timing(position, {
       toValue: { x: W * 1.5, y: -60 },
@@ -93,11 +98,11 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
       useNativeDriver: true,
     }).start(() => {
       position.setValue({ x: 0, y: 0 });
-      advance(true);
+      advanceRef.current(true);
     });
   };
 
-  const swipeSkip = () => {
+  swipeSkipRef.current = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Animated.timing(position, {
       toValue: { x: -W * 1.5, y: -60 },
@@ -105,9 +110,13 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
       useNativeDriver: true,
     }).start(() => {
       position.setValue({ x: 0, y: 0 });
-      advance(false);
+      advanceRef.current(false);
     });
   };
+
+  // Convenience wrappers for button presses (always fresh via refs)
+  const swipeFire = () => swipeFireRef.current();
+  const swipeSkip = () => swipeSkipRef.current();
 
   const panResponder = useRef(
     PanResponder.create({
@@ -117,9 +126,9 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
       },
       onPanResponderRelease: (_, g) => {
         if (g.dx > SWIPE_THRESHOLD || g.vx > 0.9) {
-          swipeFire();
+          swipeFireRef.current();
         } else if (g.dx < -SWIPE_THRESHOLD || g.vx < -0.9) {
-          swipeSkip();
+          swipeSkipRef.current();
         } else {
           Animated.spring(position, {
             toValue: { x: 0, y: 0 },
