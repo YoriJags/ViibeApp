@@ -67,6 +67,8 @@ export const useVibeStore = create<VibeStore>()(
         selectedCity: state.selectedCity,
         // Scout
         pendingRatings: state.pendingRatings,
+        // Tutorial
+        hasSeenAppTutorial: state.hasSeenAppTutorial,
         // Skin
         selectedSkin: state.selectedSkin,
         oscMode: state.oscMode,

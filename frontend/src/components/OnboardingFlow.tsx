@@ -46,7 +46,7 @@ const pages: OnboardingPage[] = [
     icon: 'pulse',
     iconColor: '#FF6B35',
     headline: 'Step in. Feel the room.\nShare it with the city.',
-    body: "Rate the energy, the crowd, the door. Three taps and you've just updated the city's live pulse.\n\nEvery rating helps thousands of people make better decisions tonight.",
+    body: "Rate the energy, the crowd, the door. Three taps and you've just updated the city's live pulse.\n\nEight visual skins — AURA, TERRAIN, MATRIX and more — show the crowd's energy in totally different ways.",
     accent: '#FF6B35',
   },
   {
@@ -54,7 +54,7 @@ const pages: OnboardingPage[] = [
     icon: 'flash',
     iconColor: '#FFD700',
     headline: 'Your insight\nearns you Clout.',
-    body: "Build rating streaks. Earn multipliers. Rise through Scout ranks from Newcomer to City Elite.\n\nThe most trusted voices shape where the city goes. Yours could be one of them.",
+    body: "Build rating streaks. Earn multipliers. Rise through Scout ranks from Newcomer to City Elite.\n\nHold IGNITE with other scouts to fire a synchronized flashlight moment — the crowd goes off together.",
     accent: '#FFD700',
   },
   {

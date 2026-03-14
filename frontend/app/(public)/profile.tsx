@@ -61,7 +61,7 @@ const DEMO_DEBRIEF = {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode, isFeatureEnabled, isVibePlus, avatarConfig, updateAvatar, crew, fetchCrew } = useVibeStore();
+  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode, isFeatureEnabled, isVibePlus, avatarConfig, updateAvatar, crew, fetchCrew, replayAppTutorial } = useVibeStore();
   const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
@@ -529,6 +529,16 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           )
         )}
+
+        {/* Replay app tutorial */}
+        <TouchableOpacity
+          style={styles.replayTutorialBtn}
+          onPress={replayAppTutorial}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="book-outline" size={14} color="#3399FF" />
+          <Text style={styles.replayTutorialText}>How to Use Viibez</Text>
+        </TouchableOpacity>
 
         {/* Demo: trigger AuraLevelUp ceremony */}
         {isDemoMode && (
@@ -1236,6 +1246,14 @@ const styles = StyleSheet.create({
   nightSummaryStatLbl: { color: '#666', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 },
   nightSummaryFooter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   nightSummaryPreview: { flex: 1, color: '#666', fontSize: 12, fontStyle: 'italic' },
+  // Replay tutorial
+  replayTutorialBtn: {
+    marginHorizontal: 16, marginBottom: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#3399FF11', borderRadius: 10, borderWidth: 1,
+    borderColor: '#3399FF33', paddingHorizontal: 14, paddingVertical: 10,
+  },
+  replayTutorialText: { color: '#3399FF', fontSize: 12, fontWeight: '600' },
   // Demo trigger
   demoTriggerBtn: {
     marginHorizontal: 16, marginBottom: 16,

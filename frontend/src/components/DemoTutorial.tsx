@@ -72,6 +72,36 @@ const STEPS: TutorialStep[] = [
     gradientColors: ['#FF3366', '#FF6B35'],
   },
   {
+    id: 'reactor-skins',
+    title: 'Reactor Skins',
+    description:
+      'Choose how you see the energy — AURA morphs like a living blob, TERRAIN draws a scrolling ridge, MATRIX streams falling data, RADAR sweeps scout positions. Tap "CHANGE SKIN" below the reactor.',
+    icon: 'color-palette',
+    targetRoute: '/venue/demo_venue_quilox',
+    position: 'bottom',
+    gradientColors: ['#CC44FF', '#9933FF'],
+  },
+  {
+    id: 'scene-frequency',
+    title: 'Scene Frequency',
+    description:
+      'Below the reactor — the live energy waveform. Switch between BARS, WAVE, and PULSE modes using the pill switcher. Exclusive to VIBE+ subscribers.',
+    icon: 'radio',
+    targetRoute: '/venue/demo_venue_quilox',
+    position: 'bottom',
+    gradientColors: ['#3399FF', '#9933FF'],
+  },
+  {
+    id: 'torch-ignite',
+    title: 'Torch Ignite',
+    description:
+      'When the venue hits peak energy (85+), IGNITE appears above the reactor. Hold it with other scouts to trigger a synchronized flashlight moment across the whole crowd.',
+    icon: 'flashlight',
+    targetRoute: '/venue/demo_venue_quilox',
+    position: 'top',
+    gradientColors: ['#FFD700', '#FF9933'],
+  },
+  {
     id: 'trending',
     title: 'Trending & Leaderboard',
     description:

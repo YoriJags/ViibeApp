@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import { useVibeStore } from '../src/store/vibeStore';
 import OnboardingFlow from '../src/components/OnboardingFlow';
+import AppTutorial from '../src/components/AppTutorial';
 import SplashAnimation from '../src/components/SplashAnimation';
 import DemoTutorial from '../src/components/DemoTutorial';
 import ErrorBoundary from '../src/components/ErrorBoundary';
@@ -17,7 +18,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // App Initializer Component — manages splash → content transition
 function AppInitializer({ children }: { children: React.ReactNode }) {
-  const { hasHydrated, fetchCities, connectSocket, hasSeenOnboarding, completeOnboarding, fetchFeatureFlags } = useVibeStore();
+  const { hasHydrated, fetchCities, connectSocket, hasSeenOnboarding, completeOnboarding, fetchFeatureFlags, hasSeenAppTutorial, completeAppTutorial } = useVibeStore();
   const [isReady, setIsReady] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
@@ -62,9 +63,14 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // After splash exits, show onboarding or main app
+  // After splash exits, show onboarding for new users
   if (!hasSeenOnboarding) {
     return <OnboardingFlow onComplete={completeOnboarding} />;
+  }
+
+  // How-to tutorial — shown once after onboarding (and for existing users on next launch)
+  if (!hasSeenAppTutorial) {
+    return <AppTutorial visible onComplete={completeAppTutorial} />;
   }
 
   return <>{children}</>;

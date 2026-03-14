@@ -37,6 +37,9 @@ export interface AuthSlice {
   toggleDemoMode: () => void;
   completeDemoTutorial: () => void;
   restartDemoTutorial: () => void;
+  hasSeenAppTutorial: boolean;
+  completeAppTutorial: () => void;
+  replayAppTutorial: () => void;
   updateAvatar: (config: { emoji: string; bgColor: string; accentColor: string }) => void;
   toggleLocationSharing: () => void;
   setVibePersona: (persona: 'turn_up' | 'grown_sexy' | 'culture' | 'chill_set') => void;
@@ -61,6 +64,7 @@ export const createAuthSlice: StateCreator<
   hasSeenMerchantOnboarding: false,
   isDemoMode: false,
   hasSeenDemoTutorial: false,
+  hasSeenAppTutorial: false,
   avatarConfig: null,
   locationSharingEnabled: true,
   vibePersona: null,
@@ -251,6 +255,8 @@ export const createAuthSlice: StateCreator<
 
   completeDemoTutorial: () => set({ hasSeenDemoTutorial: true }),
   restartDemoTutorial: () => set({ hasSeenDemoTutorial: false }),
+  completeAppTutorial: () => set({ hasSeenAppTutorial: true }),
+  replayAppTutorial:   () => set({ hasSeenAppTutorial: false }),
   updateAvatar: (config) => set({ avatarConfig: config }),
   toggleLocationSharing: () => set({ locationSharingEnabled: !get().locationSharingEnabled }),
   setVibePersona: (persona) => set({ vibePersona: persona }),
