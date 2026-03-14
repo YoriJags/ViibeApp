@@ -12,13 +12,13 @@
 import React, { useRef, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
-  Dimensions, ActivityIndicator, Platform,
+  Dimensions, ActivityIndicator, Platform, Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { captureRef } from 'react-native-view-shot';
-import * as Sharing from 'expo-sharing';
+// react-native-view-shot and expo-sharing are native-only — guarded below
+// Web users see a "not available" message instead of a broken build
 import { Canvas, Path, Skia, Paint } from '@shopify/react-native-skia';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -214,16 +214,21 @@ export default function VibeShareCard({ data, visible, onClose }: Props) {
   const [sharing, setSharing] = useState(false);
 
   const handleShare = useCallback(async () => {
+    if (Platform.OS === 'web') {
+      Alert.alert('Share', 'Screenshot sharing is not available on web — use the mobile app.');
+      return;
+    }
     if (!cardRef.current) return;
     setSharing(true);
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      const uri = await captureRef(cardRef, { format: 'png', quality: 0.95 });
-      const canShare = await Sharing.isAvailableAsync();
+      // Dynamic requires so the web bundle never tries to resolve these modules
+      const { captureRef: _captureRef } = require('react-native-view-shot');
+      const _Sharing = require('expo-sharing');
+      const uri = await _captureRef(cardRef, { format: 'png', quality: 0.95 });
+      const canShare = await _Sharing.isAvailableAsync();
       if (canShare) {
-        await Sharing.shareAsync(uri, {
+        await _Sharing.shareAsync(uri, {
           mimeType:    'image/png',
           dialogTitle: 'Share your VIIBE night',
           UTI:         'public.png',
