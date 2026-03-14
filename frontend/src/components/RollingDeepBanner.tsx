@@ -137,8 +137,8 @@ export default function RollingDeepBanner({ crewId, currentUserId, isDemoMode, o
 
         {/* Venue info */}
         <TouchableOpacity
-          onPress={() => session.venue_id && onVenuePress?.(session.venue_id)}
-          activeOpacity={0.8}
+          onPress={() => session.venue_id && session.venue_id !== 'demo_venue' && onVenuePress?.(session.venue_id)}
+          activeOpacity={session.venue_id && session.venue_id !== 'demo_venue' ? 0.8 : 1}
           style={styles.venueRow}
         >
           <Ionicons name="location" size={14} color={isRolling ? '#00E676' : '#FF3366'} />
