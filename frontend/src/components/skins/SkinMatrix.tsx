@@ -37,10 +37,14 @@ export default function SkinMatrix({ vibeScore, surgeValue, color }: SkinProps) 
     clock.value = withRepeat(withTiming(H, { duration: 1600 }), -1, false);
   }, []);
 
+  // Surge: surgeValue peaks at 1.8. Use it directly as speed multiplier (2× at peak)
+  // Gold toggle: surgeValue > 1.3 → gold mode
+  const surgeIntensity = useDerivedValue(() => Math.max(0, (surgeValue.value - 1.0) / 0.8));
+
   const matrixPath = useDerivedValue(() => {
-    const surge     = surgeValue.value;
+    const surge     = surgeValue.value;           // speed multiplier
     const intensity = (vibeScore.value / 100);
-    const tick      = clock.value * surge;
+    const tick      = clock.value * surge;        // faster fall during surge
     const p         = Skia.Path.Make();
 
     for (let col = 0; col < COLS; col++) {
@@ -55,6 +59,25 @@ export default function SkinMatrix({ vibeScore, surgeValue, color }: SkinProps) 
         const charH = CHAR_H - 3;
         // Each "character" is a small rect
         p.addRect(Skia.XYWHRect(cx, y, charW, charH));
+      }
+    }
+    return p;
+  });
+
+  // Gold path — same as matrixPath but rendered gold at surge
+  const goldPath = useDerivedValue(() => {
+    const surge     = surgeValue.value;
+    const intensity = vibeScore.value / 100;
+    const tick      = clock.value * surge;
+    const p         = Skia.Path.Make();
+    for (let col = 0; col < COLS; col++) {
+      const cx     = col * COL_W + COL_W / 2 - CHAR_WIDTHS[col] / 2;
+      const speed  = COL_SPEEDS[col];
+      const offset = COL_OFFSETS[col];
+      const chars  = Math.round(intensity * CHARS_PER_COL * 0.8 + 2);
+      for (let row = 0; row < chars; row++) {
+        const y = ((tick * speed + offset + row * CHAR_H) % H + H) % H;
+        p.addRect(Skia.XYWHRect(cx, y, CHAR_WIDTHS[col], CHAR_H - 3));
       }
     }
     return p;
@@ -82,11 +105,15 @@ export default function SkinMatrix({ vibeScore, surgeValue, color }: SkinProps) 
         {/* Background */}
         <Rect x={0} y={0} width={W} height={H} color="#020802" />
 
-        {/* Stream body */}
-        <Path path={matrixPath} color={color + '70'} style="fill" />
+        {/* Normal stream — fades out during surge */}
+        <Path path={matrixPath} color={color + '70'} style="fill" opacity={useDerivedValue(() => 1 - surgeIntensity.value)} />
 
-        {/* Bright head chars */}
-        <Path path={headPath} color={color} style="fill" />
+        {/* Gold surge stream — fades in during surge */}
+        <Path path={goldPath} color="#FFD70099" style="fill" opacity={surgeIntensity} />
+
+        {/* Bright head chars — gold during surge */}
+        <Path path={headPath} color={color} style="fill" opacity={useDerivedValue(() => 1 - surgeIntensity.value)} />
+        <Path path={headPath} color="#FFD700" style="fill" opacity={surgeIntensity} />
       </Canvas>
     </View>
   );

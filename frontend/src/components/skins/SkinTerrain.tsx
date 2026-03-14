@@ -44,64 +44,110 @@ export default function SkinTerrain({ bpmShared, vibeScore, surgeValue, color }:
   };
 
   // Build path from history every noise tick
-  const terrainPath = useDerivedValue(() => {
-    // Access noise to trigger re-run on tick
-    const _ = noise.value;
-    runOnJS(updateHistory)();
+  // Surge intensity: 0 at rest, peaks at 0.8 during surge (surgeValue goes 1→1.8→1)
+  const surgeIntensity = useDerivedValue(() => Math.max(0, (surgeValue.value - 1.0) / 0.8));
 
+  const buildRidge = (amplitudeMultiplier: number, xOffset: number) => {
     const pts = historyRef.current;
     const p   = Skia.Path.Make();
-
-    p.moveTo(0, H);
-    p.lineTo(0, pts[0]);
-
-    // Smooth the ridge with quadratic bezier midpoints
+    p.moveTo(xOffset, pts[0]);
     for (let i = 0; i < pts.length - 1; i++) {
-      const x1 = i * STEP;
-      const y1 = pts[i];
-      const x2 = (i + 1) * STEP;
-      const y2 = pts[i + 1];
-      const mx  = (x1 + x2) / 2;
-      const my  = (y1 + y2) / 2;
+      const x1 = i * STEP + xOffset;
+      const y1 = pts[i] * amplitudeMultiplier;
+      const x2 = (i + 1) * STEP + xOffset;
+      const y2 = pts[i + 1] * amplitudeMultiplier;
+      const mx = (x1 + x2) / 2;
+      const my = (y1 + y2) / 2;
       p.quadTo(x1, y1, mx, my);
     }
+    p.lineTo((pts.length - 1) * STEP + xOffset, pts[pts.length - 1] * amplitudeMultiplier);
+    return p;
+  };
 
-    p.lineTo(W, pts[pts.length - 1]);
+  const terrainPath = useDerivedValue(() => {
+    const _ = noise.value;
+    runOnJS(updateHistory)();
+    const surge = surgeValue.value;
+    const pts = historyRef.current;
+    const p   = Skia.Path.Make();
+    p.moveTo(0, H);
+    p.lineTo(0, pts[0]);
+    for (let i = 0; i < pts.length - 1; i++) {
+      const x1 = i * STEP;
+      const y1 = pts[i] / surge;        // surge pulls ridge UP (lower Y = higher on screen)
+      const x2 = (i + 1) * STEP;
+      const y2 = pts[i + 1] / surge;
+      p.quadTo(x1, y1, (x1 + x2) / 2, (y1 + y2) / 2);
+    }
+    p.lineTo(W, pts[pts.length - 1] / surge);
     p.lineTo(W, H);
     p.close();
     return p;
   });
 
-  // Ridge line only (stroke)
-  const ridgePath = useDerivedValue(() => {
+  // Ridge main + chromatic aberration: red shifted right, cyan shifted left
+  const ridgeMain = useDerivedValue(() => {
     const _ = noise.value;
+    const surge = surgeValue.value;
     const pts = historyRef.current;
-    const p   = Skia.Path.Make();
-    p.moveTo(0, pts[0]);
+    const p = Skia.Path.Make();
+    p.moveTo(0, pts[0] / surge);
     for (let i = 0; i < pts.length - 1; i++) {
-      const x1 = i * STEP;
-      const y1 = pts[i];
-      const x2 = (i + 1) * STEP;
-      const y2 = pts[i + 1];
-      const mx  = (x1 + x2) / 2;
-      const my  = (y1 + y2) / 2;
-      p.quadTo(x1, y1, mx, my);
+      const x1 = i * STEP; const y1 = pts[i] / surge;
+      const x2 = (i + 1) * STEP; const y2 = pts[i + 1] / surge;
+      p.quadTo(x1, y1, (x1 + x2) / 2, (y1 + y2) / 2);
     }
-    p.lineTo(W, pts[pts.length - 1]);
+    p.lineTo(W, pts[pts.length - 1] / surge);
     return p;
   });
+
+  // Chromatic channels — offset X by surge-scaled amount
+  const ridgeRed = useDerivedValue(() => {
+    const _ = noise.value;
+    const surge = surgeValue.value;
+    const offset = surgeIntensity.value * 5;  // 0→5px at full surge
+    const pts = historyRef.current;
+    const p = Skia.Path.Make();
+    p.moveTo(offset, pts[0] / surge);
+    for (let i = 0; i < pts.length - 1; i++) {
+      const x1 = i * STEP + offset; const y1 = pts[i] / surge;
+      const x2 = (i + 1) * STEP + offset; const y2 = pts[i + 1] / surge;
+      p.quadTo(x1, y1, (x1 + x2) / 2, (y1 + y2) / 2);
+    }
+    p.lineTo(W + offset, pts[pts.length - 1] / surge);
+    return p;
+  });
+
+  const ridgeCyan = useDerivedValue(() => {
+    const _ = noise.value;
+    const surge = surgeValue.value;
+    const offset = -surgeIntensity.value * 5;
+    const pts = historyRef.current;
+    const p = Skia.Path.Make();
+    p.moveTo(offset, pts[0] / surge);
+    for (let i = 0; i < pts.length - 1; i++) {
+      const x1 = i * STEP + offset; const y1 = pts[i] / surge;
+      const x2 = (i + 1) * STEP + offset; const y2 = pts[i + 1] / surge;
+      p.quadTo(x1, y1, (x1 + x2) / 2, (y1 + y2) / 2);
+    }
+    p.lineTo(W + offset, pts[pts.length - 1] / surge);
+    return p;
+  });
+
+  const chromaOpacity = useDerivedValue(() => surgeIntensity.value * 0.7);
 
   return (
     <View style={styles.wrapper}>
       <Canvas style={{ width: W, height: H }}>
-        {/* Base dark fill */}
         <Rect x={0} y={0} width={W} height={H} color="#030808" />
-
-        {/* Terrain fill */}
         <Path path={terrainPath} color={color + '20'} style="fill" />
 
-        {/* Ridge stroke */}
-        <Path path={ridgePath} color={color} style="stroke" strokeWidth={2} strokeCap="round" />
+        {/* Chromatic aberration — red channel right */}
+        <Path path={ridgeRed}  color="#FF334488" style="stroke" strokeWidth={1.5} strokeCap="round" opacity={chromaOpacity} />
+        {/* Chromatic aberration — cyan channel left */}
+        <Path path={ridgeCyan} color="#00FFFF66" style="stroke" strokeWidth={1.5} strokeCap="round" opacity={chromaOpacity} />
+        {/* Main ridge */}
+        <Path path={ridgeMain} color={color} style="stroke" strokeWidth={2} strokeCap="round" />
       </Canvas>
     </View>
   );

@@ -64,9 +64,12 @@ export default function SkinAura({ bpmShared, vibeScore, surgeValue, color }: Sk
     return p;
   });
 
-  // Glow path — slightly larger, low opacity
+  // Surge intensity 0→1
+  const surgeIntensity = useDerivedValue(() => Math.max(0, (surgeValue.value - 1.0) / 0.8));
+
+  // Glow path — slightly larger, low opacity. Expands dramatically at surge (Supernova)
   const glowPath = useDerivedValue(() => {
-    const baseR = (vibeScore.value / 100) * 80 + 44;
+    const baseR = (vibeScore.value / 100) * 80 + 44 + surgeIntensity.value * 40;
     const surge  = surgeValue.value;
     const pts: [number, number][] = [];
 
@@ -102,6 +105,13 @@ export default function SkinAura({ bpmShared, vibeScore, surgeValue, color }: Sk
       <Canvas style={{ width: W, height: H }}>
         {/* Background */}
         <Circle cx={CX} cy={CY} r={W / 2} color="#050510" />
+
+        {/* Supernova outer ring — only visible at surge */}
+        <Path path={glowPath} color={color + '10'} style="fill">
+          <Paint style="fill" color={color + '10'}>
+            <BlurMask blur={useDerivedValue(() => 24 + surgeIntensity.value * 32)} style="solid" />
+          </Paint>
+        </Path>
 
         {/* Outer glow */}
         <Path path={glowPath} color={color + '18'} style="fill">

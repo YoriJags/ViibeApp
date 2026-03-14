@@ -53,6 +53,7 @@ export default function SkinContainer({
 }: Props) {
   const { selectedSkin } = useVibeStore();
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const [focusSkinId, setFocusSkinId]   = useState<import('./skins/skinTypes').SkinId | null>(null);
 
   const meta = SKINS.find(s => s.id === selectedSkin) ?? SKINS[0];
   const skinProps = { bpmShared, vibeScore, surgeValue, color: vibeColor };
@@ -130,7 +131,7 @@ export default function SkinContainer({
       {/* Change skin affordance */}
       <TouchableOpacity
         style={styles.changeSkinBtn}
-        onPress={() => setSelectorOpen(true)}
+        onPress={() => { setFocusSkinId(null); setSelectorOpen(true); }}
         activeOpacity={0.75}
       >
         <Text style={styles.changeSkinIcon}>{meta.icon}</Text>
@@ -141,7 +142,8 @@ export default function SkinContainer({
       <SkinSelector
         visible={selectorOpen}
         isPlus={isPlus}
-        onClose={() => setSelectorOpen(false)}
+        focusSkinId={focusSkinId}
+        onClose={() => { setSelectorOpen(false); setFocusSkinId(null); }}
         onUnlockPress={onUnlockPress}
       />
     </View>

@@ -11,6 +11,8 @@
  * always see it, returning users get the nudge when checking in).
  */
 import React, { useRef, useState } from 'react';
+import SkinSelector from './SkinSelector';
+import { SkinId } from './skins/skinTypes';
 import {
   View, Text, TouchableOpacity, ScrollView,
   StyleSheet, Dimensions, Animated,
@@ -110,7 +112,9 @@ interface Props {
 
 export default function FeatureStoryStrip({ onUnlockPress, onOpenSelector }: Props) {
   const { selectedSkin, setSkin } = useVibeStore();
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed,    setDismissed]    = useState(false);
+  const [skinSelector, setSkinSelector] = useState(false);
+  const [focusSkin,    setFocusSkin]    = useState<SkinId | null>(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const dismiss = () => {
@@ -123,17 +127,21 @@ export default function FeatureStoryStrip({ onUnlockPress, onOpenSelector }: Pro
 
   const handleCardPress = (feature: typeof FEATURES[0]) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (feature.isPremium) {
-      onUnlockPress();
+    if (feature.isPremium && feature.skinId) {
+      // Open selector spotlight with this skin focused — conversion loop
+      setFocusSkin(feature.skinId as SkinId);
+      setSkinSelector(true);
       return;
     }
     if (feature.id === 'skins') {
-      onOpenSelector();
+      setFocusSkin(null);
+      setSkinSelector(true);
       return;
     }
     if (feature.skinId) {
       setSkin(feature.skinId as any);
-      onOpenSelector();
+      setFocusSkin(null);
+      setSkinSelector(true);
     }
   };
 
@@ -223,6 +231,15 @@ export default function FeatureStoryStrip({ onUnlockPress, onOpenSelector }: Pro
 
       {/* Swipe hint on first render */}
       <Text style={styles.swipeHint}>swipe to explore ›</Text>
+
+      {/* Inline SkinSelector — opened when story card tapped */}
+      <SkinSelector
+        visible={skinSelector}
+        isPlus={false}
+        focusSkinId={focusSkin}
+        onClose={() => { setSkinSelector(false); setFocusSkin(null); }}
+        onUnlockPress={() => { setSkinSelector(false); onUnlockPress(); }}
+      />
     </Animated.View>
   );
 }
