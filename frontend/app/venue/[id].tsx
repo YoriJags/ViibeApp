@@ -55,6 +55,7 @@ import ScoutPressureChip from '../../src/components/ScoutPressureChip';
 import VibeMomentum from '../../src/components/VibeMomentum';
 import TorchButton from '../../src/components/TorchButton';
 import VibeOscillator, { triggerOscillatorSurge } from '../../src/components/VibeOscillator';
+import SkinContainer from '../../src/components/SkinContainer';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -1171,14 +1172,14 @@ export default function VenueDetailScreen() {
           />
         )}
 
-        {/* ── Vibe Reactor — merged charge ring + kinetic tap ── */}
-        {id && (
+        {/* ── Reactor / Skin Container ── */}
+        {id && venue && (
           <ErrorBoundary label="Vibe Reactor">
             <View onLayout={e => { reactorLayoutY.current = e.nativeEvent.layout.y; }}>
-              <VibeReactor
+              <SkinContainer
                 venueId={id}
-                venueName={venue?.name ?? ''}
-                venueCoordinates={venue?.coordinates ?? null}
+                venueName={venue.name ?? ''}
+                venueCoordinates={venue.coordinates ?? null}
                 userLocation={userLocation}
                 isDemoMode={isDemoMode}
                 onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }}
@@ -1188,6 +1189,13 @@ export default function VenueDetailScreen() {
                   setShowSurgeCelebration(true);
                 }}
                 onBpmUpdate={(bpm) => { oscBpm.value = bpm; }}
+                bpmShared={oscBpm}
+                vibeScore={oscScore}
+                surgeValue={oscSurge}
+                vibeColor={vibeColor}
+                isPlus={isVibePlus}
+                socket={socket}
+                onUnlockPress={() => setShowVibePlusModal(true)}
               />
             </View>
           </ErrorBoundary>

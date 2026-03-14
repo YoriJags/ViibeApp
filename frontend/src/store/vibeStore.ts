@@ -17,18 +17,28 @@ import { createAuthSlice, AuthSlice } from './slices/authSlice';
 import { createVenueSlice, VenueSlice } from './slices/venueSlice';
 import { createScoutSlice, ScoutSlice } from './slices/scoutSlice';
 import { createSocketSlice, SocketSlice } from './slices/socketSlice';
+import { SkinId } from '../components/skins/skinTypes';
+
+// ─── Skin preference (persisted, tiny — lives inline) ─────────────────────────
+interface SkinSlice {
+  selectedSkin: SkinId;
+  setSkin: (id: SkinId) => void;
+}
 
 // ─── Combined store type ──────────────────────────────────────────────────────
-export type VibeStore = AuthSlice & VenueSlice & ScoutSlice & SocketSlice;
+export type VibeStore = AuthSlice & VenueSlice & ScoutSlice & SocketSlice & SkinSlice;
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 export const useVibeStore = create<VibeStore>()(
   persist(
-    (...args) => ({
-      ...createAuthSlice(...args),
-      ...createVenueSlice(...args),
-      ...createScoutSlice(...args),
-      ...createSocketSlice(...args),
+    (set, get, api) => ({
+      ...createAuthSlice(set, get, api),
+      ...createVenueSlice(set, get, api),
+      ...createScoutSlice(set, get, api),
+      ...createSocketSlice(set, get, api),
+      // Skin preference
+      selectedSkin: 'reactor' as SkinId,
+      setSkin: (id: SkinId) => set({ selectedSkin: id }),
     }),
     {
       name: 'vibe-store',
@@ -52,6 +62,8 @@ export const useVibeStore = create<VibeStore>()(
         selectedCity: state.selectedCity,
         // Scout
         pendingRatings: state.pendingRatings,
+        // Skin
+        selectedSkin: state.selectedSkin,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

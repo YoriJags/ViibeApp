@@ -62,6 +62,7 @@ import SceneMoodSelector, { SceneMood } from '../../src/components/SceneMoodSele
 import VariableRewardOverlay, { VariableRewardRef } from '../../src/components/VariableRewardOverlay';
 import VenueDiscoverFlow from '../../src/components/VenueDiscoverFlow';
 import NightArcStrip from '../../src/components/NightArcStrip';
+import FeatureStoryStrip from '../../src/components/FeatureStoryStrip';
 import StreakFireModal from '../../src/components/StreakFireModal';
 import OracleTease from '../../src/components/OracleTease';
 
@@ -769,6 +770,14 @@ export default function MapScreen() {
               onSeeMore={() => router.push('/(public)/trending')}
             />
           )}
+
+          {/* Feature Story Strip — discover & explore VIIBE features */}
+          <ErrorBoundary label="Feature Story">
+            <FeatureStoryStrip
+              onUnlockPress={() => setShowVibePlus(true)}
+              onOpenSelector={() => {/* handled inside strip */}}
+            />
+          </ErrorBoundary>
 
           {/* City Pulse + Live Push: only show if there is real data */}
           {cityPulse && (
