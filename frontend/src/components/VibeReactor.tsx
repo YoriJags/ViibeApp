@@ -28,6 +28,7 @@ import { calculateDistance } from '../utils/geo';
 import SurgeFullScreen, { SurgeState } from './SurgeFullScreen';
 import { useHapticVelocity } from '../hooks/useHapticVelocity';
 import { useRetryFetch } from '../hooks/useRetryFetch';
+import { useKineticBuffer } from '../hooks/useKineticBuffer';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -145,11 +146,24 @@ interface KineticCanvasProps {
   ringProgress: ReturnType<typeof useSharedValue<number>>;
   coreColor:    ReturnType<typeof useDerivedValue<string>>;
   sparks:       Spark[];
+  syncPct:      ReturnType<typeof useSharedValue<number>>;
 }
 
 const KineticCanvas = React.memo(function KineticCanvas({
-  ringProgress, coreColor, sparks,
+  ringProgress, coreColor, sparks, syncPct,
 }: KineticCanvasProps) {
+  // Coherence arc — crystallises from blurry ghost → sharp glowing ring as crowd syncs
+  // Opacity: invisible below 15%, full at 100%. Blur: thick at 0%, crisp at 100%.
+  const coherenceOpacity = useDerivedValue(() =>
+    Math.max(0, (syncPct.value - 15) / 85)
+  );
+  const coherenceBlur = useDerivedValue(() =>
+    interpolate(syncPct.value, [0, 100], [18, 2])
+  );
+  const coherenceWidth = useDerivedValue(() =>
+    interpolate(syncPct.value, [0, 100], [1.5, 4])
+  );
+
   // Progress arc — built on the UI thread
   const arcPath = useDerivedValue(() => {
     const sweep = Math.max(0, ringProgress.value * 360);
@@ -193,6 +207,20 @@ const KineticCanvas = React.memo(function KineticCanvas({
         />
       </Path>
 
+      {/* Coherence ring — crowd sync visualiser
+          Low sync  → barely-visible blurry ghost halo
+          High sync → crisp cyan arc crystallises, crowd is locked in */}
+      <Circle cx={CX} cy={CY} r={RING_R + 7}>
+        <Paint
+          style="stroke"
+          strokeWidth={coherenceWidth}
+          color="#00FFCC"
+          opacity={coherenceOpacity}
+        >
+          <BlurMask blur={coherenceBlur} style="solid" />
+        </Paint>
+      </Circle>
+
       {/* Particle sparks */}
       {sparks.map(spark => (
         <Circle
@@ -231,6 +259,28 @@ export default function VibeReactor({
   const socket         = useVibeStore(s => s.socket);
   const user           = useVibeStore(s => s.user);
   const activeSurge    = useVibeStore(s => s.activeSurge);
+
+  // ── Coherence system ─────────────────────────────────────────────────────────
+  const { syncPct, isCoherent, recordVariance } = useKineticBuffer();
+  const syncPctShared   = useSharedValue(0);
+  const wasCoherentRef  = useRef(false);
+
+  useEffect(() => {
+    syncPctShared.value = withTiming(syncPct, { duration: 600 });
+  }, [syncPct]);
+
+  // Haptic + one-shot feedback when crowd first locks in
+  useEffect(() => {
+    if (isCoherent && !wasCoherentRef.current) {
+      wasCoherentRef.current = true;
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success), 90);
+      }
+    } else if (!isCoherent) {
+      wasCoherentRef.current = false;
+    }
+  }, [isCoherent]);
 
   // ── Surge state ─────────────────────────────────────────────────────────────
   const [surge,       setSurge]     = useState<SurgeState | null>(isDemoMode ? DEMO_SURGE : null);
@@ -575,6 +625,9 @@ export default function VibeReactor({
           ) / 1000;
         }
 
+        // Feed variance into coherence buffer → drives the sync ring
+        recordVariance(tapVariance);
+
         socket?.emit('vibe_pulse', {
           venue_id:   venueId, user_id: user?.id,
           tap_count:  windowTapCount.current,
@@ -722,12 +775,26 @@ export default function VibeReactor({
       {/* ── Kinetic Core ─────────────────────────────────────────── */}
       <View style={styles.coreContainer}>
 
-        {/* Skia: ring track + progress arc + sparks */}
+        {/* Skia: ring track + progress arc + coherence ring + sparks */}
         <KineticCanvas
           ringProgress={ringProgress}
           coreColor={coreColor}
           sparks={sparksRef.current}
+          syncPct={syncPctShared}
         />
+
+        {/* SYNC chip — appears as coherence rises, crystallises at isCoherent */}
+        {syncPct > 18 && (
+          <View style={[
+            styles.syncChip,
+            { borderColor: isCoherent ? '#00FFCC' : '#00FFCC55',
+              backgroundColor: isCoherent ? 'rgba(0,255,204,0.12)' : 'rgba(0,255,204,0.05)' },
+          ]}>
+            <Text style={[styles.syncChipText, { color: isCoherent ? '#00FFCC' : '#00FFCC88' }]}>
+              {isCoherent ? '⬡ ' : ''}SYNC {Math.round(syncPct)}%
+            </Text>
+          </View>
+        )}
 
         {/* Ghost surge ring — secondary pulse offset from main ring */}
         <Animated.View style={[styles.surgeGhostRing, surgeRingStyle, { borderColor: color }]} />
@@ -982,6 +1049,23 @@ const styles = StyleSheet.create({
     fontSize:     11,
     fontWeight:  '800',
     color:       '#FFD60A',
+    letterSpacing: 1.4,
+  },
+  // ── Coherence ring chip ──────────────────────────────────
+  syncChip: {
+    position:          'absolute',
+    top:                8,
+    alignSelf:         'center',
+    left:              '50%',
+    marginLeft:        -36,
+    borderRadius:       8,
+    borderWidth:        1,
+    paddingHorizontal:  8,
+    paddingVertical:    3,
+  },
+  syncChipText: {
+    fontSize:      9,
+    fontWeight:   '800',
     letterSpacing: 1.4,
   },
 } as any);

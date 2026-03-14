@@ -44,6 +44,7 @@ import ArrivalIntelCard from '../../src/components/ArrivalIntelCard';
 import CrowdCompositionBar from '../../src/components/CrowdCompositionBar';
 import BookingModal from '../../src/components/BookingModal';
 import VibeReactor from '../../src/components/VibeReactor';
+import CollectiveVibeQuest from '../../src/components/CollectiveVibeQuest';
 import SurgeCelebration from '../../src/components/SurgeCelebration';
 import FirstScoutCelebration from '../../src/components/FirstScoutCelebration';
 import ResonancePrompt from '../../src/components/ResonancePrompt';
@@ -1096,6 +1097,20 @@ export default function VenueDetailScreen() {
         )}
 
         </>}
+
+        {/* ── Collective Vibe Quest — room pushes to PEAK together ── */}
+        {id && (
+          <CollectiveVibeQuest
+            venueId={id}
+            isDemoMode={isDemoMode}
+            onPushPress={() => {
+              // Scroll to the VibeReactor below
+              if (reactorLayoutY.current > 0) {
+                scrollViewRef.current?.scrollTo({ y: reactorLayoutY.current, animated: true });
+              }
+            }}
+          />
+        )}
 
         {/* ── Vibe Reactor — merged charge ring + kinetic tap ── */}
         {id && (

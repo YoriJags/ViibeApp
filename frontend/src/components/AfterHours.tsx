@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useVibeStore } from '../store/vibeStore';
+import VibeShareCard, { ShareNightData } from './VibeShareCard';
 
 const { width: W, height: H } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -72,8 +73,12 @@ interface Props {
 
 export default function AfterHours({ visible, onClose, isDemoMode }: Props) {
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
+  const user           = useVibeStore(s => s.user);
+  const cityPulse      = useVibeStore(s => s.cityPulse);
+  const vibeDNA        = useVibeStore(s => s.vibeDNA);
   const [recap, setRecap] = useState<NightRecap | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
 
   const slideAnim  = useRef(new Animated.Value(H)).current;
   const bgOpac     = useRef(new Animated.Value(0)).current;
@@ -243,10 +248,49 @@ export default function AfterHours({ visible, onClose, isDemoMode }: Props) {
                   ? 'You showed up. That matters.'
                   : 'New night tomorrow.'}
               </Text>
+
+              {/* Share your night */}
+              <TouchableOpacity
+                style={[styles.shareBtn, { borderColor: color + '55', backgroundColor: color + '14' }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setShowShareCard(true);
+                }}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="share-outline" size={15} color={color} />
+                <Text style={[styles.shareBtnText, { color }]}>SHARE YOUR NIGHT</Text>
+              </TouchableOpacity>
             </Animated.View>
           ) : null}
         </ScrollView>
       </Animated.View>
+      {/* Vibe Share Card — export your night as a shareable image */}
+      {recap && (
+        <VibeShareCard
+          visible={showShareCard}
+          onClose={() => setShowShareCard(false)}
+          data={{
+            username:        user?.username ?? user?.name ?? 'Scout',
+            scoutStatus:     user?.scout_status ?? undefined,
+            rank:            (user as any)?.rank ?? undefined,
+            auraLabel:       recap.heat_label,
+            auraColor:       recap.heat_color,
+            heatScore:       recap.heat_score,
+            boltsTonight:    recap.bolts_tonight,
+            checkinsTonight: recap.checkins_tonight,
+            ratingsTonight:  recap.ratings_tonight,
+            streakDays:      recap.streak_days,
+            hotNights:       recap.hot_nights,
+            topVenueName:    recap.top_venue?.venue_name,
+            dnaSignature:    cityPulse?.city_vibe_signature ?? (vibeDNA as any)?.dominant_type,
+            sparkline:       cityPulse?.sparkline ?? [40, 55, 60, 70, 75, 78],
+            city:            cityPulse?.city ?? 'Lagos',
+            date:            new Date().toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }),
+            isDemoMode,
+          }}
+        />
+      )}
     </Modal>
   );
 }
@@ -300,4 +344,10 @@ const styles = StyleSheet.create({
   topVenueTapNum: { fontSize: 24, fontWeight: '900', lineHeight: 26 },
   topVenueTapLabel: { fontSize: 9, color: '#3A3A4E', fontWeight: '600' },
   closingLine:  { fontSize: 14, color: '#555', fontWeight: '600', textAlign: 'center', fontStyle: 'italic', paddingVertical: 8 },
+  shareBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, borderWidth: 1, borderRadius: 14,
+    paddingVertical: 12, marginTop: 4,
+  },
+  shareBtnText: { fontSize: 12, fontWeight: '900', letterSpacing: 1 },
 });
