@@ -73,6 +73,8 @@ export default function VenueDetailScreen() {
   const router = useRouter();
   const vibePersona = useVibeStore(s => s.vibePersona);
 
+  const { oscMode, setOscMode } = useVibeStore();
+
   const {
     fetchVenue,
     getUserRatingStatus,
@@ -1206,18 +1208,30 @@ export default function VenueDetailScreen() {
           <View style={styles.oscillatorSection}>
             <View style={styles.oscillatorHeader}>
               <Text style={styles.oscillatorLabel}>SCENE FREQUENCY</Text>
-              {!isVibePlus && (
-                <View style={styles.oscillatorPlusBadge}>
-                  <Text style={styles.oscillatorPlusBadgeText}>◆ VIBE+</Text>
-                </View>
-              )}
+              <View style={styles.oscModeRow}>
+                {!isVibePlus && (
+                  <View style={styles.oscillatorPlusBadge}>
+                    <Text style={styles.oscillatorPlusBadgeText}>◆ VIBE+</Text>
+                  </View>
+                )}
+                {isVibePlus && (['BARS', 'WAVE', 'PULSE'] as const).map((m) => (
+                  <TouchableOpacity
+                    key={m}
+                    style={[styles.oscModePill, oscMode === m && styles.oscModePillActive]}
+                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setOscMode(m); }}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[styles.oscModePillText, oscMode === m && styles.oscModePillTextActive]}>{m}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
             <VibeOscillator
               bpmShared={oscBpm}
               vibeScore={oscScore}
               surgeValue={oscSurge}
               isPlus={isVibePlus}
-              mode="WAVE"
+              mode={oscMode}
               onUnlockPress={() => setShowVibePlusModal(true)}
             />
           </View>
@@ -1639,6 +1653,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
+  },
+  oscModeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  oscModePill: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  oscModePillActive: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  oscModePillText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.25)',
+    letterSpacing: 1,
+  },
+  oscModePillTextActive: {
+    color: 'rgba(255,255,255,0.75)',
   },
   oscillatorLabel: {
     fontSize: 10,

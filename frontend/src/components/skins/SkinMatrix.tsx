@@ -30,7 +30,7 @@ const COL_SPEEDS = Array.from({ length: COLS }, (_, i) =>
 // Column char pattern widths (simulate symbol variety)
 const CHAR_WIDTHS = Array.from({ length: COLS }, (_, i) => [4, 6, 8, 5, 7][i % 5]);
 
-export default function SkinMatrix({ vibeScore, surgeValue, color }: SkinProps) {
+export default function SkinMatrix({ bpmShared, vibeScore, surgeValue, color }: SkinProps) {
   const clock = useSharedValue(0);
 
   useEffect(() => {
@@ -44,7 +44,8 @@ export default function SkinMatrix({ vibeScore, surgeValue, color }: SkinProps) 
   const matrixPath = useDerivedValue(() => {
     const surge     = surgeValue.value;           // speed multiplier
     const intensity = (vibeScore.value / 100);
-    const tick      = clock.value * surge;        // faster fall during surge
+    const bpmScale  = (bpmShared.value / 120);    // normalize: 120 BPM = 1×, 140 BPM = 1.17×
+    const tick      = clock.value * surge * bpmScale; // BPM-synced + surge fall
     const p         = Skia.Path.Make();
 
     for (let col = 0; col < COLS; col++) {
@@ -68,7 +69,8 @@ export default function SkinMatrix({ vibeScore, surgeValue, color }: SkinProps) 
   const goldPath = useDerivedValue(() => {
     const surge     = surgeValue.value;
     const intensity = vibeScore.value / 100;
-    const tick      = clock.value * surge;
+    const bpmScale  = (bpmShared.value / 120);
+    const tick      = clock.value * surge * bpmScale;
     const p         = Skia.Path.Make();
     for (let col = 0; col < COLS; col++) {
       const cx     = col * COL_W + COL_W / 2 - CHAR_WIDTHS[col] / 2;
@@ -85,8 +87,9 @@ export default function SkinMatrix({ vibeScore, surgeValue, color }: SkinProps) 
 
   // Head of each stream — bright leading char
   const headPath = useDerivedValue(() => {
-    const surge  = surgeValue.value;
-    const tick   = clock.value * surge;
+    const surge    = surgeValue.value;
+    const bpmScale = (bpmShared.value / 120);
+    const tick     = clock.value * surge * bpmScale;
     const p      = Skia.Path.Make();
 
     for (let col = 0; col < COLS; col++) {

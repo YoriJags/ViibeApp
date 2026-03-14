@@ -20,9 +20,12 @@ import { createSocketSlice, SocketSlice } from './slices/socketSlice';
 import { SkinId } from '../components/skins/skinTypes';
 
 // ─── Skin preference (persisted, tiny — lives inline) ─────────────────────────
+type OscMode = 'BARS' | 'WAVE' | 'PULSE';
 interface SkinSlice {
   selectedSkin: SkinId;
   setSkin: (id: SkinId) => void;
+  oscMode: OscMode;
+  setOscMode: (mode: OscMode) => void;
 }
 
 // ─── Combined store type ──────────────────────────────────────────────────────
@@ -39,6 +42,8 @@ export const useVibeStore = create<VibeStore>()(
       // Skin preference
       selectedSkin: 'reactor' as SkinId,
       setSkin: (id: SkinId) => set({ selectedSkin: id }),
+      oscMode: 'WAVE' as OscMode,
+      setOscMode: (mode: OscMode) => set({ oscMode: mode }),
     }),
     {
       name: 'vibe-store',
@@ -64,6 +69,7 @@ export const useVibeStore = create<VibeStore>()(
         pendingRatings: state.pendingRatings,
         // Skin
         selectedSkin: state.selectedSkin,
+        oscMode: state.oscMode,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
