@@ -11,7 +11,6 @@ import SplashAnimation from '../src/components/SplashAnimation';
 import DemoTutorial from '../src/components/DemoTutorial';
 import ErrorBoundary from '../src/components/ErrorBoundary';
 import GlobalVibePill from '../src/components/GlobalVibePill';
-import GlobalChargePill from '../src/components/GlobalChargePill';
 
 // Keep native splash visible until we're ready to show our animated one
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -102,10 +101,6 @@ export default function RootLayout() {
             {/* GlobalVibePill — geofence HUD (top bar, inside venue) */}
             <ErrorBoundary label="Vibe Pill">
               <GlobalVibePill />
-            </ErrorBoundary>
-            {/* GlobalChargePill — bottom kinetic pill (city + venue surge state) */}
-            <ErrorBoundary label="Charge Pill">
-              <GlobalChargePill />
             </ErrorBoundary>
           </View>
         </AppInitializer>

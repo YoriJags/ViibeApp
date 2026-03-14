@@ -87,7 +87,7 @@ const CITIES = [
 export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string }>();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode, tabBarHidden, setTabBarHidden, sceneMood, sceneMoodSetAt, setSceneMood } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode, tabBarHidden, setTabBarHidden, sceneMood, sceneMoodSetAt, setSceneMood, isInsideVenue, activeVenueId, activeVenueName } = useVibeStore();
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -624,6 +624,30 @@ export default function MapScreen() {
           contentContainerStyle={{ paddingBottom: 120 }}
         >
           {/* ── HERO ZONE: one editorial block before content ── */}
+
+          {/* Reactor shortcut — only when geofenced to a venue */}
+          {isInsideVenue && activeVenueId && (
+            <TouchableOpacity
+              style={styles.reactorBanner}
+              onPress={() => router.push(`/venue/${activeVenueId}`)}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#FF330618', '#5544FF18']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={styles.reactorBannerGrad}
+              >
+                <Ionicons name="flash" size={16} color="#FF3366" />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.reactorBannerLabel}>YOU'RE INSIDE</Text>
+                  <Text style={styles.reactorBannerVenue} numberOfLines={1}>
+                    {activeVenueName ?? 'the venue'} · TAP TO CHARGE
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
 
           {/* Scout Aura chip — persistent level indicator above the feed */}
           <ErrorBoundary label="Scout Aura Chip">
@@ -1304,6 +1328,32 @@ const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
     paddingHorizontal: 10,
+  },
+  reactorBanner: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#FF336628',
+  },
+  reactorBannerGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  reactorBannerLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FF3366',
+    letterSpacing: 1.5,
+  },
+  reactorBannerVenue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFF',
+    marginTop: 1,
   },
   quickRateStrip: {
     flexDirection: 'row',
