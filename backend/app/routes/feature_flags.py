@@ -34,6 +34,11 @@ FLAG_META: Dict[str, dict] = {
     "venue_spotlight":  {"label": "Venue Spotlight",   "desc": "Trending venue spotlight card on home",         "category": "Engagement",     "ai": False},
     "share_cards":      {"label": "Share Cards",       "desc": "Share venue vibe cards",                        "category": "Engagement",     "ai": False},
     "demo_mode":        {"label": "Demo Mode",         "desc": "Demo mode toggle visible on profile",           "category": "Engagement",     "ai": False},
+    # Crew & Social Features
+    "cartel_battle":    {"label": "Cartel Battle",     "desc": "Cross-venue crew tap-off battles",              "category": "Crew & Social",  "ai": False},
+    "rolling_deep":     {"label": "Rolling Deep",      "desc": "Crew group check-in coordination card",         "category": "Crew & Social",  "ai": False},
+    "quest_timeline":   {"label": "Quest Timeline",    "desc": "Scheduled collective venue boost challenges",   "category": "Crew & Social",  "ai": False},
+    "collective_quest": {"label": "Collective Quest",  "desc": "Real-time push-to-PEAK quest on venue detail",  "category": "Crew & Social",  "ai": False},
 }
 
 DEFAULT_FLAGS: Dict[str, bool] = {key: True for key in FLAG_META}

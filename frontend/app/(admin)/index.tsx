@@ -479,6 +479,18 @@ export default function AdminAnalytics() {
   const [flagsSaving, setFlagsSaving] = useState(false);
   const [flagsLastSaved, setFlagsLastSaved] = useState<string | null>(null);
 
+  // Quest Scheduler
+  const [questVenueSearch, setQuestVenueSearch] = useState('');
+  const [questVenueResults, setQuestVenueResults] = useState<any[]>([]);
+  const [questVenueSearching, setQuestVenueSearching] = useState(false);
+  const [questSelectedVenue, setQuestSelectedVenue] = useState<any | null>(null);
+  const [questTargetScore, setQuestTargetScore] = useState('85');
+  const [questCategory, setQuestCategory] = useState('');
+  const [questRewardLabel, setQuestRewardLabel] = useState('1.5× Clout');
+  const [questScheduledAt, setQuestScheduledAt] = useState('');
+  const [questScheduling, setQuestScheduling] = useState(false);
+  const [questScheduled, setQuestScheduled] = useState<any[]>([]);
+
   // Platform Settings (prices)
   const [localSettings, setLocalSettings] = useState<Record<string, number>>({});
   const [settingsMeta, setSettingsMeta] = useState<Record<string, any>>({});
@@ -546,6 +558,13 @@ export default function AdminAnalytics() {
         const flagsData = await flagsRes.json();
         setLocalFlags(flagsData.flags || {});
         setFlagsMeta(flagsData.meta || {});
+      }
+
+      // Scheduled Quests
+      const questsRes = await fetch(`${API_URL}/api/quest-timeline?limit=10`);
+      if (questsRes.ok) {
+        const qd = await questsRes.json();
+        setQuestScheduled(qd.quests || []);
       }
 
       // Platform Settings
@@ -634,6 +653,62 @@ export default function AdminAnalytics() {
     } finally {
       setSettingsSaving(prev => ({ ...prev, [key]: false }));
     }
+  };
+
+  const searchQuestVenues = async () => {
+    if (!questVenueSearch.trim()) return;
+    setQuestVenueSearching(true);
+    try {
+      const res = await fetch(`${API_URL}/api/venues?q=${encodeURIComponent(questVenueSearch)}&limit=6`);
+      if (res.ok) {
+        const d = await res.json();
+        setQuestVenueResults(d.venues || []);
+      }
+    } catch {}
+    setQuestVenueSearching(false);
+  };
+
+  const fetchScheduledQuests = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/quest-timeline?city=all&limit=10`);
+      if (res.ok) {
+        const d = await res.json();
+        setQuestScheduled(d.quests || []);
+      }
+    } catch {}
+  };
+
+  const scheduleQuest = async () => {
+    if (!questSelectedVenue) { Alert.alert('Select a venue first'); return; }
+    if (!questScheduledAt.trim()) { Alert.alert('Enter a scheduled time'); return; }
+    setQuestScheduling(true);
+    try {
+      const res = await fetch(`${API_URL}/api/quest-timeline`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          venue_id: questSelectedVenue.id,
+          scheduled_at: questScheduledAt,
+          target_score: parseInt(questTargetScore) || 85,
+          category: questCategory,
+          reward_label: questRewardLabel,
+          ranking_boost: true,
+        }),
+      });
+      if (res.ok) {
+        Alert.alert('Quest Scheduled!', `Quest set for ${questSelectedVenue.name}`);
+        setQuestSelectedVenue(null);
+        setQuestVenueSearch('');
+        setQuestVenueResults([]);
+        setQuestScheduledAt('');
+        setQuestCategory('');
+        fetchScheduledQuests();
+      } else {
+        const err = await res.json();
+        Alert.alert('Error', err.detail || 'Failed to schedule quest');
+      }
+    } catch { Alert.alert('Error', 'Network error'); }
+    setQuestScheduling(false);
   };
 
   const toggleFlag = (key: string, value: boolean) => {
@@ -1376,16 +1451,24 @@ export default function AdminAnalytics() {
             </View>
 
             {/* Group flags by category */}
-            {['AI Features', 'Core Features', 'Engagement'].map((category) => {
+            {['AI Features', 'Core Features', 'Engagement', 'Crew & Social'].map((category) => {
               const categoryFlags = Object.entries(flagsMeta).filter(([, meta]: [string, any]) => meta.category === category);
               if (categoryFlags.length === 0) return null;
               return (
                 <View key={category} style={[styles.card, { gap: 0 }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                     <Ionicons
-                      name={category === 'AI Features' ? 'sparkles' : category === 'Core Features' ? 'layers' : 'people-circle'}
+                      name={
+                        category === 'AI Features' ? 'sparkles' :
+                        category === 'Core Features' ? 'layers' :
+                        category === 'Crew & Social' ? 'people' : 'people-circle'
+                      }
                       size={16}
-                      color={category === 'AI Features' ? '#FF3366' : category === 'Core Features' ? adminColors.primary : adminColors.gold}
+                      color={
+                        category === 'AI Features' ? '#FF3366' :
+                        category === 'Core Features' ? adminColors.primary :
+                        category === 'Crew & Social' ? '#00E676' : adminColors.gold
+                      }
                     />
                     <Text style={[styles.cardTitle, { fontSize: 13 }]}>{category}</Text>
                     {category === 'AI Features' && (
@@ -1425,8 +1508,8 @@ export default function AdminAnalytics() {
                         <Switch
                           value={isOn}
                           onValueChange={(val) => toggleFlag(key, val)}
-                          trackColor={{ false: 'rgba(255,255,255,0.08)', true: category === 'AI Features' ? 'rgba(255,51,102,0.4)' : 'rgba(65,105,225,0.4)' }}
-                          thumbColor={isOn ? (category === 'AI Features' ? '#FF3366' : adminColors.primary) : adminColors.textMuted}
+                          trackColor={{ false: 'rgba(255,255,255,0.08)', true: category === 'AI Features' ? 'rgba(255,51,102,0.4)' : category === 'Crew & Social' ? 'rgba(0,230,118,0.4)' : 'rgba(65,105,225,0.4)' }}
+                          thumbColor={isOn ? (category === 'AI Features' ? '#FF3366' : category === 'Crew & Social' ? '#00E676' : adminColors.primary) : adminColors.textMuted}
                           ios_backgroundColor="rgba(255,255,255,0.08)"
                         />
                       </View>
@@ -1526,6 +1609,156 @@ export default function AdminAnalytics() {
                   </View>
                 );
               })}
+            </View>
+
+            {/* ── Quest Scheduler ── */}
+            <View style={[styles.card, { borderColor: 'rgba(153,51,255,0.25)', borderWidth: 1, gap: 0 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <Ionicons name="flash" size={20} color="#9933FF" />
+                <Text style={[styles.cardTitle, { color: '#9933FF' }]}>Quest Scheduler</Text>
+              </View>
+              <Text style={[styles.cardSubtitle, { color: adminColors.textSecondary, marginBottom: 14 }]}>
+                Schedule collective venue boost challenges. Admin only — users see them in Quest Timeline.
+              </Text>
+
+              {/* Venue search */}
+              <Text style={{ color: adminColors.textSecondary, fontSize: 11, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.6 }}>Venue</Text>
+              {questSelectedVenue ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(153,51,255,0.1)', borderRadius: 8, padding: 10, gap: 10, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(153,51,255,0.3)' }}>
+                  <Ionicons name="business" size={16} color="#9933FF" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: adminColors.text, fontSize: 13, fontWeight: '700' }}>{questSelectedVenue.name}</Text>
+                    <Text style={{ color: adminColors.textMuted, fontSize: 10, marginTop: 1 }}>{questSelectedVenue.area} · Score {Math.round(questSelectedVenue.current_vibe_score || 0)}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => { setQuestSelectedVenue(null); setQuestVenueResults([]); }}>
+                    <Ionicons name="close-circle" size={18} color={adminColors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={{ marginBottom: 12 }}>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TextInput
+                      style={{ flex: 1, backgroundColor: adminColors.inputBackground, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, color: adminColors.text, borderWidth: 1, borderColor: adminColors.border }}
+                      placeholder="Search venue name..."
+                      placeholderTextColor={adminColors.textMuted}
+                      value={questVenueSearch}
+                      onChangeText={setQuestVenueSearch}
+                      onSubmitEditing={searchQuestVenues}
+                      returnKeyType="search"
+                    />
+                    <TouchableOpacity
+                      onPress={searchQuestVenues}
+                      style={{ backgroundColor: 'rgba(153,51,255,0.2)', borderRadius: 8, paddingHorizontal: 14, justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(153,51,255,0.3)' }}
+                    >
+                      {questVenueSearching
+                        ? <ActivityIndicator size="small" color="#9933FF" />
+                        : <Text style={{ color: '#9933FF', fontWeight: '800', fontSize: 12 }}>Find</Text>
+                      }
+                    </TouchableOpacity>
+                  </View>
+                  {questVenueResults.map(v => (
+                    <TouchableOpacity
+                      key={v.id}
+                      onPress={() => { setQuestSelectedVenue(v); setQuestVenueResults([]); setQuestVenueSearch(''); }}
+                      style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: adminColors.inputBackground, borderRadius: 8, padding: 10, marginTop: 6, gap: 8 }}
+                    >
+                      <Ionicons name="business-outline" size={14} color={adminColors.textMuted} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: adminColors.text, fontSize: 13, fontWeight: '600' }}>{v.name}</Text>
+                        <Text style={{ color: adminColors.textMuted, fontSize: 10 }}>{v.area} · {Math.round(v.current_vibe_score || 0)} score</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {/* Target score + Category row */}
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: adminColors.textSecondary, fontSize: 11, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.6 }}>Target Score</Text>
+                  <TextInput
+                    style={{ backgroundColor: adminColors.inputBackground, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, color: adminColors.text, borderWidth: 1, borderColor: adminColors.border, fontWeight: '700' }}
+                    value={questTargetScore}
+                    onChangeText={setQuestTargetScore}
+                    keyboardType="numeric"
+                    selectTextOnFocus
+                  />
+                </View>
+                <View style={{ flex: 2 }}>
+                  <Text style={{ color: adminColors.textSecondary, fontSize: 11, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.6 }}>Category (shown on card)</Text>
+                  <TextInput
+                    style={{ backgroundColor: adminColors.inputBackground, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, color: adminColors.text, borderWidth: 1, borderColor: adminColors.border }}
+                    placeholder="e.g. Top Clubs VI"
+                    placeholderTextColor={adminColors.textMuted}
+                    value={questCategory}
+                    onChangeText={setQuestCategory}
+                  />
+                </View>
+              </View>
+
+              {/* Reward label + Scheduled at row */}
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: adminColors.textSecondary, fontSize: 11, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.6 }}>Reward Label</Text>
+                  <TextInput
+                    style={{ backgroundColor: adminColors.inputBackground, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, color: adminColors.text, borderWidth: 1, borderColor: adminColors.border }}
+                    placeholder="1.5× Clout"
+                    placeholderTextColor={adminColors.textMuted}
+                    value={questRewardLabel}
+                    onChangeText={setQuestRewardLabel}
+                  />
+                </View>
+                <View style={{ flex: 2 }}>
+                  <Text style={{ color: adminColors.textSecondary, fontSize: 11, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.6 }}>Starts At (ISO)</Text>
+                  <TextInput
+                    style={{ backgroundColor: adminColors.inputBackground, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 12, color: adminColors.text, borderWidth: 1, borderColor: adminColors.border }}
+                    placeholder="2025-01-15T21:00:00Z"
+                    placeholderTextColor={adminColors.textMuted}
+                    value={questScheduledAt}
+                    onChangeText={setQuestScheduledAt}
+                    autoCapitalize="none"
+                  />
+                </View>
+              </View>
+
+              {/* Schedule button */}
+              <TouchableOpacity
+                style={{ backgroundColor: questScheduling ? 'rgba(153,51,255,0.1)' : 'rgba(153,51,255,0.2)', borderRadius: 10, padding: 13, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(153,51,255,0.4)' }}
+                onPress={scheduleQuest}
+                disabled={questScheduling}
+              >
+                {questScheduling
+                  ? <ActivityIndicator size="small" color="#9933FF" />
+                  : <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Ionicons name="calendar" size={16} color="#9933FF" />
+                      <Text style={{ color: '#9933FF', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 }}>SCHEDULE QUEST</Text>
+                    </View>
+                }
+              </TouchableOpacity>
+
+              {/* Upcoming quests list */}
+              {questScheduled.length > 0 && (
+                <View style={{ marginTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 12 }}>
+                  <Text style={{ color: adminColors.textSecondary, fontSize: 11, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.6 }}>Upcoming Quests</Text>
+                  {questScheduled.slice(0, 5).map(q => (
+                    <View key={q.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)', gap: 10 }}>
+                      <View style={[{ width: 8, height: 8, borderRadius: 4 }, { backgroundColor: q.status === 'active' ? '#00E676' : '#FF9933' }]} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: adminColors.text, fontSize: 12, fontWeight: '700' }}>{q.venue_name}</Text>
+                        <Text style={{ color: adminColors.textMuted, fontSize: 10, marginTop: 1 }}>
+                          {q.category ? `${q.category} · ` : ''}{q.reward_label}
+                          {q.status === 'active' ? ` · ${Math.floor((q.seconds_remaining || 0) / 60)}m left` : q.starts_in_seconds != null ? ` · in ${Math.floor(q.starts_in_seconds / 60)}m` : ''}
+                        </Text>
+                      </View>
+                      <View style={{ backgroundColor: q.status === 'active' ? 'rgba(0,230,118,0.15)' : 'rgba(255,153,51,0.15)', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 }}>
+                        <Text style={{ fontSize: 9, fontWeight: '800', color: q.status === 'active' ? '#00E676' : '#FF9933', letterSpacing: 0.5 }}>
+                          {q.status === 'active' ? 'LIVE' : 'SOON'}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
 
             {/* Quick actions */}
