@@ -82,7 +82,7 @@ export default function EnergyMeter({
   const fillAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  const barHeight = size === 'md' ? 12 : 8;
+  const barHeight = size === 'md' ? 18 : 8;
   const barRadius = barHeight / 2;
 
   useEffect(() => {
