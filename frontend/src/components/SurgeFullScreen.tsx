@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Accelerometer } from 'expo-sensors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: W } = Dimensions.get('window');
 
@@ -78,6 +79,7 @@ export default function SurgeFullScreen({
   visible, surge, venueName, venueId, onClose, onTap, tapping, cooldown,
   socket, userId,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const [ripples, setRipples] = useState<Ripple[]>([]);
   // ── New state ──
   const [localTapCount, setLocalTapCount] = useState(0);
@@ -405,7 +407,7 @@ export default function SurgeFullScreen({
         <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#FFF', opacity: flashOpacity }]} pointerEvents="none" />
 
         {/* Close */}
-        <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.closeBtn, { top: insets.top + 8 }]} onPress={onClose} activeOpacity={0.7}>
           <Ionicons name="close" size={22} color="#555" />
         </TouchableOpacity>
 
@@ -613,7 +615,7 @@ export default function SurgeFullScreen({
 
 const styles = StyleSheet.create({
   overlay:          { flex: 1, alignItems: 'center', justifyContent: 'space-between', paddingTop: 56, paddingBottom: 44 },
-  closeBtn:         { position: 'absolute', top: 52, left: 18, width: 40, height: 40, borderRadius: 20, backgroundColor: '#0E0E1A', borderWidth: 1, borderColor: '#1C1C2C', justifyContent: 'center', alignItems: 'center', zIndex: 10 },
+  closeBtn:         { position: 'absolute', left: 18, width: 40, height: 40, borderRadius: 20, backgroundColor: '#0E0E1A', borderWidth: 1, borderColor: '#1C1C2C', justifyContent: 'center', alignItems: 'center', zIndex: 10 },
   surgeBanner:      { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,214,10,0.08)', zIndex: 5 },
   surgeBannerText:  { fontSize: 28, fontWeight: '900', color: '#FFD60A', letterSpacing: 3, textAlign: 'center' },
   surgeBannerSub:   { fontSize: 13, color: 'rgba(255,214,10,0.7)', marginTop: 6 },

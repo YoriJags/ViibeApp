@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   closeBtn: {
-    position: 'absolute', top: 52, right: 20,
+    position: 'absolute', top: 60, right: 20,
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center', justifyContent: 'center',

@@ -18,6 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ─── Placeholder club images — seeded by venue ID ─────────────────────────────
 const CLUB_PLACEHOLDERS = [
@@ -154,6 +155,8 @@ function DoneScreen({ fireCount, onComplete }: { fireCount: number; onComplete: 
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props) {
+  const insets = useSafeAreaInsets();
+
   // Shuffle venues once on mount
   const shuffled = useMemo(() => {
     const arr = [...venues];
@@ -300,7 +303,7 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
       />
 
       {/* Top bar */}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { top: insets.top + 8 }]}>
         <TouchableOpacity style={styles.skipBtn} onPress={onComplete} activeOpacity={0.7}>
           <Text style={styles.skipText}>Skip all</Text>
           <Ionicons name="chevron-forward" size={12} color="#333355" />
@@ -410,7 +413,6 @@ const styles = StyleSheet.create({
   // ── Top bar ─────────────────────────────────────────────────────────────────
   topBar: {
     position: 'absolute',
-    top: 52,
     left: 20,
     right: 20,
     flexDirection: 'row',

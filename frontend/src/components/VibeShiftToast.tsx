@@ -6,6 +6,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, Animated, StyleSheet, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: W } = Dimensions.get('window');
 
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export default function VibeShiftToast({ visible, venueName, newTier, prevTier, onPress, onDismiss }: Props) {
+  const insets = useSafeAreaInsets();
   const slideY = useRef(new Animated.Value(-120)).current;
   const opac   = useRef(new Animated.Value(0)).current;
   const timer  = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -61,7 +63,7 @@ export default function VibeShiftToast({ visible, venueName, newTier, prevTier, 
   if (!visible) return null;
 
   return (
-    <Animated.View style={[styles.wrap, { transform: [{ translateY: slideY }], opacity: opac }]}>
+    <Animated.View style={[styles.wrap, { top: insets.top + 8, transform: [{ translateY: slideY }], opacity: opac }]}>
       <TouchableOpacity
         style={[styles.toast, { borderColor: tier.color + '44' }]}
         onPress={() => { clearTimeout(timer.current); dismiss(); onPress?.(); }}
@@ -101,7 +103,7 @@ export default function VibeShiftToast({ visible, venueName, newTier, prevTier, 
 
 const styles = StyleSheet.create({
   wrap: {
-    position: 'absolute', top: 54, left: 16, right: 16, zIndex: 9999,
+    position: 'absolute', left: 16, right: 16, zIndex: 9999,
   },
   toast: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
