@@ -87,7 +87,9 @@ export default function StreakFireModal({ visible, streak, cloutBonus, onClaim, 
 
     return () => {
       clearTimeout(echoTimer);
-      // Reset animations when hidden
+      // Stop loops before resetting — prevents them running after unmount
+      rotateAnim.stopAnimation();
+      pulseAnim.stopAnimation();
       scaleAnim.setValue(0.8);
       opacityAnim.setValue(0);
       rotateAnim.setValue(0);
