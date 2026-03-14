@@ -34,12 +34,12 @@ import { useKineticBuffer } from '../hooks/useKineticBuffer';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
-const CANVAS_SIZE = 220;
+const CANVAS_SIZE = 300;
 const CX          = CANVAS_SIZE / 2;
 const CY          = CANVAS_SIZE / 2;
-const RING_R      = 95;
+const RING_R      = 130;
 const RING_T      = 9;
-const ORB_R       = 72;   // inner tap circle radius
+const ORB_R       = 98;   // inner tap circle radius
 
 const GEOFENCE_RADIUS_M  = 100;
 const BPM_WINDOW_SIZE    = 8;
@@ -134,7 +134,7 @@ function GlitchText({ text, color }: { text: string; color: string }) {
   }, [text]);
 
   return (
-    <Text style={{ color, fontSize: 10, fontWeight: '800', letterSpacing: 1.8 }}>
+    <Text style={{ color, fontSize: 20, fontWeight: '900', letterSpacing: 3 }}>
       {display}
     </Text>
   );
@@ -158,7 +158,7 @@ const KineticCanvas = React.memo(function KineticCanvas({
     Math.max(0, (syncPct.value - 15) / 85)
   );
   const coherenceBlur = useDerivedValue(() =>
-    interpolate(syncPct.value, [0, 100], [18, 2])
+    interpolate(syncPct.value, [0, 100], [24, 2])
   );
   const coherenceWidth = useDerivedValue(() =>
     interpolate(syncPct.value, [0, 100], [1.5, 4])
@@ -181,19 +181,19 @@ const KineticCanvas = React.memo(function KineticCanvas({
     <Canvas style={canvasStyle}>
       {/* Ring track */}
       <Circle cx={CX} cy={CY} r={RING_R}>
-        <Paint style="stroke" strokeWidth={RING_T} color="#1A1A2E" />
+        <Paint style="stroke" strokeWidth={RING_T} color="rgba(255,255,255,0.05)" />
       </Circle>
 
       {/* Outer glow (blurred wide stroke) */}
       <Path path={arcPath}>
         <Paint
           style="stroke"
-          strokeWidth={RING_T + 10}
+          strokeWidth={RING_T + 16}
           strokeCap="round"
           color={coreColor}
-          opacity={0.18}
+          opacity={0.30}
         >
-          <BlurMask blur={14} style="normal" />
+          <BlurMask blur={20} style="normal" />
         </Paint>
       </Path>
 
@@ -772,8 +772,23 @@ export default function VibeReactor({
         </View>
       )}
 
+      {/* ── Atmospheric backdrop ─────────────────────────────── */}
+      <LinearGradient
+        colors={[color + '26', 'transparent', 'transparent']}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={{
+          position: 'absolute',
+          left: -16,
+          right: -16,
+          height: 340,
+          top: 0,
+          zIndex: 0,
+        }}
+      />
+
       {/* ── Kinetic Core ─────────────────────────────────────────── */}
-      <View style={styles.coreContainer}>
+      <View style={[styles.coreContainer, { zIndex: 1 }]}>
 
         {/* Skia: ring track + progress arc + coherence ring + sparks */}
         <KineticCanvas
@@ -826,7 +841,7 @@ export default function VibeReactor({
 
             {/* Bolt */}
             <Animated.View style={boltStyle}>
-              <Ionicons name="flash" size={34} color={color} />
+              <Ionicons name="flash" size={44} color={color} />
             </Animated.View>
 
             {/* Level text — glitches on transition */}
@@ -919,10 +934,10 @@ const styles = StyleSheet.create({
   outerWrap: {
     marginHorizontal: 16,
     marginVertical:   12,
-    backgroundColor:  '#0A0A12',
+    backgroundColor:  'transparent',
     borderRadius:     20,
-    borderWidth:      1,
-    borderColor:      '#1A1A2C',
+    borderWidth:      0,
+    borderColor:      'transparent',
     paddingVertical:  16,
     paddingHorizontal: 12,
     shadowOffset:  { width: 0, height: 4 },
@@ -981,8 +996,8 @@ const styles = StyleSheet.create({
     borderRadius: ORB_R,
   },
   tapCount: {
-    fontSize: 11,
-    color:    'rgba(255,255,255,0.35)',
+    fontSize: 16,
+    color:    'rgba(255,255,255,0.55)',
     marginTop: 2,
   },
 
@@ -1011,7 +1026,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between',
     marginTop: 12, paddingHorizontal: 4,
   },
-  subText: { fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: '500' },
+  subText: { fontSize: 13, color: 'rgba(255,255,255,0.60)', fontWeight: '600' },
 
   dangerText: {
     textAlign: 'center', fontSize: 12, color: '#FF3B30',
