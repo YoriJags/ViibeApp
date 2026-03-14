@@ -24,6 +24,7 @@ import MissedPeaksBanner from '../../src/components/MissedPeaksBanner';
 import TonightCard from '../../src/components/TonightCard';
 import AreaPulseBar from '../../src/components/AreaPulseBar';
 import VenueBattle from '../../src/components/VenueBattle';
+import QuestTimeline from '../../src/components/QuestTimeline';
 
 const { width } = Dimensions.get('window');
 
@@ -223,6 +224,13 @@ export default function MapScreen() {
 
           {/* Morning scene recap — shown daily after a night of data */}
           <SceneReportCard isDemoMode={isDemoMode} />
+
+          {/* Quest Timeline — upcoming & active collective venue boosts */}
+          <QuestTimeline
+            city={selectedCity}
+            isDemoMode={isDemoMode}
+            onVenuePress={(id) => router.push(`/venue/${id}`)}
+          />
 
           {/* Venue Battle — live tap-off between two venues */}
           <VenueBattle isDemoMode={isDemoMode} />

@@ -23,6 +23,7 @@ import VoteCard from '../../src/components/VoteCard';
 import AvatarDisplay from '../../src/components/AvatarDisplay';
 import CartelRadarMap from '../../src/components/CartelRadarMap';
 import CartelPulse from '../../src/components/CartelPulse';
+import CartelBattle from '../../src/components/CartelBattle';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
 import { OwnBatteryIndicator } from '../../src/components/BatteryIndicator';
 import CrewIntelligence from '../../src/components/CrewIntelligence';
@@ -316,6 +317,16 @@ export default function CrewScreen() {
           members={(crew.member_details ?? []) as any[]}
           onPress={() => scrollRef.current?.scrollTo({ y: radarY.current, animated: true })}
         />
+
+        {/* Cartel Battle — cross-venue tap-off */}
+        <ErrorBoundary label="Cartel Battle">
+          <CartelBattle
+            crewId={crew.id}
+            crewName={crew.name}
+            isCaptain={crew.is_captain ?? false}
+            isDemoMode={isDemoMode}
+          />
+        </ErrorBoundary>
 
         {/* Rolling Deep — group check-in coordination banner */}
         <ErrorBoundary label="Rolling Deep">
