@@ -22,8 +22,11 @@ export interface VenueSlice {
   followedVenues: any[];
   livePushFeed: LivePush[];
   featureFlags: Record<string, boolean>;
+  cityPickerOpen: boolean;
 
   // ── Actions ──────────────────────────────────────────────────────────────────
+  openCityPicker: () => void;
+  closeCityPicker: () => void;
   setVenues: (venues: Venue[]) => void;
   updateVenue: (venue: Venue) => void;
   setSelectedCity: (city: string) => void;
@@ -72,6 +75,10 @@ export const createVenueSlice: StateCreator<
   followedVenues: [],
   livePushFeed: [],
   featureFlags: {},
+  cityPickerOpen: false,
+
+  openCityPicker: () => set({ cityPickerOpen: true }),
+  closeCityPicker: () => set({ cityPickerOpen: false }),
 
   setVenues: (venues) => set({ venues }),
 

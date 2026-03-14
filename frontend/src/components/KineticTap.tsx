@@ -24,6 +24,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Accelerometer } from 'expo-sensors';
+import { Ionicons } from '@expo/vector-icons';
 import { calculateDistance } from '../utils/geo';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -242,7 +243,27 @@ export default function KineticTap({
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
-  if (!isEligible) return null;
+  // Show a locked state instead of silently returning nothing.
+  // Explains why the tap is unavailable and what the user needs to do.
+  if (!isEligible) {
+    const reason = !user
+      ? { icon: 'person-circle-outline' as const, line1: 'Sign in to tap', line2: 'Create your scout account to join the energy' }
+      : !userLocation
+      ? { icon: 'location-outline' as const, line1: 'Location needed', line2: 'Enable location to unlock kinetic tap' }
+      : (() => {
+          const hasRole = user.is_vibe_plus || ['regular', 'scout', 'elite'].includes(user.scout_status);
+          if (!hasRole) return { icon: 'lock-closed-outline' as const, line1: 'Scout status required', line2: 'Keep scouting to unlock this feature' };
+          return { icon: 'navigate-outline' as const, line1: 'Get closer', line2: 'You need to be within 100m of the venue' };
+        })();
+
+    return (
+      <View style={lockStyles.wrap}>
+        <Ionicons name={reason.icon} size={28} color="#2A2A3E" />
+        <Text style={lockStyles.line1}>{reason.line1}</Text>
+        <Text style={lockStyles.line2}>{reason.line2}</Text>
+      </View>
+    );
+  }
 
   const bpmDisplay = Math.round(calcBpm());
   const resonanceMin = questState?.resonance_min ?? 123;
@@ -324,6 +345,34 @@ export default function KineticTap({
     </Animated.View>
   );
 }
+
+// ─── Lock state styles ────────────────────────────────────────────────────────
+
+const lockStyles = StyleSheet.create({
+  wrap: {
+    marginHorizontal: 16,
+    marginVertical: 8,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#1A1A2A',
+    padding: 20,
+    alignItems: 'center',
+    gap: 6,
+  },
+  line1: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#2A2A3E',
+    marginTop: 4,
+  },
+  line2: {
+    fontSize: 11,
+    color: '#1E1E2E',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+});
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 

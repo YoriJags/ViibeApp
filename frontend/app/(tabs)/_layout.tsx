@@ -1,9 +1,16 @@
 import React from 'react';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { useVibeStore } from '../../src/store/vibeStore';
+import { VibeDynamicIsland } from '../../src/components/VibeDynamicIsland';
 
 export default function TabLayout() {
+  const router = useRouter();
+  const isInsideVenue  = useVibeStore(s => s.isInsideVenue);
+  const activeVenueId  = useVibeStore(s => s.activeVenueId);
+  const openCityPicker = useVibeStore(s => s.openCityPicker);
+
   // Public scout floor is mobile-only — web visitors see download prompt
   if (Platform.OS === 'web') {
     return (
@@ -19,52 +26,70 @@ export default function TabLayout() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: '#FF3366',
-        tabBarInactiveTintColor: '#666',
-        tabBarLabelStyle: styles.tabBarLabel,
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Map',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map" size={size} color={color} />
-          ),
+    <View style={{ flex: 1 }}>
+      {/* ── Persistent Island HUD — floats above all tabs ─────────────── */}
+      <View
+        style={styles.islandHud}
+        pointerEvents="box-none"
+      >
+        <VibeDynamicIsland
+          onPress={() => {
+            if (isInsideVenue && activeVenueId) {
+              router.push(`/venue/${activeVenueId}`);
+            } else {
+              openCityPicker();
+            }
+          }}
+        />
+      </View>
+
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: styles.tabBar,
+          tabBarActiveTintColor: '#FF3366',
+          tabBarInactiveTintColor: '#666',
+          tabBarLabelStyle: styles.tabBarLabel,
         }}
-      />
-      <Tabs.Screen
-        name="leaderboard"
-        options={{
-          title: 'Trending',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="flame" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="pulse"
-        options={{
-          title: 'Pulse',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="notifications" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Map',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="map" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="leaderboard"
+          options={{
+            title: 'Trending',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="flame" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="pulse"
+          options={{
+            title: 'Pulse',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="notifications" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Profile',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="person" size={size} color={color} />
+            ),
+          }}
+        />
+      </Tabs>
+    </View>
   );
 }
 
@@ -98,6 +123,13 @@ const styles = StyleSheet.create({
     color: '#888',
     textAlign: 'center',
     lineHeight: 22,
+  },
+  islandHud: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 56 : 28,
+    alignSelf: 'center',
+    zIndex: 1000,
+    elevation: 20,
   },
   tabBar: {
     backgroundColor: '#151520',

@@ -14,7 +14,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { useVibeStore } from '../../src/store/vibeStore';
 import { MockMap } from '../../src/components/MockMap';
@@ -24,7 +23,7 @@ import SceneReportCard from '../../src/components/SceneReportCard';
 import MissedPeaksBanner from '../../src/components/MissedPeaksBanner';
 import TonightCard from '../../src/components/TonightCard';
 import AreaPulseBar from '../../src/components/AreaPulseBar';
-import { VibeDynamicIsland } from '../../src/components/VibeDynamicIsland';
+import VenueBattle from '../../src/components/VenueBattle';
 
 const { width } = Dimensions.get('window');
 
@@ -37,24 +36,27 @@ const CITIES = [
 
 export default function MapScreen() {
   const router = useRouter();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, sessionToken, isDemoMode } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, sessionToken, isDemoMode, fetchCityPulse, cityPickerOpen, closeCityPicker } = useVibeStore();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
-  // Default to list on web — MockMap is not useful in a browser
-  const [showList, setShowList] = useState(Platform.OS === 'web');
+  // Default to list view so battle / quest cards are visible immediately
+  const [showList, setShowList] = useState(true);
   const [showCityPicker, setShowCityPicker] = useState(false);
 
-  // Show city picker every time the user navigates to this tab
-  useFocusEffect(
-    useCallback(() => {
-      setShowCityPicker(true);
-    }, []),
-  );
+  // Sync store-driven city picker trigger (from island tap or other global sources)
+  useEffect(() => {
+    if (cityPickerOpen) setShowCityPicker(true);
+  }, [cityPickerOpen]);
 
   useEffect(() => {
     initializeApp();
   }, []);
+
+  // Re-fetch city pulse whenever the selected city changes
+  useEffect(() => {
+    fetchCityPulse(selectedCity);
+  }, [selectedCity]);
 
   const initializeApp = async () => {
     // Request location permission
@@ -77,9 +79,9 @@ export default function MapScreen() {
       setUserLocation({ lat: 6.4281, lng: 3.4219 });
     }
 
-    // Connect socket and fetch venues
+    // Connect socket and fetch venues + city pulse
     connectSocket();
-    await fetchVenues();
+    await Promise.all([fetchVenues(), fetchCityPulse(selectedCity)]);
   };
 
   const onRefresh = useCallback(async () => {
@@ -121,7 +123,6 @@ export default function MapScreen() {
           />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <VibeDynamicIsland onPress={() => setShowCityPicker(true)} />
           <TouchableOpacity
             style={styles.citySelector}
             onPress={() => setShowCityPicker(true)}
@@ -140,13 +141,13 @@ export default function MapScreen() {
         visible={showCityPicker}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowCityPicker(false)}
+        onRequestClose={() => { setShowCityPicker(false); closeCityPicker(); }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select City</Text>
-              <TouchableOpacity onPress={() => setShowCityPicker(false)}>
+              <TouchableOpacity onPress={() => { setShowCityPicker(false); closeCityPicker(); }}>
                 <Ionicons name="close" size={24} color="#FFF" />
               </TouchableOpacity>
             </View>
@@ -160,6 +161,7 @@ export default function MapScreen() {
                 onPress={() => {
                   setSelectedCity(city.code);
                   setShowCityPicker(false);
+                  closeCityPicker();
                 }}
               >
                 <Text style={styles.cityEmoji}>{city.emoji}</Text>
@@ -221,6 +223,9 @@ export default function MapScreen() {
 
           {/* Morning scene recap — shown daily after a night of data */}
           <SceneReportCard isDemoMode={isDemoMode} />
+
+          {/* Venue Battle — live tap-off between two venues */}
+          <VenueBattle isDemoMode={isDemoMode} />
 
           {/* "You Missed It" — venues that peaked while user was away */}
           <MissedPeaksBanner

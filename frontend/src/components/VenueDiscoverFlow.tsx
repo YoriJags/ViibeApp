@@ -13,10 +13,29 @@ import {
   Dimensions,
   TouchableOpacity,
   StatusBar,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+
+// ─── Placeholder club images — seeded by venue ID ─────────────────────────────
+const CLUB_PLACEHOLDERS = [
+  'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=600&q=80',
+  'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&q=80',
+  'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&q=80',
+  'https://images.unsplash.com/photo-1571266028243-d220c8b77883?w=600&q=80',
+  'https://images.unsplash.com/photo-1574391884720-bbc3740c59d1?w=600&q=80',
+  'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&q=80',
+];
+
+function getVenueImage(venue: Venue): string {
+  if (venue.cover_image_url) return venue.cover_image_url;
+  if (venue.photo_base64) return `data:image/jpeg;base64,${venue.photo_base64}`;
+  // Deterministic placeholder — same venue always gets same photo
+  const hash = venue.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return CLUB_PLACEHOLDERS[hash % CLUB_PLACEHOLDERS.length];
+}
 
 const { width: W, height: H } = Dimensions.get('window');
 const SWIPE_THRESHOLD = W * 0.28;
@@ -40,6 +59,8 @@ interface Venue {
   entry_fee?: string;
   capacity_level?: string;
   venue_type?: string;
+  photo_base64?: string;
+  cover_image_url?: string;
 }
 
 interface Props {
@@ -53,50 +74,61 @@ function VenueCardBody({ venue }: { venue: Venue }) {
   const energy = ENERGY[venue.energy_level] ?? ENERGY.quiet;
   const score = venue.current_vibe_score ?? 0;
   const scoreColor = score >= 80 ? '#00E676' : score >= 60 ? '#FFD700' : score >= 40 ? '#FF8C00' : '#666';
+  const imgUrl = getVenueImage(venue);
 
   return (
-    <LinearGradient
-      colors={['#10101C', '#07070F']}
-      style={styles.cardInner}
-    >
-      {/* Energy badge */}
-      <View style={[styles.energyBadge, { borderColor: energy.color + '60', backgroundColor: energy.color + '15' }]}>
-        <View style={[styles.energyDot, { backgroundColor: energy.color }]} />
-        <Text style={[styles.energyLabel, { color: energy.color }]}>{energy.label}</Text>
+    <View style={styles.cardInner}>
+      {/* Hero image — fills entire card */}
+      <Image source={{ uri: imgUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+
+      {/* Deep gradient scrim — transparent top → opaque dark bottom */}
+      <LinearGradient
+        colors={['rgba(7,7,15,0.15)', 'rgba(7,7,15,0.55)', 'rgba(7,7,15,0.92)', '#07070F']}
+        locations={[0, 0.35, 0.7, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Content — anchored to bottom */}
+      <View style={styles.cardContent}>
+        {/* Energy badge */}
+        <View style={[styles.energyBadge, { borderColor: energy.color + '80', backgroundColor: energy.color + '22' }]}>
+          <View style={[styles.energyDot, { backgroundColor: energy.color }]} />
+          <Text style={[styles.energyLabel, { color: energy.color }]}>{energy.label}</Text>
+        </View>
+
+        {/* Venue name */}
+        <Text style={styles.venueName} numberOfLines={2}>{venue.name}</Text>
+        {venue.area ? <Text style={styles.venueArea}>{venue.area}</Text> : null}
+
+        {/* Score */}
+        <View style={styles.scoreRow}>
+          <Text style={[styles.scoreNum, { color: scoreColor }]}>{score}</Text>
+          <Text style={styles.scoreLabel}>VIBE</Text>
+        </View>
+
+        {/* Meta row */}
+        <View style={styles.metaRow}>
+          {venue.music_genre ? (
+            <View style={styles.metaChip}>
+              <Text style={styles.metaText}>🎵 {venue.music_genre.split('/')[0].trim()}</Text>
+            </View>
+          ) : null}
+          {venue.entry_fee ? (
+            <View style={styles.metaChip}>
+              <Text style={styles.metaText}>{venue.entry_fee}</Text>
+            </View>
+          ) : null}
+          {venue.capacity_level ? (
+            <View style={styles.metaChip}>
+              <Text style={styles.metaText}>{venue.capacity_level === 'full' ? '🔥 Full' : venue.capacity_level === 'vibrant' ? '⚡ Vibrant' : '🌙 Easy entry'}</Text>
+            </View>
+          ) : null}
+        </View>
+
+        {/* Hint */}
+        <Text style={styles.swipeHint}>swipe anywhere</Text>
       </View>
-
-      {/* Venue name */}
-      <Text style={styles.venueName} numberOfLines={2}>{venue.name}</Text>
-      {venue.area ? <Text style={styles.venueArea}>{venue.area}</Text> : null}
-
-      {/* Score */}
-      <View style={styles.scoreRow}>
-        <Text style={[styles.scoreNum, { color: scoreColor }]}>{score}</Text>
-        <Text style={styles.scoreLabel}>VIBE</Text>
-      </View>
-
-      {/* Meta row */}
-      <View style={styles.metaRow}>
-        {venue.music_genre ? (
-          <View style={styles.metaChip}>
-            <Text style={styles.metaText}>🎵 {venue.music_genre.split('/')[0].trim()}</Text>
-          </View>
-        ) : null}
-        {venue.entry_fee ? (
-          <View style={styles.metaChip}>
-            <Text style={styles.metaText}>{venue.entry_fee}</Text>
-          </View>
-        ) : null}
-        {venue.capacity_level ? (
-          <View style={styles.metaChip}>
-            <Text style={styles.metaText}>{venue.capacity_level === 'full' ? '🔥 Full' : venue.capacity_level === 'vibrant' ? '⚡ Vibrant' : '🌙 Easy entry'}</Text>
-          </View>
-        ) : null}
-      </View>
-
-      {/* Hint */}
-      <Text style={styles.swipeHint}>swipe anywhere</Text>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -436,12 +468,16 @@ const styles = StyleSheet.create({
   },
   cardInner: {
     flex: 1,
-    padding: 24,
-    justifyContent: 'flex-end',
-    gap: 10,
     borderWidth: 1,
     borderColor: '#1A1A2E',
     borderRadius: 20,
+    overflow: 'hidden',
+  },
+  cardContent: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'flex-end',
+    gap: 10,
   },
 
   // Stamps

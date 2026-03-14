@@ -21,7 +21,7 @@ import React, {
   useEffect, useRef, useState, useMemo, useCallback,
 } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Platform,
+  View, Text, StyleSheet, TouchableOpacity, Platform, Animated,
 } from 'react-native';
 import {
   Canvas, Circle, BlurMask, Skia, Group,
@@ -107,16 +107,22 @@ export function VibeDynamicIsland({ onPress }: VibeDynamicIslandProps) {
   const cityPulse        = useVibeStore(s => s.cityPulse);
   const cityChargeActive = useVibeStore(s => s.cityChargeActive);
   const user             = useVibeStore(s => s.user);
+  const isInsideVenue    = useVibeStore(s => s.isInsideVenue);
+  const activeVenueName  = useVibeStore(s => s.activeVenueName);
 
-  const isVibePlus = user?.is_vibe_plus ?? false;
-  const label      = cityPulse?.pulse_label ?? 'CHILL';
-  const score      = cityPulse?.pulse_score ?? 0;
-  const scouts     = cityPulse?.active_scouts ?? 0;
+  const isVibePlus   = user?.is_vibe_plus ?? false;
+  const label        = cityPulse?.pulse_label ?? 'CHILL';
+  const score        = cityPulse?.pulse_score ?? 0;
+  const scouts       = cityPulse?.active_scouts ?? 0;
   const dnaSignature = cityPulse?.city_vibe_signature;
+  const isOverdrive  = score > 90;
 
   // DNA color overrides energy label color — VIIBE+ Obsidian overrides both
+  // Overdrive (score >90) overrides everything with red-gold
   const innerColor = isVibePlus
     ? OBSIDIAN_COLORS[0]
+    : isOverdrive
+    ? '#FF4400'
     : (dnaSignature ? DNA_COLORS[dnaSignature] : (VIBE_COLORS[label] ?? VIBE_COLORS.CHILL)[0]);
 
   // ── Metaball composite layer paint (imperative, Skia.Paint API) ──────────────
@@ -156,14 +162,16 @@ export function VibeDynamicIsland({ onPress }: VibeDynamicIslandProps) {
     [],
   );
 
-  // ── Orbit radius: far apart (18px) at low energy, fused (4px) at high ────────
+  // ── Orbit radius: close enough to always partially fuse (10px) at low energy ─
+  // Was [18,4] — at 18px with 12px blur, blobs were too far to merge at score 0,
+  // giving three isolated dots instead of a liquid mass. 10px keeps them fused.
   const orbitR = useDerivedValue(() =>
-    interpolate(normScore.value, [0, 1], [18, 4])
+    interpolate(normScore.value, [0, 1], [10, 4])
   );
 
-  // ── Blob radius: slightly larger at high energy (more mass to fuse) ──────────
+  // ── Blob radius: slightly larger at low energy for always-visible mass ────────
   const blobR = useDerivedValue(() =>
-    interpolate(normScore.value, [0, 1], [14, 18])
+    interpolate(normScore.value, [0, 1], [15, 18])
   );
 
   // ── Orbiting blob positions (120° apart) ─────────────────────────────────────
@@ -230,6 +238,42 @@ export function VibeDynamicIsland({ onPress }: VibeDynamicIslandProps) {
     }
   }, [cityChargeActive]);
 
+  // ── Overdrive: red-gold ring flicker + MAXED label pulse (score > 90) ─────────
+  const isOverdriveShared  = useSharedValue(isOverdrive ? 1 : 0);
+  const overdriveFlicker   = useSharedValue(0);
+  const maxedPulse         = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    isOverdriveShared.value = isOverdrive ? 1 : 0;
+    if (isOverdrive) {
+      overdriveFlicker.value = withRepeat(
+        withSequence(
+          withTiming(1,   { duration: 110 }),
+          withTiming(0.3, { duration: 170 }),
+          withTiming(0.9, { duration: 80  }),
+          withTiming(0.1, { duration: 140 }),
+        ),
+        -1, false,
+      );
+      Animated.loop(Animated.sequence([
+        Animated.timing(maxedPulse, { toValue: 0.25, duration: 280, useNativeDriver: true }),
+        Animated.timing(maxedPulse, { toValue: 1,    duration: 280, useNativeDriver: true }),
+      ])).start();
+    } else {
+      overdriveFlicker.value = withTiming(0, { duration: 400 });
+      maxedPulse.stopAnimation();
+      maxedPulse.setValue(1);
+    }
+  }, [isOverdrive]);
+
+  const overdriveRingColor = useDerivedValue(() =>
+    isOverdriveShared.value > 0
+      ? `rgba(255,68,0,${(0.5 + overdriveFlicker.value * 0.5).toFixed(2)})`
+      : cityChargeActive
+        ? `rgba(255,214,10,${(0.3 + chargeGlow.value * 0.5).toFixed(2)})`
+        : innerColor + '44'
+  );
+
   // ── Gold overflow particles (JS-thread RAF) ───────────────────────────────────
   const sparksRef = useRef<GoldParticle[]>([]);
   const rafRef    = useRef<number>(0);
@@ -283,6 +327,35 @@ export function VibeDynamicIsland({ onPress }: VibeDynamicIslandProps) {
     return () => cancelAnimationFrame(rafRef.current);
   }, [cityChargeActive, tickParticles]);
 
+  // ─── Web fallback — Skia ColorMatrix layer doesn't work on web ───────────────
+  // Simple pulsing orb using React Native Animated API.
+  const webPulseAnim = useRef(new Animated.Value(0.7)).current;
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    Animated.loop(Animated.sequence([
+      Animated.timing(webPulseAnim, { toValue: 1,   duration: Math.max(300, Math.round(60_000 / Math.max(60, 60 + score))), useNativeDriver: true }),
+      Animated.timing(webPulseAnim, { toValue: 0.7, duration: Math.max(300, Math.round(60_000 / Math.max(60, 60 + score))), useNativeDriver: true }),
+    ])).start();
+  }, [score]);
+
+  if (Platform.OS === 'web') {
+    return (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.wrapper}>
+        <View style={styles.webOrbWrap}>
+          <Animated.View style={[styles.webOrbRing, { borderColor: innerColor + '55' }]} />
+          <Animated.View style={[styles.webOrb, { backgroundColor: innerColor, opacity: webPulseAnim, transform: [{ scale: webPulseAnim }] }]} />
+          {cityChargeActive && <View style={styles.webGoldRing} />}
+        </View>
+        <View style={styles.hud}>
+          <Text style={[styles.hudLabel, { color: innerColor }]}>
+            {cityChargeActive ? 'CITY ON FIRE' : label}
+          </Text>
+          {scouts > 0 && <Text style={styles.hudScouts}>{scouts} scouts</Text>}
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
@@ -304,16 +377,12 @@ export function VibeDynamicIsland({ onPress }: VibeDynamicIslandProps) {
           <BlurMask blur={4} style="inner" />
         </RoundedRect>
 
-        {/* 2. Outer ring — gold flash on cityChargeActive, dim ring otherwise */}
+        {/* 2. Outer ring — overdrive flicker / gold flash / dim ring */}
         <Circle cx={CX} cy={CY} r={OUTER_RING}>
           <Paint
             style="stroke"
-            strokeWidth={cityChargeActive ? 2 : 1.5}
-            color={
-              cityChargeActive
-                ? `rgba(255,214,10,${(0.3 + chargeGlow.value * 0.5).toFixed(2)})`
-                : innerColor + '44'
-            }
+            strokeWidth={isOverdrive ? 3 : cityChargeActive ? 2 : 1.5}
+            color={overdriveRingColor}
           />
         </Circle>
 
@@ -322,10 +391,15 @@ export function VibeDynamicIsland({ onPress }: VibeDynamicIslandProps) {
         {/* then applies the alpha-threshold ColorMatrix to fuse their edges.    */}
         <Group layer={metaballPaint}>
 
-          {/* Center blob — stationary */}
+          {/* Center blob — stationary; overdrive adds molten gold core on top */}
           <Circle cx={CX} cy={CY} r={blobR} color={innerColor}>
             <BlurMask blur={BLOB_BLUR} style="normal" />
           </Circle>
+          {isOverdrive && (
+            <Circle cx={CX} cy={CY} r={blobR} color="rgba(255,184,0,0.55)">
+              <BlurMask blur={BLOB_BLUR * 0.6} style="normal" />
+            </Circle>
+          )}
 
           {/* Orbiting blob 2 */}
           <Circle cx={orb2X} cy={orb2Y} r={blobR} color={innerColor}>
@@ -357,11 +431,23 @@ export function VibeDynamicIsland({ onPress }: VibeDynamicIslandProps) {
 
       {/* HUD text */}
       <View style={styles.hud}>
-        <Text style={[styles.hudLabel, { color: innerColor }]}>
-          {cityChargeActive ? 'CITY ON FIRE' : label}
-        </Text>
-        {scouts > 0 && (
+        <Animated.Text style={[
+          styles.hudLabel,
+          { color: innerColor, opacity: isOverdrive ? maxedPulse : 1 },
+        ]}>
+          {isOverdrive
+            ? 'MAXED'
+            : cityChargeActive
+            ? 'CITY ON FIRE'
+            : isInsideVenue && activeVenueName
+            ? activeVenueName.slice(0, 11).toUpperCase()
+            : label}
+        </Animated.Text>
+        {scouts > 0 && !isInsideVenue && (
           <Text style={styles.hudScouts}>{scouts} scouts</Text>
+        )}
+        {isInsideVenue && !isOverdrive && (
+          <Text style={styles.hudScouts}>you're inside</Text>
         )}
       </View>
     </TouchableOpacity>
@@ -371,9 +457,14 @@ export function VibeDynamicIsland({ onPress }: VibeDynamicIslandProps) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  wrapper:    { alignItems: 'center' },
-  canvas:     { width: CANVAS_W, height: CANVAS_H },
-  hud:        { alignItems: 'center', marginTop: -4 },
-  hudLabel:   { fontSize: 9, fontWeight: '800', letterSpacing: 1.4 },
-  hudScouts:  { fontSize: 8, color: 'rgba(255,255,255,0.3)', marginTop: 1 },
+  wrapper:      { alignItems: 'center' },
+  canvas:       { width: CANVAS_W, height: CANVAS_H },
+  hud:          { alignItems: 'center', marginTop: -4 },
+  hudLabel:     { fontSize: 9, fontWeight: '800', letterSpacing: 1.4 },
+  hudScouts:    { fontSize: 8, color: 'rgba(255,255,255,0.3)', marginTop: 1 },
+  // Web fallback styles
+  webOrbWrap:   { width: CANVAS_W, height: CANVAS_H, alignItems: 'center', justifyContent: 'center' },
+  webOrbRing:   { position: 'absolute', width: OUTER_RING * 2, height: OUTER_RING * 2, borderRadius: OUTER_RING, borderWidth: 1.5 },
+  webOrb:       { width: 36, height: 36, borderRadius: 18 },
+  webGoldRing:  { position: 'absolute', width: OUTER_RING * 2 + 8, height: OUTER_RING * 2 + 8, borderRadius: OUTER_RING + 4, borderWidth: 2, borderColor: 'rgba(255,214,10,0.6)' },
 } as any);
