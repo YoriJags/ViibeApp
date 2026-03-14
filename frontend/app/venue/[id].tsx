@@ -52,6 +52,7 @@ import AIPulseComment from '../../src/components/AIPulseComment';
 import EmojiPulse from '../../src/components/EmojiPulse';
 import ScoutPressureChip from '../../src/components/ScoutPressureChip';
 import VibeMomentum from '../../src/components/VibeMomentum';
+import TorchButton from '../../src/components/TorchButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -802,6 +803,13 @@ export default function VenueDetailScreen() {
                 {/* Tap hint */}
                 <Text style={styles.energyTapHint}>TAP TO RATE THE VIBE</Text>
               </TouchableOpacity>
+
+              {/* Torch — manual + synchronized IGNITE */}
+              <TorchButton
+                vibeScore={venue.current_vibe_score}
+                venueId={venue.id}
+                socket={socket}
+              />
 
               {/* AI Pulse Commentary — live scene blurb */}
               <ErrorBoundary label="AI Pulse">
