@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import { useVibeStore } from '../src/store/vibeStore';
 import OnboardingFlow from '../src/components/OnboardingFlow';
@@ -72,6 +73,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <ErrorBoundary variant="screen" label="App">
       <SafeAreaProvider>
         <AppInitializer>
@@ -109,6 +111,7 @@ export default function RootLayout() {
         </AppInitializer>
       </SafeAreaProvider>
     </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 }
 
