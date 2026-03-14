@@ -104,6 +104,7 @@ export interface VibeReactorProps {
   onElectric?:       (tapCount: number) => void;
   onReact?:          () => void;
   onQuestSucceeded?: (participants: number) => void;
+  onBpmUpdate?:      (bpm: number) => void;
 }
 
 // ─── GlitchText ───────────────────────────────────────────────────────────────
@@ -254,6 +255,7 @@ export default function VibeReactor({
   onElectric,
   onReact,
   onQuestSucceeded,
+  onBpmUpdate,
 }: VibeReactorProps) {
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const socket         = useVibeStore(s => s.socket);
@@ -584,8 +586,9 @@ export default function VibeReactor({
       ? 0
       : Math.min(((recent.length - 1) / ((recent[recent.length - 1] - recent[0]) / 1000)) * 60, 300);
 
-    // Update BPM shared value for orb pulse
+    // Update BPM shared value for orb pulse + oscillator
     bpmShared.value = Math.round(bpm);
+    onBpmUpdate?.(Math.round(bpm));
 
     socket?.emit('tap_velocity', {
       venue_id: venueId, user_id: user?.id,

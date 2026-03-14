@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useSharedValue, withSequence, withSpring } from 'react-native-reanimated';
 import {
   View,
   Text,
@@ -53,6 +54,7 @@ import EmojiPulse from '../../src/components/EmojiPulse';
 import ScoutPressureChip from '../../src/components/ScoutPressureChip';
 import VibeMomentum from '../../src/components/VibeMomentum';
 import TorchButton from '../../src/components/TorchButton';
+import VibeOscillator, { triggerOscillatorSurge } from '../../src/components/VibeOscillator';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -323,8 +325,30 @@ export default function VenueDetailScreen() {
     };
     socket.on('venue_update', handleVenueUpdate);
 
+    // Sync oscillator score live
+    const handleOscUpdate = (updated: any) => {
+      if (updated?.id === venue.id && updated.current_vibe_score != null) {
+        oscScore.value = updated.current_vibe_score;
+      }
+    };
+    socket.on('venue_update', handleOscUpdate);
+
+    // Surge → explosive oscillator pop (user's spring values)
+    const handleSurge = (data: any) => {
+      if (data?.venue_id !== venue.id) return;
+      oscScore.value = withSequence(
+        withSpring(Math.min((oscScore.value + 30), 100), { damping: 4 }),
+        withSpring(oscScore.value, { damping: 10 }),
+      );
+      triggerOscillatorSurge(oscSurge);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    };
+    socket.on('venue_surge', handleSurge);
+
     return () => {
       socket.off('venue_update', handleVenueUpdate);
+      socket.off('venue_update', handleOscUpdate);
+      socket.off('venue_surge', handleSurge);
     };
   }, [socket, venue?.id, user?.id]);
 
@@ -510,6 +534,11 @@ export default function VenueDetailScreen() {
     user?.is_vibe_plus &&
     (!user?.vibe_plus_expires_at || new Date(user.vibe_plus_expires_at) > now)
   );
+
+  // ── Oscillator shared values ────────────────────────────────────────────────
+  const oscBpm    = useSharedValue(80);
+  const oscScore  = useSharedValue(venue?.current_vibe_score ?? 50);
+  const oscSurge  = useSharedValue(1.0);
 
   const getVibeColor = (score: number, capacity = 'sparse') => {
     if (score >= 85) return '#FF3366';
@@ -1158,9 +1187,32 @@ export default function VenueDetailScreen() {
                   setSurgeTapCount(participants);
                   setShowSurgeCelebration(true);
                 }}
+                onBpmUpdate={(bpm) => { oscBpm.value = bpm; }}
               />
             </View>
           </ErrorBoundary>
+        )}
+
+        {/* ── VibeOscillator — VIBE+ scene frequency intel ── */}
+        {venue && (
+          <View style={styles.oscillatorSection}>
+            <View style={styles.oscillatorHeader}>
+              <Text style={styles.oscillatorLabel}>SCENE FREQUENCY</Text>
+              {!isVibePlus && (
+                <View style={styles.oscillatorPlusBadge}>
+                  <Text style={styles.oscillatorPlusBadgeText}>◆ VIBE+</Text>
+                </View>
+              )}
+            </View>
+            <VibeOscillator
+              bpmShared={oscBpm}
+              vibeScore={oscScore}
+              surgeValue={oscSurge}
+              isPlus={isVibePlus}
+              mode="WAVE"
+              onUnlockPress={() => setShowVibePlusModal(true)}
+            />
+          </View>
         )}
 
         <View style={{ height: 200 }} />
@@ -1568,6 +1620,37 @@ const styles = StyleSheet.create({
   glassCardInner: {
     padding: 20,
     backgroundColor: 'rgba(26, 26, 37, 0.85)',
+  },
+  oscillatorSection: {
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  oscillatorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  oscillatorLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 2.5,
+    color: 'rgba(255,255,255,0.30)',
+  },
+  oscillatorPlusBadge: {
+    backgroundColor: 'rgba(255,215,0,0.10)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: '#FFD70033',
+  },
+  oscillatorPlusBadgeText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#FFD700',
+    letterSpacing: 1,
   },
   energyTapBlock: {
     marginBottom: 16,
