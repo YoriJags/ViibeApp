@@ -310,11 +310,21 @@ export default function VenueDetailScreen() {
     setLoading(false);
   };
 
-  // Socket.IO — live reaction feed for this venue
+  // Socket.IO — join room + live venue_update → patch local state
   useEffect(() => {
     if (!socket || !venue?.id) return;
     socket.emit('join_venue', { venue_id: venue.id });
-    return () => {};
+
+    const handleVenueUpdate = (updated: any) => {
+      if (updated?.id === venue.id) {
+        setVenue((prev: any) => prev ? { ...prev, ...updated } : updated);
+      }
+    };
+    socket.on('venue_update', handleVenueUpdate);
+
+    return () => {
+      socket.off('venue_update', handleVenueUpdate);
+    };
   }, [socket, venue?.id, user?.id]);
 
   const handleReact = async () => {
