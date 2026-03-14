@@ -92,7 +92,7 @@ export default function CollectiveVibeQuest({ venueId, isDemoMode, onPushPress }
   useEffect(() => {
     if (!quest?.active) return;
     Animated.parallel([
-      Animated.spring(scaleAnim, { toValue: 1, tension: 50, friction: 10, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, tension: 50, friction: 10, useNativeDriver: false }),
       Animated.timing(glowAnim,  { toValue: 1, duration: 600, easing: Easing.out(Easing.exp), useNativeDriver: false }),
     ]).start();
 
