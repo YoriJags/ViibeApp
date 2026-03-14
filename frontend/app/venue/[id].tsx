@@ -758,28 +758,40 @@ export default function VenueDetailScreen() {
                 </View>
               )}
 
-              {/* Energy Level Headline */}
-              <View style={styles.energyHeadline}>
-                <View style={[styles.energyDot, { backgroundColor: vibeColor }]} />
-                <Text style={[styles.energyLabel, { color: vibeColor }]}>
-                  {vibeStateLabel}
-                </Text>
-                <View style={styles.energyScoreBadge}>
-                  <Text style={[styles.energyScoreText, { color: vibeColor }]}>
-                    {Math.round(venue.current_vibe_score)}%
+              {/* Energy Level Headline — tap to rate */}
+              <TouchableOpacity
+                onPress={() => setShowRateModal(true)}
+                activeOpacity={0.75}
+                style={styles.energyTapBlock}
+              >
+                <View style={styles.energyHeadline}>
+                  <View style={[styles.energyDot, { backgroundColor: vibeColor }]} />
+                  <Text style={[styles.energyLabel, { color: vibeColor }]}>
+                    {vibeStateLabel}
                   </Text>
+                  <View style={[styles.energyScoreBadge, { backgroundColor: vibeColor }]}>
+                    <Text style={styles.energyScoreText}>
+                      {Math.round(venue.current_vibe_score)}%
+                    </Text>
+                  </View>
                 </View>
-              </View>
 
-              {/* Energy Meter Bar */}
-              <View style={{ marginBottom: 16 }}>
-                <EnergyMeter
-                  percent={venue.current_vibe_score}
-                  size="md"
-                  showLabel={false}
-                  animate={true}
-                />
-              </View>
+                {/* Bar label */}
+                <Text style={styles.energyBarLabel}>ENERGY LEVEL</Text>
+
+                {/* Energy Meter Bar — bleeds edge-to-edge */}
+                <View style={styles.energyBarWrap}>
+                  <EnergyMeter
+                    percent={venue.current_vibe_score}
+                    size="md"
+                    showLabel={false}
+                    animate={true}
+                  />
+                </View>
+
+                {/* Tap hint */}
+                <Text style={styles.energyTapHint}>TAP TO RATE THE VIBE</Text>
+              </TouchableOpacity>
 
               {/* AI Pulse Commentary — live scene blurb */}
               <ErrorBoundary label="AI Pulse">
@@ -1539,10 +1551,13 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: 'rgba(26, 26, 37, 0.85)',
   },
+  energyTapBlock: {
+    marginBottom: 16,
+  },
   energyHeadline: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 18,
+    marginBottom: 12,
     gap: 10,
   },
   energyDot: {
@@ -1560,12 +1575,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   energyScoreBadge: {
-    backgroundColor: 'rgba(20,20,32,0.85)',
     paddingHorizontal: 18,
     paddingVertical: 14,
     borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     minWidth: 90,
     alignItems: 'center',
   },
@@ -1573,6 +1585,26 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '900',
     letterSpacing: -0.5,
+    color: '#FFF',
+  },
+  energyBarLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 2,
+    color: 'rgba(255,255,255,0.30)',
+    marginBottom: 8,
+  },
+  energyBarWrap: {
+    marginHorizontal: -20,
+    marginBottom: 10,
+  },
+  energyTapHint: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    color: 'rgba(255,255,255,0.20)',
+    textAlign: 'center',
+    marginTop: 2,
   },
   utilityStatsRow: {
     flexDirection: 'row',
