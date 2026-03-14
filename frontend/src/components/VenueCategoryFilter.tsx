@@ -4,16 +4,14 @@
  * Inactive: muted icon + label, no underline.
  * Shows live count badge per category.
  */
-import React, { useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Animated,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 export type VenueCategory =
   | 'all'
@@ -40,6 +38,19 @@ interface VenueCategoryFilterProps {
   counts?: Record<string, number>;
 }
 
+const CATEGORY_EMOJI: Record<string, string> = {
+  all:         '✦',
+  club:        '🎵',
+  bar:         '🥃',
+  lounge:      '🌙',
+  restaurant:  '🍽️',
+  concert:     '🎤',
+  block_party: '🌆',
+  church:      '●',
+  rave:        '🎤',
+  festival:    '🌆',
+};
+
 const CATEGORIES: CategoryOption[] = [
   { key: 'all',         label: 'All',        icon: 'apps',           color: '#FF3366' },
   { key: 'club',        label: 'Clubs',      icon: 'musical-notes',  color: '#FF3366' },
@@ -62,35 +73,24 @@ function CategoryTab({
   count: number;
   onPress: () => void;
 }) {
-  const underlineScale = useRef(new Animated.Value(isActive ? 1 : 0)).current;
-
   const handlePress = () => {
-    if (!isActive) {
-      Animated.spring(underlineScale, {
-        toValue: 1,
-        tension: 180,
-        friction: 12,
-        useNativeDriver: true,
-      }).start();
-    }
     onPress();
   };
 
+  const emoji = CATEGORY_EMOJI[cat.key] ?? '●';
+
   return (
     <TouchableOpacity
-      style={styles.tab}
+      style={[
+        styles.tab,
+        isActive ? [styles.tabActive, { backgroundColor: cat.color }] : styles.tabInactive,
+      ]}
       onPress={handlePress}
       activeOpacity={0.65}
     >
-      {/* Icon */}
-      <Ionicons
-        name={cat.icon as any}
-        size={15}
-        color={isActive ? cat.color : '#444'}
-      />
-
-      {/* Label + count badge */}
+      {/* Emoji prefix + Label */}
       <View style={styles.labelRow}>
+        <Text style={styles.emoji}>{emoji}</Text>
         <Text style={[styles.label, isActive && { color: '#FFF' }]}>
           {cat.label}
         </Text>
@@ -99,28 +99,16 @@ function CategoryTab({
             style={[
               styles.badge,
               isActive
-                ? { backgroundColor: cat.color + '30', borderColor: cat.color + '60' }
+                ? { backgroundColor: 'rgba(255,255,255,0.25)', borderColor: 'rgba(255,255,255,0.4)' }
                 : { backgroundColor: '#1A1A28', borderColor: '#252530' },
             ]}
           >
-            <Text style={[styles.badgeText, isActive && { color: cat.color }]}>
+            <Text style={[styles.badgeText, isActive && { color: '#FFF' }]}>
               {count}
             </Text>
           </View>
         )}
       </View>
-
-      {/* Underline indicator */}
-      <Animated.View
-        style={[
-          styles.underline,
-          {
-            backgroundColor: cat.color,
-            transform: [{ scaleX: isActive ? 1 : 0 }],
-            opacity: isActive ? 1 : 0,
-          },
-        ]}
-      />
     </TouchableOpacity>
   );
 }
@@ -161,16 +149,23 @@ const styles = StyleSheet.create({
   tab: {
     alignItems: 'center',
     paddingHorizontal: 14,
-    paddingTop: 6,
-    paddingBottom: 0,
-    gap: 4,
-    position: 'relative',
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  tabActive: {
+    // backgroundColor set inline with cat.color
+  },
+  tabInactive: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: 6,
+  },
+  emoji: {
+    fontSize: 12,
   },
   label: {
     fontSize: 12,
@@ -189,14 +184,5 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     color: '#555',
-  },
-  underline: {
-    height: 2,
-    borderRadius: 1,
-    width: '100%',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
   },
 });

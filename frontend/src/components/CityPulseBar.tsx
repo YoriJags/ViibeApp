@@ -74,8 +74,10 @@ const sparkSt = StyleSheet.create({
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function CityPulseBar({ pulse, onPress }: CityPulseBarProps) {
-  const pulseAnim = useRef(new Animated.Value(0.7)).current;
-  const dotAnim   = useRef(new Animated.Value(1)).current;
+  const pulseAnim    = useRef(new Animated.Value(0.7)).current;
+  const dotAnim      = useRef(new Animated.Value(1)).current;
+  const scoutsScale  = useRef(new Animated.Value(1)).current;
+  const venuesScale  = useRef(new Animated.Value(1)).current;
   const [fullscreen, setFullscreen] = useState(false);
 
   const color = LABEL_COLORS[pulse.pulse_label] ?? LABEL_COLORS.CHILL;
@@ -102,6 +104,20 @@ export default function CityPulseBar({ pulse, onPress }: CityPulseBarProps) {
       ])
     ).start();
   }, []);
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(scoutsScale, { toValue: 1.15, duration: 150, useNativeDriver: true }),
+      Animated.timing(scoutsScale, { toValue: 1,    duration: 150, useNativeDriver: true }),
+    ]).start();
+  }, [pulse.active_scouts]);
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(venuesScale, { toValue: 1.15, duration: 150, useNativeDriver: true }),
+      Animated.timing(venuesScale, { toValue: 1,    duration: 150, useNativeDriver: true }),
+    ]).start();
+  }, [pulse.hot_venues]);
 
   const cityName   = pulse.city.charAt(0).toUpperCase() + pulse.city.slice(1);
   const sparkline  = pulse.sparkline ?? [];
@@ -131,9 +147,16 @@ export default function CityPulseBar({ pulse, onPress }: CityPulseBarProps) {
                 {TREND_ICON[pulse.trend]} {TREND_LABEL[pulse.trend]}
               </Text>
             </View>
-            <Text style={styles.sub}>
-              {pulse.active_scouts} scouts · {pulse.hot_venues ?? 0} venues lit
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+              <Animated.Text style={[styles.sub, { transform: [{ scale: scoutsScale }] }]}>
+                {pulse.active_scouts}
+              </Animated.Text>
+              <Text style={styles.sub}>{' scouts · '}</Text>
+              <Animated.Text style={[styles.sub, { transform: [{ scale: venuesScale }] }]}>
+                {pulse.hot_venues ?? 0}
+              </Animated.Text>
+              <Text style={styles.sub}>{' venues lit'}</Text>
+            </View>
           </View>
 
           {/* Right: sparkline + expand hint */}

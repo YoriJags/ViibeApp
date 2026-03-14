@@ -519,9 +519,15 @@ export default function MapScreen() {
           }}
           activeOpacity={0.7}
         >
-          <Text style={styles.cityNameLarge}>
-            {CITIES.find(c => c.code === selectedCity)?.name ?? 'Lagos'}
-          </Text>
+          <Text style={styles.sceneSuperLabel}>SCENE</Text>
+          <View style={styles.cityNameRow}>
+            <Text style={styles.cityNameLarge}>
+              {CITIES.find(c => c.code === selectedCity)?.name ?? 'Lagos'}
+            </Text>
+            <View style={styles.liveChip}>
+              <Text style={styles.liveChipText}>● LIVE</Text>
+            </View>
+          </View>
           <Animated.View style={{ transform: [{ rotate: chevronSpin }] }}>
             <Ionicons name="chevron-down" size={13} color="rgba(255,255,255,0.4)" />
           </Animated.View>
@@ -1102,11 +1108,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
     paddingVertical: 2,
   },
+  sceneSuperLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 3,
+    color: '#FF3366',
+  },
+  cityNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   cityNameLarge: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '900',
     color: 'rgba(255,255,255,0.88)',
-    letterSpacing: 0.3,
+    letterSpacing: 2,
+  },
+  liveChip: {
+    backgroundColor: 'rgba(0,230,118,0.12)',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  liveChipText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#00E676',
   },
   headerSubtitle: {
     fontSize: 11,

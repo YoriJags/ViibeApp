@@ -156,6 +156,14 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
         onPressOut={onPressOut}
         activeOpacity={0.72}
       >
+        {/* Atmospheric top gradient — subtle vibe color wash */}
+        <LinearGradient
+          colors={[vibeColor + '12', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.atmosphericTop}
+        />
+
         {/* Gold shimmer overlay for pulse-boosted cards */}
         {isPulseBoosted && (
           <LinearGradient
@@ -369,6 +377,14 @@ const styles = StyleSheet.create({
   },
   cardBoosted: {
     backgroundColor: '#110F1A',
+  },
+  atmosphericTop: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 80,
+    zIndex: 0,
   },
   accentBar: {
     width: 5,
