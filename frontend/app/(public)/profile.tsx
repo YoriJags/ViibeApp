@@ -349,22 +349,34 @@ export default function ProfileScreen() {
   // User Profile Screen
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-            <TouchableOpacity onPress={() => setShowAfterParty(true)} activeOpacity={0.8}>
-              <Ionicons name="moon-outline" size={22} color="#9933FF" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowPassport(true)} activeOpacity={0.8}>
-              <Ionicons name="id-card-outline" size={24} color="#6655FF" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleLogout}>
-              <Ionicons name="log-out-outline" size={24} color="#FF3366" />
-            </TouchableOpacity>
-          </View>
+      {/* Header — outside ScrollView so buttons always respond */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <TouchableOpacity
+            onPress={() => setShowAfterParty(true)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="moon-outline" size={22} color="#9933FF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowPassport(true)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="id-card-outline" size={24} color="#6655FF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleLogout}
+            activeOpacity={0.7}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="log-out-outline" size={24} color="#FF3366" />
+          </TouchableOpacity>
         </View>
+      </View>
+      <ScrollView style={styles.scrollView}>
 
         {/* User Card */}
         <View style={styles.userCard}>
