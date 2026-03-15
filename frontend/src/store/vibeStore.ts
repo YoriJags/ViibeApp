@@ -17,19 +17,8 @@ import { createAuthSlice, AuthSlice } from './slices/authSlice';
 import { createVenueSlice, VenueSlice } from './slices/venueSlice';
 import { createScoutSlice, ScoutSlice } from './slices/scoutSlice';
 import { createSocketSlice, SocketSlice } from './slices/socketSlice';
-import { SkinId } from '../components/skins/skinTypes';
-
-// ─── Skin preference (persisted, tiny — lives inline) ─────────────────────────
-type OscMode = 'BARS' | 'WAVE' | 'PULSE';
-interface SkinSlice {
-  selectedSkin: SkinId;
-  setSkin: (id: SkinId) => void;
-  oscMode: OscMode;
-  setOscMode: (mode: OscMode) => void;
-}
-
 // ─── Combined store type ──────────────────────────────────────────────────────
-export type VibeStore = AuthSlice & VenueSlice & ScoutSlice & SocketSlice & SkinSlice;
+export type VibeStore = AuthSlice & VenueSlice & ScoutSlice & SocketSlice;
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 export const useVibeStore = create<VibeStore>()(
@@ -39,11 +28,6 @@ export const useVibeStore = create<VibeStore>()(
       ...createVenueSlice(set, get, api),
       ...createScoutSlice(set, get, api),
       ...createSocketSlice(set, get, api),
-      // Skin preference
-      selectedSkin: 'reactor' as SkinId,
-      setSkin: (id: SkinId) => set({ selectedSkin: id }),
-      oscMode: 'WAVE' as OscMode,
-      setOscMode: (mode: OscMode) => set({ oscMode: mode }),
     }),
     {
       name: 'vibe-store',
@@ -69,9 +53,6 @@ export const useVibeStore = create<VibeStore>()(
         pendingRatings: state.pendingRatings,
         // Tutorial
         hasSeenAppTutorial: state.hasSeenAppTutorial,
-        // Skin
-        selectedSkin: state.selectedSkin,
-        oscMode: state.oscMode,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useSharedValue, withSequence, withSpring } from 'react-native-reanimated';
 import {
   View,
   Text,
@@ -45,17 +44,14 @@ import ArrivalIntelCard from '../../src/components/ArrivalIntelCard';
 import CrowdCompositionBar from '../../src/components/CrowdCompositionBar';
 import BookingModal from '../../src/components/BookingModal';
 import VibeReactor from '../../src/components/VibeReactor';
-import CollectiveVibeQuest from '../../src/components/CollectiveVibeQuest';
 import SurgeCelebration from '../../src/components/SurgeCelebration';
 import FirstScoutCelebration from '../../src/components/FirstScoutCelebration';
 import ResonancePrompt from '../../src/components/ResonancePrompt';
-import AIPulseComment from '../../src/components/AIPulseComment';
 import EmojiPulse from '../../src/components/EmojiPulse';
+import VenueInsiderPanel from '../../src/components/VenueInsiderPanel';
 import ScoutPressureChip from '../../src/components/ScoutPressureChip';
 import VibeMomentum from '../../src/components/VibeMomentum';
 import TorchButton from '../../src/components/TorchButton';
-import VibeOscillator, { triggerOscillatorSurge } from '../../src/components/VibeOscillator';
-import SkinContainer from '../../src/components/SkinContainer';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -72,8 +68,6 @@ export default function VenueDetailScreen() {
   const { id, openRateModal } = useLocalSearchParams<{ id: string; openRateModal?: string }>();
   const router = useRouter();
   const vibePersona = useVibeStore(s => s.vibePersona);
-
-  const { oscMode, setOscMode } = useVibeStore();
 
   const {
     fetchVenue,
@@ -301,9 +295,12 @@ export default function VenueDetailScreen() {
     if (isDemoMode) {
       const { DEMO_VENUES } = require('../../src/data/demoData');
       const demoVenue = DEMO_VENUES.find((v: any) => v.id === id);
-      setVenue(demoVenue ?? null);
-      setLoading(false);
-      return;
+      if (demoVenue) {
+        setVenue(demoVenue);
+        setLoading(false);
+        return;
+      }
+      // Real venue ID accessed in demo mode — fall through to API
     }
     const venueData = await fetchVenue(id || '');
     setVenue(venueData);
@@ -328,30 +325,8 @@ export default function VenueDetailScreen() {
     };
     socket.on('venue_update', handleVenueUpdate);
 
-    // Sync oscillator score live
-    const handleOscUpdate = (updated: any) => {
-      if (updated?.id === venue.id && updated.current_vibe_score != null) {
-        oscScore.value = updated.current_vibe_score;
-      }
-    };
-    socket.on('venue_update', handleOscUpdate);
-
-    // Surge → explosive oscillator pop (user's spring values)
-    const handleSurge = (data: any) => {
-      if (data?.venue_id !== venue.id) return;
-      oscScore.value = withSequence(
-        withSpring(Math.min((oscScore.value + 30), 100), { damping: 4 }),
-        withSpring(oscScore.value, { damping: 10 }),
-      );
-      triggerOscillatorSurge(oscSurge);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    };
-    socket.on('venue_surge', handleSurge);
-
     return () => {
       socket.off('venue_update', handleVenueUpdate);
-      socket.off('venue_update', handleOscUpdate);
-      socket.off('venue_surge', handleSurge);
     };
   }, [socket, venue?.id, user?.id]);
 
@@ -538,12 +513,7 @@ export default function VenueDetailScreen() {
     (!user?.vibe_plus_expires_at || new Date(user.vibe_plus_expires_at) > now)
   );
 
-  // ── Oscillator shared values ────────────────────────────────────────────────
-  const oscBpm    = useSharedValue(80);
-  const oscScore  = useSharedValue(venue?.current_vibe_score ?? 50);
-  const oscSurge  = useSharedValue(1.0);
-
-  const getVibeColor = (score: number, capacity = 'sparse') => {
+const getVibeColor = (score: number, capacity = 'sparse') => {
     if (score >= 85) return '#FF3366';
     if (score >= 65) return '#FF9933';
     if (score >= 45) return (capacity === 'full' || capacity === 'vibrant') ? '#9B59B6' : '#9933FF';
@@ -635,56 +605,7 @@ export default function VenueDetailScreen() {
   const hasPulseDrop = venue.active_pulse_tier !== null;
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle} numberOfLines={1}>{venue.name}</Text>
-          <View style={styles.headerBadges}>
-            {venue.vibe_certified && (
-              <CertifiedBadge compact />
-            )}
-            {venue.is_verified && (
-              <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark-circle" size={12} color="#4CAF50" />
-              </View>
-            )}
-            {hasPulseDrop && (
-              <View style={styles.pulseBadge}>
-                <Ionicons name="flame" size={12} color="#FFD700" />
-              </View>
-            )}
-          </View>
-        </View>
-        <TouchableOpacity style={styles.lobbyButton} onPress={handleShare}>
-          <Ionicons name="share-social-outline" size={22} color="#888" />
-        </TouchableOpacity>
-        {isAuthenticated && (
-          <TouchableOpacity style={styles.lobbyButton} onPress={handleToggleLobby}>
-            <Ionicons
-              name={inLobby ? 'bookmark' : 'bookmark-outline'}
-              size={22}
-              color={inLobby ? '#FF3366' : '#888'}
-            />
-          </TouchableOpacity>
-        )}
-        {isAuthenticated && (
-          <TouchableOpacity
-            style={styles.lobbyButton}
-            onPress={() => setShowAlertModal(true)}
-          >
-            <Ionicons
-              name={venueAlerts.length > 0 ? 'notifications' : 'notifications-outline'}
-              size={22}
-              color={venueAlerts.length > 0 ? '#FF9933' : '#888'}
-            />
-          </TouchableOpacity>
-        )}
-      </View>
-
+    <SafeAreaView style={styles.container} edges={[]}>
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
@@ -692,38 +613,113 @@ export default function VenueDetailScreen() {
         showsVerticalScrollIndicator={false}
         bounces={true}
       >
-        {/* ====== LIVE LOOK THUMBNAIL ====== */}
-        <Animated.View style={[styles.liveLookContainer, { transform: [{ translateY: slideAnim }] }]}>
-          <View style={styles.liveLookWrapper}>
-            <Image
-              source={{ uri: venue.last_snapshot_url || getPlaceholderImage() }}
-              style={styles.liveLookImage}
-              resizeMode="cover"
-            />
-            
-            {/* Gradient Overlay */}
+
+        {/* ====== CINEMATIC HERO ====== */}
+        <View style={styles.heroContainer}>
+          <Image
+            source={{ uri: venue.last_snapshot_url || getPlaceholderImage() }}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
+
+          {/* Cinematic bottom gradient */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.5)', '#000']}
+            style={styles.heroGradient}
+          />
+
+          {/* Pulse-drop gold shimmer */}
+          {hasPulseDrop && (
             <LinearGradient
-              colors={['transparent', 'rgba(10,10,15,0.8)']}
-              style={styles.liveLookGradient}
+              colors={['rgba(201,168,76,0.18)', 'transparent']}
+              style={StyleSheet.absoluteFillObject}
             />
-            
-            {/* Verified Badge */}
-            <View style={styles.liveLookBadge}>
-              <Ionicons name="eye" size={12} color="#4CAF50" />
-              <Text style={styles.liveLookBadgeText}>{getSnapshotTimeAgo()}</Text>
+          )}
+
+          {/* Top row: back + snapshot pill + actions */}
+          <View style={styles.heroTopRow}>
+            <TouchableOpacity style={styles.heroBackBtn} onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={20} color="#FFF" />
+            </TouchableOpacity>
+
+            {/* Snapshot time pill — centered */}
+            <View style={styles.heroSnapshotPill}>
+              <Ionicons name="eye" size={10} color="#4CAF50" />
+              <Text style={styles.heroSnapshotText}>{getSnapshotTimeAgo()}</Text>
             </View>
-            
-            {/* Pulse Drop Glow Effect */}
-            {hasPulseDrop && (
-              <View style={styles.pulseGlowOverlay}>
-                <LinearGradient
-                  colors={['rgba(255,215,0,0.3)', 'transparent']}
-                  style={styles.pulseGlow}
-                />
+
+            {/* Right-side action buttons */}
+            <View style={styles.heroActionsRow}>
+              <TouchableOpacity style={styles.heroActionBtn} onPress={handleShare}>
+                <Ionicons name="share-social-outline" size={18} color="#FFF" />
+              </TouchableOpacity>
+              {isAuthenticated && (
+                <TouchableOpacity style={styles.heroActionBtn} onPress={handleToggleLobby}>
+                  <Ionicons
+                    name={inLobby ? 'bookmark' : 'bookmark-outline'}
+                    size={18}
+                    color={inLobby ? '#C9A84C' : '#FFF'}
+                  />
+                </TouchableOpacity>
+              )}
+              {isAuthenticated && (
+                <TouchableOpacity style={styles.heroActionBtn} onPress={() => setShowAlertModal(true)}>
+                  <Ionicons
+                    name={venueAlerts.length > 0 ? 'notifications' : 'notifications-outline'}
+                    size={18}
+                    color={venueAlerts.length > 0 ? '#C9A84C' : '#FFF'}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          {/* Bottom hero info: name + vibe state label + score badge */}
+          <View style={styles.heroBottom}>
+            <Text style={styles.heroVenueName} numberOfLines={2}>{venue.name}</Text>
+            <Text style={[styles.heroVenueState, { color: vibeColor }]}>{vibeStateLabel}</Text>
+
+            {/* Vibe score badge — bottom-right */}
+            <View style={styles.heroScoreBadge}>
+              <Text style={[styles.heroScoreNumber, { color: vibeColor }]}>
+                {Math.round(venue.current_vibe_score)}
+                <Text style={{ fontSize: 20, fontWeight: '700' }}>%</Text>
+              </Text>
+              <Text style={styles.heroScoreLabel}>VIBE SCORE</Text>
+            </View>
+
+            {/* Certified + Verified badges */}
+            {(venue.vibe_certified || venue.is_verified) && (
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                {venue.vibe_certified && <CertifiedBadge compact />}
+                {venue.is_verified && (
+                  <View style={styles.heroCertBadge}>
+                    <Ionicons name="checkmark-circle" size={12} color="#4CAF50" />
+                    <Text style={{ fontSize: 10, color: '#4CAF50', fontWeight: '700', letterSpacing: 1 }}>VERIFIED</Text>
+                  </View>
+                )}
               </View>
             )}
           </View>
-        </Animated.View>
+        </View>
+
+        {/* ====== LIVE CHECKIN BANNER ====== */}
+        {isWithinGeofence && (
+          <Animated.View style={[styles.checkinBanner, {
+            opacity: checkinBannerAnim,
+            transform: [{ translateY: checkinBannerAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }],
+          }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Animated.View style={[styles.checkinBannerDot, { opacity: checkinDotAnim }]} />
+              <Text style={styles.checkinBannerText}>
+                YOU'RE IN
+                {checkinMinutes > 0 ? ` · ${checkinMinutes}m` : ' · Just arrived'}
+                {venueCheckinCount > 0 ? ` · ${venueCheckinCount} here` : ''}
+              </Text>
+            </View>
+            <Ionicons name="people" size={14} color="#00E676" />
+          </Animated.View>
+        )}
 
         {/* ====== STORY BUBBLES + CROWD COUNT ====== */}
         {(venueStories.length > 0 || venueCheckinCount > 0) && (
@@ -755,489 +751,466 @@ export default function VenueDetailScreen() {
           </View>
         )}
 
-        {/* ====== GLASSMORPHISM VENUE PULSE CARD ====== */}
-        <View style={styles.glassCardContainer}>
-          <BlurView
-            intensity={20}
-            tint="dark"
-            style={[styles.glassCard, isWithinGeofence && styles.glassCardLockedIn]}
-          >
-            <View style={styles.glassCardInner}>
-              {/* LOCKED IN banner — modern with crowd count */}
-              {isWithinGeofence && (
-                <Animated.View style={[styles.lockedInBanner, {
-                  opacity: checkinBannerAnim,
-                  transform: [{ translateY: checkinBannerAnim.interpolate({ inputRange: [0, 1], outputRange: [-16, 0] }) }],
-                }]}>
-                  <LinearGradient
-                    colors={['rgba(0,230,118,0.12)', 'rgba(0,230,118,0.04)']}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={styles.lockedInGradient}
-                  >
-                    <View style={styles.lockedInLeft}>
-                      <Animated.View style={[styles.lockedInDot, { opacity: checkinDotAnim }]} />
-                      <Text style={styles.lockedInLabel}>YOU'RE IN</Text>
-                    </View>
-                    <View style={styles.lockedInMeta}>
-                      <Text style={styles.lockedInTime}>
-                        {checkinMinutes > 0 ? checkinMinutes + 'm' : 'Just arrived'}
-                      </Text>
-                      {venueCheckinCount > 0 && (
-                        <>
-                          <View style={styles.lockedInDivider} />
-                          <Ionicons name="people" size={12} color="#00E676" />
-                          <Text style={styles.lockedInCrowd}>{venueCheckinCount}</Text>
-                        </>
-                      )}
-                    </View>
-                  </LinearGradient>
-                </Animated.View>
-              )}
-
-              {/* VIIBE CERTIFIED banner */}
-              {venue.viibe_certified && (
-                <View style={styles.viibeBar}>
-                  <Text style={styles.viibeBarText}>✦ VIIBE CERTIFIED — Peak Energy + Max Pulse</Text>
-                </View>
-              )}
-
-              {/* Energy Level Headline — tap to rate */}
-              <TouchableOpacity
-                onPress={() => setShowRateModal(true)}
-                activeOpacity={0.75}
-                style={styles.energyTapBlock}
-              >
-                <View style={styles.energyHeadline}>
-                  <View style={[styles.energyDot, { backgroundColor: vibeColor }]} />
-                  <Text style={[styles.energyLabel, { color: vibeColor }]}>
-                    {vibeStateLabel}
-                  </Text>
-                  <View style={[styles.energyScoreBadge, { backgroundColor: vibeColor }]}>
-                    <Text style={styles.energyScoreText}>
-                      {Math.round(venue.current_vibe_score)}%
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Bar label */}
-                <Text style={styles.energyBarLabel}>ENERGY LEVEL</Text>
-
-                {/* Energy Meter Bar — bleeds edge-to-edge */}
-                <View style={styles.energyBarWrap}>
-                  <EnergyMeter
-                    percent={venue.current_vibe_score}
-                    size="md"
-                    showLabel={false}
-                    animate={true}
-                  />
-                </View>
-
-                {/* Tap hint */}
-                <Text style={styles.energyTapHint}>TAP TO RATE THE VIBE</Text>
-              </TouchableOpacity>
-
-              {/* Torch — manual + synchronized IGNITE */}
-              <TorchButton
-                vibeScore={venue.current_vibe_score}
-                venueId={venue.id}
-                socket={socket}
-              />
-
-              {/* AI Pulse Commentary — live scene blurb */}
-              <ErrorBoundary label="AI Pulse">
-                <AIPulseComment
-                  venueId={venue.id}
-                  venueName={venue.name}
-                  energyLevel={venue.energy_level}
-                  vibeScore={venue.current_vibe_score}
-                  capacityLevel={(venue as any).capacity_level}
-                  isDemoMode={isDemoMode}
-                />
-              </ErrorBoundary>
-
-              {/* Scout Pressure Chip — social proof "X scouts heading here" */}
-              <ErrorBoundary label="Scout Pressure">
-                <ScoutPressureChip
-                  venueId={venue.id}
-                  isDemoMode={isDemoMode}
-                  style={{ marginHorizontal: 16, marginBottom: 10 }}
-                />
-              </ErrorBoundary>
-
-              {/* Emoji Pulse — ambient one-tap reactions */}
-              <ErrorBoundary label="Emoji Pulse">
-                <EmojiPulse
-                  venueId={venue.id}
-                  isDemoMode={isDemoMode}
-                />
-              </ErrorBoundary>
-
-              {/* Vibe Momentum — crowd velocity + decay freshness */}
-              <ErrorBoundary label="Vibe Momentum">
-                <VibeMomentum
-                  venueId={venue.id}
-                  isDemoMode={isDemoMode}
-                />
-              </ErrorBoundary>
-
-              {/* Utility Stats Row */}
-              <View style={styles.utilityStatsRow}>
-                {/* Entry Fee */}
-                <View style={styles.utilityStat}>
-                  <View style={styles.utilityIconContainer}>
-                    <Ionicons name="ticket-outline" size={18} color="#FFD700" />
-                  </View>
-                  <Text style={styles.utilityLabel}>Entry</Text>
-                  <Text style={styles.utilityValue}>{venue.entry_fee || 'Free'}</Text>
-                </View>
-
-                {/* Music Genre */}
-                <View style={styles.utilityStat}>
-                  <View style={styles.utilityIconContainer}>
-                    <Ionicons name="musical-notes" size={18} color="#FF3366" />
-                  </View>
-                  <Text style={styles.utilityLabel}>Music</Text>
-                  <Text style={styles.utilityValue} numberOfLines={1}>
-                    {venue.music_genre || 'Mixed'}
-                  </Text>
-                </View>
-
-                {/* Table Availability */}
-                <View style={styles.utilityStat}>
-                  <View style={styles.utilityIconContainer}>
-                    <Ionicons 
-                      name={venue.tables_available ? "checkmark-circle" : "close-circle"} 
-                      size={18} 
-                      color={venue.tables_available ? "#4CAF50" : "#FF5252"} 
-                    />
-                  </View>
-                  <Text style={styles.utilityLabel}>Tables</Text>
-                  <Text style={[
-                    styles.utilityValue,
-                    { color: venue.tables_available ? "#4CAF50" : "#FF5252" }
-                  ]}>
-                    {venue.tables_available ? 'Available' : 'Full'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Velocity */}
-              <View style={styles.vibeStatsRow}>
-                <View style={styles.vibeStat}>
-                  <Ionicons
-                    name={venue.vibe_velocity === 'heating_up' ? 'trending-up' : venue.vibe_velocity === 'cooling_down' ? 'trending-down' : 'remove'}
-                    size={16}
-                    color={venue.vibe_velocity === 'heating_up' ? '#4CAF50' : venue.vibe_velocity === 'cooling_down' ? '#FF5252' : '#888'}
-                  />
-                  <Text style={[
-                    styles.vibeStatText,
-                    { color: venue.vibe_velocity === 'heating_up' ? '#4CAF50' : venue.vibe_velocity === 'cooling_down' ? '#FF5252' : '#888' }
-                  ]}>
-                    {venue.vibe_velocity === 'heating_up' ? 'Heating Up' : venue.vibe_velocity === 'cooling_down' ? 'Cooling Down' : 'Holding Steady'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Context row — crowd + queue (informational only) */}
-              <View style={styles.contextStatsRow}>
-                <Text style={styles.contextStatsLabel}>CONTEXT</Text>
-                <View style={styles.vibeStat}>
-                  <Ionicons name="people" size={14} color="#555" />
-                  <Text style={styles.contextStatText}>
-                    {venue.capacity_level === 'full' ? 'Packed' : venue.capacity_level === 'vibrant' ? 'Filling Up' : 'Almost Empty'}
-                  </Text>
-                </View>
-                <View style={styles.vibeStatDivider} />
-                <View style={styles.vibeStat}>
-                  <Ionicons name="enter" size={14} color="#555" />
-                  <Text style={styles.contextStatText}>
-                    {venue.gate_level === 'blocked' ? 'Long Queue' : venue.gate_level === 'slow' ? 'Short Wait' : 'Walk In'}
-                  </Text>
-                </View>
-              </View>
+        {/* ====== QUICK STATS STRIP ====== */}
+        <View style={styles.statsStrip}>
+          {/* VIBE — pulsing live dot */}
+          <TouchableOpacity style={styles.statCol} activeOpacity={0.7} onPress={() => setActiveTab('now')}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <Text style={[styles.statNumber, { color: vibeColor }]}>
+                {Math.round(venue.current_vibe_score)}
+              </Text>
+              <Animated.View style={{
+                width: 6, height: 6, borderRadius: 3, backgroundColor: vibeColor,
+                opacity: pulseAnim.interpolate({ inputRange: [1, 1.3], outputRange: [0.5, 1] }),
+              }} />
             </View>
-          </BlurView>
+            <Text style={styles.statLabel}>VIBE</Text>
+          </TouchableOpacity>
+          <View style={styles.statDivider} />
+          {/* CROWD — color-coded */}
+          <TouchableOpacity style={styles.statCol} activeOpacity={0.7} onPress={() => setActiveTab('intel')}>
+            <Text style={[styles.statNumber, {
+              color: venue.capacity_level === 'full' ? '#FF3366' : venue.capacity_level === 'vibrant' ? '#FF9933' : '#3399FF',
+              fontSize: 14,
+            }]}>
+              {venue.capacity_level === 'full' ? 'Packed' : venue.capacity_level === 'vibrant' ? 'Filling' : 'Quiet'}
+            </Text>
+            <Text style={styles.statLabel}>CROWD</Text>
+          </TouchableOpacity>
+          <View style={styles.statDivider} />
+          {/* ENTRY — taps to booking */}
+          <TouchableOpacity style={styles.statCol} activeOpacity={0.7} onPress={() => setShowBookingModal(true)}>
+            <Text style={[styles.statNumber, { color: '#C9A84C' }]}>
+              {venue.entry_fee || 'FREE'}
+            </Text>
+            <Text style={styles.statLabel}>ENTRY ›</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* ====== TAB NAVIGATION ====== */}
+        {/* ====== VIIBE CERTIFIED BAR ====== */}
+        {venue.viibe_certified && (
+          <View style={styles.viibeBar}>
+            <Text style={styles.viibeBarText}>✦ VIIBE CERTIFIED — Peak Energy + Max Pulse</Text>
+          </View>
+        )}
+
+        {/* ====== VELOCITY CHIP ====== */}
+        <View style={styles.velocityChip}>
+          <Ionicons
+            name={venue.vibe_velocity === 'heating_up' ? 'trending-up' : venue.vibe_velocity === 'cooling_down' ? 'trending-down' : 'remove'}
+            size={16}
+            color={venue.vibe_velocity === 'heating_up' ? '#4CAF50' : venue.vibe_velocity === 'cooling_down' ? '#FF5252' : 'rgba(255,255,255,0.3)'}
+          />
+          <Text style={[styles.velocityText, {
+            color: venue.vibe_velocity === 'heating_up' ? '#4CAF50' : venue.vibe_velocity === 'cooling_down' ? '#FF5252' : 'rgba(255,255,255,0.3)',
+          }]}>
+            {venue.vibe_velocity === 'heating_up' ? 'HEATING UP' : venue.vibe_velocity === 'cooling_down' ? 'COOLING DOWN' : 'HOLDING STEADY'}
+          </Text>
+        </View>
+
+        {/* ====== TAB BAR ====== */}
         <View style={styles.tabBar}>
           {([
-            { key: 'now',   label: 'NOW',   icon: 'flash' },
-            { key: 'intel', label: 'INTEL', icon: 'analytics' },
-            { key: 'crew',  label: 'CREW',  icon: 'people' },
-            { key: 'info',  label: 'INFO',  icon: 'information-circle' },
+            { key: 'now',   label: 'NOW' },
+            { key: 'intel', label: 'INTEL' },
+            { key: 'crew',  label: 'CREW' },
+            { key: 'info',  label: 'INFO' },
           ] as const).map(tab => (
             <TouchableOpacity
               key={tab.key}
-              style={[styles.tabItem, activeTab === tab.key && styles.tabItemActive]}
+              style={styles.tabItem}
               onPress={() => setActiveTab(tab.key)}
               activeOpacity={0.7}
             >
-              <Ionicons name={tab.icon} size={16} color={activeTab === tab.key ? '#FF3366' : '#3A3A4E'} />
-              <Text style={[styles.tabLabel, activeTab === tab.key && styles.tabLabelActive]}>{tab.label}</Text>
+              <Text style={[styles.tabLabel, activeTab === tab.key && styles.tabLabelActive]}>
+                {tab.label}
+              </Text>
               {activeTab === tab.key && <View style={styles.tabUnderline} />}
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* NOW — live energy + intent */}
-        {activeTab === 'now' && <>
-          {id && <VenueIntentBar venueId={id} venueName={venue?.name} />}
-        </>}
+        {/* ====== TAB CONTENT ====== */}
+        <View style={styles.tabContent}>
 
-        {/* INTEL — predictions, crowd, timing */}
-        {activeTab === 'intel' && <>
-          {id && isFeatureEnabled('vibe_oracle') && <ErrorBoundary label="Vibe Oracle"><VibeOracle venueId={id} venueName={venue?.name} /></ErrorBoundary>}
-          {id && venue && isFeatureEnabled('roast_toast') && <ErrorBoundary label="AI Take"><VenueRoastCard venueId={id} venueName={venue.name} isDemoMode={isDemoMode} /></ErrorBoundary>}
-          {id && <ErrorBoundary label="Arrival Intel"><ArrivalIntelCard venueId={id} isDemoMode={isDemoMode} /></ErrorBoundary>}
-          {id && <ErrorBoundary label="Crowd"><CrowdCompositionBar venueId={id} isDemoMode={isDemoMode} /></ErrorBoundary>}
-          {venueTimeline.length > 0 && <ErrorBoundary label="Timeline"><VibeTimeline timeline={venueTimeline} peakHour={timelinePeakHour} /></ErrorBoundary>}
-          {id && <ErrorBoundary label="Forecast"><View style={{ paddingHorizontal: 16, marginTop: 12 }}><VibeForecast venueId={id} /></View></ErrorBoundary>}
-        </>}
+          {/* NOW TAB */}
+          {activeTab === 'now' && (
+            <>
+              {/* ── Emoji Milestone Energy Bar ── */}
+              {(() => {
+                const score = Math.round(venue.current_vibe_score);
+                const MILESTONES = [
+                  { pct: 0,   emoji: '😴', label: '0'   },
+                  { pct: 20,  emoji: '👀', label: '20'  },
+                  { pct: 40,  emoji: '⚡', label: '40'  },
+                  { pct: 60,  emoji: '🔥', label: '60'  },
+                  { pct: 80,  emoji: '💜', label: '80'  },
+                  { pct: 100, emoji: '👑', label: '100' },
+                ];
+                const currentBracket = [80, 60, 40, 20, 0].find(b => score >= b) ?? 0;
+                return (
+                  <TouchableOpacity
+                    style={styles.contentPad}
+                    onPress={() => setShowRateModal(true)}
+                    activeOpacity={0.85}
+                  >
+                    {/* Big score */}
+                    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5, marginBottom: 16 }}>
+                      <Text style={{ fontSize: 56, fontWeight: '900', color: vibeColor, letterSpacing: -2 }}>
+                        {score}
+                      </Text>
+                      <Text style={{ fontSize: 22, color: 'rgba(255,255,255,0.25)', fontWeight: '600' }}>/100</Text>
+                    </View>
+                    {/* Bar */}
+                    <View style={{ height: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 4, marginBottom: 14, overflow: 'hidden' }}>
+                      <View style={{ height: 8, width: `${score}%` as any, backgroundColor: vibeColor, borderRadius: 4 }} />
+                    </View>
+                    {/* Emoji markers */}
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      {MILESTONES.map(m => {
+                        const isCurrent = m.pct === currentBracket;
+                        const isPast    = m.pct < currentBracket;
+                        return (
+                          <View key={m.pct} style={{ alignItems: 'center', gap: 3 }}>
+                            <Text style={{
+                              fontSize: isCurrent ? 22 : 16,
+                              opacity: isCurrent ? 1 : isPast ? 0.55 : 0.2,
+                            }}>
+                              {m.emoji}
+                            </Text>
+                            <Text style={{
+                              fontSize: 9, fontWeight: '700',
+                              color: isCurrent ? vibeColor : 'rgba(255,255,255,0.25)',
+                            }}>
+                              {m.label}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                    {/* Sports-broadcast narrative line */}
+                    {venue.venue_narrative ? (
+                      <View style={{
+                        flexDirection: 'row', alignItems: 'flex-start', gap: 7,
+                        marginTop: 14, backgroundColor: 'rgba(255,255,255,0.04)',
+                        borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
+                        borderLeftWidth: 3, borderLeftColor: vibeColor,
+                      }}>
+                        <Text style={{ fontSize: 9, fontWeight: '900', color: vibeColor, letterSpacing: 1.5, marginTop: 1 }}>LIVE</Text>
+                        <Text style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '600', lineHeight: 17 }}>
+                          {venue.venue_narrative}
+                        </Text>
+                      </View>
+                    ) : venueCheckinCount > 0 ? (
+                      <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 10, fontWeight: '600' }}>
+                        {venueCheckinCount} scouts here tonight
+                      </Text>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })()}
 
-        {/* CREW — scouts + social */}
-        {activeTab === 'crew' && <>
-          {id && isFeatureEnabled('top_scouts') && <ErrorBoundary label="Top Scouts"><TopScoutsCard venueId={id} /></ErrorBoundary>}
-        </>}
+              {/* Torch */}
+              <View style={styles.contentPad}>
+                <TorchButton
+                  vibeScore={venue.current_vibe_score}
+                  venueId={venue.id}
+                  socket={socket}
+                />
+              </View>
 
-        {/* INFO — location, booking, status */}
-        {activeTab === 'info' && <>
-          {venue.active_campaign_multiplier && <View style={{ paddingHorizontal: 16, marginTop: 12 }}><CampaignBadge multiplier={venue.active_campaign_multiplier} expiresAt={venue.active_campaign_expires} /></View>}
-          {venue.vibe_certified && <View style={{ paddingHorizontal: 16, marginTop: 12 }}><CertifiedBadge score={venue.certification_score} /></View>}
+              {/* Emoji Pulse */}
+              <View style={styles.contentPad}>
+                <ErrorBoundary label="Emoji Pulse">
+                  <EmojiPulse
+                    venueId={venue.id}
+                    isDemoMode={isDemoMode}
+                  />
+                </ErrorBoundary>
+              </View>
 
-        {/* ── Action Buttons: full-width stacked ── */}
-        <View style={styles.actionButtonStack}>
-          <TouchableOpacity onPress={handleGetDirections} activeOpacity={0.85}>
-            <LinearGradient colors={['#1E88E5', '#1565C0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.actionBtn}>
-              <Ionicons name="navigate" size={20} color="#FFF" />
-              <Text style={styles.actionBtnText}>GET DIRECTIONS</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-          {isAuthenticated && (
-            <TouchableOpacity onPress={() => setShowBookingModal(true)} activeOpacity={0.85}>
-              <LinearGradient colors={['#FF3366', '#CC0044']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.actionBtn}>
-                <Ionicons name="calendar" size={20} color="#FFF" />
-                <Text style={styles.actionBtnText}>RESERVE TABLE</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+              {/* Vibe Momentum */}
+              <View style={styles.contentPad}>
+                <ErrorBoundary label="Vibe Momentum">
+                  <VibeMomentum
+                    venueId={venue.id}
+                    isDemoMode={isDemoMode}
+                  />
+                </ErrorBoundary>
+              </View>
+
+              {/* Scout Pressure Chip */}
+              <ErrorBoundary label="Scout Pressure">
+                <ScoutPressureChip
+                  venueId={venue.id}
+                  isDemoMode={isDemoMode}
+                  style={{ marginHorizontal: 20, marginBottom: 10 }}
+                />
+              </ErrorBoundary>
+
+              {/* Venue Intent Bar */}
+              {id && <VenueIntentBar venueId={id} venueName={venue?.name} />}
+
+              {/* Context stats */}
+              <View style={[styles.contentPad, { marginTop: 16, marginBottom: 8 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Ionicons name="people" size={14} color="rgba(255,255,255,0.3)" />
+                  <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: '600' }}>
+                    {venue.capacity_level === 'full' ? 'Packed' : venue.capacity_level === 'vibrant' ? 'Filling Up' : 'Almost Empty'}
+                  </Text>
+                  <View style={{ width: 1, height: 12, backgroundColor: 'rgba(255,255,255,0.08)', marginHorizontal: 4 }} />
+                  <Ionicons name="enter" size={14} color="rgba(255,255,255,0.3)" />
+                  <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: '600' }}>
+                    {venue.gate_level === 'blocked' ? 'Long Queue' : venue.gate_level === 'slow' ? 'Short Wait' : 'Walk In'}
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
+
+          {/* INTEL TAB */}
+          {activeTab === 'intel' && (
+            <View style={styles.contentPad}>
+              {id && isFeatureEnabled('vibe_oracle') && (
+                <ErrorBoundary label="Vibe Oracle">
+                  <VibeOracle venueId={id} venueName={venue?.name} />
+                </ErrorBoundary>
+              )}
+              {id && venue && isFeatureEnabled('roast_toast') && (
+                <ErrorBoundary label="AI Take">
+                  <VenueRoastCard venueId={id} venueName={venue.name} isDemoMode={isDemoMode} />
+                </ErrorBoundary>
+              )}
+              {id && (
+                <ErrorBoundary label="Arrival Intel">
+                  <ArrivalIntelCard venueId={id} isDemoMode={isDemoMode} />
+                </ErrorBoundary>
+              )}
+              {id && (
+                <ErrorBoundary label="Crowd">
+                  <CrowdCompositionBar venueId={id} isDemoMode={isDemoMode} />
+                </ErrorBoundary>
+              )}
+              {venueTimeline.length > 0 && (
+                <ErrorBoundary label="Timeline">
+                  <VibeTimeline timeline={venueTimeline} peakHour={timelinePeakHour} />
+                </ErrorBoundary>
+              )}
+              {id && (
+                <ErrorBoundary label="Forecast">
+                  <VibeForecast venueId={id} />
+                </ErrorBoundary>
+              )}
+            </View>
+          )}
+
+          {/* CREW TAB */}
+          {activeTab === 'crew' && (
+            <View style={styles.contentPad}>
+              {id && isFeatureEnabled('top_scouts') && (
+                <ErrorBoundary label="Top Scouts">
+                  <TopScoutsCard venueId={id} />
+                </ErrorBoundary>
+              )}
+            </View>
+          )}
+
+          {/* INFO TAB */}
+          {activeTab === 'info' && (
+            <>
+              {venue.active_campaign_multiplier && (
+                <View style={styles.contentPad}>
+                  <CampaignBadge multiplier={venue.active_campaign_multiplier} expiresAt={venue.active_campaign_expires} />
+                </View>
+              )}
+              {venue.vibe_certified && (
+                <View style={styles.contentPad}>
+                  <CertifiedBadge score={venue.certification_score} />
+                </View>
+              )}
+
+              {/* Action buttons */}
+              <Text style={styles.sectionLabel}>ACTIONS</Text>
+              <View style={styles.actionButtonStack}>
+                <TouchableOpacity style={styles.actionFullBtn} onPress={handleGetDirections} activeOpacity={0.85}>
+                  <Ionicons name="navigate" size={20} color="#1E88E5" />
+                  <Text style={styles.actionFullBtnText}>GET DIRECTIONS</Text>
+                  <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
+                </TouchableOpacity>
+                {isAuthenticated && (
+                  <TouchableOpacity style={styles.actionFullBtn} onPress={() => setShowBookingModal(true)} activeOpacity={0.85}>
+                    <Ionicons name="calendar" size={20} color="#FF3366" />
+                    <Text style={styles.actionFullBtnText}>RESERVE TABLE</Text>
+                    <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Venue Details */}
+              <Text style={styles.sectionLabel}>VENUE DETAILS</Text>
+              <View style={styles.infoCard}>
+                <View style={styles.infoRow}>
+                  <Ionicons name="location" size={16} color="#FF3366" />
+                  <Text style={styles.infoLabel}>Address</Text>
+                  <Text style={styles.infoValue} numberOfLines={2}>{venue.address}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Ionicons name="map" size={16} color="#C9A84C" />
+                  <Text style={styles.infoLabel}>Area</Text>
+                  <Text style={styles.infoValue}>{venue.area} · {venue.city}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Ionicons name="ticket-outline" size={16} color="#FFD700" />
+                  <Text style={styles.infoLabel}>Entry</Text>
+                  <Text style={styles.infoValue}>{venue.entry_fee || 'Free'}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Ionicons name="musical-notes" size={16} color="#9933FF" />
+                  <Text style={styles.infoLabel}>Music</Text>
+                  <Text style={styles.infoValue}>{venue.music_genre || 'Mixed'}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Ionicons name={venue.tables_available ? 'checkmark-circle' : 'close-circle'} size={16} color={venue.tables_available ? '#4CAF50' : '#FF5252'} />
+                  <Text style={styles.infoLabel}>Tables</Text>
+                  <Text style={[styles.infoValue, { color: venue.tables_available ? '#4CAF50' : '#FF5252' }]}>
+                    {venue.tables_available ? 'Available' : 'Full tonight'}
+                  </Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Ionicons name="people" size={16} color="#33CCFF" />
+                  <Text style={styles.infoLabel}>Crowd</Text>
+                  <Text style={styles.infoValue}>
+                    {venue.capacity_level === 'full' ? 'Packed' : venue.capacity_level === 'vibrant' ? 'Filling Up' : 'Plenty of Room'}
+                  </Text>
+                </View>
+                <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+                  <Ionicons name="enter" size={16} color="#FF9933" />
+                  <Text style={styles.infoLabel}>Entry Queue</Text>
+                  <Text style={styles.infoValue}>
+                    {venue.gate_level === 'blocked' ? 'Long Queue' : venue.gate_level === 'slow' ? 'Short Wait' : 'Walk In'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Your Status */}
+              <Text style={styles.sectionLabel}>YOUR STATUS</Text>
+              <View style={styles.infoCard}>
+                <View style={[styles.infoRow, { borderBottomWidth: user && ratingStatus ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.05)' }]}>
+                  <Animated.View style={{ transform: [{ scale: isWithinGeofence ? pulseAnim : 1 }] }}>
+                    <Ionicons name={isWithinGeofence ? 'location' : 'location-outline'} size={16} color={isWithinGeofence ? '#4CAF50' : '#555'} />
+                  </Animated.View>
+                  <Text style={styles.infoLabel}>Location</Text>
+                  <Text style={[styles.infoValue, { color: isWithinGeofence ? '#4CAF50' : '#888' }]}>
+                    {checkingLocation ? 'Verifying...' : isWithinGeofence ? 'At the venue' : `Within ${venue?.geofence_radius_m || 100}m to rate`}
+                  </Text>
+                  {checkingLocation && <ActivityIndicator size="small" color="#FF3366" />}
+                </View>
+
+                {user && ratingStatus && (
+                  <View style={[styles.infoRow, { borderBottomWidth: user && isWithinGeofence ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.05)' }]}>
+                    <Ionicons name={ratingStatus.can_rate ? 'star' : 'time'} size={16} color={ratingStatus.can_rate ? '#FF3366' : '#FF9800'} />
+                    <Text style={styles.infoLabel}>Rating</Text>
+                    <Text style={[styles.infoValue, { color: ratingStatus.can_rate ? '#FF3366' : '#888' }]}>
+                      {ratingStatus.is_correction_available ? 'Correction available' : ratingStatus.can_rate ? 'Ready to rate' : 'Limit reached'}
+                    </Text>
+                    <View style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
+                      <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: '700' }}>{ratingStatus.ratings_count}/2</Text>
+                    </View>
+                  </View>
+                )}
+
+                {user && isWithinGeofence && (
+                  <TouchableOpacity
+                    style={[styles.infoRow, { borderBottomWidth: 0 }]}
+                    onPress={handleGhostCheckin}
+                    disabled={checkinLoading}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name={activeCheckin?.venue_id === venue?.id ? 'radio-button-on' : 'radio-button-off'} size={16} color={activeCheckin?.venue_id === venue?.id ? '#00E676' : '#555'} />
+                    <Text style={styles.infoLabel}>Check-in</Text>
+                    <Text style={[styles.infoValue, { color: activeCheckin?.venue_id === venue?.id ? '#00E676' : '#888' }]}>
+                      {checkinLoading ? 'Updating...' : activeCheckin?.venue_id === venue?.id ? "You're Here (ghost mode)" : "Tap to ghost check-in"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Geofence Tooltip */}
+              {showGeofenceTooltip && (
+                <Animated.View style={[styles.tooltip, { opacity: tooltipAnim }]}>
+                  <Ionicons name="location-outline" size={16} color="#FFF" />
+                  <Text style={styles.tooltipText}>You must be at the venue to rate it</Text>
+                </Animated.View>
+              )}
+            </>
           )}
         </View>
 
-        {/* ── Venue Details Card ── */}
-        <View style={styles.venueDetailsCard}>
-          <Text style={styles.venueDetailsSectionLabel}>VENUE DETAILS</Text>
-
-          <View style={styles.venueDetailsGrid}>
-            {/* Address */}
-            <View style={styles.venueDetailRow}>
-              <View style={styles.venueDetailIcon}><Ionicons name="location" size={16} color="#FF3366" /></View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.venueDetailLabel}>Address</Text>
-                <Text style={styles.venueDetailValue}>{venue.address}</Text>
-                <Text style={styles.venueDetailSub}>{venue.area} · {venue.city}</Text>
-              </View>
-            </View>
-
-            {/* Entry */}
-            <View style={styles.venueDetailRow}>
-              <View style={styles.venueDetailIcon}><Ionicons name="ticket-outline" size={16} color="#FFD700" /></View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.venueDetailLabel}>Entry</Text>
-                <Text style={styles.venueDetailValue}>{venue.entry_fee || 'Free'}</Text>
-              </View>
-            </View>
-
-            {/* Music */}
-            <View style={styles.venueDetailRow}>
-              <View style={styles.venueDetailIcon}><Ionicons name="musical-notes" size={16} color="#9933FF" /></View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.venueDetailLabel}>Music</Text>
-                <Text style={styles.venueDetailValue}>{venue.music_genre || 'Mixed'}</Text>
-              </View>
-            </View>
-
-            {/* Tables */}
-            <View style={styles.venueDetailRow}>
-              <View style={styles.venueDetailIcon}>
-                <Ionicons name={venue.tables_available ? 'checkmark-circle' : 'close-circle'} size={16} color={venue.tables_available ? '#4CAF50' : '#FF5252'} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.venueDetailLabel}>Tables</Text>
-                <Text style={[styles.venueDetailValue, { color: venue.tables_available ? '#4CAF50' : '#FF5252' }]}>
-                  {venue.tables_available ? 'Available' : 'Full tonight'}
-                </Text>
-              </View>
-            </View>
-
-            {/* Crowd / Capacity */}
-            <View style={styles.venueDetailRow}>
-              <View style={styles.venueDetailIcon}><Ionicons name="people" size={16} color="#33CCFF" /></View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.venueDetailLabel}>Crowd</Text>
-                <Text style={styles.venueDetailValue}>
-                  {venue.capacity_level === 'full' ? 'Packed' : venue.capacity_level === 'vibrant' ? 'Filling Up' : 'Plenty of Room'}
-                </Text>
-              </View>
-            </View>
-
-            {/* Queue */}
-            <View style={[styles.venueDetailRow, { borderBottomWidth: 0 }]}>
-              <View style={styles.venueDetailIcon}><Ionicons name="enter" size={16} color="#FF9933" /></View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.venueDetailLabel}>Entry Queue</Text>
-                <Text style={styles.venueDetailValue}>
-                  {venue.gate_level === 'blocked' ? 'Long Queue' : venue.gate_level === 'slow' ? 'Short Wait' : 'Walk In'}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* GPS status + check-in */}
-        <View style={styles.venueDetailsCard}>
-          <Text style={styles.venueDetailsSectionLabel}>YOUR STATUS</Text>
-
-          {/* GPS / Location row */}
-          <View style={[styles.venueDetailRow, { borderBottomWidth: user && ratingStatus ? 1 : 0 }]}>
-            <Animated.View style={[styles.venueDetailIcon, { transform: [{ scale: isWithinGeofence ? pulseAnim : 1 }] }]}>
-              <Ionicons name={isWithinGeofence ? 'location' : 'location-outline'} size={16} color={isWithinGeofence ? '#4CAF50' : '#555'} />
-            </Animated.View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.venueDetailLabel}>Location</Text>
-              <Text style={[styles.venueDetailValue, { color: isWithinGeofence ? '#4CAF50' : '#888' }]}>
-                {checkingLocation ? 'Verifying...' : isWithinGeofence ? `At the venue` : `Must be within ${venue?.geofence_radius_m || 100}m to rate`}
+        {/* ====== SCOUT PULSE / NARRATIVE INDICATOR ====== */}
+        {venue && (venue.venue_narrative || venueCheckinCount > 1) && (
+          <Animated.View style={[styles.scoutPulseRow, {
+            opacity: pulseAnim.interpolate({ inputRange: [1, 1.3], outputRange: [0.7, 1] }),
+          }]}>
+            <Animated.View style={[styles.scoutPulseDot, {
+              transform: [{ scale: pulseAnim }],
+              backgroundColor: vibeColor,
+            }]} />
+            {venue.venue_narrative ? (
+              <Text style={[styles.scoutPulseText, { color: vibeColor, flex: 1 }]} numberOfLines={1}>
+                {venue.venue_narrative}
               </Text>
-            </View>
-            {checkingLocation && <ActivityIndicator size="small" color="#FF3366" />}
-          </View>
-
-          {/* Rating status */}
-          {user && ratingStatus && (
-            <View style={[styles.venueDetailRow, { borderBottomWidth: user && isWithinGeofence ? 1 : 0 }]}>
-              <View style={styles.venueDetailIcon}>
-                <Ionicons name={ratingStatus.can_rate ? 'star' : 'time'} size={16} color={ratingStatus.can_rate ? '#FF3366' : '#FF9800'} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.venueDetailLabel}>Rating</Text>
-                <Text style={[styles.venueDetailValue, { color: ratingStatus.can_rate ? '#FF3366' : '#888' }]}>
-                  {ratingStatus.is_correction_available ? 'Correction available' : ratingStatus.can_rate ? 'Ready to rate' : 'Limit reached — resets in 24h'}
+            ) : (
+              <>
+                <Text style={[styles.scoutPulseText, { color: vibeColor }]}>
+                  {venueCheckinCount} scouts pushing
                 </Text>
-              </View>
-              <View style={{ backgroundColor: '#1E1E2E', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3 }}>
-                <Text style={{ color: '#555', fontSize: 11, fontWeight: '700' }}>{ratingStatus.ratings_count}/2</Text>
-              </View>
-            </View>
-          )}
-
-          {/* Ghost check-in */}
-          {user && isWithinGeofence && (
-            <TouchableOpacity
-              style={[styles.venueDetailRow, { borderBottomWidth: 0 }]}
-              onPress={handleGhostCheckin}
-              disabled={checkinLoading}
-              activeOpacity={0.7}
-            >
-              <View style={styles.venueDetailIcon}>
-                <Ionicons name={activeCheckin?.venue_id === venue?.id ? 'radio-button-on' : 'radio-button-off'} size={16} color={activeCheckin?.venue_id === venue?.id ? '#00E676' : '#555'} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.venueDetailLabel}>Check-in</Text>
-                <Text style={[styles.venueDetailValue, { color: activeCheckin?.venue_id === venue?.id ? '#00E676' : '#888' }]}>
-                  {checkinLoading ? 'Updating...' : activeCheckin?.venue_id === venue?.id ? "You're Here (ghost mode)" : "Tap to ghost check-in"}
+                <Text style={styles.scoutPulseGap}>
+                  · {Math.max(0, 85 - Math.round(venue.current_vibe_score))} pts to PEAK
                 </Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Geofence Tooltip */}
-        {showGeofenceTooltip && (
-          <Animated.View style={[styles.tooltip, { opacity: tooltipAnim }]}>
-            <Ionicons name="location-outline" size={16} color="#FFF" />
-            <Text style={styles.tooltipText}>You must be at the venue to rate it</Text>
+              </>
+            )}
           </Animated.View>
         )}
 
-        </>}
-
-        {/* ── Collective Vibe Quest — room pushes to PEAK together ── */}
-        {id && (
-          <CollectiveVibeQuest
+        {/* ====== PERSONAL VENUE STATS (geofence only) ====== */}
+        {(isWithinGeofence || isDemoMode) && id && venue && (
+          <VenueInsiderPanel
             venueId={id}
+            venueName={venue.name}
+            vibeColor={vibeColor}
             isDemoMode={isDemoMode}
-            onPushPress={() => {
-              // Scroll to the VibeReactor below
-              if (reactorLayoutY.current > 0) {
-                scrollViewRef.current?.scrollTo({ y: reactorLayoutY.current, animated: true });
-              }
-            }}
+            authHeaders={getAuthHeaders()}
+            userName={user?.display_name ?? user?.username}
           />
         )}
 
-        {/* ── Reactor / Skin Container ── */}
+        {/* ====== VIBE REACTOR ====== */}
         {id && venue && (
-          <ErrorBoundary label="Vibe Reactor">
-            <View onLayout={e => { reactorLayoutY.current = e.nativeEvent.layout.y; }}>
-              <SkinContainer
-                venueId={id}
-                venueName={venue.name ?? ''}
-                venueCoordinates={venue.coordinates ?? null}
-                userLocation={userLocation}
-                isDemoMode={isDemoMode}
-                onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }}
-                onReact={handleReact}
-                onQuestSucceeded={(participants) => {
-                  setSurgeTapCount(participants);
-                  setShowSurgeCelebration(true);
-                }}
-                onBpmUpdate={(bpm) => { oscBpm.value = bpm; }}
-                bpmShared={oscBpm}
-                vibeScore={oscScore}
-                surgeValue={oscSurge}
-                vibeColor={vibeColor}
-                isPlus={isVibePlus}
-                socket={socket}
-                onUnlockPress={() => setShowVibePlusModal(true)}
-              />
+          <>
+            <Text style={styles.sectionLabel}>REACTOR</Text>
+            <View style={styles.reactorWrap}>
+              <ErrorBoundary label="Vibe Reactor">
+                <View onLayout={e => { reactorLayoutY.current = e.nativeEvent.layout.y; }}>
+                  <VibeReactor
+                    venueId={id}
+                    venueName={venue.name ?? ''}
+                    venueCoordinates={venue.coordinates ?? null}
+                    userLocation={userLocation}
+                    isDemoMode={isDemoMode}
+                    onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }}
+                    onReact={handleReact}
+                    onQuestSucceeded={(participants) => {
+                      setSurgeTapCount(participants);
+                      setShowSurgeCelebration(true);
+                    }}
+                  />
+                </View>
+              </ErrorBoundary>
             </View>
-          </ErrorBoundary>
+          </>
         )}
 
-        {/* ── VibeOscillator — VIBE+ scene frequency intel ── */}
-        {venue && (
-          <View style={styles.oscillatorSection}>
-            <View style={styles.oscillatorHeader}>
-              <Text style={styles.oscillatorLabel}>SCENE FREQUENCY</Text>
-              <View style={styles.oscModeRow}>
-                {!isVibePlus && (
-                  <View style={styles.oscillatorPlusBadge}>
-                    <Text style={styles.oscillatorPlusBadgeText}>◆ VIBE+</Text>
-                  </View>
-                )}
-                {isVibePlus && (['BARS', 'WAVE', 'PULSE'] as const).map((m) => (
-                  <TouchableOpacity
-                    key={m}
-                    style={[styles.oscModePill, oscMode === m && styles.oscModePillActive]}
-                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setOscMode(m); }}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={[styles.oscModePillText, oscMode === m && styles.oscModePillTextActive]}>{m}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-            <VibeOscillator
-              bpmShared={oscBpm}
-              vibeScore={oscScore}
-              surgeValue={oscSurge}
-              isPlus={isVibePlus}
-              mode={oscMode}
-              onUnlockPress={() => setShowVibePlusModal(true)}
-            />
-          </View>
-        )}
-
-        <View style={{ height: 200 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
 
       {/* ═══ GPS Ready to Rate Banner ═══ */}
@@ -1246,22 +1219,15 @@ export default function VenueDetailScreen() {
           opacity: readyBannerAnim,
           transform: [{ translateY: readyBannerAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
         }]}>
-          <LinearGradient
-            colors={['rgba(0,230,118,0.14)', 'rgba(0,200,100,0.06)']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={styles.readyToRateGradient}
-          >
-            <Animated.View style={[styles.readyToRateDot, { opacity: readyDotAnim, shadowColor: '#00E676', shadowOpacity: 0.8, shadowRadius: 6 }]} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.readyToRateText}>GPS LOCKED IN · READY TO RATE</Text>
-              <Text style={styles.readyToRateSub}>You're at the venue — your rating counts now</Text>
-            </View>
-            <Ionicons name="star" size={18} color="#00E676" />
-          </LinearGradient>
+          <View style={styles.readyToRateRow}>
+            <Animated.View style={[styles.readyToRateDot, { opacity: readyDotAnim }]} />
+            <Text style={styles.readyToRateText}>GPS LOCKED IN · READY TO RATE</Text>
+            <Ionicons name="star" size={16} color="#00E676" />
+          </View>
         </Animated.View>
       )}
 
-      {/* ═══ Sticky Rate Footer ═══ */}
+      {/* ═══ Sticky Footer — Rate + Check In ═══ */}
       <View style={styles.stickyRateFooter}>
         <BlurView intensity={30} tint="dark" style={styles.stickyBlur}>
           <LinearGradient
@@ -1269,17 +1235,55 @@ export default function VenueDetailScreen() {
             style={styles.stickyGradient}
           >
             <View style={styles.stickyFooterRow}>
+              {/* Check In — primary when geofenced */}
+              {(isWithinGeofence || isDemoMode) && user && (
+                <Animated.View style={[styles.stickyCheckinBtn, {
+                  transform: [{ scale: readyDotAnim.interpolate({ inputRange: [0.2, 1], outputRange: [0.97, 1.02] }) }],
+                }]}>
+                <TouchableOpacity
+                  style={{ flex: 1 }}
+                  activeOpacity={0.8}
+                  onPress={handleGhostCheckin}
+                  disabled={checkinLoading}
+                >
+                  <LinearGradient
+                    colors={activeCheckin?.venue_id === venue?.id ? ['#00C853', '#00A846'] : ['#00E676', '#00C853']}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={styles.stickyRateGradient}
+                  >
+                    <Ionicons
+                      name={activeCheckin?.venue_id === venue?.id ? 'radio-button-on' : 'radio-button-off'}
+                      size={20} color="#000"
+                    />
+                    <Text style={[styles.stickyRateText, { color: '#000' }]}>
+                      {checkinLoading ? 'UPDATING...' : activeCheckin?.venue_id === venue?.id ? 'CHECKED IN' : 'CHECK IN'}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+                </Animated.View>
+              )}
+
+              {/* Rate */}
+              <Animated.View style={[
+                styles.stickyRateBtn,
+                (isWithinGeofence || isDemoMode) && user && { flex: 0.9 },
+                user && (isWithinGeofence || isDemoMode) && {
+                  transform: [{ scale: readyDotAnim.interpolate({ inputRange: [0.2, 1], outputRange: [1, 1.02] }) }],
+                  shadowColor: '#FF3366',
+                  shadowOpacity: readyDotAnim.interpolate({ inputRange: [0.2, 1], outputRange: [0, 0.6] }),
+                  shadowRadius: 12,
+                  elevation: 8,
+                },
+              ]}>
               <TouchableOpacity
-                style={styles.stickyRateBtn}
+                style={{ flex: 1 }}
                 activeOpacity={0.8}
                 onPress={() => {
-                  if (!user) {
-                    router.push('/profile');
-                  } else if (!isWithinGeofence && !isDemoMode) {
+                  if (!user) { router.push('/profile'); }
+                  else if (!isWithinGeofence && !isDemoMode) {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
                     checkUserLocation();
                   } else {
-                    // Always open modal — it shows cooldown screen if on cooldown
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                     setShowRateModal(true);
                   }
@@ -1288,30 +1292,21 @@ export default function VenueDetailScreen() {
                 <LinearGradient
                   colors={
                     user && (isWithinGeofence || isDemoMode) && (ratingStatus?.can_rate || isDemoMode)
-                      ? ['#FF3366', '#FF6B35']
-                      : ['#2A2A3E', '#1A1A2E']
+                      ? ['#FF3366', '#FF6B35'] : ['#2A2A3E', '#1A1A2E']
                   }
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={styles.stickyRateGradient}
                 >
                   <Ionicons
                     name={!user ? 'person' : (!isWithinGeofence && !isDemoMode) ? 'location-outline' : 'star'}
-                    size={20}
-                    color="#FFF"
+                    size={20} color="#FFF"
                   />
                   <Text style={styles.stickyRateText}>
-                    {!user
-                      ? 'Sign in to Rate'
-                      : !isWithinGeofence && !isDemoMode
-                      ? 'Get Closer to Rate'
-                      : ratingStatus?.can_rate || isDemoMode
-                      ? 'Rate the Vibe'
-                      : 'Limit Reached'}
+                    {!user ? 'Sign in' : !isWithinGeofence && !isDemoMode ? 'Get Closer' : ratingStatus?.can_rate || isDemoMode ? 'Rate the Vibe' : 'Limit Reached'}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
-
+              </Animated.View>
             </View>
           </LinearGradient>
         </BlurView>
@@ -1388,7 +1383,7 @@ export default function VenueDetailScreen() {
               bolt_count: sessionBoltCount,
               scene_mood: useVibeStore.getState().sceneMood ?? undefined,
             }),
-          }).catch(() => {}); // fire-and-forget
+          }).catch(() => {});
         }}
         onDismiss={() => setShowResonance(false)}
       />
@@ -1478,508 +1473,408 @@ export default function VenueDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  // ====== BASE ======
   container: {
     flex: 1,
-    backgroundColor: '#0A0A0F', // Midnight Premium theme
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#888',
-    fontSize: 14,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  errorText: {
-    fontSize: 18,
-    color: '#666',
-    marginTop: 16,
-    marginBottom: 24,
-  },
-  backButtonLarge: {
-    backgroundColor: '#FF3366',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  backButtonText: {
-    color: '#FFF',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1A1A25',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1A1A25',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitleContainer: {
-    flex: 1,
-    marginLeft: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFF',
-    flex: 1,
-  },
-  headerBadges: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  verifiedBadge: {
-    backgroundColor: '#4CAF5020',
-    padding: 4,
-    borderRadius: 6,
-  },
-  pulseBadge: {
-    backgroundColor: '#FFD70030',
-    padding: 4,
-    borderRadius: 6,
-  },
-  lobbyButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1A1A25',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#000',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
 
-  // ====== LIVE LOOK STYLES ======
-  liveLookContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
+  // ====== ERROR / LOADING ======
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
   },
-  liveLookWrapper: {
+  errorText: {
+    fontSize: 16,
+    color: '#888',
+    fontWeight: '600',
+  },
+  backButtonLarge: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: '#1A1A2E',
+    borderRadius: 8,
+  },
+  backButtonText: {
+    color: '#FFF',
+    fontWeight: '700',
+  },
+
+  // ====== CINEMATIC HERO ======
+  heroContainer: {
     width: '100%',
-    aspectRatio: 1,
-    borderRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: '#1A1A25',
+    height: 380,
+    position: 'relative',
   },
-  liveLookImage: {
+  heroImage: {
     width: '100%',
     height: '100%',
   },
-  liveLookGradient: {
+  heroGradient: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 100,
+    height: 240,
   },
-  liveLookBadge: {
+  heroTopRow: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-  },
-  liveLookBadgeText: {
-    color: '#4CAF50',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  pulseGlowOverlay: {
-    position: 'absolute',
-    top: 0,
+    top: 52,
     left: 0,
     right: 0,
-    bottom: 0,
-    borderWidth: 3,
-    borderColor: '#FFD70060',
-    borderRadius: 20,
-  },
-  pulseGlow: {
-    flex: 1,
-  },
-
-  // ====== GLASSMORPHISM CARD ======
-  glassCardContainer: {
-    paddingHorizontal: 16,
-    marginTop: -40,
-    zIndex: 10,
-  },
-  glassCard: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  glassCardInner: {
-    padding: 20,
-    backgroundColor: 'rgba(26, 26, 37, 0.85)',
-  },
-  oscillatorSection: {
-    paddingHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  oscillatorHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    paddingHorizontal: 16,
   },
-  oscModeRow: {
+  heroBackBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  heroActionBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroSnapshotPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
-  oscModePill: {
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  oscModePillActive: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderColor: 'rgba(255,255,255,0.25)',
-  },
-  oscModePillText: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: 'rgba(255,255,255,0.25)',
-    letterSpacing: 1,
-  },
-  oscModePillTextActive: {
-    color: 'rgba(255,255,255,0.75)',
-  },
-  oscillatorLabel: {
+  heroSnapshotText: {
     fontSize: 10,
+    color: '#4CAF50',
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  heroBottom: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
+  heroVenueName: {
+    fontSize: 34,
     fontWeight: '800',
-    letterSpacing: 2.5,
-    color: 'rgba(255,255,255,0.30)',
+    color: '#FFF',
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
-  oscillatorPlusBadge: {
-    backgroundColor: 'rgba(255,215,0,0.10)',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderWidth: 1,
-    borderColor: '#FFD70033',
+  heroVenueState: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 3,
   },
-  oscillatorPlusBadgeText: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#FFD700',
-    letterSpacing: 1,
+  heroScoreBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    alignItems: 'flex-end',
   },
-  energyTapBlock: {
-    marginBottom: 16,
-  },
-  energyHeadline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 10,
-  },
-  energyDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    marginTop: 4,
-    flexShrink: 0,
-  },
-  energyLabel: {
+  heroScoreNumber: {
     fontSize: 44,
     fontWeight: '900',
-    letterSpacing: 1,
-    lineHeight: 48,
-    flex: 1,
+    lineHeight: 44,
   },
-  energyScoreBadge: {
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderRadius: 18,
-    minWidth: 90,
-    alignItems: 'center',
-  },
-  energyScoreText: {
-    fontSize: 28,
-    fontWeight: '900',
-    letterSpacing: -0.5,
-    color: '#FFF',
-  },
-  energyBarLabel: {
-    fontSize: 9,
-    fontWeight: '800',
+  heroScoreLabel: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.5)',
     letterSpacing: 2,
-    color: 'rgba(255,255,255,0.30)',
-    marginBottom: 8,
-  },
-  energyBarWrap: {
-    marginHorizontal: -20,
-    marginBottom: 10,
-  },
-  energyTapHint: {
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    color: 'rgba(255,255,255,0.20)',
-    textAlign: 'center',
+    textAlign: 'right',
     marginTop: 2,
   },
-  utilityStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  utilityStat: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  utilityIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  utilityLabel: {
-    fontSize: 11,
-    color: '#666',
-    marginBottom: 2,
-  },
-  utilityValue: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#FFF',
-    textAlign: 'center',
-  },
-  viibeBar: {
-    backgroundColor: 'rgba(255,215,0,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.35)',
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    marginBottom: 10,
-    alignItems: 'center',
-  },
-  viibeBarText: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#FFD700',
-    letterSpacing: 1.2,
-  },
-  contextStatsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 6,
-    paddingTop: 6,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
-  },
-  contextStatsLabel: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: '#444',
-    letterSpacing: 1.5,
-    marginRight: 4,
-  },
-  contextStatText: {
-    fontSize: 11,
-    color: '#555',
-    fontWeight: '500',
-  },
-  vibeStatsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
-  },
-  vibeStat: {
+  heroCertBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-  },
-  vibeStatText: {
-    fontSize: 12,
-    color: '#888',
-  },
-  vibeStatDivider: {
-    width: 1,
-    height: 12,
-    backgroundColor: '#333',
-    marginHorizontal: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
 
-  // ====== LOCATION CARD ======
-  tabBar: { flexDirection: 'row', backgroundColor: '#0A0A12', borderBottomWidth: 1, borderBottomColor: '#1C1C2C', marginTop: 4, marginBottom: 4 },
-  tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12, gap: 3, position: 'relative' },
-  tabItemActive: { },
-  tabLabel: { fontSize: 9, color: '#3A3A4E', fontWeight: '700', letterSpacing: 1 },
-  tabLabelActive: { color: '#FF3366' },
-  tabUnderline: { position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 2, backgroundColor: '#FF3366', borderRadius: 1 },
-  locationCard: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    backgroundColor: '#1A1A25',
-    borderRadius: 16,
-    padding: 16,
-  },
-  locationInfo: {
+  // ====== CHECKIN BANNER ======
+  checkinBanner: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(0,230,118,0.06)',
+    borderLeftWidth: 2,
+    borderLeftColor: '#00E676',
   },
-  locationTextContainer: {
-    flex: 1,
-    marginLeft: 10,
+  checkinBannerDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#00E676',
+    marginRight: 8,
   },
-  locationAddress: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFF',
+  checkinBannerText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#00E676',
+    letterSpacing: 1.5,
   },
-  locationArea: {
-    fontSize: 12,
-    color: '#888',
-    marginTop: 2,
+
+  // ====== STORY ROW ======
+  storyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    gap: 12,
   },
-  directionsButton: {
+  storyScroll: {
+    gap: 10,
+  },
+  crowdBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(0,230,118,0.1)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  crowdText: {
+    fontSize: 11,
+    color: '#00E676',
+    fontWeight: '700',
+  },
+
+  // ====== QUICK STATS STRIP ======
+  statsStrip: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginTop: 20,
     borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
     overflow: 'hidden',
   },
-  directionsGradient: {
+  statCol: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginVertical: 12,
+  },
+  statNumber: {
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  statLabel: {
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.35)',
+    letterSpacing: 2,
+    marginTop: 4,
+    fontWeight: '700',
+  },
+
+  // ====== VIIBE CERTIFIED BAR ======
+  viibeBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    gap: 8,
+    paddingVertical: 8,
+    marginBottom: 8,
+    marginTop: 12,
+    marginHorizontal: 20,
   },
-  directionsText: {
-    color: '#FFF',
-    fontSize: 14,
+  viibeBarText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#C9A84C',
+    letterSpacing: 2,
+  },
+
+
+  // ====== VELOCITY CHIP ======
+  velocityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  velocityText: {
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,
   },
 
-  // ====== GPS CONTAINER ======
-  gpsContainer: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    backgroundColor: '#1A1A25',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  gpsContainerActive: {
-    borderColor: '#4CAF5040',
-    backgroundColor: '#4CAF5010',
-  },
-  gpsContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  gpsIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  gpsIconActive: {
-    backgroundColor: '#4CAF5020',
-  },
-  gpsIconInactive: {
-    backgroundColor: '#33333380',
-  },
-  gpsTextContainer: {
-    flex: 1,
-  },
-  gpsTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  gpsSubtitle: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
+  // ====== SECTION LABEL ======
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#C9A84C',
+    letterSpacing: 3,
+    marginBottom: 12,
+    paddingHorizontal: 20,
+    marginTop: 28,
   },
 
-  // ====== RATING STATUS ======
-  ratingStatusCard: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    backgroundColor: '#1A1A25',
-    borderRadius: 16,
-    padding: 16,
+  // ====== REACTOR WRAP ======
+  reactorWrap: {
+    paddingHorizontal: 20,
   },
-  ratingStatusHeader: {
+
+  // ====== ACTION BAR ======
+  actionBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    gap: 10,
+    paddingHorizontal: 20,
+    marginTop: 20,
   },
-  ratingStatusTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-  ratingCount: {
-    backgroundColor: '#FF336620',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  ratingCountText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FF3366',
-  },
-  ratingStatusContent: {},
-  ratingStatusRow: {
+  actionBtn: {
+    flex: 1,
     flexDirection: 'row',
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
   },
-  ratingStatusText: {
+  actionBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFF',
+    letterSpacing: 1.5,
+  },
+  actionBtnSecondary: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+
+  // ====== TAB BAR ======
+  tabBar: {
+    flexDirection: 'row',
+    marginTop: 28,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#000',
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 14,
+    position: 'relative',
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.3)',
+    letterSpacing: 2,
+  },
+  tabLabelActive: {
+    color: '#C9A84C',
+  },
+  tabUnderline: {
+    position: 'absolute',
+    bottom: 0,
+    left: '25%',
+    right: '25%',
+    height: 2,
+    backgroundColor: '#C9A84C',
+    borderRadius: 1,
+  },
+
+  // ====== TAB CONTENT ======
+  tabContent: {
+    paddingTop: 8,
+  },
+  contentPad: {
+    paddingHorizontal: 20,
+  },
+
+  // ====== INFO TAB ======
+  infoCard: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    padding: 16,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.5)',
+    fontWeight: '600',
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: 12,
+    color: '#FFF',
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+  actionButtonStack: {
+    paddingHorizontal: 20,
+    gap: 10,
+    marginTop: 16,
+  },
+  actionFullBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  actionFullBtnText: {
     fontSize: 13,
-    color: '#888',
+    fontWeight: '700',
+    color: '#FFF',
+    flex: 1,
   },
 
   // ====== TOOLTIP ======
@@ -2004,40 +1899,58 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // ====== RATE BUTTON ======
-  rateButton: {
-    marginHorizontal: 16,
-    marginTop: 24,
-    borderRadius: 16,
-    overflow: 'hidden',
+  // ====== GPS READY BANNER ======
+  readyToRateBanner: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#000',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    padding: 16,
   },
-  rateButtonDisabled: {
-    opacity: 0.6,
-  },
-  rateButtonGradient: {
+  readyToRateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 18,
     gap: 10,
   },
-  rateButtonText: {
-    fontSize: 16,
+  readyToRateDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#00E676',
+  },
+  readyToRateText: {
+    fontSize: 13,
     fontWeight: '700',
     color: '#FFF',
+    flex: 1,
   },
-  geofenceWarning: {
+
+  // ====== SCOUT PULSE ======
+  scoutPulseRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-    paddingHorizontal: 16,
-    gap: 6,
+    gap: 8,
+    marginHorizontal: 20,
+    marginTop: 4,
+    marginBottom: 8,
   },
-  geofenceWarningText: {
+  scoutPulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  scoutPulseText: {
     fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  scoutPulseGap: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.4)',
+    fontWeight: '600',
   },
 
   // ====== STICKY RATE FOOTER ======
@@ -2063,6 +1976,11 @@ const styles = StyleSheet.create({
     gap: 10,
     alignItems: 'stretch',
   },
+  stickyCheckinBtn: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
   stickyRateBtn: {
     flex: 1,
     borderRadius: 16,
@@ -2083,217 +2001,26 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-  // ====== STORY BUBBLES + CROWD ======
-  storyRow: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  storyScroll: {
-    gap: 12,
-    paddingRight: 12,
+  // ====== STORY VIEWER MODAL ======
+  storyViewerModal: {
     flex: 1,
-  },
-  crowdBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#00E67615',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 4,
-  },
-  crowdText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#00E676',
+    backgroundColor: '#000',
   },
 
-  // ====== GHOST CHECK-IN ======
-  ghostCheckinButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 16,
-    marginTop: 12,
-    paddingVertical: 14,
-    borderRadius: 16,
-    backgroundColor: '#1A1A25',
-    borderWidth: 1,
-    borderColor: '#333',
-    borderStyle: 'dashed',
-    gap: 8,
-  },
-  ghostCheckinActive: {
-    borderColor: '#00E67640',
-    backgroundColor: '#00E67610',
-    borderStyle: 'solid',
-  },
-  ghostCheckinText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#888',
-  },
-
-  // ====== CHECK-IN MODE ======
-  glassCardLockedIn: {
-    borderWidth: 1,
-    borderColor: 'rgba(0, 230, 118, 0.25)',
-  },
-  lockedInBanner: {
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 230, 118, 0.22)',
-    overflow: 'hidden',
-  },
-  lockedInGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
+  // ====== PERSONA TOAST ======
+  personaToast: {
+    position: 'absolute',
+    top: 100,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,51,102,0.9)',
+    paddingHorizontal: 20,
     paddingVertical: 10,
+    borderRadius: 20,
   },
-  lockedInLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  lockedInMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  lockedInDivider: {
-    width: 1,
-    height: 12,
-    backgroundColor: 'rgba(0, 230, 118, 0.3)',
-  },
-  lockedInCrowd: {
-    fontSize: 12,
-    color: '#00E676',
-    fontWeight: '700',
-  },
-  lockedInDot: {
-    width: 9, height: 9, borderRadius: 5,
-    backgroundColor: '#00E676',
-    shadowColor: '#00E676', shadowOpacity: 0.9, shadowRadius: 6, shadowOffset: { width: 0, height: 0 },
-  },
-  lockedInLabel: {
-    fontSize: 12, fontWeight: '900', color: '#00E676', letterSpacing: 2,
-  },
-  lockedInTime: {
-    fontSize: 13, fontWeight: '700', color: '#00E676',
-  },
-
-  // ====== INFO TAB: ACTION BUTTONS ======
-  actionButtonStack: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    gap: 10,
-  },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 14,
-    gap: 10,
-  },
-  actionBtnText: {
+  personaToastText: {
     color: '#FFF',
-    fontSize: 14,
     fontWeight: '800',
-    letterSpacing: 1.5,
-  },
-
-  // ====== INFO TAB: VENUE DETAILS CARD ======
-  venueDetailsCard: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    backgroundColor: '#0F0F1C',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    overflow: 'hidden',
-  },
-  venueDetailsSectionLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#3A3A4E',
-    letterSpacing: 2,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 10,
-  },
-  venueDetailsGrid: {},
-  venueDetailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
-    gap: 12,
-  },
-  venueDetailIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  venueDetailLabel: {
-    fontSize: 10,
-    color: '#3A3A4E',
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    marginBottom: 3,
-  },
-  venueDetailValue: {
-    fontSize: 14,
-    color: '#DDD',
-    fontWeight: '600',
-  },
-  venueDetailSub: {
-    fontSize: 11,
-    color: '#555',
-    marginTop: 2,
-  },
-
-  // ====== GPS READY BANNER ======
-  readyToRateBanner: {
-    marginHorizontal: 16,
-    marginBottom: 10,
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  readyToRateGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 10,
-  },
-  readyToRateDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#00E676',
-  },
-  readyToRateText: {
-    flex: 1,
-    color: '#00E676',
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  readyToRateSub: {
-    color: 'rgba(0,230,118,0.6)',
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.3,
+    fontSize: 12,
+    letterSpacing: 1,
   },
 });

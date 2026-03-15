@@ -25,8 +25,8 @@ interface MissedPeak {
 }
 
 const DEMO_MISSED: MissedPeak[] = [
-  { venue_id: '1', venue_name: 'DNA Nightclub', area: 'Victoria Island', peak_score: 94, message: 'Hit 94% while you were away' },
-  { venue_id: '2', venue_name: 'Club Quilox', area: 'Lekki', peak_score: 81, message: 'Hit 81% while you were away' },
+  { venue_id: 'demo_venue_quilox', venue_name: 'Quilox Nightclub', area: 'Victoria Island', peak_score: 94, message: 'Hit 94% while you were away' },
+  { venue_id: 'demo_venue_escape', venue_name: 'Escape Nightclub', area: 'Victoria Island', peak_score: 81, message: 'Hit 81% while you were away' },
 ];
 
 interface Props {

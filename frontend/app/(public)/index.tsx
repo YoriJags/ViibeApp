@@ -51,6 +51,7 @@ import VenueSpotlight from '../../src/components/VenueSpotlight';
 import VibeShiftToast from '../../src/components/VibeShiftToast';
 import LastCallStrip from '../../src/components/LastCallStrip';
 import MissedPeaksBanner from '../../src/components/MissedPeaksBanner';
+import SurgeAlertBanner from '../../src/components/SurgeAlertBanner';
 import AfterHours from '../../src/components/AfterHours';
 import SwipeRate from '../../src/components/SwipeRate';
 import ScoutOfTheNight from '../../src/components/ScoutOfTheNight';
@@ -69,6 +70,9 @@ import OracleTease from '../../src/components/OracleTease';
 // ─────────────────────────────────────────────────────────────────────────────
 // [CityWelcomeCard, WeekendCard, InsiderFeed extracted to src/components/]
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Module-level flag so discover flow only shows once per app session (survives navigation)
+let _discoverShownThisSession = false;
 
 // Persona → preferred venue types for feed boosting
 const PERSONA_BOOST: Record<string, string[]> = {
@@ -110,7 +114,7 @@ export default function MapScreen() {
   const [showSwipeRate, setShowSwipeRate] = useState(false);
   const [showScoutOfNight, setShowScoutOfNight] = useState(false);
   const [showDiscoverFlow, setShowDiscoverFlow] = useState(false);
-  const discoverShownRef = useRef(false);
+  const discoverShownRef = useRef(_discoverShownThisSession);
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [streakData, setStreakData] = useState({ streak: 3, cloutBonus: 50 });
   const [hasRatedThisSession, setHasRatedThisSession] = useState(false);
@@ -186,6 +190,10 @@ export default function MapScreen() {
     if (params.highlightVenue) {
       setHighlightedVenueId(params.highlightVenue);
       setShowList(false);
+      // autoOpen=true: navigate directly to venue detail
+      if (params.autoOpen === 'true') {
+        router.push(`/venue/${params.highlightVenue}`);
+      }
       const timer = setTimeout(() => setHighlightedVenueId(null), 5000);
       return () => clearTimeout(timer);
     }
@@ -221,6 +229,7 @@ export default function MapScreen() {
   useEffect(() => {
     if (!discoverShownRef.current && venues.length > 0 && user) {
       discoverShownRef.current = true;
+      _discoverShownThisSession = true;
       const timer = setTimeout(() => setShowDiscoverFlow(true), 600);
       return () => clearTimeout(timer);
     }
@@ -479,6 +488,7 @@ export default function MapScreen() {
   }
 
   return (
+    <View style={{ flex: 1 }}>
     <SafeAreaView style={styles.container}>
       {/* Venue Discover Flow — fullscreen Netflix-style on session open */}
       {showDiscoverFlow && (
@@ -1070,7 +1080,11 @@ export default function MapScreen() {
         onClaim={() => { setShowStreakModal(false); setShowCloutReward(true); }}
         onDismiss={() => setShowStreakModal(false)}
       />
+
     </SafeAreaView>
+    {/* Sports-broadcast surge alert — outside SafeAreaView so it positions relative to full screen */}
+    <SurgeAlertBanner onPress={(id) => router.push(`/venue/${id}`)} />
+    </View>
   );
 }
 

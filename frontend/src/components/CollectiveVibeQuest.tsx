@@ -215,7 +215,7 @@ export default function CollectiveVibeQuest({ venueId, isDemoMode, onPushPress }
             >
               <Ionicons name="flash" size={14} color={accentColor} />
               <Text style={[styles.pushBtnText, { color: accentColor }]}>
-                PUSH TOGETHER ⚡
+                TAP THE REACTOR BELOW ⚡
               </Text>
             </TouchableOpacity>
           </Animated.View>

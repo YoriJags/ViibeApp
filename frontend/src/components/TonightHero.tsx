@@ -174,25 +174,6 @@ export default function TonightHero({
         )}
       </View>
 
-      {/* Headline */}
-      <View style={s.headlineWrap}>
-        <Text style={s.headlineText}>
-          It's {currentHour || '10PM'} — {cityName} is{' '}
-        </Text>
-        <Animated.Text
-          style={[
-            s.headlineEnergy,
-            {
-              color: energyColor,
-              textShadowColor: energyColor,
-              textShadowRadius: glowRadius,
-            },
-          ]}
-        >
-          {energyWord.toUpperCase()}
-        </Animated.Text>
-      </View>
-
       {/* Match row */}
       {matchVenue && matchPercent && (
         <TouchableOpacity style={s.matchRow} onPress={onMatchVenuePress} activeOpacity={0.7}>
@@ -218,18 +199,6 @@ export default function TonightHero({
         </View>
       )}
 
-      {/* CTA */}
-      <TouchableOpacity style={s.ctaWrap} onPress={onSeePicksPress} activeOpacity={0.8}>
-        <LinearGradient
-          colors={['#FF3366', '#FF6B35']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={s.ctaGradient}
-        >
-          <Text style={s.ctaText}>See Tonight's Picks</Text>
-          <Ionicons name="arrow-forward" size={16} color="#FFF" />
-        </LinearGradient>
-      </TouchableOpacity>
     </>
   );
 

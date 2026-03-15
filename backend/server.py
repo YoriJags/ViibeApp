@@ -65,6 +65,7 @@ from app.routes.rolling_deep import router as rolling_deep_router
 from app.routes.quests import router as quests_router
 from app.routes.vibe_quest import router as vibe_quest_router
 from app.routes.quest_timeline import router as quest_timeline_router
+from app.routes.insider import router as insider_router
 
 # ===== Create FastAPI App =====
 app = FastAPI(title="Viibe App API", version="3.0.0")
@@ -126,6 +127,7 @@ api_router.include_router(rolling_deep_router)
 api_router.include_router(quests_router)
 api_router.include_router(vibe_quest_router)
 api_router.include_router(quest_timeline_router)
+api_router.include_router(insider_router)
 
 # Include the API router in the main app
 app.include_router(api_router)

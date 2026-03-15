@@ -772,6 +772,111 @@ async def update_user_clout(user_id: str, venue_id: str, rating_score: float):
     )
 
 
+async def generate_venue_narrative(venue_id: str, current_score: float) -> tuple[str, float | None]:
+    """
+    Sports-broadcast narrative for a venue based on score momentum.
+
+    Queries the last snapshot from 15–25 minutes ago and compares it to
+    the current score. Returns (narrative_string, delta).
+    delta is None when there is no historical data yet.
+    """
+    now    = datetime.now(timezone.utc)
+    t_min  = now - timedelta(minutes=25)
+    t_max  = now - timedelta(minutes=15)
+
+    snap = await db.vibe_snapshots.find_one(
+        {"venue_id": venue_id, "timestamp": {"$gte": t_min, "$lte": t_max}},
+        sort=[("timestamp", -1)],
+    )
+
+    if snap is None:
+        # No history yet — venue just woke up or data gap
+        if current_score >= 70:
+            return "Already buzzing. Doors haven't been open long.", None
+        return "Just waking up. Check back in 20.", None
+
+    delta = current_score - snap["vibe_score"]
+
+    # ── Climbing ─────────────────────────────────────────────────────────
+    if delta > 15:
+        return f"Up {delta:.0f} pts in 20 mins 🔥 Fastest climb tonight.", delta
+    if delta > 10:
+        return f"Warming fast — up {delta:.0f} pts. 🔥 Peak incoming.", delta
+    if delta > 5:
+        return f"Building. Up {delta:.0f} pts and still climbing.", delta
+
+    # ── At peak / holding ─────────────────────────────────────────────────
+    if current_score >= 85 and abs(delta) <= 5:
+        return "At PEAK. Energy is holding. This is the moment.", delta
+
+    # ── Stable mid-range ─────────────────────────────────────────────────
+    if current_score >= 60 and abs(delta) <= 5:
+        return "Holding steady. Waiting for the crowd to commit.", delta
+    if 40 <= current_score < 60 and abs(delta) <= 5:
+        return "Building energy. Night is still early.", delta
+
+    # ── Dropping ─────────────────────────────────────────────────────────
+    if delta < -10:
+        return f"Down {abs(delta):.0f} pts. Just passed PEAK — ride it while it lasts.", delta
+    if delta < -5:
+        return "Winding down. Moving to the after-party?", delta
+
+    # ── Quiet ────────────────────────────────────────────────────────────
+    if current_score < 40:
+        return "Quiet tonight. Could flip at any moment.", delta
+
+    return "Holding. Scouts are watching.", delta
+
+
+async def check_and_emit_surge_alert(venue_id: str, venue_name: str, city: str, current_score: float):
+    """
+    If any venue has jumped > 15 pts in the last 15 minutes, emit a
+    global_surge_alert to the city room so home-screen viewers feel the FOMO.
+    Throttled: one alert per venue per 20 minutes.
+    """
+    from app.config import sio  # local import to avoid circular deps
+
+    now   = datetime.now(timezone.utc)
+    t_min = now - timedelta(minutes=15)
+
+    snap = await db.vibe_snapshots.find_one(
+        {"venue_id": venue_id, "timestamp": {"$gte": t_min}},
+        sort=[("timestamp", 1)],   # oldest in window
+    )
+    if snap is None:
+        return
+
+    delta = current_score - snap["vibe_score"]
+    if delta <= 15:
+        return
+
+    # Throttle: check if we already fired an alert for this venue recently
+    cooldown_key = f"surge_alert_{venue_id}"
+    last_alert = await db.surge_alert_log.find_one({"key": cooldown_key})
+    if last_alert:
+        age_mins = (now - last_alert["fired_at"].replace(tzinfo=timezone.utc)).total_seconds() / 60
+        if age_mins < 20:
+            return
+
+    # Record the alert
+    await db.surge_alert_log.update_one(
+        {"key": cooldown_key},
+        {"$set": {"key": cooldown_key, "fired_at": now}},
+        upsert=True,
+    )
+
+    narrative, _ = await generate_venue_narrative(venue_id, current_score)
+
+    await sio.emit("global_surge_alert", {
+        "venue_id":   venue_id,
+        "venue_name": venue_name,
+        "city":       city,
+        "delta":      round(delta, 1),
+        "score":      round(current_score, 1),
+        "narrative":  narrative,
+    }, room=f"city_{city}")
+
+
 async def save_vibe_snapshot(venue_id: str, aggregate: dict):
     """Save a vibe snapshot for timeline history. Called after each rating recalculation."""
     snapshot = {

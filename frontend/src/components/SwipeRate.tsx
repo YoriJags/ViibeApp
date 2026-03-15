@@ -120,7 +120,8 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
 
   const panResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 6 && Math.abs(g.dx) > Math.abs(g.dy),
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 0.8,
       onPanResponderMove: (_, g) => {
         position.setValue({ x: g.dx, y: g.dy * 0.25 });
       },
@@ -175,7 +176,7 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
         <TouchableOpacity style={StyleSheet.absoluteFill} onPress={dismiss} activeOpacity={1} />
       </Animated.View>
 
-      <Animated.View style={[styles.sheet, { transform: [{ translateY: slideY }] }]} {...panResponder.panHandlers}>
+      <Animated.View style={[styles.sheet, { transform: [{ translateY: slideY }] }]}>
         {/* Handle */}
         <View style={styles.handle} />
 
@@ -243,6 +244,7 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
                   { rotate },
                 ],
               }]}
+              {...panResponder.panHandlers}
             >
               <LinearGradient colors={['#151526', '#0D0D1C', '#080812']} style={styles.cardGrad}>
 

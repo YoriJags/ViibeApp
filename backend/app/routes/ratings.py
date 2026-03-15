@@ -21,7 +21,7 @@ BURST_WINDOW_MINUTES = 10  # window to detect burst
 BURST_HOLD_MINUTES = 15    # how long provisional ratings are held
 from app.services.realtime import broadcast_venue_update, broadcast_leaderboard, broadcast_city_pulse
 from app.services.streaks import update_streak
-from app.services.vibe import save_vibe_snapshot
+from app.services.vibe import save_vibe_snapshot, generate_venue_narrative, check_and_emit_surge_alert
 
 router = APIRouter(tags=["ratings"])
 
@@ -165,6 +165,22 @@ async def create_rating(rating_data: RatingCreate):
 
     # Save vibe snapshot for timeline (also triggers Aura Shield check)
     await save_vibe_snapshot(rating_data.venue_id, aggregate)
+
+    # Generate sports-broadcast narrative and patch venue document
+    current_score = aggregate.get("current_vibe_score", 0)
+    narrative, _ = await generate_venue_narrative(rating_data.venue_id, current_score)
+    await db.venues.update_one(
+        {"id": rating_data.venue_id},
+        {"$set": {"venue_narrative": narrative}},
+    )
+
+    # Emit global_surge_alert to city room if score jumped > 15 pts in 15 mins
+    await check_and_emit_surge_alert(
+        rating_data.venue_id,
+        venue.get("name", ""),
+        venue.get("city", "lagos"),
+        current_score,
+    )
 
     # Check for active energy campaign -> apply campaign clout multiplier
     campaign_multiplier = 1

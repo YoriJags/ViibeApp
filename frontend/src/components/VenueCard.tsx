@@ -27,6 +27,7 @@ interface Venue {
   is_open_now?: boolean | null;
   next_open?: string;
   vibe_tier?: string;
+  venue_narrative?: string;
   icon_spotted?: { username: string; icon_tier: string; icon_label?: string } | null;
 }
 
@@ -288,6 +289,14 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
             )}
           </ScrollView>
 
+          {/* Sports-broadcast narrative */}
+          {venue.venue_narrative && (
+            <View style={styles.narrativeRow}>
+              <View style={styles.narrativeDot} />
+              <Text style={styles.narrativeText} numberOfLines={1}>{venue.venue_narrative}</Text>
+            </View>
+          )}
+
           {/* Pulse strip */}
           {venue.pulse && (
             <PulseStrip pulse={venue.pulse} onPress={() => setShowPulseSheet(true)} />
@@ -530,6 +539,27 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#4FC56E',
     fontWeight: '700',
+  },
+  narrativeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 7,
+    paddingHorizontal: 2,
+  },
+  narrativeDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#FF3366',
+    opacity: 0.8,
+  },
+  narrativeText: {
+    flex: 1,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.5)',
+    fontWeight: '600',
+    fontStyle: 'italic',
   },
   lowEnergyRow: {
     flexDirection: 'row',

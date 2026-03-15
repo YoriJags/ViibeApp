@@ -205,13 +205,13 @@ export default function TrendingScreen() {
   };
 
   const handlePullUp = (venue: TrendingVenue['venue']) => {
-    // Navigate to map tab with venue highlight parameter
     router.push({
       pathname: '/',
-      params: { 
+      params: {
         highlightVenue: venue.id,
         centerLat: venue.coordinates.lat.toString(),
-        centerLng: venue.coordinates.lng.toString()
+        centerLng: venue.coordinates.lng.toString(),
+        autoOpen: 'true',
       }
     });
   };
