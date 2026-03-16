@@ -40,6 +40,8 @@ const CY          = CANVAS_SIZE / 2;
 const RING_R      = 130;
 const RING_T      = 9;
 const ORB_R       = 98;   // inner tap circle radius
+const OUTER_R     = 144;  // outer bezel ring (precision dial)
+const INNER_R     = 114;  // inner detail ring (depth layer)
 
 const GEOFENCE_RADIUS_M  = 100;
 const BPM_WINDOW_SIZE    = 8;
@@ -153,8 +155,8 @@ interface KineticCanvasProps {
 const KineticCanvas = React.memo(function KineticCanvas({
   ringProgress, coreColor, sparks, syncPct,
 }: KineticCanvasProps) {
-  // Coherence arc — crystallises from blurry ghost → sharp glowing ring as crowd syncs
-  // Opacity: invisible below 15%, full at 100%. Blur: thick at 0%, crisp at 100%.
+
+  // ── Coherence arc ─────────────────────────────────────────────────────────
   const coherenceOpacity = useDerivedValue(() =>
     Math.max(0, (syncPct.value - 15) / 85)
   );
@@ -165,7 +167,7 @@ const KineticCanvas = React.memo(function KineticCanvas({
     interpolate(syncPct.value, [0, 100], [1.5, 4])
   );
 
-  // Progress arc — built on the UI thread
+  // ── Progress arc ──────────────────────────────────────────────────────────
   const arcPath = useDerivedValue(() => {
     const sweep = Math.max(0, ringProgress.value * 360);
     if (sweep < 0.5) return Skia.Path.Make();
@@ -178,40 +180,109 @@ const KineticCanvas = React.memo(function KineticCanvas({
     return path;
   });
 
+  // ── Arc leading-edge tip — glowing dot tracks the progress head ───────────
+  const arcTipGlow = useDerivedValue(() => {
+    const sweep = Math.max(0, ringProgress.value * 360);
+    if (sweep < 3) return Skia.Path.Make();
+    const a = (-90 + sweep) * (Math.PI / 180);
+    const tx = CX + RING_R * Math.cos(a);
+    const ty = CY + RING_R * Math.sin(a);
+    const p = Skia.Path.Make();
+    p.addOval({ x: tx - 10, y: ty - 10, width: 20, height: 20 });
+    return p;
+  });
+  const arcTipCore = useDerivedValue(() => {
+    const sweep = Math.max(0, ringProgress.value * 360);
+    if (sweep < 3) return Skia.Path.Make();
+    const a = (-90 + sweep) * (Math.PI / 180);
+    const tx = CX + RING_R * Math.cos(a);
+    const ty = CY + RING_R * Math.sin(a);
+    const p = Skia.Path.Make();
+    p.addOval({ x: tx - 3.5, y: ty - 3.5, width: 7, height: 7 });
+    return p;
+  });
+
+  // ── Precision bezel ticks — computed once, static ─────────────────────────
+  // 24 ticks at 15° intervals; 4 major ticks at cardinal points (0/90/180/270°)
+  const { minorTicks, majorTicks } = React.useMemo(() => {
+    const minor = Skia.Path.Make();
+    const major = Skia.Path.Make();
+    const TICK_OUT = OUTER_R - 1;
+    for (let i = 0; i < 24; i++) {
+      const isMajor = i % 6 === 0;
+      const rad = ((i / 24) * 360 - 90) * (Math.PI / 180);
+      const inR  = isMajor ? OUTER_R - 10 : OUTER_R - 5;
+      const xi = CX + inR      * Math.cos(rad);
+      const yi = CY + inR      * Math.sin(rad);
+      const xo = CX + TICK_OUT * Math.cos(rad);
+      const yo = CY + TICK_OUT * Math.sin(rad);
+      (isMajor ? major : minor).moveTo(xi, yi);
+      (isMajor ? major : minor).lineTo(xo, yo);
+    }
+    return { minorTicks: minor, majorTicks: major };
+  }, []);
+
   return (
     <Canvas style={canvasStyle}>
-      {/* Ring track */}
-      <Circle cx={CX} cy={CY} r={RING_R}>
-        <Paint style="stroke" strokeWidth={RING_T} color="rgba(255,255,255,0.05)" />
+
+      {/* ── 1. Outer bezel ring ── */}
+      <Circle cx={CX} cy={CY} r={OUTER_R}>
+        <Paint style="stroke" strokeWidth={0.75} color="rgba(255,255,255,0.06)" />
       </Circle>
 
-      {/* Outer glow (blurred wide stroke) */}
+      {/* ── 2. Minor tick marks (15° spacing) ── */}
+      <Path path={minorTicks}>
+        <Paint style="stroke" strokeWidth={1} color="rgba(255,255,255,0.10)" strokeCap="round" />
+      </Path>
+
+      {/* ── 3. Major tick marks (90° — cardinal) ── */}
+      <Path path={majorTicks}>
+        <Paint style="stroke" strokeWidth={1.75} color="rgba(255,255,255,0.28)" strokeCap="round" />
+      </Path>
+
+      {/* ── 4. Ring track ── */}
+      <Circle cx={CX} cy={CY} r={RING_R}>
+        <Paint style="stroke" strokeWidth={RING_T} color="rgba(14,14,30,0.95)" />
+      </Circle>
+
+      {/* ── 5. Inner detail ring (depth) ── */}
+      <Circle cx={CX} cy={CY} r={INNER_R}>
+        <Paint style="stroke" strokeWidth={0.75} color="rgba(255,255,255,0.04)" />
+      </Circle>
+
+      {/* ── 6. Wide bloom glow behind arc ── */}
       <Path path={arcPath}>
-        <Paint
-          style="stroke"
-          strokeWidth={RING_T + 16}
-          strokeCap="round"
-          color={coreColor}
-          opacity={0.30}
-        >
-          <BlurMask blur={20} style="normal" />
+        <Paint style="stroke" strokeWidth={RING_T + 22} strokeCap="round" color={coreColor} opacity={0.18}>
+          <BlurMask blur={26} style="normal" />
         </Paint>
       </Path>
 
-      {/* Progress arc (sharp) */}
+      {/* ── 7. Mid glow ── */}
       <Path path={arcPath}>
-        <Paint
-          style="stroke"
-          strokeWidth={RING_T}
-          strokeCap="round"
-          color={coreColor}
-        />
+        <Paint style="stroke" strokeWidth={RING_T + 8} strokeCap="round" color={coreColor} opacity={0.28}>
+          <BlurMask blur={10} style="normal" />
+        </Paint>
       </Path>
 
-      {/* Coherence ring — crowd sync visualiser
-          Low sync  → barely-visible blurry ghost halo
-          High sync → crisp cyan arc crystallises, crowd is locked in */}
-      <Circle cx={CX} cy={CY} r={RING_R + 7}>
+      {/* ── 8. Progress arc (sharp, crisp) ── */}
+      <Path path={arcPath}>
+        <Paint style="stroke" strokeWidth={RING_T} strokeCap="round" color={coreColor} />
+      </Path>
+
+      {/* ── 9. Arc tip — outer bloom ── */}
+      <Path path={arcTipGlow}>
+        <Paint color={coreColor} opacity={0.50}>
+          <BlurMask blur={10} style="solid" />
+        </Paint>
+      </Path>
+
+      {/* ── 10. Arc tip — core dot (bright white center) ── */}
+      <Path path={arcTipCore}>
+        <Paint color="rgba(255,255,255,0.95)" />
+      </Path>
+
+      {/* ── 11. Coherence ring — crowd sync crystalliser ── */}
+      <Circle cx={CX} cy={CY} r={RING_R + 8}>
         <Paint
           style="stroke"
           strokeWidth={coherenceWidth}
@@ -222,7 +293,7 @@ const KineticCanvas = React.memo(function KineticCanvas({
         </Paint>
       </Circle>
 
-      {/* Particle sparks */}
+      {/* ── 12. Particle sparks ── */}
       {sparks.map(spark => (
         <Circle
           key={spark.id}
@@ -233,6 +304,7 @@ const KineticCanvas = React.memo(function KineticCanvas({
           opacity={spark.life / spark.maxLife}
         />
       ))}
+
     </Canvas>
   );
 });
@@ -824,16 +896,22 @@ export default function VibeReactor({
             orbStyle,
             {
               shadowColor:   color,
-              shadowOpacity: isElectric ? 0.8 : 0.4,
-              shadowRadius:  isElectric ? 20 : 10,
-              borderColor:   color + '30',
+              shadowOpacity: isElectric ? 0.9 : 0.5,
+              shadowRadius:  isElectric ? 28 : 14,
+              borderColor:   color + '55',
             },
           ]}>
-            {/* Gradient wash */}
+            {/* Diagonal color wash */}
             <LinearGradient
-              colors={[color + '1A', 'transparent'] as [string, string]}
+              colors={[color + '28', 'transparent', 'rgba(0,0,0,0.20)']}
+              start={{ x: 0.1, y: 0 }}
+              end={{ x: 0.9, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
+
+            {/* Specular highlight — metallic glass illusion */}
+            <View style={styles.orbSpecular} />
+            <View style={styles.orbSpecularCore} />
 
             {/* Peak flare */}
             <Animated.View style={[
@@ -986,8 +1064,8 @@ const styles = StyleSheet.create({
     width:           '100%',
     height:          '100%',
     borderRadius:    ORB_R,
-    backgroundColor: 'rgba(10, 10, 18, 0.96)',
-    borderWidth:     1.5,
+    backgroundColor: 'rgba(4, 4, 12, 0.98)',
+    borderWidth:     0.75,
     alignItems:      'center',
     justifyContent:  'center',
     overflow:        'hidden',
@@ -997,6 +1075,28 @@ const styles = StyleSheet.create({
   flareOverlay: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: ORB_R,
+  },
+
+  // Metallic glass specular highlights — two overlapping ellipses top-left
+  orbSpecular: {
+    position:        'absolute',
+    top:             14,
+    left:            20,
+    width:           58,
+    height:          28,
+    borderRadius:    18,
+    backgroundColor: 'rgba(255,255,255,0.055)',
+    transform:       [{ rotate: '-22deg' }],
+  },
+  orbSpecularCore: {
+    position:        'absolute',
+    top:             18,
+    left:            30,
+    width:           26,
+    height:          12,
+    borderRadius:    9,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    transform:       [{ rotate: '-22deg' }],
   },
   tapCount: {
     fontSize: 16,
