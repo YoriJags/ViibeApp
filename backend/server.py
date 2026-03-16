@@ -39,6 +39,8 @@ from app.routes.certifications import router as certifications_router
 from app.routes.planner import router as planner_router
 from app.routes.oracle import router as oracle_router
 from app.routes.ai_features import router as ai_features_router
+from app.routes.cosmic import router as cosmic_router
+from app.routes.analytics import router as analytics_router
 from app.routes.feature_flags import router as feature_flags_router
 from app.routes.platform_settings import router as platform_settings_router
 from app.routes.subscriptions import router as subscriptions_router
@@ -101,6 +103,8 @@ api_router.include_router(certifications_router)
 api_router.include_router(planner_router)
 api_router.include_router(oracle_router)
 api_router.include_router(ai_features_router)
+api_router.include_router(cosmic_router)
+api_router.include_router(analytics_router)
 api_router.include_router(feature_flags_router)
 api_router.include_router(platform_settings_router)
 api_router.include_router(subscriptions_router)

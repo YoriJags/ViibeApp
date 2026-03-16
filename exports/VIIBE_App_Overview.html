@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VIIBE — Platform Overview v2.0</title>
+  <style>
+    
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #070b10;
+    color: #d0d5da;
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 12.5px;
+    line-height: 1.7;
+  }
+
+  body::before {
+    content: 'VIIBE · PLATFORM REFERENCE · v2.0 · FEB 2026';
+    display: block;
+    background: #050810;
+    color: #3a5068;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 10px 60px;
+    border-bottom: 1px solid #0d1a28;
+  }
+
+  h1 {
+    font-size: 44px;
+    font-weight: 900;
+    letter-spacing: -1.2px;
+    background: linear-gradient(135deg, #a78bfa, #7c3aed, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    padding: 52px 60px 8px;
+  }
+
+  h1 + p em {
+    display: block;
+    padding: 0 60px 44px;
+    color: #4a5568;
+    font-size: 12px;
+    font-style: normal;
+  }
+
+  h2 {
+    page-break-before: always;
+    font-size: 24px;
+    font-weight: 800;
+    color: #a78bfa;
+    padding: 52px 60px 0;
+    margin-bottom: 24px;
+    letter-spacing: -0.4px;
+  }
+
+  h2::before {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 3px;
+    background: linear-gradient(90deg, #7c3aed, #c084fc);
+    margin-bottom: 14px;
+    border-radius: 2px;
+  }
+
+  h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #67e8f9;
+    margin: 28px 60px 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-left: 3px solid #0891b2;
+    padding-left: 12px;
+  }
+
+  h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #86efac;
+    margin: 22px 60px 8px;
+  }
+
+  p {
+    margin: 0 60px 14px;
+    color: #8898a8;
+    font-size: 12.5px;
+  }
+
+  strong { color: #e0e6ed; font-weight: 700; }
+
+  blockquote {
+    margin: 20px 60px 24px;
+    padding: 16px 20px;
+    background: #060c14;
+    border: 1px solid #0d1e30;
+    border-left: 3px solid #a78bfa;
+    border-radius: 0 8px 8px 0;
+    color: #a0b0c0;
+    font-size: 12.5px;
+  }
+  blockquote p { margin: 0; color: #a0b0c0; }
+  blockquote > p > strong { color: #c4b5fd; }
+
+  ul, ol {
+    margin: 0 60px 16px 80px;
+    color: #8898a8;
+  }
+  li { margin-bottom: 6px; }
+  li strong { color: #e0e6ed; }
+  ul li::marker { color: #a78bfa; }
+  ol li::marker { color: #67e8f9; font-weight: 700; }
+
+  table {
+    width: calc(100% - 120px);
+    margin: 20px 60px 28px;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #0d1e30;
+  }
+
+  thead { background: #070f1a; border-bottom: 2px solid #1e3a5c; }
+
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #6080a0;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #0a1828;
+    color: #8898a8;
+    vertical-align: top;
+  }
+
+  tbody tr:nth-child(even) td { background: #060c14; }
+  tbody tr:last-child td { border-bottom: none; }
+  td code { background: #0a1828; color: #67e8f9; padding: 2px 5px; border-radius: 4px; font-size: 11px; }
+
+  pre {
+    margin: 16px 60px 24px;
+    padding: 18px 22px;
+    background: #060c14;
+    border: 1px solid #0d1e30;
+    border-radius: 8px;
+  }
+  pre code { background: none; color: #86efac; font-size: 12px; }
+  code { background: #0a1525; color: #67e8f9; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: 'Fira Code', monospace; }
+
+  hr {
+    border: none;
+    border-top: 1px solid #0d1e30;
+    margin: 36px 60px;
+  }
+
+
+    /* Print / PDF settings */
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
+  </style>
+</head>
+<body>
+  <h1>VIIBE — Complete App Overview</h1>
+<p><em>Platform Reference Document | v2.0 | February 2026</em></p>
+<hr>
+<h2>1. Executive Summary</h2>
+<p>VIIBE is a real-time nightlife intelligence platform for Nigeria. It solves a single, persistent problem: on any given Friday night in Lagos, you have no reliable way to know which venues are actually alive before you walk in — and by the time you find out you&#39;re at the wrong place, the night is half over.</p>
+<p>VIIBE fixes this by placing a network of credentialed scouts — real people physically inside venues — who report live conditions every 30 minutes. Their reports feed a scoring algorithm that produces a 0-100 vibe score, an energy state label, and a time-series trend for every venue in real time. The data is surfaced to the public through a consumer app, monetised through a merchant dashboard, and governed through an admin layer.</p>
+<p><strong>Current Status:</strong> Live at <code>vibe-app-hc83.vercel.app</code> (frontend) + <code>vibeapp-production-1835.up.railway.app</code> (backend). MongoDB seeded with 10 Lagos venues. Three test accounts active.</p>
+<hr>
+<h2>2. The Problem</h2>
+<p>Nigeria has the highest concentration of nightlife spend per capita in Sub-Saharan Africa. Lagos alone generates an estimated ₦2.3 trillion in entertainment spend annually. Yet the discovery infrastructure is stuck in 2012:</p>
+<ul>
+<li><strong>No live venue data anywhere.</strong> Instagram stories are delayed, staged, and curated.</li>
+<li><strong>No accountability.</strong> Venue promoters always say &quot;it&#39;s mad tonight.&quot; There is no way to verify.</li>
+<li><strong>Coordination is broken.</strong> Planning a night out with a squad of 6 involves a WhatsApp thread, 3 phone calls, and at least one person ending up at the wrong place.</li>
+<li><strong>Merchants are flying blind.</strong> Venue owners have no real-time demand signal. They spend on promotions without knowing if their venue is empty or full.</li>
+</ul>
+<hr>
+<h2>3. The Solution</h2>
+<p>VIIBE creates a <strong>live, community-verified, manipulation-resistant</strong> venue intelligence layer.</p>
+<p>The core loop:</p>
+<ol>
+<li><strong>Scouts</strong> (public users) physically visit venues and submit 60-second ratings from inside the geofence.</li>
+<li>The <strong>scoring engine</strong> aggregates these reports with time-decay weighting to produce a live vibe score.</li>
+<li>The <strong>map and feed</strong> surface this data to anyone looking for a good night out.</li>
+<li><strong>Merchants</strong> see the same data on their dashboard and can amplify their presence with paid Pulse Drops.</li>
+<li>The <strong>data flywheel</strong> grows: more scouts → more data → more accurate scores → more useful product → more users.</li>
+</ol>
+<hr>
+<h2>4. The Three-Storey Architecture</h2>
+<p>VIIBE is not one product — it is three linked products sharing one backend and one database.</p>
+<h3>Floor 1 — The Public App (Scouts)</h3>
+<p>The consumer experience. Anyone can sign up, verify with a Nigerian phone number, and start rating venues. The public floor surfaces:</p>
+<ul>
+<li>Live venue map with energy state overlays</li>
+<li>Venue detail pages (score, timeline, oracle, top scouts)</li>
+<li>Personal profile (Vibe DNA, scout tier, clout balance, streak)</li>
+<li>Squad/crew features (live location, coordination)</li>
+<li>Night Planner AI concierge</li>
+</ul>
+<p><strong>Access:</strong> <code>/(public)</code> routes. URL: <code>vibe-app-hc83.vercel.app</code></p>
+<h3>Floor 2 — The Merchant Portal (Venue Owners)</h3>
+<p>Venue owners get a private dashboard showing their own venue&#39;s live performance:</p>
+<ul>
+<li>Real-time vibe score and energy state</li>
+<li>Rating volume, capacity breakdown, gate reports</li>
+<li>24-hour historical timeline</li>
+<li>Aura Shield alerts (push notification when score drops)</li>
+<li>Pulse Drop purchasing (paid visibility boosts)</li>
+<li>Wallet management (Paystack-powered top-ups)</li>
+</ul>
+<p><strong>Access:</strong> <code>/(merchant)</code> routes. URL: <code>vibe-app-hc83.vercel.app/merchant</code></p>
+<h3>Floor 3 — The Admin Console (Platform Operators)</h3>
+<p>Super-admin control panel:</p>
+<ul>
+<li>Venue CRUD (create, update, delete)</li>
+<li>Merchant assignment (link a merchant account to a venue)</li>
+<li>Economy configuration (clout rates, cooldown timers, Pulse Drop pricing)</li>
+<li>Platform-wide monitoring</li>
+</ul>
+<p><strong>Access:</strong> <code>/(admin)</code> routes. URL: <code>vibe-app-hc83.vercel.app/admin</code></p>
+<hr>
+<h2>5. The Vibe Scoring System</h2>
+<p>This is the core intellectual property of VIIBE. Every number shown to a user traces back to this model.</p>
+<h3>5.1 The Six Energy States</h3>
+<p>A scout physically observes the venue and selects one of six states. This is the <strong>only input</strong> that comes from human judgment:</p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Numeric Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>quiet</code></td>
+<td>0</td>
+<td>Nearly empty. No atmosphere.</td>
+</tr>
+<tr>
+<td><code>chill</code></td>
+<td>25</td>
+<td>Small crowd, low energy, relaxed.</td>
+</tr>
+<tr>
+<td><code>warming</code></td>
+<td>50</td>
+<td>Building momentum — people arriving, vibe stirring.</td>
+</tr>
+<tr>
+<td><code>lit</code></td>
+<td>75</td>
+<td>High energy — crowd engaged, music hitting.</td>
+</tr>
+<tr>
+<td><code>peak</code></td>
+<td>100</td>
+<td>Maximum energy. Packed, electric, best of the night.</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Note:</strong> <code>charged</code> is NOT an input state. It is a derived display state only (see §5.4).</p>
+</blockquote>
+<h3>5.2 The Score Formula</h3>
+<p>A single rating produces a vibe score between 0 and 100:</p>
+<pre><code>base_score = (energy_value × 0.80) + (venue_specific_value × 0.20)
+final_score = min(100, base_score × capacity_multiplier)
+</code></pre>
+<p><strong>Energy is 80% of the score.</strong> This is intentional — the atmosphere in the room is the primary signal. No other factor can compensate for a dead crowd.</p>
+<p><strong>Venue-specific (4th dimension):</strong> An optional secondary dimension that captures context specific to the venue type. Scouts can optionally report this for a more nuanced reading.</p>
+<table>
+<thead>
+<tr>
+<th>Venue Type</th>
+<th>Low (0)</th>
+<th>Medium (50)</th>
+<th>High (100)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Club / Rave</td>
+<td><code>mellow</code></td>
+<td><code>good_set</code></td>
+<td><code>killing_it</code></td>
+</tr>
+<tr>
+<td>Bar</td>
+<td><code>quiet_atm</code></td>
+<td><code>decent_atm</code></td>
+<td><code>loud_alive</code></td>
+</tr>
+<tr>
+<td>Lounge</td>
+<td><code>slow_service</code></td>
+<td><code>decent_service</code></td>
+<td><code>on_point</code></td>
+</tr>
+<tr>
+<td>Concert / Event</td>
+<td><code>flat_crowd</code></td>
+<td><code>building_crowd</code></td>
+<td><code>going_off</code></td>
+</tr>
+<tr>
+<td>Block Party</td>
+<td><code>standing_around</code></td>
+<td><code>mixed_movement</code></td>
+<td><code>packed_dancing</code></td>
+</tr>
+</tbody></table>
+<p><strong>Capacity multiplier:</strong> The crowd size <em>amplifies</em> real energy but cannot create energy from nothing:</p>
+<table>
+<thead>
+<tr>
+<th>Crowd Level</th>
+<th>Multiplier</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>sparse</code></td>
+<td>× 0.92</td>
+<td>Slight drag — thin crowd dampens the room</td>
+</tr>
+<tr>
+<td><code>vibrant</code></td>
+<td>× 1.05</td>
+<td>Small boost — crowd is the right size</td>
+</tr>
+<tr>
+<td><code>full</code></td>
+<td>× 1.15</td>
+<td>Bigger boost — packed house amplifies everything</td>
+</tr>
+</tbody></table>
+<p><strong>Gate is context only:</strong> <code>clear</code> / <code>slow</code> / <code>blocked</code> is recorded and shown but does not affect the score. It answers a different question: &quot;how hard is it to get in?&quot; — not &quot;what&#39;s it like inside?&quot;</p>
+<p><strong>Worked examples:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Energy</th>
+<th>Venue-Specific</th>
+<th>Capacity</th>
+<th>Calculation</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>peak</code></td>
+<td><code>killing_it</code></td>
+<td><code>full</code></td>
+<td>(100×0.8 + 100×0.2) × 1.15</td>
+<td><strong>100</strong></td>
+</tr>
+<tr>
+<td><code>lit</code></td>
+<td><code>good_set</code></td>
+<td><code>vibrant</code></td>
+<td>(75×0.8 + 50×0.2) × 1.05</td>
+<td><strong>73</strong></td>
+</tr>
+<tr>
+<td><code>warming</code></td>
+<td><em>(none)</em></td>
+<td><code>full</code></td>
+<td>(50×0.8 + 50×0.2) × 1.15</td>
+<td><strong>57</strong></td>
+</tr>
+<tr>
+<td><code>chill</code></td>
+<td><code>decent_atm</code></td>
+<td><code>vibrant</code></td>
+<td>(25×0.8 + 50×0.2) × 1.05</td>
+<td><strong>31</strong></td>
+</tr>
+<tr>
+<td><code>quiet</code></td>
+<td><em>(none)</em></td>
+<td><code>full</code></td>
+<td>(0×0.8 + 50×0.2) × 1.15</td>
+<td><strong>11</strong></td>
+</tr>
+</tbody></table>
+<p>A full venue cannot rescue a dead crowd. An empty venue cannot hide a lit crowd.</p>
+<h3>5.3 Time-Decay Weighted Aggregation</h3>
+<p>The <strong>live score</strong> displayed on the map is not a simple average of all ratings. It is a time-decay weighted mean over the past 60 minutes:</p>
+<table>
+<thead>
+<tr>
+<th>Age of Rating</th>
+<th>Weight</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0–15 minutes ago</td>
+<td><strong>3×</strong></td>
+</tr>
+<tr>
+<td>15–30 minutes ago</td>
+<td><strong>2×</strong></td>
+</tr>
+<tr>
+<td>30–60 minutes ago</td>
+<td><strong>1×</strong></td>
+</tr>
+<tr>
+<td>Older than 60 minutes</td>
+<td>Excluded</td>
+</tr>
+</tbody></table>
+<pre><code>live_score = Σ(score_i × weight_i) / Σ(weight_i)
+</code></pre>
+<p><strong>Why:</strong> A single fresh <code>peak</code> rating from someone inside right now should outweigh three <code>chill</code> ratings from 45 minutes ago. The venue could have exploded in that time.</p>
+<p><strong>Glow Boost:</strong> Active Pulse Drops (merchant purchases) add a <code>glow_boost</code> value (+20 / +40 / +100) to the aggregated score, capped at 100. This ensures a paying merchant gets genuine visibility uplift — but only on top of real scout activity.</p>
+<h3>5.4 The CHARGED State — Derived Display Labels</h3>
+<p>After aggregation, the raw score is converted to a <strong>display state</strong> that users see on the map and venue cards. This is a separate step from the energy input:</p>
+<table>
+<thead>
+<tr>
+<th>Score Range</th>
+<th>Condition</th>
+<th>Display State</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>≥ 85</td>
+<td>—</td>
+<td><code>peak</code> 🔥</td>
+<td>Maximum energy. Get there now.</td>
+</tr>
+<tr>
+<td>≥ 65</td>
+<td>—</td>
+<td><code>lit</code> ⚡</td>
+<td>High energy. Night is in full swing.</td>
+</tr>
+<tr>
+<td>45–64</td>
+<td>Crowd is <code>full</code> or <code>vibrant</code></td>
+<td><code>charged</code> ⚡</td>
+<td>Potential energy — packed but about to blow.</td>
+</tr>
+<tr>
+<td>45–64</td>
+<td>Crowd is <code>sparse</code></td>
+<td><code>warming</code> 🌡</td>
+<td>Building slowly. Check back later.</td>
+</tr>
+<tr>
+<td>20–44</td>
+<td>—</td>
+<td><code>chill</code> 😌</td>
+<td>Low key. Good for a quieter night.</td>
+</tr>
+<tr>
+<td>&lt; 20</td>
+<td>—</td>
+<td><code>quiet</code> 🌙</td>
+<td>Barely alive. Not tonight.</td>
+</tr>
+</tbody></table>
+<p><strong>CHARGED</strong> is the key insight: a venue with score 52 and a full crowd is fundamentally different from a venue with score 52 and a sparse crowd. In the first case, 300 people are in the room and the DJ hasn&#39;t dropped yet — it&#39;s about to be peak. In the second, 30 people are spread across a big room and it feels empty. CHARGED surfaces that distinction in a single label.</p>
+<h3>5.5 Venue State Timeline (24-Hour History)</h3>
+<p>Every time a rating is submitted and the aggregate is recalculated, a <strong>vibe snapshot</strong> is saved to <code>db.vibe_snapshots</code>. The timeline endpoint aggregates these into hourly buckets.</p>
+<p>To average energy labels across an hour (you can&#39;t average strings), labels are converted to a numeric scale for MongoDB aggregation:</p>
+<pre><code>quiet=0, chill=1, warming=2, charged=3, lit=4, peak=5
+</code></pre>
+<p>MongoDB computes <code>avg_energy</code> per hour. The number is converted back to a label:</p>
+<pre><code>&lt; 0.5 → quiet | 0.5–1.5 → chill | 1.5–2.5 → warming
+2.5–3.5 → charged | 3.5–4.5 → lit | ≥ 4.5 → peak
+</code></pre>
+<p>A 1-hour bucket with mixed <code>lit</code> (4) and <code>chill</code> (1) ratings would average to ~2.5 = <code>warming</code>. The label correctly reflects the distribution rather than arbitrarily picking one.</p>
+<hr>
+<h2>6. Scout Economy — Clout</h2>
+<p>Clout is the in-platform reputation and incentive currency. It is non-transferable and cannot be purchased directly.</p>
+<h3>6.1 Earning Clout</h3>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Clout Earned</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Rating submitted (base)</td>
+<td>+10</td>
+</tr>
+<tr>
+<td>Rating during active Pulse Drop</td>
+<td>+20 (2× multiplier)</td>
+</tr>
+<tr>
+<td>High accuracy bonus</td>
+<td>Up to +10 extra based on proximity to venue average</td>
+</tr>
+<tr>
+<td>Quick Pulse (check-in signal)</td>
+<td>+3</td>
+</tr>
+<tr>
+<td>Streak milestones</td>
+<td>+5 / +15 / +30 / +50 (3d/7d/14d/30d)</td>
+</tr>
+</tbody></table>
+<h3>6.2 Spending Clout</h3>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Clout Cost</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Skip 30-minute rating cooldown</td>
+<td>50 clout</td>
+</tr>
+</tbody></table>
+<h3>6.3 Scout Tiers</h3>
+<p>Tiers unlock leaderboard status and social credibility within the app. They are computed from rating volume + accuracy:</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Requirement</th>
+<th>Badge Color</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>newbie</code></td>
+<td>&lt; 10 ratings</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>regular</code></td>
+<td>≥ 10 ratings</td>
+<td>Bronze</td>
+</tr>
+<tr>
+<td><code>scout</code></td>
+<td>≥ 20 ratings + ≥ 70% accuracy</td>
+<td>Silver</td>
+</tr>
+<tr>
+<td><code>elite</code></td>
+<td>≥ 50 ratings + ≥ 80% accuracy</td>
+<td>Gold</td>
+</tr>
+</tbody></table>
+<p><strong>Accuracy</strong> is computed per rating: <code>accuracy = 100 - |submitted_score - venue_avg|</code>. A scout who consistently reads venues accurately (within 10 points of consensus) achieves elite status faster than one who churns volume with wild estimates.</p>
+<h3>6.4 Rating Cooldowns &amp; Anti-Gaming</h3>
+<ul>
+<li><strong>30-minute cooldown</strong> between ratings at the same venue (prevents flood from a single user).</li>
+<li><strong>3 ratings max per venue per 24 hours</strong> (hard cap).</li>
+<li><strong>Cooldown skip:</strong> 50 clout (creates a meaningful cost to gaming frequency).</li>
+<li><strong>Geofence enforcement:</strong> Rating rejected if GPS coordinates are outside the venue radius (default 100m; events/festivals get 500m).</li>
+</ul>
+<hr>
+<h2>7. Anti-Manipulation Layer</h2>
+<h3>7.1 Burst Detection (Provisional Ratings)</h3>
+<p>If an abnormal volume of ratings arrives at a single venue within a short window, they are flagged <code>provisional: true</code> and excluded from the aggregate until <code>provisional_until</code> passes. This kills coordinated rating floods from promoter teams. Provisional ratings are stored but silently downweighted.</p>
+<h3>7.2 Aura Shield</h3>
+<p>A merchant can configure an Aura Shield on their venue:</p>
+<ul>
+<li>Set a score threshold (e.g., 50).</li>
+<li>Set alert triggers: <code>score_drop</code>, <code>gate_blocked</code>, <code>capacity_full</code>.</li>
+<li>Receive a push notification the moment any trigger fires.</li>
+</ul>
+<p>This gives merchants a direct signal when they need to respond — send a performer, open a second bar, address gate issues.</p>
+<h3>7.3 VIIBE Certified Badge</h3>
+<p>The highest trust signal on the platform. A venue earns <strong>VIIBE Certified</strong> status only when <strong>both</strong> of these are simultaneously true:</p>
+<ul>
+<li><code>current_vibe_score ≥ 85</code></li>
+<li><code>total_ratings_24h ≥ 80</code></li>
+</ul>
+<p>You cannot buy this. You cannot fake it. It requires genuine peak activity AND a critical mass of real scouts reporting in. It expires as soon as either condition falls.</p>
+<hr>
+<h2>8. Feature Set — Public Floor</h2>
+<h3>8.1 Venue Map</h3>
+<p>Interactive map showing all venues in the selected city. Venue pins render with colour-coded energy state overlays (quiet=grey, chill=blue, warming=yellow, charged=orange, lit=purple, peak=red). Tapping a pin opens a venue summary card. Long press opens the full venue detail page.</p>
+<h3>8.2 Venue Detail Page</h3>
+<p>Full profile for a single venue including:</p>
+<ul>
+<li>Live score + energy badge</li>
+<li>24-hour timeline chart (hourly energy + score)</li>
+<li>Vibe Oracle (predicted peak time + confidence)</li>
+<li>AI Roast (humorous AI-generated venue commentary)</li>
+<li>Vibe Forecast (next 2-hour prediction)</li>
+<li>Top Scouts (top 5 raters at this venue)</li>
+<li>Check-in button</li>
+<li>Rate Vibe button (geofenced)</li>
+</ul>
+<h3>8.3 Vibe Oracle</h3>
+<p>Heuristic-based peak time prediction. Uses:</p>
+<ul>
+<li><strong>Base confidence</strong> per venue type (e.g., club=82%, block_party=88%)</li>
+<li><strong>Velocity delta:</strong> +8 if heating_up, -10 if cooling_down</li>
+<li><strong>Activity delta:</strong> +5 if &gt;30 ratings in 24h, -5 if &lt;10</li>
+<li><strong>Peak windows</strong> per venue type × day of week (weekday vs weekend)</li>
+</ul>
+<p>Oracle outputs: headline, peak window (start + end), best arrival time (45 minutes before peak), trajectory, confidence score, and context signals (day of week, velocity, genre, certification).</p>
+<p>When <code>ANTHROPIC_API_KEY</code> is set, the Night Planner (§8.5) upgrades to Claude. Oracle itself remains heuristic — deterministic and auditable.</p>
+<h3>8.4 Vibe DNA</h3>
+<p>Personalised affinity fingerprint computed from the user&#39;s full rating history:</p>
+<ul>
+<li>Groups all ratings by venue type the user rated</li>
+<li>Computes average vibe score per venue type</li>
+<li>Normalises to 0–100 scale relative to their highest-scoring type</li>
+<li>Outputs: ranked affinity bars (e.g., &quot;Club 96 · Block Party 91 · Lounge 68&quot;)</li>
+<li>Night style: <code>early_bird</code> (arrives before 10pm), <code>night_owl</code> (peaks after midnight), <code>midnight_crew</code></li>
+<li>Requires minimum 3 ratings to unlock</li>
+</ul>
+<p>DNA is used to power personalised venue sort order in the feed — your top affinity types surface higher.</p>
+<h3>8.5 Night Planner</h3>
+<p>Conversational AI venue recommendation:</p>
+<ul>
+<li><strong>Rules path:</strong> Keyword scoring on message text (area, genre, budget, venue type, group size keywords). Fast, always available.</li>
+<li><strong>Claude path:</strong> Activates when <code>ANTHROPIC_API_KEY</code> is set. Sends full venue context (live scores, energy, capacity, gate, genre) to <code>claude-haiku-4-5</code> as a structured system prompt. Returns JSON: <code>{reply, venue_ids, follow_up_prompts}</code>.</li>
+<li>Follow-up chips allow multi-turn conversation without typing.</li>
+</ul>
+<h3>8.6 City Pulse</h3>
+<p>Live city heartbeat aggregated across all active venues:</p>
+<ul>
+<li><strong>Pulse score:</strong> Weighted average of all active venue scores (weighted by <code>total_ratings_24h</code>)</li>
+<li><strong>Active scouts:</strong> Unique users who rated or reacted in the last hour</li>
+<li><strong>Hot venues:</strong> Count of venues with score ≥ 65</li>
+<li><strong>30-minute sparkline:</strong> 6 data points in 5-minute buckets</li>
+<li><strong>Trend:</strong> <code>heating_up</code> / <code>stable</code> / <code>cooling_down</code> based on sparkline direction</li>
+<li><strong>Pulse tiers:</strong> QUIET → CHILL → WARMING → LIT → PEAK label on the overall city score</li>
+</ul>
+<h3>8.7 Bolt Reactions (VIIBE+ Only)</h3>
+<p>Live reaction mechanic exclusive to VIIBE+ subscribers:</p>
+<ul>
+<li>Tap the bolt icon on any venue detail page to send a live reaction signal.</li>
+<li>Rate cap: 60 taps per user per minute per venue (anti-spam).</li>
+<li>Response: <code>reactions_per_min</code> + <code>active_scouts</code> in the current 5-minute window.</li>
+<li>VIIBE+ gate: Tapping without a subscription presents the upgrade modal.</li>
+</ul>
+<h3>8.8 Crew / Squad Features</h3>
+<ul>
+<li>Create a crew (named group) and invite friends via invite link.</li>
+<li>In live mode, crew members&#39; active check-ins appear on the map with their avatar.</li>
+<li>Privacy toggle: location sharing is opt-in per session.</li>
+<li><code>avatar_config</code> stored per user (emoji + background colour) persists to crew map markers.</li>
+</ul>
+<h3>8.9 Check-In System</h3>
+<ul>
+<li>Scouts check in to venues they are physically at.</li>
+<li>Check-in creates a record with <code>status: active</code>, expires 4 hours after creation.</li>
+<li>Required for crew live mode to display your location.</li>
+<li>Feeds the crew coordination map.</li>
+</ul>
+<h3>8.10 VIIBE+ Subscription</h3>
+<p>Premium tier at ₦1,500/month (≈$1 USD):</p>
+<ul>
+<li>Bolt reactions</li>
+<li>Priority feed placement</li>
+<li>Exclusive persona badges</li>
+<li>Early access to new features</li>
+</ul>
+<p>Powered by Paystack (Nigerian payment processor). Subscription state stored in MongoDB and verified at feature access points.</p>
+<hr>
+<h2>9. Feature Set — Merchant Floor</h2>
+<h3>9.1 Live Dashboard</h3>
+<ul>
+<li>Real-time vibe score + energy state for their assigned venue</li>
+<li>Rating volume trend (last hour vs previous hour)</li>
+<li>Capacity breakdown pie (what scouts are reporting)</li>
+<li>Gate status indicator</li>
+<li>Velocity label (heating_up / stable / cooling_down)</li>
+</ul>
+<h3>9.2 Vibe Intelligence Card</h3>
+<p>AI-generated weekly insights (powered by Claude when API key is set). Surfaces patterns like &quot;Your venue peaks 45 minutes later on Saturdays&quot; or &quot;Gate reports are your biggest drag on score.&quot;</p>
+<h3>9.3 Pulse Drops (Paid Boosts)</h3>
+<p>Merchants purchase Pulse Drops to amplify their venue&#39;s presence:</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Price</th>
+<th>Duration</th>
+<th>Radius</th>
+<th>Glow Boost</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Spark</td>
+<td>₦5,000</td>
+<td>2 hours</td>
+<td>2km</td>
+<td>+20 to score</td>
+</tr>
+<tr>
+<td>Flare</td>
+<td>₦15,000</td>
+<td>4 hours</td>
+<td>5km</td>
+<td>+40 to score</td>
+</tr>
+<tr>
+<td>Supernova</td>
+<td>₦50,000</td>
+<td>8 hours</td>
+<td>50km</td>
+<td>+100 to score</td>
+</tr>
+</tbody></table>
+<p>During a Pulse Drop, the venue appears at the top of the sponsored section in the trending feed, and scouts who rate the venue earn 2× clout (incentivising real reports during the paid window).</p>
+<h3>9.4 Aura Shield</h3>
+<p>Configurable early warning system (see §7.2).</p>
+<h3>9.5 Wallet</h3>
+<ul>
+<li>Merchants maintain an in-app wallet funded via Paystack top-up.</li>
+<li>Minimum top-up: ₦1,000.</li>
+<li>Platform fee: 10% on all wallet spend.</li>
+<li>Wallet balance used for Pulse Drops and campaigns.</li>
+</ul>
+<hr>
+<h2>10. Technical Architecture</h2>
+<h3>10.1 Frontend</h3>
+<ul>
+<li><strong>Framework:</strong> React Native via Expo SDK 54 (Expo Router v5, file-based routing)</li>
+<li><strong>Styling:</strong> NativeWind + custom theme tokens</li>
+<li><strong>State management:</strong> Zustand v5 with <code>persist</code> middleware → AsyncStorage</li>
+<li><strong>Real-time:</strong> Socket.IO client for venue score updates and leaderboard broadcasts</li>
+<li><strong>Navigation:</strong> Expo Router file-based: <code>/(public)</code>, <code>/(merchant)</code>, <code>/(admin)</code>, <code>/venue/[id]</code></li>
+</ul>
+<h3>10.2 Backend (Railway — Primary)</h3>
+<ul>
+<li><strong>Framework:</strong> FastAPI (Python 3.11) with Motor (async MongoDB driver)</li>
+<li><strong>Database:</strong> MongoDB Atlas (Motor 3.6.0 / pymongo 4.9.2)</li>
+<li><strong>Real-time:</strong> Socket.IO (python-socketio) server running on the same process</li>
+<li><strong>Payments:</strong> Paystack API (Nigerian processor)</li>
+<li><strong>Notifications:</strong> Expo Push Notification API (non-blocking fire-and-forget)</li>
+<li><strong>AI:</strong> <code>anthropic</code> Python SDK (Claude Haiku 4.5) for Night Planner + Vibe Intelligence</li>
+<li><strong>Deployment:</strong> Railway with Dockerfile builder. Start command: <code>uvicorn server:socket_app --host 0.0.0.0 --port $PORT</code></li>
+</ul>
+<h3>10.3 Backend (Vercel — Secondary Entry Point)</h3>
+<p>A separate <code>BaseHTTPRequestHandler</code> implementation (<code>backend/api/index.py</code>) that handles requests routed through Vercel&#39;s serverless Python runtime. It mirrors all Railway routes using synchronous pymongo. This exists because Vercel&#39;s Python runtime has issues with FastAPI&#39;s <code>issubclass</code> introspection — the handler pattern bypasses this.</p>
+<p><strong>Critical:</strong> Both entry points must be kept in sync. <code>server.py</code> routes ↔ <code>api/index.py</code> handlers. Any new endpoint must be added to both.</p>
+<h3>10.4 Routing Architecture</h3>
+<pre><code>User → Vercel Frontend (vibe-app-hc83.vercel.app)
+  └── /api/* rewrites → Railway backend (vibeapp-production-1835.up.railway.app)
+  └── Vercel also hosts api/index.py as a serverless fallback
+</code></pre>
+<p>All <code>/api/*</code> traffic from the frontend goes to Railway via Vercel rewrites. The <code>api/index.py</code> serverless function is a resilience fallback.</p>
+<h3>10.5 Database Schema (MongoDB)</h3>
+<p><strong>Collections:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Collection</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>venues</code></td>
+<td>Venue profiles with live score fields</td>
+</tr>
+<tr>
+<td><code>users</code></td>
+<td>User accounts, clout, scout status, avatar config</td>
+</tr>
+<tr>
+<td><code>ratings</code></td>
+<td>Individual vibe ratings submitted by scouts</td>
+</tr>
+<tr>
+<td><code>vibe_snapshots</code></td>
+<td>Time-series score snapshots per venue (timeline source)</td>
+</tr>
+<tr>
+<td><code>user_sessions</code></td>
+<td>JWT session tokens with expiry</td>
+</tr>
+<tr>
+<td><code>checkins</code></td>
+<td>Active check-in records (4h TTL)</td>
+</tr>
+<tr>
+<td><code>crews</code></td>
+<td>Squad/crew groups and member arrays</td>
+</tr>
+<tr>
+<td><code>reactions</code></td>
+<td>Bolt reaction events (per user per venue per timestamp)</td>
+</tr>
+<tr>
+<td><code>quick_pulses</code></td>
+<td>Quick pulse check-ins (15-min cooldown source)</td>
+</tr>
+<tr>
+<td><code>cooldown_skips</code></td>
+<td>Clout-spend records for cooldown bypasses</td>
+</tr>
+<tr>
+<td><code>pulse_drops</code></td>
+<td>Active merchant boost purchases</td>
+</tr>
+<tr>
+<td><code>aura_shields</code></td>
+<td>Merchant alert configurations</td>
+</tr>
+<tr>
+<td><code>subscriptions</code></td>
+<td>VIIBE+ subscriber records</td>
+</tr>
+<tr>
+<td><code>stories</code></td>
+<td>Short-lived venue stories (24h TTL, media_url)</td>
+</tr>
+<tr>
+<td><code>platform_config</code></td>
+<td>Global platform settings (clout rates, cooldowns)</td>
+</tr>
+<tr>
+<td><code>config</code></td>
+<td>Economy config (Pulse Drop pricing, campaign pricing)</td>
+</tr>
+</tbody></table>
+<h3>10.6 Authentication</h3>
+<ul>
+<li>Phone-number based OTP flow for public users (Nigerian phone validation)</li>
+<li>Session tokens (UUID) stored in <code>user_sessions</code>, 30-day expiry</li>
+<li>Bearer token passed in <code>Authorization</code> header on all authenticated requests</li>
+<li><code>get_current_user()</code> helper validates token + expiry on every protected endpoint</li>
+<li>Admin/merchant roles stored as boolean flags on user document (<code>is_admin</code>, <code>is_super_admin</code>, <code>is_merchant</code>)</li>
+</ul>
+<hr>
+<h2>11. Measurement System — Complete Reference</h2>
+<h3>Input Vocabulary (What Scouts Submit)</h3>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Valid Values</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Energy</td>
+<td><code>quiet</code>, <code>chill</code>, <code>warming</code>, <code>lit</code>, <code>peak</code></td>
+<td>Required. Primary signal (80% of score).</td>
+</tr>
+<tr>
+<td>Capacity</td>
+<td><code>sparse</code>, <code>vibrant</code>, <code>full</code></td>
+<td>Required. Multiplier on score.</td>
+</tr>
+<tr>
+<td>Gate</td>
+<td><code>clear</code>, <code>slow</code>, <code>blocked</code></td>
+<td>Required. Context only — not scored.</td>
+</tr>
+<tr>
+<td>Venue-specific</td>
+<td>See §5.2</td>
+<td>Optional. Secondary signal (20% of score).</td>
+</tr>
+</tbody></table>
+<p><strong>Legacy mapping</strong> (backward compatibility for older app versions):</p>
+<pre><code>electric → peak | popping → lit | dead → quiet | buzzing → lit | good_vibes → lit
+</code></pre>
+<h3>Output Vocabulary (What Users See)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Source</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>current_vibe_score</code></td>
+<td>Aggregation</td>
+<td>0–100 (float, rounded to 1dp)</td>
+</tr>
+<tr>
+<td><code>energy_level</code></td>
+<td>Max-count energy from last 60min</td>
+<td><code>quiet / chill / warming / lit / peak</code></td>
+</tr>
+<tr>
+<td><code>vibe_state</code></td>
+<td>Derived: score + capacity → display label</td>
+<td><code>quiet / chill / warming / charged / lit / peak</code></td>
+</tr>
+<tr>
+<td><code>vibe_velocity</code></td>
+<td>Recent vs older rating volume ratio</td>
+<td><code>heating_up / stable / cooling_down</code></td>
+</tr>
+<tr>
+<td><code>capacity_level</code></td>
+<td>Max-count capacity from last 60min</td>
+<td><code>sparse / vibrant / full</code></td>
+</tr>
+<tr>
+<td><code>gate_level</code></td>
+<td>Max-count gate from last 60min</td>
+<td><code>clear / slow / blocked</code></td>
+</tr>
+<tr>
+<td><code>viibe_certified</code></td>
+<td>score ≥ 85 AND ratings_24h ≥ 80</td>
+<td>Boolean</td>
+</tr>
+</tbody></table>
+<h3>Velocity Calculation</h3>
+<pre><code class="language-python">recent_count = ratings in last 15 minutes
+older_count = ratings in 15–60 minutes
+
+if recent_count &gt; older_count × 1.5: velocity = &quot;heating_up&quot;
+elif recent_count &lt; older_count × 0.5: velocity = &quot;cooling_down&quot;
+else: velocity = &quot;stable&quot;
+</code></pre>
+<h3>Scoring Thresholds Summary</h3>
+<pre><code>Score ≥ 85 + ratings_24h ≥ 80 → VIIBE Certified
+Score ≥ 85                     → peak state
+Score ≥ 65                     → lit state
+Score 45–64, crowd full/vibrant → charged state
+Score 45–64, crowd sparse       → warming state
+Score 20–44                    → chill state
+Score &lt; 20                     → quiet state
+</code></pre>
+<hr>
+<h2>12. Cities &amp; Geographic Coverage</h2>
+<p>VIIBE is currently live in 4 Nigerian cities:</p>
+<table>
+<thead>
+<tr>
+<th>City</th>
+<th>Center Coordinates</th>
+<th>Coverage Radius</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Lagos</td>
+<td>6.5244°N, 3.3792°E</td>
+<td>50km</td>
+</tr>
+<tr>
+<td>Abuja</td>
+<td>9.0579°N, 7.4951°E</td>
+<td>40km</td>
+</tr>
+<tr>
+<td>Port Harcourt</td>
+<td>4.8156°N, 7.0498°E</td>
+<td>30km</td>
+</tr>
+<tr>
+<td>Ibadan</td>
+<td>7.3775°N, 3.9470°E</td>
+<td>35km</td>
+</tr>
+</tbody></table>
+<p>Launch strategy is Lagos-first, specifically the Island corridor (Victoria Island, Lekki, Ikoyi) where nightlife density and smartphone penetration are highest.</p>
+<hr>
+<h2>13. Venue Types</h2>
+<p>VIIBE supports 9 venue categories, each with type-specific scoring dimensions:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Venue-Specific Dimension</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>club</code></td>
+<td>DJ set quality (mellow / good_set / killing_it)</td>
+</tr>
+<tr>
+<td><code>bar</code></td>
+<td>Atmosphere (quiet_atm / decent_atm / loud_alive)</td>
+</tr>
+<tr>
+<td><code>lounge</code></td>
+<td>Service vibe (slow_service / decent_service / on_point)</td>
+</tr>
+<tr>
+<td><code>restaurant</code></td>
+<td>Crowd energy (flat_crowd / building_crowd / going_off)</td>
+</tr>
+<tr>
+<td><code>concert</code></td>
+<td>Crowd response (flat_crowd / building_crowd / going_off)</td>
+</tr>
+<tr>
+<td><code>rave</code></td>
+<td>DJ set quality (same as club)</td>
+</tr>
+<tr>
+<td><code>block_party</code></td>
+<td>Movement (standing_around / mixed_movement / packed_dancing)</td>
+</tr>
+<tr>
+<td><code>event</code></td>
+<td>Crowd response (same as concert)</td>
+</tr>
+<tr>
+<td><code>church</code></td>
+<td>(Standard energy model applies)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>14. Test Accounts (Production)</h2>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Phone</th>
+<th>Username</th>
+<th>Access</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Super Admin</td>
+<td>+2340000000000</td>
+<td>admin</td>
+<td>/admin</td>
+</tr>
+<tr>
+<td>Merchant</td>
+<td>+2341111111111</td>
+<td>merchant_demo</td>
+<td>/merchant (Club Quilox)</td>
+</tr>
+<tr>
+<td>Scout</td>
+<td>+2341234567890</td>
+<td>vibe_tester</td>
+<td>public floor</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>15. Known Limitations &amp; Pending Work</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Priority</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Base64 story images</td>
+<td>ARCH</td>
+<td>Stories store raw base64 in MongoDB documents. No CDN. Will hit document size limits at scale. Needs Cloudinary/S3.</td>
+</tr>
+<tr>
+<td>Crew avatar_config in DB</td>
+<td>ARCH</td>
+<td>Live crew members may show blank avatars if they authenticated before avatar_config field was added to user schema.</td>
+</tr>
+<tr>
+<td>vibeStore.ts size</td>
+<td>ARCH</td>
+<td>Single 64KB Zustand store. Should be split by domain (auth, venues, crew, subscriptions, DNA).</td>
+</tr>
+<tr>
+<td>Live data fallbacks</td>
+<td>ARCH</td>
+<td>Most public floor features (stories, oracle, DNA, city pulse, planner) fall back to demo constants when API returns empty. Live users see demo data until enough real data accumulates.</td>
+</tr>
+<tr>
+<td>Merchant venue onboarding</td>
+<td>MISSING</td>
+<td>Merchants cannot self-register a venue. Admin must manually assign. Onboarding flow not built.</td>
+</tr>
+<tr>
+<td>Unit tests</td>
+<td>MISSING</td>
+<td>No automated tests for scoring logic, aggregation pipeline, or anti-cheat rules.</td>
+</tr>
+</tbody></table>
+<hr>
+<p><em>Document maintained alongside the codebase. Authoritative source for scoring logic: <code>backend/app/services/vibe.py</code> (Railway) and <code>backend/api/index.py</code> (Vercel).</em></p>
+
+</body>
+</html>

@@ -3,12 +3,15 @@ Vibe DNA — Scout taste fingerprint from rating + tap history.
 
 Rating affinities: which venue types you rate highest (how much you enjoy them).
 Tap affinities: which venue types you electrify most (where you drop bolts).
+Time patterns: when they go out, which days, how their taste evolves.
+Area patterns: which neighbourhoods they frequent.
 
-Both signals together give a full picture of who you are in the scene.
+All signals compound over time — the more they rate, the sharper the DNA.
 
 Routes:
-  GET /users/{user_id}/dna   — public taste fingerprint
+  GET /users/{user_id}/dna   — full taste fingerprint + intelligence signals
 """
+from collections import Counter
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from app.config import db
@@ -110,6 +113,74 @@ async def _compute_dna(user_id: str) -> dict:
 
     top_tap_type = tap_affinities[0]["venue_type"] if tap_affinities else None
 
+    # ── Day-of-week patterns ─────────────────────────────────────────────────
+    day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    day_counts: Counter = Counter()
+    for r in ratings:
+        ts = r.get("timestamp")
+        if ts and isinstance(ts, datetime):
+            day_counts[ts.weekday()] += 1
+
+    day_pattern = [
+        {"day": day_names[i], "count": day_counts.get(i, 0)}
+        for i in range(7)
+    ]
+    peak_day_idx = day_counts.most_common(1)[0][0] if day_counts else 5  # default Saturday
+    peak_day = day_names[peak_day_idx]
+
+    # ── Neighbourhood preferences ────────────────────────────────────────────
+    area_counts: Counter = Counter()
+    for r in ratings:
+        vid = r.get("venue_id")
+        if vid in venue_cache:
+            vt = venue_cache[vid]
+        else:
+            v = await db.venues.find_one({"id": vid}, {"area": 1})
+            area_counts[v.get("area", "unknown") if v else "unknown"] += 1
+            continue
+        v = await db.venues.find_one({"id": vid}, {"area": 1})
+        if v:
+            area_counts[v.get("area", "unknown")] += 1
+
+    top_areas = [
+        {"area": area, "count": cnt}
+        for area, cnt in area_counts.most_common(5)
+        if area != "unknown"
+    ]
+
+    # ── Taste evolution: recent (last 30) vs older ───────────────────────────
+    recent_ratings  = ratings[:30]
+    older_ratings   = ratings[30:]
+    recent_types: Counter = Counter()
+    older_types: Counter  = Counter()
+    for r in recent_ratings:
+        vt = venue_cache.get(r.get("venue_id", ""), "other")
+        recent_types[vt] += 1
+    for r in older_ratings:
+        vt = venue_cache.get(r.get("venue_id", ""), "other")
+        older_types[vt] += 1
+
+    # Did their most-rated type shift?
+    taste_shifting = (
+        recent_types.most_common(1)[0][0] != older_types.most_common(1)[0][0]
+        if recent_types and older_types
+        else False
+    )
+
+    # ── Energy preference ────────────────────────────────────────────────────
+    energy_map = {"quiet": 1, "chill": 2, "warming": 3, "charged": 4, "lit": 5, "peak": 6}
+    energy_scores = []
+    for r in ratings:
+        e = r.get("energy", "chill")
+        energy_scores.append(energy_map.get(e, 2))
+    avg_energy_pref = round(sum(energy_scores) / len(energy_scores), 1) if energy_scores else 3.0
+    energy_label = (
+        "Peak Seeker"   if avg_energy_pref >= 5 else
+        "High Energy"   if avg_energy_pref >= 4 else
+        "Mid Vibration" if avg_energy_pref >= 3 else
+        "Low Key"
+    )
+
     return {
         "user_id": user_id,
         "affinities": affinities,
@@ -120,6 +191,15 @@ async def _compute_dna(user_id: str) -> dict:
         "tap_affinities": tap_affinities,
         "top_tap_type": top_tap_type,
         "total_bolts_analyzed": sum(tap_type_counts.values()),
+        # ── Intelligence expansion ──
+        "day_pattern": day_pattern,
+        "peak_day": peak_day,
+        "top_areas": top_areas,
+        "energy_preference": {
+            "avg_score": avg_energy_pref,
+            "label": energy_label,
+        },
+        "taste_shifting": taste_shifting,
         "computed_at": datetime.now(timezone.utc).isoformat(),
     }
 

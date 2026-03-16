@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VIIBE — Financial Model 2026–2030</title>
+  <style>
+    
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #060a0f;
+    color: #d0d8e0;
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 12.5px;
+    line-height: 1.65;
+  }
+
+  /* Header strip */
+  body::before {
+    content: 'VIIBE — FINANCIAL MODEL · SEED ROUND 2026';
+    display: block;
+    background: linear-gradient(90deg, #0d1b2a, #0a1628);
+    color: #4a7fa0;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 10px 60px;
+    border-bottom: 1px solid #0d2035;
+  }
+
+  h1 {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #22d3ee, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    padding: 48px 60px 8px;
+  }
+
+  h1 + p em {
+    display: block;
+    padding: 0 60px 40px;
+    color: #4a7fa0;
+    font-size: 12px;
+    font-style: normal;
+  }
+
+  h2 {
+    page-break-before: always;
+    font-size: 26px;
+    font-weight: 800;
+    color: #f59e0b;
+    padding: 56px 60px 0;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+    border-top: none;
+  }
+
+  h2::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 3px;
+    background: #f59e0b;
+    margin-bottom: 16px;
+    border-radius: 2px;
+  }
+
+  h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #38bdf8;
+    margin: 28px 60px 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #a3e635;
+    margin: 20px 60px 8px;
+  }
+
+  p {
+    margin: 0 60px 14px;
+    color: #8ea8c0;
+    font-size: 12.5px;
+  }
+
+  strong { color: #e8f0f8; font-weight: 700; }
+
+  ul, ol {
+    margin: 0 60px 16px 80px;
+    color: #8ea8c0;
+  }
+
+  li { margin-bottom: 5px; font-size: 12.5px; }
+  li strong { color: #e8f0f8; }
+  ul li::marker { color: #38bdf8; }
+
+  table {
+    width: calc(100% - 120px);
+    margin: 20px 60px 28px;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #0d2035;
+  }
+
+  thead { background: #091525; border-bottom: 2px solid #1e4060; }
+
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #7ab0d0;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #0d1f30;
+    color: #99b8cc;
+    vertical-align: top;
+    font-variant-numeric: tabular-nums;
+  }
+
+  tbody tr:nth-child(even) td { background: #060e18; }
+  tbody tr:last-child td { border-bottom: none; background: #0a1828; font-weight: 700; }
+
+  /* Bold/total rows */
+  td strong { color: #e8f0f8; }
+
+  /* Positive numbers (₦ revenue) */
+  td:nth-child(n+2) { font-family: 'Fira Code', monospace; }
+
+  blockquote {
+    margin: 20px 60px 24px;
+    padding: 16px 20px;
+    background: #060f1a;
+    border: 1px solid #0d2035;
+    border-left: 3px solid #22d3ee;
+    border-radius: 0 8px 8px 0;
+    color: #b0ccd8;
+  }
+
+  blockquote p { margin: 0; color: #b0ccd8; }
+
+  pre {
+    margin: 16px 60px 24px;
+    padding: 18px 22px;
+    background: #060f1a;
+    border: 1px solid #0d2035;
+    border-radius: 8px;
+  }
+
+  pre code { background: none; color: #a3e635; font-size: 12px; }
+  code { background: #0a1828; color: #f59e0b; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+
+  hr {
+    border: none;
+    border-top: 1px solid #0d2035;
+    margin: 32px 60px;
+  }
+
+
+    /* Print / PDF settings */
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
+  </style>
+</head>
+<body>
+  <h1>VIIBE — Financial Model</h1>
+<p><em>Seed Round | 5-Year Projections (2026–2030)</em>
+<em>All figures in Nigerian Naira (₦) unless stated. Conversion rate: ₦1,500 = $1 USD</em></p>
+<hr>
+<h2>SECTION 1 — KEY ASSUMPTIONS</h2>
+<h3>Exchange Rate &amp; Market</h3>
+<ul>
+<li>₦1,500 = $1 USD (conservative, based on parallel market average Q1 2026)</li>
+<li>Nigeria population: 220M | Lagos: 15–20M | Urban smartphone users Lagos: ~8M</li>
+<li>Annual entertainment spend (Nigeria): ₦2.3T ($1.53B USD)</li>
+<li>Licensed nightlife venues in Lagos: ~4,000 (clubs, bars, lounges, restaurants with nightlife component)</li>
+<li>Target venue market penetration by Year 3: 20% = 800 active merchant venues</li>
+</ul>
+<h3>Product Pricing (Fixed for projection period)</h3>
+<table>
+<thead>
+<tr>
+<th>Product</th>
+<th>Price</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>VIIBE+ Monthly</td>
+<td>₦1,500</td>
+<td>~$1 USD. Deliberately low to maximise penetration</td>
+</tr>
+<tr>
+<td>Pulse Drop — Spark</td>
+<td>₦5,000</td>
+<td>2h, 2km radius, +20 score boost</td>
+</tr>
+<tr>
+<td>Pulse Drop — Flare</td>
+<td>₦15,000</td>
+<td>4h, 5km radius, +40 score boost</td>
+</tr>
+<tr>
+<td>Pulse Drop — Supernova</td>
+<td>₦50,000</td>
+<td>8h, city-wide, +100 score boost</td>
+</tr>
+<tr>
+<td>Pulse Drop — Average</td>
+<td>₦15,000</td>
+<td>Weighted average (40% Spark, 40% Flare, 20% Supernova)</td>
+</tr>
+<tr>
+<td>Campaign — Average</td>
+<td>₦8,000</td>
+<td>Mid-point across 2×/3× duration tiers</td>
+</tr>
+<tr>
+<td>Data API</td>
+<td>₦50,000/month</td>
+<td>Per enterprise subscriber. Activated Year 2 (Month 18+)</td>
+</tr>
+</tbody></table>
+<h3>User &amp; Merchant Growth Assumptions</h3>
+<ul>
+<li>MAU growth: grassroots scout ambassador program + word of mouth + creator partnerships</li>
+<li>Merchant growth: direct sales (1 AE from Month 6) + product-led (merchants see their own data)</li>
+<li>VIIBE+ conversion: 5% of MAU (consumer apps globally 2–8%; 5% is conservative for a habit-forming utility)</li>
+<li>Merchant activity: avg 3 Pulse Drops/month + 1 campaign/quarter per active merchant</li>
+<li>Platform fee on wallet spend: 10% (taken from Paystack top-ups before spend)</li>
+<li>Churn (VIIBE+): 6% monthly | Churn (Merchant): 4% monthly</li>
+</ul>
+<h3>Cost Assumptions</h3>
+<ul>
+<li>Paystack processing fee: 1.5% + ₦100 per transaction</li>
+<li>MongoDB Atlas: $57/month (M10 shared cluster, scales to M30 at $200/mo by Year 2)</li>
+<li>Railway (backend): $20/month base, scales to $80/mo by Year 2</li>
+<li>Vercel (frontend): $20/month (Pro plan)</li>
+<li>Claude API (Haiku 4.5): $0.25/M input tokens, $1.25/M output tokens — estimated ₦3,000/month Year 1, ₦15,000/month Year 2</li>
+<li>Expo push notifications: Free tier covers first 10K/month; negligible cost thereafter</li>
+<li>Infrastructure TOTAL: ₦130K/month Year 1 → ₦300K/month Year 2</li>
+</ul>
+<hr>
+<h2>SECTION 2 — REVENUE MODEL</h2>
+<h3>Stream 1: VIIBE+ Subscriptions</h3>
+<p><em>Monthly recurring revenue from consumer premium tier.</em></p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>MAU</th>
+<th>Conversion %</th>
+<th>Subscribers</th>
+<th>MRR (₦)</th>
+<th>ARR (₦)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Month 6</td>
+<td>1,000</td>
+<td>5%</td>
+<td>50</td>
+<td>75,000</td>
+<td>900,000</td>
+</tr>
+<tr>
+<td>Month 12</td>
+<td>5,000</td>
+<td>5%</td>
+<td>250</td>
+<td>375,000</td>
+<td>4,500,000</td>
+</tr>
+<tr>
+<td>Month 18</td>
+<td>12,000</td>
+<td>5%</td>
+<td>600</td>
+<td>900,000</td>
+<td>10,800,000</td>
+</tr>
+<tr>
+<td>Month 24</td>
+<td>25,000</td>
+<td>5%</td>
+<td>1,250</td>
+<td>1,875,000</td>
+<td>22,500,000</td>
+</tr>
+<tr>
+<td>Month 36</td>
+<td>80,000</td>
+<td>5%</td>
+<td>4,000</td>
+<td>6,000,000</td>
+<td>72,000,000</td>
+</tr>
+<tr>
+<td>Month 48</td>
+<td>200,000</td>
+<td>5%</td>
+<td>10,000</td>
+<td>15,000,000</td>
+<td>180,000,000</td>
+</tr>
+<tr>
+<td>Month 60</td>
+<td>500,000</td>
+<td>5%</td>
+<td>25,000</td>
+<td>37,500,000</td>
+<td>450,000,000</td>
+</tr>
+</tbody></table>
+<h3>Stream 2: Pulse Drops (Merchant Paid Boosts)</h3>
+<p><em>Transaction revenue from merchant visibility purchases.</em></p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Active Merchants</th>
+<th>Drops/Month/Merchant</th>
+<th>Avg Price (₦)</th>
+<th>MRR (₦)</th>
+<th>ARR (₦)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Month 6</td>
+<td>15</td>
+<td>2</td>
+<td>10,000</td>
+<td>300,000</td>
+<td>3,600,000</td>
+</tr>
+<tr>
+<td>Month 12</td>
+<td>50</td>
+<td>2.5</td>
+<td>12,000</td>
+<td>1,500,000</td>
+<td>18,000,000</td>
+</tr>
+<tr>
+<td>Month 18</td>
+<td>150</td>
+<td>3</td>
+<td>15,000</td>
+<td>6,750,000</td>
+<td>81,000,000</td>
+</tr>
+<tr>
+<td>Month 24</td>
+<td>300</td>
+<td>3</td>
+<td>15,000</td>
+<td>13,500,000</td>
+<td>162,000,000</td>
+</tr>
+<tr>
+<td>Month 36</td>
+<td>800</td>
+<td>3.5</td>
+<td>16,000</td>
+<td>44,800,000</td>
+<td>537,600,000</td>
+</tr>
+<tr>
+<td>Month 48</td>
+<td>1,500</td>
+<td>4</td>
+<td>17,000</td>
+<td>102,000,000</td>
+<td>1,224,000,000</td>
+</tr>
+<tr>
+<td>Month 60</td>
+<td>2,500</td>
+<td>4</td>
+<td>17,000</td>
+<td>170,000,000</td>
+<td>2,040,000,000</td>
+</tr>
+</tbody></table>
+<h3>Stream 3: Sponsored Campaigns</h3>
+<p><em>Merchant campaign purchases (2× / 3× clout multipliers for defined windows).</em></p>
+<p>Assumed as 25% of Pulse Drop revenue (campaigns are recurring but less frequent than drops):</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Campaign Revenue MRR (₦)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Month 12</td>
+<td>375,000</td>
+</tr>
+<tr>
+<td>Month 24</td>
+<td>3,375,000</td>
+</tr>
+<tr>
+<td>Month 36</td>
+<td>11,200,000</td>
+</tr>
+<tr>
+<td>Month 60</td>
+<td>42,500,000</td>
+</tr>
+</tbody></table>
+<h3>Stream 4: Data API (Enterprise)</h3>
+<p><em>Monthly subscriptions for aggregated venue intelligence. Activates Month 18.</em></p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Enterprise Subscribers</th>
+<th>MRR (₦)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Month 18</td>
+<td>2</td>
+<td>100,000</td>
+</tr>
+<tr>
+<td>Month 24</td>
+<td>5</td>
+<td>250,000</td>
+</tr>
+<tr>
+<td>Month 36</td>
+<td>15</td>
+<td>750,000</td>
+</tr>
+<tr>
+<td>Month 60</td>
+<td>50</td>
+<td>2,500,000</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>SECTION 3 — CONSOLIDATED REVENUE</h2>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th>VIIBE+ (₦)</th>
+<th>Pulse Drops (₦)</th>
+<th>Campaigns (₦)</th>
+<th>Data API (₦)</th>
+<th>TOTAL (₦)</th>
+<th>TOTAL (USD)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>2026 (Y1)</strong></td>
+<td>1,687,500</td>
+<td>4,500,000</td>
+<td>1,125,000</td>
+<td>0</td>
+<td><strong>8,312,500</strong></td>
+<td><strong>$5,542</strong></td>
+</tr>
+<tr>
+<td><strong>2027 (Y2)</strong></td>
+<td>11,250,000</td>
+<td>60,750,000</td>
+<td>15,187,500</td>
+<td>1,500,000</td>
+<td><strong>88,687,500</strong></td>
+<td><strong>$59,125</strong></td>
+</tr>
+<tr>
+<td><strong>2028 (Y3)</strong></td>
+<td>45,000,000</td>
+<td>245,000,000</td>
+<td>61,250,000</td>
+<td>6,000,000</td>
+<td><strong>357,250,000</strong></td>
+<td><strong>$238,167</strong></td>
+</tr>
+<tr>
+<td><strong>2029 (Y4)</strong></td>
+<td>112,500,000</td>
+<td>735,000,000</td>
+<td>183,750,000</td>
+<td>18,000,000</td>
+<td><strong>1,049,250,000</strong></td>
+<td><strong>$699,500</strong></td>
+</tr>
+<tr>
+<td><strong>2030 (Y5)</strong></td>
+<td>337,500,000</td>
+<td>1,530,000,000</td>
+<td>382,500,000</td>
+<td>30,000,000</td>
+<td><strong>2,280,000,000</strong></td>
+<td><strong>$1,520,000</strong></td>
+</tr>
+</tbody></table>
+<p><em>Y1 = Jan–Dec 2026 (partial ramp). Revenue is back-half weighted as scout network builds.</em></p>
+<hr>
+<h2>SECTION 4 — COST STRUCTURE</h2>
+<h3>4.1 Cost of Revenue (COGS)</h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Year 1</th>
+<th>Year 2</th>
+<th>Year 3</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Paystack fees (1.5% of GMV)</td>
+<td>₦124,688</td>
+<td>₦1,330,313</td>
+<td>₦5,358,750</td>
+</tr>
+<tr>
+<td>Infrastructure (hosting, DB, AI)</td>
+<td>₦1,560,000</td>
+<td>₦3,600,000</td>
+<td>₦6,000,000</td>
+</tr>
+<tr>
+<td>Push notifications (Expo)</td>
+<td>₦50,000</td>
+<td>₦200,000</td>
+<td>₦500,000</td>
+</tr>
+<tr>
+<td><strong>Total COGS</strong></td>
+<td><strong>₦1,734,688</strong></td>
+<td><strong>₦5,130,313</strong></td>
+<td><strong>₦11,858,750</strong></td>
+</tr>
+<tr>
+<td><strong>Gross Profit</strong></td>
+<td><strong>₦6,577,813</strong></td>
+<td><strong>₦83,557,188</strong></td>
+<td><strong>₦345,391,250</strong></td>
+</tr>
+<tr>
+<td><strong>Gross Margin</strong></td>
+<td><strong>79%</strong></td>
+<td><strong>94%</strong></td>
+<td><strong>97%</strong></td>
+</tr>
+</tbody></table>
+<h3>4.2 Operating Expenses</h3>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Year 1 (₦)</th>
+<th>Year 2 (₦)</th>
+<th>Year 3 (₦)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Personnel</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Founder (deferred)</td>
+<td>0</td>
+<td>3,600,000</td>
+<td>7,200,000</td>
+</tr>
+<tr>
+<td>Engineers (0→2)</td>
+<td>14,400,000</td>
+<td>28,800,000</td>
+<td>43,200,000</td>
+</tr>
+<tr>
+<td>Community Manager</td>
+<td>4,800,000</td>
+<td>7,200,000</td>
+<td>9,600,000</td>
+</tr>
+<tr>
+<td>Account Executive (from M6)</td>
+<td>3,000,000</td>
+<td>6,000,000</td>
+<td>7,200,000</td>
+</tr>
+<tr>
+<td><strong>Personnel Total</strong></td>
+<td><strong>22,200,000</strong></td>
+<td><strong>45,600,000</strong></td>
+<td><strong>67,200,000</strong></td>
+</tr>
+<tr>
+<td><strong>Sales &amp; Marketing</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Scout ambassador program</td>
+<td>3,375,000</td>
+<td>6,750,000</td>
+<td>9,000,000</td>
+</tr>
+<tr>
+<td>Creator partnerships</td>
+<td>1,500,000</td>
+<td>3,000,000</td>
+<td>6,000,000</td>
+</tr>
+<tr>
+<td>Events / activations</td>
+<td>1,125,000</td>
+<td>2,250,000</td>
+<td>4,500,000</td>
+</tr>
+<tr>
+<td><strong>S&amp;M Total</strong></td>
+<td><strong>6,000,000</strong></td>
+<td><strong>12,000,000</strong></td>
+<td><strong>19,500,000</strong></td>
+</tr>
+<tr>
+<td><strong>General &amp; Admin</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Legal &amp; incorporation</td>
+<td>1,500,000</td>
+<td>600,000</td>
+<td>600,000</td>
+</tr>
+<tr>
+<td>Accounting / audit</td>
+<td>600,000</td>
+<td>900,000</td>
+<td>1,200,000</td>
+</tr>
+<tr>
+<td>Office / co-working</td>
+<td>600,000</td>
+<td>1,200,000</td>
+<td>1,800,000</td>
+</tr>
+<tr>
+<td>Miscellaneous</td>
+<td>300,000</td>
+<td>600,000</td>
+<td>900,000</td>
+</tr>
+<tr>
+<td><strong>G&amp;A Total</strong></td>
+<td><strong>3,000,000</strong></td>
+<td><strong>3,300,000</strong></td>
+<td><strong>4,500,000</strong></td>
+</tr>
+<tr>
+<td><strong>Total OpEx</strong></td>
+<td><strong>31,200,000</strong></td>
+<td><strong>60,900,000</strong></td>
+<td><strong>91,200,000</strong></td>
+</tr>
+</tbody></table>
+<h3>4.3 Total Expenses</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Year 1 (₦)</th>
+<th>Year 2 (₦)</th>
+<th>Year 3 (₦)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>COGS</td>
+<td>1,734,688</td>
+<td>5,130,313</td>
+<td>11,858,750</td>
+</tr>
+<tr>
+<td>OpEx</td>
+<td>31,200,000</td>
+<td>60,900,000</td>
+<td>91,200,000</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>32,934,688</strong></td>
+<td><strong>66,030,313</strong></td>
+<td><strong>103,058,750</strong></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>SECTION 5 — P&amp;L SUMMARY</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Year 1 (₦)</th>
+<th>Year 2 (₦)</th>
+<th>Year 3 (₦)</th>
+<th>Year 4 (₦)</th>
+<th>Year 5 (₦)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Revenue</td>
+<td>8,312,500</td>
+<td>88,687,500</td>
+<td>357,250,000</td>
+<td>1,049,250,000</td>
+<td>2,280,000,000</td>
+</tr>
+<tr>
+<td>COGS</td>
+<td>(1,734,688)</td>
+<td>(5,130,313)</td>
+<td>(11,858,750)</td>
+<td>(25,000,000)</td>
+<td>(45,000,000)</td>
+</tr>
+<tr>
+<td><strong>Gross Profit</strong></td>
+<td><strong>6,577,813</strong></td>
+<td><strong>83,557,188</strong></td>
+<td><strong>345,391,250</strong></td>
+<td><strong>1,024,250,000</strong></td>
+<td><strong>2,235,000,000</strong></td>
+</tr>
+<tr>
+<td><strong>Gross Margin</strong></td>
+<td><strong>79%</strong></td>
+<td><strong>94%</strong></td>
+<td><strong>97%</strong></td>
+<td><strong>98%</strong></td>
+<td><strong>98%</strong></td>
+</tr>
+<tr>
+<td>Personnel</td>
+<td>(22,200,000)</td>
+<td>(45,600,000)</td>
+<td>(67,200,000)</td>
+<td>(90,000,000)</td>
+<td>(120,000,000)</td>
+</tr>
+<tr>
+<td>Sales &amp; Marketing</td>
+<td>(6,000,000)</td>
+<td>(12,000,000)</td>
+<td>(19,500,000)</td>
+<td>(30,000,000)</td>
+<td>(45,000,000)</td>
+</tr>
+<tr>
+<td>G&amp;A</td>
+<td>(3,000,000)</td>
+<td>(3,300,000)</td>
+<td>(4,500,000)</td>
+<td>(6,000,000)</td>
+<td>(7,500,000)</td>
+</tr>
+<tr>
+<td><strong>Total OpEx</strong></td>
+<td><strong>(31,200,000)</strong></td>
+<td><strong>(60,900,000)</strong></td>
+<td><strong>(91,200,000)</strong></td>
+<td><strong>(126,000,000)</strong></td>
+<td><strong>(172,500,000)</strong></td>
+</tr>
+<tr>
+<td><strong>EBITDA</strong></td>
+<td><strong>(24,622,188)</strong></td>
+<td><strong>22,657,188</strong></td>
+<td><strong>254,191,250</strong></td>
+<td><strong>898,250,000</strong></td>
+<td><strong>2,062,500,000</strong></td>
+</tr>
+<tr>
+<td><strong>EBITDA Margin</strong></td>
+<td><strong>-296%</strong></td>
+<td><strong>26%</strong></td>
+<td><strong>71%</strong></td>
+<td><strong>86%</strong></td>
+<td><strong>90%</strong></td>
+</tr>
+<tr>
+<td><strong>EBITDA (USD)</strong></td>
+<td><strong>-$16,415</strong></td>
+<td><strong>$15,105</strong></td>
+<td><strong>$169,461</strong></td>
+<td><strong>$598,833</strong></td>
+<td><strong>$1,375,000</strong></td>
+</tr>
+</tbody></table>
+<p><strong>Break-even: Month 18 (Q3 2027)</strong></p>
+<hr>
+<h2>SECTION 6 — CASH FLOW PROJECTION</h2>
+<h3>Seed Raise: ₦112.5M ($75,000 USD) at Month 0</h3>
+<table>
+<thead>
+<tr>
+<th>Quarter</th>
+<th>Opening Balance (₦)</th>
+<th>Revenue (₦)</th>
+<th>Expenses (₦)</th>
+<th>Net Cash Flow (₦)</th>
+<th>Closing Balance (₦)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Q1 2026</td>
+<td>112,500,000</td>
+<td>750,000</td>
+<td>8,000,000</td>
+<td>(7,250,000)</td>
+<td>105,250,000</td>
+</tr>
+<tr>
+<td>Q2 2026</td>
+<td>105,250,000</td>
+<td>1,500,000</td>
+<td>8,000,000</td>
+<td>(6,500,000)</td>
+<td>98,750,000</td>
+</tr>
+<tr>
+<td>Q3 2026</td>
+<td>98,750,000</td>
+<td>2,500,000</td>
+<td>8,500,000</td>
+<td>(6,000,000)</td>
+<td>92,750,000</td>
+</tr>
+<tr>
+<td>Q4 2026</td>
+<td>92,750,000</td>
+<td>3,562,500</td>
+<td>8,434,688</td>
+<td>(4,872,188)</td>
+<td>87,877,813</td>
+</tr>
+<tr>
+<td>Q1 2027</td>
+<td>87,877,813</td>
+<td>10,000,000</td>
+<td>15,000,000</td>
+<td>(5,000,000)</td>
+<td>82,877,813</td>
+</tr>
+<tr>
+<td>Q2 2027</td>
+<td>82,877,813</td>
+<td>18,000,000</td>
+<td>16,000,000</td>
+<td>2,000,000</td>
+<td>84,877,813</td>
+</tr>
+<tr>
+<td>Q3 2027</td>
+<td>84,877,813</td>
+<td>27,000,000</td>
+<td>16,000,000</td>
+<td><strong>11,000,000</strong></td>
+<td><strong>95,877,813</strong></td>
+</tr>
+<tr>
+<td>Q4 2027</td>
+<td>95,877,813</td>
+<td>33,687,500</td>
+<td>17,530,313</td>
+<td>16,157,188</td>
+<td>112,035,000</td>
+</tr>
+</tbody></table>
+<p><strong>Cash never drops below ₦82.9M.</strong> Seed round provides &gt;18 months of coverage with no additional raise required to reach break-even.</p>
+<p>At break-even (Q3 2027), cumulative cash consumption from seed: ~₦29.6M out of ₦112.5M raised.</p>
+<hr>
+<h2>SECTION 7 — UNIT ECONOMICS</h2>
+<h3>7.1 VIIBE+ (Consumer Subscription)</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Monthly Price</td>
+<td>₦1,500</td>
+</tr>
+<tr>
+<td>Average Tenure</td>
+<td>18 months</td>
+</tr>
+<tr>
+<td>LTV</td>
+<td>₦27,000 ($18)</td>
+</tr>
+<tr>
+<td>CAC (ambassador + organic)</td>
+<td>₦800 ($0.53)</td>
+</tr>
+<tr>
+<td><strong>LTV:CAC Ratio</strong></td>
+<td><strong>33.75:1</strong></td>
+</tr>
+<tr>
+<td>Payback Period</td>
+<td>&lt; 1 month</td>
+</tr>
+<tr>
+<td>Gross Margin (subscription)</td>
+<td>95% (Paystack fee only)</td>
+</tr>
+</tbody></table>
+<h3>7.2 Merchant (Pulse Drops + Campaigns)</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Monthly Revenue per Merchant</td>
+<td>₦16,500 avg (3 drops + 1 campaign/quarter)</td>
+</tr>
+<tr>
+<td>Average Tenure</td>
+<td>18 months</td>
+</tr>
+<tr>
+<td>LTV</td>
+<td>₦297,000 ($198)</td>
+</tr>
+<tr>
+<td>CAC (AE time + events + trials)</td>
+<td>₦6,000 ($4)</td>
+</tr>
+<tr>
+<td><strong>LTV:CAC Ratio</strong></td>
+<td><strong>49.5:1</strong></td>
+</tr>
+<tr>
+<td>Payback Period</td>
+<td>&lt; 1 month</td>
+</tr>
+<tr>
+<td>Gross Margin (Pulse Drops)</td>
+<td>97% (Paystack fee only)</td>
+</tr>
+</tbody></table>
+<h3>7.3 Blended Platform Economics (Year 2)</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ARPU (MAU)</td>
+<td>₦3,547/year</td>
+</tr>
+<tr>
+<td>Revenue per active merchant/month</td>
+<td>₦16,500</td>
+</tr>
+<tr>
+<td>Platform gross margin</td>
+<td>94%</td>
+</tr>
+<tr>
+<td>CAC blended (all users)</td>
+<td>₦1,200</td>
+</tr>
+<tr>
+<td>LTV blended</td>
+<td>₦18,000</td>
+</tr>
+<tr>
+<td><strong>Blended LTV:CAC</strong></td>
+<td><strong>15:1</strong></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>SECTION 8 — SENSITIVITY ANALYSIS</h2>
+<h3>Revenue Sensitivity — Year 2 (₦88.7M base case)</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>MAU</th>
+<th>Merchant</th>
+<th>VIIBE+ Conv%</th>
+<th>Year 2 Revenue</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Bear Case</strong></td>
+<td>12,000</td>
+<td>120</td>
+<td>3%</td>
+<td>₦28.5M ($19K)</td>
+</tr>
+<tr>
+<td><strong>Base Case</strong></td>
+<td>25,000</td>
+<td>300</td>
+<td>5%</td>
+<td>₦88.7M ($59K)</td>
+</tr>
+<tr>
+<td><strong>Bull Case</strong></td>
+<td>45,000</td>
+<td>500</td>
+<td>7%</td>
+<td>₦198M ($132K)</td>
+</tr>
+</tbody></table>
+<p><strong>Bear case break-even:</strong> Month 24 (Q4 2027). Still within seed runway.
+<strong>Bull case break-even:</strong> Month 14 (Q2 2027). Triggers earlier Series A.</p>
+<h3>Key Sensitivities</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>-20% impact</th>
+<th>+20% impact</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Merchant Pulse Drop frequency</td>
+<td>-₦11M Y2 revenue</td>
+<td>+₦11M Y2 revenue</td>
+</tr>
+<tr>
+<td>VIIBE+ conversion rate</td>
+<td>-₦2.25M Y2 revenue</td>
+<td>+₦2.25M Y2 revenue</td>
+</tr>
+<tr>
+<td>MAU growth (delayed by 2mo)</td>
+<td>-₦8M Y2 revenue</td>
+<td>—</td>
+</tr>
+<tr>
+<td>FX deterioration (₦1,700=$1)</td>
+<td>-12% USD yield</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p><strong>Pulse Drop frequency is the dominant lever.</strong> Merchant engagement is the most controllable variable and has the highest revenue impact per percentage point.</p>
+<hr>
+<h2>SECTION 9 — VALUATION FRAMEWORK</h2>
+<h3>Seed Round (February 2026)</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Pre-money valuation</td>
+<td>₦562.5M ($375K)</td>
+</tr>
+<tr>
+<td>Raise amount</td>
+<td>₦112.5M ($75K)</td>
+</tr>
+<tr>
+<td>Post-money valuation</td>
+<td>₦675M ($450K)</td>
+</tr>
+<tr>
+<td>Equity offered</td>
+<td>20%</td>
+</tr>
+<tr>
+<td>Implied revenue multiple (on Y2 projection)</td>
+<td>7.6× ARR</td>
+</tr>
+</tbody></table>
+<p><strong>Comparable transactions:</strong></p>
+<ul>
+<li>African consumer tech seed rounds (2023–2025): $50K–$200K at $300K–$1M post-money</li>
+<li>SaaS marketplace businesses at seed: 8–15× ARR is standard</li>
+<li>At 7.6× projected Year 2 ARR, this is conservative for a marketplace with compounding data moat</li>
+</ul>
+<h3>Series A Target (Month 18–24)</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MAU</td>
+<td>25,000</td>
+</tr>
+<tr>
+<td>ARR</td>
+<td>₦88.7M ($59K)</td>
+</tr>
+<tr>
+<td>Merchants</td>
+<td>300</td>
+</tr>
+<tr>
+<td>Series A Raise</td>
+<td>₦1.5B–₦2.25B ($1M–$1.5M)</td>
+</tr>
+<tr>
+<td>Target valuation</td>
+<td>15–20× ARR = ₦1.33B–₦1.77B ($888K–$1.18M)</td>
+</tr>
+<tr>
+<td>Use of A round</td>
+<td>City expansion (Abuja, PH, Ibadan), team build-out, Data API productisation</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>SECTION 10 — KEY PERFORMANCE METRICS</h2>
+<h3>North Star: Weekly Active Scouts</h3>
+<p>The number of unique users who submit at least 1 rating per week. This drives everything — data quality, score accuracy, product utility, merchant value, and subscription conversion.</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Month 6</th>
+<th>Month 12</th>
+<th>Month 24</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MAU</td>
+<td>1,000</td>
+<td>5,000</td>
+<td>25,000</td>
+</tr>
+<tr>
+<td>Weekly Active Scouts</td>
+<td>200</td>
+<td>1,000</td>
+<td>5,000</td>
+</tr>
+<tr>
+<td>Ratings/week</td>
+<td>600</td>
+<td>3,000</td>
+<td>15,000</td>
+</tr>
+<tr>
+<td>Venues with live data</td>
+<td>30</td>
+<td>80</td>
+<td>200</td>
+</tr>
+<tr>
+<td>Average ratings/venue/day</td>
+<td>3</td>
+<td>5</td>
+<td>11</td>
+</tr>
+</tbody></table>
+<p><em>A venue needs ~5 ratings/day to produce reliable, real-time scores. 11 ratings/day is the threshold where time-decay weighting has enough data to produce smooth, accurate curves.</em></p>
+<h3>Dashboard KPIs</h3>
+<table>
+<thead>
+<tr>
+<th>KPI</th>
+<th>Target (Month 12)</th>
+<th>Target (Month 24)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MAU</td>
+<td>5,000</td>
+<td>25,000</td>
+</tr>
+<tr>
+<td>D7 Retention</td>
+<td>25%</td>
+<td>35%</td>
+</tr>
+<tr>
+<td>D30 Retention</td>
+<td>15%</td>
+<td>22%</td>
+</tr>
+<tr>
+<td>VIIBE+ Subscribers</td>
+<td>250</td>
+<td>1,250</td>
+</tr>
+<tr>
+<td>Active Merchant Venues</td>
+<td>50</td>
+<td>300</td>
+</tr>
+<tr>
+<td>Avg Ratings/Active Venue/Day</td>
+<td>5</td>
+<td>11</td>
+</tr>
+<tr>
+<td>VIIBE Certified Venues</td>
+<td>2</td>
+<td>15</td>
+</tr>
+<tr>
+<td>Monthly Gross Revenue (₦)</td>
+<td>693K</td>
+<td>7.4M</td>
+</tr>
+<tr>
+<td>Platform MRR Growth MoM</td>
+<td>20%+</td>
+<td>15%+</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>SECTION 11 — RISK REGISTER</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Likelihood</th>
+<th>Impact</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Cold start problem (not enough scouts)</td>
+<td>High</td>
+<td>High</td>
+<td>Scout ambassador program with VIIBE+ incentives from Day 1</td>
+</tr>
+<tr>
+<td>FX deterioration (Naira weakening)</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Revenue is Naira-denominated; cost base is largely local; USD exposure is hosting only</td>
+</tr>
+<tr>
+<td>Promoter backlash (venues blocking scouts)</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Scouts are anonymous. Venue check-in is not required to rate.</td>
+</tr>
+<tr>
+<td>Competitor entry (well-funded)</td>
+<td>Low</td>
+<td>High</td>
+<td>Data moat + local trust + Paystack integration = 12–18 month head start minimum</td>
+</tr>
+<tr>
+<td>Paystack outage / regulation change</td>
+<td>Low</td>
+<td>Medium</td>
+<td>All payments are single-processor; diversify to Flutterwave as backup in Year 2</td>
+</tr>
+<tr>
+<td>Scout gaming / fake ratings</td>
+<td>Medium</td>
+<td>High</td>
+<td>5-layer anti-cheat system (geofence + cooldown + burst detection + accuracy tracking + VIIBE Certified)</td>
+</tr>
+<tr>
+<td>Merchant churn before data value clicks</td>
+<td>High (early)</td>
+<td>Medium</td>
+<td>Free 30-day trial removes the initial barrier; weekly performance emails demonstrate value</td>
+</tr>
+<tr>
+<td>AI API cost blowout</td>
+<td>Low</td>
+<td>Low</td>
+<td>Claude Haiku is $0.25/M tokens. Estimated $2/month Year 1. Even at 100× growth it&#39;s negligible.</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>APPENDIX — MONTHLY MODEL DETAIL (Year 1)</h2>
+<table>
+<thead>
+<tr>
+<th>Month</th>
+<th>MAU</th>
+<th>Merchants</th>
+<th>VIIBE+ Sub</th>
+<th>Pulse Drops Rev (₦)</th>
+<th>VIIBE+ Rev (₦)</th>
+<th>Total Rev (₦)</th>
+<th>Total Expenses (₦)</th>
+<th>Net (₦)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Jan 2026</td>
+<td>100</td>
+<td>3</td>
+<td>5</td>
+<td>45,000</td>
+<td>7,500</td>
+<td>52,500</td>
+<td>2,450,000</td>
+<td>(2,397,500)</td>
+</tr>
+<tr>
+<td>Feb 2026</td>
+<td>200</td>
+<td>5</td>
+<td>10</td>
+<td>75,000</td>
+<td>15,000</td>
+<td>90,000</td>
+<td>2,500,000</td>
+<td>(2,410,000)</td>
+</tr>
+<tr>
+<td>Mar 2026</td>
+<td>400</td>
+<td>8</td>
+<td>20</td>
+<td>120,000</td>
+<td>30,000</td>
+<td>150,000</td>
+<td>2,600,000</td>
+<td>(2,450,000)</td>
+</tr>
+<tr>
+<td>Apr 2026</td>
+<td>700</td>
+<td>12</td>
+<td>35</td>
+<td>180,000</td>
+<td>52,500</td>
+<td>232,500</td>
+<td>2,700,000</td>
+<td>(2,467,500)</td>
+</tr>
+<tr>
+<td>May 2026</td>
+<td>1,100</td>
+<td>18</td>
+<td>55</td>
+<td>270,000</td>
+<td>82,500</td>
+<td>352,500</td>
+<td>2,750,000</td>
+<td>(2,397,500)</td>
+</tr>
+<tr>
+<td>Jun 2026</td>
+<td>1,600</td>
+<td>25</td>
+<td>80</td>
+<td>375,000</td>
+<td>120,000</td>
+<td>495,000</td>
+<td>2,750,000</td>
+<td>(2,255,000)</td>
+</tr>
+<tr>
+<td>Jul 2026</td>
+<td>2,200</td>
+<td>30</td>
+<td>110</td>
+<td>450,000</td>
+<td>165,000</td>
+<td>615,000</td>
+<td>2,800,000</td>
+<td>(2,185,000)</td>
+</tr>
+<tr>
+<td>Aug 2026</td>
+<td>2,800</td>
+<td>35</td>
+<td>140</td>
+<td>525,000</td>
+<td>210,000</td>
+<td>735,000</td>
+<td>2,750,000</td>
+<td>(2,015,000)</td>
+</tr>
+<tr>
+<td>Sep 2026</td>
+<td>3,400</td>
+<td>40</td>
+<td>170</td>
+<td>600,000</td>
+<td>255,000</td>
+<td>855,000</td>
+<td>2,750,000</td>
+<td>(1,895,000)</td>
+</tr>
+<tr>
+<td>Oct 2026</td>
+<td>4,000</td>
+<td>44</td>
+<td>200</td>
+<td>660,000</td>
+<td>300,000</td>
+<td>960,000</td>
+<td>2,750,000</td>
+<td>(1,790,000)</td>
+</tr>
+<tr>
+<td>Nov 2026</td>
+<td>4,600</td>
+<td>47</td>
+<td>230</td>
+<td>705,000</td>
+<td>345,000</td>
+<td>1,050,000</td>
+<td>2,784,688</td>
+<td>(1,734,688)</td>
+</tr>
+<tr>
+<td>Dec 2026</td>
+<td>5,000</td>
+<td>50</td>
+<td>250</td>
+<td>750,000</td>
+<td>375,000</td>
+<td>1,125,000</td>
+<td>2,800,000</td>
+<td>(1,675,000)</td>
+</tr>
+<tr>
+<td><strong>Y1 Total</strong></td>
+<td></td>
+<td></td>
+<td></td>
+<td><strong>5,355,000</strong></td>
+<td><strong>1,957,500</strong></td>
+<td><strong>8,312,500</strong></td>
+<td><strong>32,934,688</strong></td>
+<td><strong>(24,622,188)</strong></td>
+</tr>
+</tbody></table>
+<p><em>December 2026 run rate: ₦1.125M/month = ₦13.5M ARR. Break-even at ₦5.1M/month (Month 18 trajectory confirmed).</em></p>
+<hr>
+<p><em>Model built February 2026. Assumptions reviewed quarterly against actuals.</em>
+<em>All projections are forward-looking estimates based on comparable African consumer-tech benchmarks.</em></p>
+
+</body>
+</html>

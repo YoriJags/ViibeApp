@@ -54,6 +54,8 @@ class User(BaseModel):
     # ===== Scout Gamification =====
     streak_freezes: int = 0           # clout-purchasable streak insurance
     music_preferences: list[str] = [] # genre list bridged from music streaming mock
+    zodiac_sign: Optional[str] = None # optional — set during onboarding, drives Cosmic Vibe reading
+    reactor_skin: Optional[str] = None # preset key or "custom:#RRGGBB"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -348,3 +350,7 @@ class MusicPreferencesUpdate(BaseModel):
 
 class ReactorSkinUpdate(BaseModel):
     skin: str  # preset key (e.g. "gold") or "custom:#RRGGBB"
+
+
+class ZodiacUpdate(BaseModel):
+    sign: Optional[str] = None  # e.g. "aries" — None clears the sign

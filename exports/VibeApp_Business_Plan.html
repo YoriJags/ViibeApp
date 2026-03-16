@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibeApp — Business Strategy & Pitch Document · February 2026</title>
+<style>
+  :root {
+    --primary: #8B5CF6;
+    --accent: #F59E0B;
+    --dark: #0F0F14;
+    --card: #1A1A24;
+    --border: #2D2D3D;
+    --text: #E5E5F0;
+    --muted: #9090A8;
+    --green: #22C55E;
+    --red: #EF4444;
+    --blue: #3B82F6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: white;
+    color: #1a1a2e;
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  @media print {
+    body { font-size: 12px; }
+    .page-break { page-break-before: always; }
+    .no-print { display: none; }
+    h1 { font-size: 22px; }
+    h2 { font-size: 17px; }
+    h3 { font-size: 14px; }
+  }
+
+  /* Cover Page */
+  .cover {
+    background: linear-gradient(135deg, #0F0F14 0%, #1a0a2e 50%, #0d1a0d 100%);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 40px;
+    page-break-after: always;
+  }
+  .cover .logo {
+    font-size: 64px;
+    font-weight: 900;
+    letter-spacing: -2px;
+    background: linear-gradient(135deg, #8B5CF6, #F59E0B, #8B5CF6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+  .cover .tagline {
+    font-size: 20px;
+    color: #a0a0c0;
+    margin-bottom: 40px;
+    font-style: italic;
+  }
+  .cover .headline {
+    font-size: 48px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+  .cover .sub-headline {
+    font-size: 20px;
+    color: #c0c0d8;
+    margin-bottom: 48px;
+    max-width: 600px;
+  }
+  .cover .badges {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 48px;
+  }
+  .badge {
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    color: #c4b5fd;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+  }
+  .badge.ai {
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fde68a;
+  }
+  .cover .ask-box {
+    background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(245,158,11,0.15));
+    border: 2px solid rgba(139,92,246,0.4);
+    border-radius: 16px;
+    padding: 24px 40px;
+    margin: 24px 0;
+  }
+  .cover .ask-box .amount { font-size: 36px; font-weight: 800; color: #F59E0B; }
+  .cover .ask-box .label { color: #c0c0d8; font-size: 15px; margin-top: 4px; }
+
+  /* Main content */
+  .content { max-width: 900px; margin: 0 auto; padding: 60px 48px; }
+  .section { margin-bottom: 64px; }
+  .section-label {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #8B5CF6;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  h1 {
+    font-size: 36px;
+    font-weight: 800;
+    color: #0f0f20;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+  h2 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 12px;
+    margin-top: 40px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e8e0ff;
+  }
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2a2a40;
+    margin-bottom: 10px;
+    margin-top: 28px;
+  }
+  p { margin-bottom: 14px; color: #2a2a40; }
+  ul, ol { margin-left: 24px; margin-bottom: 14px; }
+  li { margin-bottom: 6px; color: #2a2a40; }
+
+  /* Quote blocks */
+  blockquote {
+    background: linear-gradient(135deg, #f0ebff, #fff8e8);
+    border-left: 4px solid #8B5CF6;
+    padding: 20px 24px;
+    margin: 24px 0;
+    border-radius: 0 12px 12px 0;
+    font-style: italic;
+    font-size: 17px;
+    color: #1a1a2e;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 14px;
+  }
+  th {
+    background: #1a1a2e;
+    color: white;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 11px 16px;
+    border-bottom: 1px solid #e8e8f0;
+    color: #2a2a40;
+  }
+  tr:nth-child(even) td { background: #f8f6ff; }
+  tr:hover td { background: #f0ebff; }
+
+  /* Highlight cards */
+  .highlight-card {
+    background: linear-gradient(135deg, #f0ebff 0%, #fff8e8 100%);
+    border: 1px solid #d4b8ff;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 20px 0;
+  }
+  .highlight-card.ai {
+    background: linear-gradient(135deg, #fff8e8 0%, #fef3c7 100%);
+    border: 1px solid #fbbf24;
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .stat-card {
+    background: #f8f6ff;
+    border: 1px solid #e0d4ff;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-card .number {
+    font-size: 32px;
+    font-weight: 800;
+    color: #6D28D9;
+  }
+  .stat-card .number.green { color: #16a34a; }
+  .stat-card .label {
+    font-size: 12px;
+    color: #6060a0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  /* Revenue streams */
+  .revenue-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .revenue-card {
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid;
+  }
+  .revenue-card.b2b { background: #f0fdf4; border-color: #86efac; }
+  .revenue-card.ai { background: #fef9c3; border-color: #fde047; }
+  .revenue-card.data { background: #eff6ff; border-color: #93c5fd; }
+  .revenue-card.brand { background: #fdf4ff; border-color: #d8b4fe; }
+  .revenue-card.trans { background: #fff7ed; border-color: #fdba74; }
+  .revenue-card .rev-label { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+  .revenue-card.b2b .rev-label { color: #16a34a; }
+  .revenue-card.ai .rev-label { color: #ca8a04; }
+  .revenue-card.data .rev-label { color: #2563eb; }
+  .revenue-card.brand .rev-label { color: #9333ea; }
+  .revenue-card.trans .rev-label { color: #ea580c; }
+  .revenue-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: #1a1a2e; }
+  .revenue-card p { font-size: 13px; color: #4a4a6a; margin: 0; line-height: 1.5; }
+
+  /* Phase boxes */
+  .phase-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .phase-card {
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .phase-card.p1 { background: #fef3c7; border: 1px solid #fbbf24; }
+  .phase-card.p2 { background: #d1fae5; border: 1px solid #34d399; }
+  .phase-card.p3 { background: #dbeafe; border: 1px solid #60a5fa; }
+  .phase-card .phase-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .phase-card .phase-desc { font-size: 12px; color: #505070; line-height: 1.5; }
+
+  /* Feature status */
+  .feature-status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+  }
+  .status-built { background: #d1fae5; color: #065f46; }
+  .status-live { background: #fef3c7; color: #92400e; }
+  .status-planned { background: #f3f4f6; color: #374151; }
+  .status-ai-live { background: #fde68a; color: #78350f; }
+
+  /* Divider */
+  .divider {
+    height: 2px;
+    background: linear-gradient(90deg, #8B5CF6, #F59E0B, transparent);
+    margin: 48px 0;
+    border: none;
+  }
+
+  /* Competitor table */
+  .win { color: #16a34a; font-weight: 700; }
+  .lose { color: #dc2626; }
+
+  /* TOC */
+  .toc { background: #f8f6ff; border-radius: 12px; padding: 28px 32px; margin-bottom: 48px; }
+  .toc h3 { margin-top: 0; }
+  .toc ol { margin-left: 20px; }
+  .toc li { margin-bottom: 8px; color: #4444aa; font-size: 14px; }
+
+  /* Footer */
+  .doc-footer {
+    background: #1a1a2e;
+    color: #7070a0;
+    text-align: center;
+    padding: 32px;
+    margin-top: 64px;
+    font-size: 13px;
+  }
+  .doc-footer strong { color: #c0c0d8; }
+
+  /* Print button */
+  .print-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #8B5CF6;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 1000;
+    box-shadow: 0 4px 16px rgba(139,92,246,0.4);
+  }
+  .print-btn:hover { background: #7C3AED; }
+
+  /* Financial model */
+  .projection-row-y1 { background: #fef9c3 !important; }
+  .projection-row-y2 { background: #dcfce7 !important; }
+  .projection-row-y3 { background: #dbeafe !important; }
+  .big-number { font-size: 22px; font-weight: 800; color: #6D28D9; }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ Print to PDF</button>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <div class="logo">VibeApp</div>
+  <div class="tagline">Real-Time Social Venue Intelligence · Africa</div>
+  <div class="headline">Where's the energy?</div>
+  <div class="sub-headline">Clubs. Restaurants. Concerts. Brunch spots. Any venue. Any hour. Live. Now with Claude AI.</div>
+
+  <div class="badges">
+    <span class="badge">Africa-First</span>
+    <span class="badge">Real-Time</span>
+    <span class="badge ai">✦ 8 Claude AI Features · Live</span>
+    <span class="badge">3-Tier Platform</span>
+    <span class="badge">iOS + Android + Web</span>
+    <span class="badge">Deployed · Railway + Vercel</span>
+  </div>
+
+  <div class="ask-box">
+    <div class="amount">$150–300K</div>
+    <div class="label">Pre-Seed Round · $2–3M Valuation · February 2026</div>
+  </div>
+
+  <div class="meta" style="color:#7070a0;font-size:14px;margin-top:40px;border-top:1px solid rgba(255,255,255,0.1);padding-top:24px;width:100%;max-width:500px;">
+    <strong style="color:#c0c0d8;">Confidential — For Internal Use &amp; Investor Distribution Only</strong><br>
+    Yoriajagun08@gmail.com · February 2026 · Lagos, Nigeria<br>
+    <em>Document v3.0 — Claude AI live · Feature Control Tower · 8 AI endpoints confirmed firing</em>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>Contents</h3>
+    <ol>
+      <li>Executive Summary &amp; The One-Liner</li>
+      <li>The Problem &amp; Opportunity</li>
+      <li>The Product — Three Floors, One Platform</li>
+      <li>What We've Built (Build Status)</li>
+      <li>AI Strategy — The Real Moat</li>
+      <li>Market Size &amp; Expansion Roadmap</li>
+      <li>Revenue Model — 8 Streams</li>
+      <li>Financial Projections &amp; Unit Economics</li>
+      <li>Launch Strategy — The Cartel</li>
+      <li>Competitive Landscape</li>
+      <li>Fundraising Roadmap &amp; The $250M Exit Path</li>
+      <li>Naming &amp; Brand Strategy</li>
+      <li>Immediate Action Items</li>
+      <li>Appendix: Key Metrics, Target Investors</li>
+    </ol>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="section">
+    <div class="section-label">Section 1</div>
+    <h1>Executive Summary</h1>
+
+    <blockquote>
+      "VibeApp is the real-time Yelp for African nightlife — with Claude AI baked in. We tell you where the energy is RIGHT NOW, and our AI tells you where it's going."
+    </blockquote>
+
+    <p>VibeApp is building the real-time intelligence layer for human social behavior in Africa. Starting with nightlife, we answer one question nobody else can: <strong>"Where is the energy RIGHT NOW?"</strong></p>
+
+    <p>Unlike Yelp, Google Maps, or TripAdvisor — which show you where the energy WAS last week — VibeApp uses a network of on-the-ground scouts who report live vibe scores, crowd levels, and gate conditions from venues in real-time. On top of that live data layer, we run <strong>Claude AI</strong> to generate venue narratives, night plans, behavioral fingerprints, and merchant insights — creating an experience that doesn't exist anywhere else on the planet.</p>
+
+    <div class="highlight-card ai">
+      <strong>Claude AI is live and confirmed firing across 8 endpoints as of February 2026.</strong><br>
+      Vibe Brief · Roast &amp; Toast · DNA Narrative · Merchant AI Advisor · Night Debrief · Night Planner · Oracle Premium · Feature Control Tower. All gated with graceful fallback — zero single points of failure.
+    </div>
+
+    <div class="highlight-card">
+      <strong>The Bigger Vision:</strong><br>
+      "We're building the real-time intelligence layer for human social behavior in Africa. Our AI knows where 100,000 people will be tonight before they decide. We started with nightlife. Next: restaurants, events, retail, tourism."
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="number green">8</div>
+        <div class="label">Claude AI Features Live</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">20+</div>
+        <div class="label">Algorithms &amp; Intelligence Pipes</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">$5B+</div>
+        <div class="label">Nigeria TAM</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 2 -->
+  <div class="section">
+    <div class="section-label">Section 2</div>
+    <h1>The Problem &amp; Opportunity</h1>
+
+    <p>Nigeria's social experience economy is worth <strong>$5B+ annually</strong> — nightlife, restaurants, and events combined. Not a single platform tells you where the energy is <em>right now</em>, for any of it.</p>
+
+    <table>
+      <tr><th>Scenario</th><th>The Failure</th></tr>
+      <tr><td><strong>Saturday night — where's the vibe?</strong></td><td>Google "Popular Times" = historical averages from months ago</td></tr>
+      <tr><td><strong>Sunday brunch — any good spots open?</strong></td><td>Yelp reviews from last year. Dead before you read them.</td></tr>
+      <tr><td><strong>Event tonight — worth going?</strong></td><td>WhatsApp group of 12. Unreliable. Unstructured. Too late.</td></tr>
+      <tr><td><strong>New venue — is it worth trying?</strong></td><td>Zero reviews. No data. Blind trust or stay home.</td></tr>
+      <tr><td><strong>Venue owner — why did Saturday flop?</strong></td><td>No real data. Gut feeling only. Can't improve what you can't measure.</td></tr>
+    </table>
+
+    <h3>Why Now</h3>
+    <ul>
+      <li>Nigeria is the <strong>#1 music market in Africa</strong> — Afrobeats, Amapiano, live events are booming globally</li>
+      <li>Lagos has 20M+ people with a thriving going-out economy — and zero real-time intelligence tools</li>
+      <li>Claude AI (Anthropic) now makes it economically viable to give every user a personal concierge at &lt;$0.001/call</li>
+      <li>African smartphone adoption is exploding — right moment for a mobile-first social product</li>
+      <li>Nobody is building this. First mover owns the data moat forever.</li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 3 -->
+  <div class="section page-break">
+    <div class="section-label">Section 3</div>
+    <h1>The Product — Three Floors, One Platform</h1>
+
+    <table>
+      <tr><th>Floor</th><th>Users</th><th>Purpose</th></tr>
+      <tr><td><strong>🔴 Public Floor (Scouts)</strong></td><td>Regular users</td><td>Discover venues, rate vibes, check in, earn clout</td></tr>
+      <tr><td><strong>🟡 Merchant Floor</strong></td><td>Venue owners</td><td>Analytics dashboard, campaigns, alerts, AI insights</td></tr>
+      <tr><td><strong>🟢 Admin Floor</strong></td><td>Super admins</td><td>Platform management, data oversight, Feature Control Tower</td></tr>
+    </table>
+
+    <h2>For Scouts (Users)</h2>
+    <ul>
+      <li>Real-time venue map with live vibe score pins</li>
+      <li>3-dimension rating system: <strong>Energy / Capacity / Gate</strong></li>
+      <li>Rating cooldown — prevents spam, enforces honest 1-per-session rating</li>
+      <li>Scout ranking system: Newbie → Regular → Scout → Elite</li>
+      <li>Clout points &amp; accuracy scoring</li>
+      <li>Check-in system with streaks &amp; CheckInCelebration (30-particle confetti)</li>
+      <li>Crew/Cartel social features (squad up, squad live locations)</li>
+      <li>Cartel Radar — find scouts nearby who match your vibe persona</li>
+      <li>Achievement badges &amp; leaderboards</li>
+      <li><strong>Vibe Persona</strong> — 4 archetypes (Turn Up / The Luxe / Culture Vulture / Chill Set)</li>
+      <li><strong>Top Scouts per venue</strong> — ranked leaderboard of most active raters</li>
+      <li><strong>Vibe Oracle</strong> — heuristic peak-time prediction ("Quilox will be electric by 12:30am")</li>
+      <li><strong>Vibe DNA</strong> — behavioral affinity fingerprint from rating history with AI narrative</li>
+      <li><strong>Night Planner</strong> — conversational AI (Claude) venue concierge: "Whats popping in Lekki tonight?" → curated venue cards</li>
+      <li><strong>VibeMatch</strong> — dynamic vibe match score (DNA affinity 40% + live score 60%)</li>
+      <li><strong>✦ Vibe Brief</strong> — daily AI-generated city briefing on home screen (Claude, cached 4h)</li>
+      <li><strong>✦ Night Debrief</strong> — post-night AI recap on profile: "You hit 3 spots and kept it electric all night"</li>
+      <li><strong>✦ Oracle Premium</strong> — Claude AI deep prediction with narrative: crowd forecast, insider tip, best arrival window</li>
+    </ul>
+
+    <h2>For Merchants (Venue Owners)</h2>
+    <ul>
+      <li>Live analytics dashboard with vibe intelligence &amp; hourly energy curves</li>
+      <li>Pulse Drops — promoted venue pins with 2× clout for scouts (Spark / Flare / Supernova)</li>
+      <li>Aura Shield — automated alerts when vibe drops below threshold</li>
+      <li>Direction click tracking, profile views, campaign analytics</li>
+      <li><strong>✦ Venue Roast &amp; Toast</strong> — Claude AI punchy 2-sentence venue personality review (auto-generated, cached)</li>
+      <li><strong>✦ Merchant AI Advisor</strong> — weekly AI action items and priority recommendations from Claude</li>
+    </ul>
+
+    <h2>For Admins</h2>
+    <ul>
+      <li>Full platform command center (Treasury, Users, Venues, Logs)</li>
+      <li>Venue certification system &amp; Clout Airdrop tool</li>
+      <li><strong>✦ Feature Control Tower</strong> — toggle any of 16 platform features on/off in real-time without a deployment</li>
+      <li>Integrity Monitor — sponsored vs organic venue data quality watchdog</li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 4 -->
+  <div class="section page-break">
+    <div class="section-label">Section 4</div>
+    <h1>What We've Built</h1>
+
+    <div class="highlight-card">
+      <strong>12–16 months of equivalent development work. Full-stack. Demo-ready. Claude AI confirmed firing.</strong><br>
+      React Native (Expo 54) · FastAPI (Python) · MongoDB (Motor async) · Socket.IO · Paystack · Zustand v5 · Anthropic Claude Haiku · Deployed on Vercel + Railway
+    </div>
+
+    <h2>Intelligence Layer — Algorithms</h2>
+    <table>
+      <tr><th>Algorithm / Feature</th><th>Description</th><th>Status</th></tr>
+      <tr><td>Vibe Score Calculation</td><td>Weighted formula (energy ×0.5, capacity ×0.3, gate ×0.2)</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+      <tr><td>Time-Decay Ratings</td><td>15min=3×, 30min=2×, 60min=1× — freshest ratings count most</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+      <tr><td>Vibe Forecast</td><td>4-week same-day average with recency weighting</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+      <tr><td>Trending Algorithm</td><td>avg_energy ×0.5 + check-in velocity ×0.3 + scout count ×0.2</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+      <tr><td>Scout Accuracy Score</td><td>Running average of rating vs. venue consensus</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+      <tr><td>Geofence Verification</td><td>Haversine formula — must be physically present to rate</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+      <tr><td>Aura Shield Alerts</td><td>Threshold-based merchant alert system</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+      <tr><td>Vibe Oracle (Heuristic)</td><td>PEAK_WINDOWS + velocity/activity signals → confidence score</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+      <tr><td>Vibe DNA</td><td>Aggregates user ratings by venue type → affinity scores 0–100</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+      <tr><td>VibeMatch</td><td>Dynamic match score: DNA affinity (40%) + live vibe score (60%)</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+      <tr><td>Vibe Persona Feed</td><td>4-archetype persona → venue type boost → home feed reordering</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+      <tr><td>Top Scouts Pipeline</td><td>MongoDB aggregation → top 5 raters per venue with tier/clout</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+    </table>
+
+    <h2>Claude AI Layer — Live</h2>
+    <table>
+      <tr><th>AI Feature</th><th>What It Does</th><th>Cache</th><th>Status</th></tr>
+      <tr><td><strong>✦ Vibe Brief</strong></td><td>Daily city-level AI briefing on home screen: hot area, headline, top pick</td><td>4h</td><td><span class="feature-status status-ai-live">✦ Claude Live</span></td></tr>
+      <tr><td><strong>✦ Roast &amp; Toast</strong></td><td>Punchy 2-sentence AI venue personality review on venue detail</td><td>6h</td><td><span class="feature-status status-ai-live">✦ Claude Live</span></td></tr>
+      <tr><td><strong>✦ DNA Narrative</strong></td><td>AI personality narrative + archetype label from your vibe history</td><td>24h</td><td><span class="feature-status status-ai-live">✦ Claude Live</span></td></tr>
+      <tr><td><strong>✦ Merchant AI Advisor</strong></td><td>Weekly action items + priority summary for venue owners</td><td>6h</td><td><span class="feature-status status-ai-live">✦ Claude Live</span></td></tr>
+      <tr><td><strong>✦ Night Debrief</strong></td><td>Post-night AI recap on profile: spots, ratings, avg vibe narrative</td><td>2h</td><td><span class="feature-status status-ai-live">✦ Claude Live</span></td></tr>
+      <tr><td><strong>✦ Night Planner</strong></td><td>Conversational AI venue planning chat + venue cards + follow-ups</td><td>—</td><td><span class="feature-status status-ai-live">✦ Claude Live</span></td></tr>
+      <tr><td><strong>✦ Oracle Premium</strong></td><td>Claude deep prediction: crowd forecast, insider tip, best arrival</td><td>4h</td><td><span class="feature-status status-ai-live">✦ Claude Live</span></td></tr>
+      <tr><td><strong>✦ Feature Control Tower</strong></td><td>Admin UI to toggle any of 16 features on/off without a deploy</td><td>—</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+    </table>
+
+    <p style="font-size:13px;color:#555;margin-top:-8px;">All Claude features use <strong>Haiku</strong> model (~$0.001/call), MongoDB TTL caching, and graceful fallback to rule-based logic if API key is unavailable.</p>
+
+    <h2>Current Deployment</h2>
+    <table>
+      <tr><th>Layer</th><th>URL</th><th>Status</th></tr>
+      <tr><td>Frontend (Expo Web)</td><td>vibe-app-hc83.vercel.app</td><td><span class="feature-status status-built">✅ Live</span></td></tr>
+      <tr><td>Backend (FastAPI + Socket.IO)</td><td>vibeapp-production-1835.up.railway.app</td><td><span class="feature-status status-built">✅ Live</span></td></tr>
+      <tr><td>Database</td><td>MongoDB Atlas — 10 Lagos venues seeded</td><td><span class="feature-status status-built">✅ Live</span></td></tr>
+      <tr><td>Real-time</td><td>Socket.IO — confirmed connected on web</td><td><span class="feature-status status-built">✅ Live</span></td></tr>
+      <tr><td>Payments</td><td>Paystack integration (Nigerian processor)</td><td><span class="feature-status status-built">✅ Built</span></td></tr>
+      <tr><td>Claude AI</td><td>Anthropic Haiku — confirmed firing on all 7 AI endpoints</td><td><span class="feature-status status-ai-live">✦ Live</span></td></tr>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 5 -->
+  <div class="section page-break">
+    <div class="section-label">Section 5</div>
+    <h1>AI Strategy — The Real Moat</h1>
+
+    <blockquote>
+      The app is the <strong>data collection device</strong>. The AI is the <strong>actual product</strong>. And Claude is live.
+    </blockquote>
+
+    <p>After 12 months of operation in Lagos, we'll be sitting on a dataset that doesn't exist anywhere else:</p>
+
+    <table>
+      <tr><th>Data Asset</th><th>Why It's Valuable</th></tr>
+      <tr><td><strong>Real-time crowd behavior data</strong></td><td>Nobody else collects this in Africa</td></tr>
+      <tr><td><strong>Venue performance patterns</strong></td><td>Hour-by-hour, day-by-day, season-by-season</td></tr>
+      <tr><td><strong>Social graph of nightlife</strong></td><td>Who goes where, with whom, how often</td></tr>
+      <tr><td><strong>Taste profiles (Vibe DNA)</strong></td><td>What 100K Nigerians actually DO on weekends — not what they say</td></tr>
+      <tr><td><strong>Location movement patterns</strong></td><td>How people flow between venues in a night</td></tr>
+      <tr><td><strong>Economic signals</strong></td><td>Spending patterns tied to nightlife (Paystack data)</td></tr>
+    </table>
+
+    <p><em>Google doesn't have this. Meta doesn't have this. Spotify doesn't have this.</em></p>
+
+    <h2>AI Roadmap</h2>
+    <table>
+      <tr><th>Phase</th><th>Feature</th><th>Trigger</th><th>Status</th></tr>
+      <tr><td>Now</td><td>20+ rule-based algorithms (Score, Trending, DNA, Oracle heuristic, VibeMatch…)</td><td>—</td><td><span class="feature-status status-built">✅ Done</span></td></tr>
+      <tr><td>Now</td><td>Claude AI — 7 live endpoints: Brief, Roast, DNA Narrative, Advisor, Debrief, Planner, Oracle Premium</td><td>ANTHROPIC_API_KEY set ✅</td><td><span class="feature-status status-ai-live">✦ LIVE</span></td></tr>
+      <tr><td>5K users</td><td>Log everything — build behavioral data pipeline + A/B test Claude prompts</td><td>Month 3</td><td><span class="feature-status status-planned">⬜ Planned</span></td></tr>
+      <tr><td>20K users</td><td>Upgrade DNA to collaborative filtering (users similar to you like…)</td><td>Month 6</td><td><span class="feature-status status-planned">⬜ Planned</span></td></tr>
+      <tr><td>50K users</td><td>Upgrade Oracle to Prophet/LSTM time-series model trained on real data</td><td>Month 9</td><td><span class="feature-status status-planned">⬜ Planned</span></td></tr>
+      <tr><td>100K users</td><td>Computer vision — auto-fill ratings from scout photos</td><td>Month 12</td><td><span class="feature-status status-planned">⬜ Planned</span></td></tr>
+      <tr><td>At scale</td><td>Vibe Autopilot — AI runs merchant marketing campaigns autonomously</td><td>Month 18</td><td><span class="feature-status status-planned">⬜ Planned</span></td></tr>
+    </table>
+
+    <h2>Why Claude (Anthropic) Specifically</h2>
+    <ul>
+      <li><strong>Haiku model</strong> — ~$0.001 per call (extremely affordable at scale)</li>
+      <li><strong>JSON mode</strong> — returns structured data, not markdown — feeds directly into UI components</li>
+      <li><strong>Cultural nuance</strong> — handles Lagos slang, Afrobeats context, Nigerian social patterns better than alternatives</li>
+      <li><strong>Safety built-in</strong> — no hallucinated venue recommendations, conservative when unsure</li>
+      <li><strong>MongoDB caching</strong> — each response cached 2–24h to minimize API spend; full platform runs on ~$5–20/day at 10K MAU</li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 6 -->
+  <div class="section page-break">
+    <div class="section-label">Section 6</div>
+    <h1>Market Size &amp; Expansion Roadmap</h1>
+
+    <table>
+      <tr><th>Segment</th><th>Nigeria</th><th>Africa</th></tr>
+      <tr><td>🌙 Nightlife</td><td>$1B+</td><td>$4B+</td></tr>
+      <tr><td>🍽️ Restaurants &amp; Dining</td><td>$1.5B+</td><td>$6B+</td></tr>
+      <tr><td>🎵 Events &amp; Concerts</td><td>$800M+</td><td>$3B+</td></tr>
+      <tr><td>🌍 <strong>Total TAM</strong></td><td><strong>$5B+</strong></td><td><strong>$20B+</strong></td></tr>
+      <tr><td>🌐 Global Experiences Economy</td><td colspan="2"><strong>$50B+</strong></td></tr>
+    </table>
+
+    <div class="phase-grid">
+      <div class="phase-card p1">
+        <div class="phase-name">🟡 Phase 1 · Months 1–12</div>
+        <div class="phase-desc"><strong>Lagos Nightlife Dominance</strong><br>50 venues · 10K MAU<br>~₦15M MRR ($10K/mo)</div>
+      </div>
+      <div class="phase-card p2">
+        <div class="phase-name">🟢 Phase 2 · Months 12–24</div>
+        <div class="phase-desc"><strong>Nigeria Expansion</strong><br>+Restaurants +Events<br>200+ venues · 100K MAU · $50K MRR</div>
+      </div>
+      <div class="phase-card p3">
+        <div class="phase-name">🔵 Phase 3 · Months 24–42</div>
+        <div class="phase-desc"><strong>Africa &amp; Beyond</strong><br>Accra · Nairobi · Jo'burg<br>500K MAU · $200K MRR</div>
+      </div>
+    </div>
+
+    <h2>City Expansion Order</h2>
+    <ul>
+      <li><strong>Phase 1:</strong> Lagos (nightlife beachhead — 2026)</li>
+      <li><strong>Phase 2:</strong> Abuja → Port Harcourt → Ibadan → restaurants/events layer</li>
+      <li><strong>Phase 3:</strong> Accra, Ghana → Nairobi, Kenya → Johannesburg, South Africa → Cairo, Egypt</li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 7 — REVENUE MODEL -->
+  <div class="section page-break">
+    <div class="section-label">Section 7</div>
+    <h1>Revenue Model — 8 Streams</h1>
+
+    <blockquote>
+      We're not a single-revenue business. Every floor of the platform generates money independently.
+    </blockquote>
+
+    <div class="revenue-grid">
+
+      <div class="revenue-card b2b">
+        <div class="rev-label">Stream 1 · B2B SaaS</div>
+        <h4>Merchant Subscriptions</h4>
+        <p><strong>Free:</strong> Basic analytics only<br>
+        <strong>Starter ₦50K/mo:</strong> Analytics + 1 Pulse Drop<br>
+        <strong>Pro ₦150K/mo:</strong> Advanced analytics + 3 Drops + AI Advisor<br>
+        <strong>Elite ₦500K/mo:</strong> Unlimited + white-glove + API access<br><br>
+        <em>90%+ gross margin. Recurring. Scalable to 1,000+ venues.</em></p>
+      </div>
+
+      <div class="revenue-card b2b">
+        <div class="rev-label">Stream 2 · Performance</div>
+        <h4>Pulse Drops (Pay-Per-Boost)</h4>
+        <p><strong>Spark ₦20K:</strong> 2km radius, 2h, 2× clout bonus<br>
+        <strong>Flare ₦50K:</strong> 5km radius, 4h, boosted visibility<br>
+        <strong>Supernova ₦100K:</strong> Citywide, 8h, pin + trending boost<br>
+        <strong>Aura Shield ₦100K/mo:</strong> Automated alerts + protection<br><br>
+        <em>95%+ margin. Impulse purchase. Night-of urgency creates natural conversion.</em></p>
+      </div>
+
+      <div class="revenue-card ai">
+        <div class="rev-label">Stream 3 · AI Premium · B2C</div>
+        <h4>Vibe+ Subscription</h4>
+        <p><strong>Free tier:</strong> Heuristic Oracle, basic DNA, rule-based Planner<br>
+        <strong>Vibe+ ₦3,000/mo (~$2):</strong> Oracle Premium (Claude), unlimited Night Planner, DNA Narrative, Night Debrief<br>
+        <strong>Night Pass ₦1,000/night:</strong> Full AI access for one night out<br><br>
+        <em>Powered by Claude Haiku at &lt;₦1.50/call. 99%+ margin at scale.</em></p>
+      </div>
+
+      <div class="revenue-card brand">
+        <div class="rev-label">Stream 4 · Brand Partnerships</div>
+        <h4>Sponsored Vibe Intelligence</h4>
+        <p><strong>Sponsored Pulse Drops:</strong> Guinness, Star Lager, Heineken pay for branded venue boosts<br>
+        <strong>Branded Vibe Brief:</strong> "Tonight's Lagos Brief, powered by Hennessy"<br>
+        <strong>Exclusive venue partnerships:</strong> ₦2M–10M per quarter per brand<br>
+        <strong>Weekly Vibe Report:</strong> Sponsored newsletter/Instagram ranking<br><br>
+        <em>80% margin. Brands desperate for authentic nightlife reach in Nigeria.</em></p>
+      </div>
+
+      <div class="revenue-card trans">
+        <div class="rev-label">Stream 5 · Transactions</div>
+        <h4>Commission Layer</h4>
+        <p><strong>Event Ticketing:</strong> 5–10% commission on tickets sold through app<br>
+        <strong>VIP Table Reservations:</strong> 10–15% commission per booking<br>
+        <strong>In-App Clout Packs:</strong> ₦5K / ₦10K / ₦25K clout bundles<br>
+        <strong>Cooldown Skip Fee:</strong> ₦500–1,000 to rate again same night<br><br>
+        <em>85% margin. Zero inventory risk. Pure take-rate model.</em></p>
+      </div>
+
+      <div class="revenue-card data">
+        <div class="rev-label">Stream 6 · Data Products</div>
+        <h4>Intelligence Licensing</h4>
+        <p><strong>Anonymized crowd reports:</strong> Sold to hospitality brands, urban planners, event organizers<br>
+        <strong>Venue performance benchmarks:</strong> "Your venue vs. top 10 in VI"<br>
+        <strong>API access (B2B):</strong> Hotels, Bolt/Uber, Eventbrite integration → usage-based pricing<br>
+        <strong>City pulse reports:</strong> ₦500K–2M per quarter per client<br><br>
+        <em>98% margin. Data collected anyway. Licensing = pure profit.</em></p>
+      </div>
+
+      <div class="revenue-card b2b">
+        <div class="rev-label">Stream 7 · Advertising</div>
+        <h4>Native In-App Ads</h4>
+        <p><strong>Venue Spotlight:</strong> Sponsored featured card on home screen<br>
+        <strong>Trending boost:</strong> Pay to appear in top 3 trending<br>
+        <strong>Push notification ads:</strong> Opt-in "venue is popping now" from sponsors<br>
+        <strong>CPM or fixed placement:</strong> ₦500K–1M/month per major brand<br><br>
+        <em>85%+ margin. Non-intrusive native formats. High intent audience.</em></p>
+      </div>
+
+      <div class="revenue-card ai">
+        <div class="rev-label">Stream 8 · Scout Economy</div>
+        <h4>Platform Micro-Monetization</h4>
+        <p><strong>Clout Exchange:</strong> Scouts convert clout → real rewards (airtime, vouchers)<br>
+        <strong>Squad Perks subscription ₦2K/mo:</strong> Ghost check-in, unlimited crew features, early access<br>
+        <strong>Elite Scout badge sales:</strong> Verified scout status for micro-influencers<br>
+        <strong>Affiliate loop:</strong> Scouts who drive venue signups earn a share<br><br>
+        <em>Creates loyalty + ARPU on the user side, not just merchant side.</em></p>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 8 — FINANCIAL PROJECTIONS -->
+  <div class="section page-break">
+    <div class="section-label">Section 8</div>
+    <h1>Financial Projections &amp; Unit Economics</h1>
+
+    <div class="highlight-card">
+      <strong>Conservative projections. Every number assumes organic growth only — no paid acquisition.</strong><br>
+      Exchange rate basis: $1 = ₦1,500. All figures in both currencies for clarity.
+    </div>
+
+    <h2>Monthly Revenue Breakdown — By Year</h2>
+    <table>
+      <tr>
+        <th>Revenue Stream</th>
+        <th>Year 1 (Month 12)</th>
+        <th>Year 2 (Month 24)</th>
+        <th>Year 3 (Month 36)</th>
+      </tr>
+      <tr class="projection-row-y1">
+        <td><strong>Merchant Subscriptions</strong></td>
+        <td>30 venues × ₦80K avg = <strong>₦2.4M</strong></td>
+        <td>200 venues × ₦120K avg = <strong>₦24M</strong></td>
+        <td>800 venues × ₦150K avg = <strong>₦120M</strong></td>
+      </tr>
+      <tr class="projection-row-y1">
+        <td><strong>Pulse Drops</strong></td>
+        <td>25 drops/mo × ₦35K avg = <strong>₦875K</strong></td>
+        <td>150 drops/mo × ₦40K avg = <strong>₦6M</strong></td>
+        <td>600 drops/mo × ₦50K avg = <strong>₦30M</strong></td>
+      </tr>
+      <tr class="projection-row-y1">
+        <td><strong>Vibe+ AI Premium</strong></td>
+        <td>200 users × ₦3K = <strong>₦600K</strong></td>
+        <td>3K users × ₦3K = <strong>₦9M</strong></td>
+        <td>20K users × ₦3K = <strong>₦60M</strong></td>
+      </tr>
+      <tr class="projection-row-y1">
+        <td><strong>Brand Partnerships</strong></td>
+        <td>1 brand × ₦2M/qtr = <strong>₦667K</strong></td>
+        <td>3 brands × ₦4M/qtr = <strong>₦4M</strong></td>
+        <td>8 brands × ₦6M/qtr = <strong>₦16M</strong></td>
+      </tr>
+      <tr class="projection-row-y1">
+        <td><strong>Transactions + Tickets</strong></td>
+        <td><strong>₦300K</strong></td>
+        <td><strong>₦2.5M</strong></td>
+        <td><strong>₦15M</strong></td>
+      </tr>
+      <tr class="projection-row-y1">
+        <td><strong>Data + API Licensing</strong></td>
+        <td><strong>₦0</strong></td>
+        <td><strong>₦1.5M</strong></td>
+        <td><strong>₦8M</strong></td>
+      </tr>
+      <tr style="background:#f0ebff;font-weight:700;">
+        <td><strong>Total Monthly Revenue</strong></td>
+        <td><strong>₦4.8M (~$3,200)</strong></td>
+        <td><strong>₦47M (~$31K)</strong></td>
+        <td><strong>₦249M (~$166K)</strong></td>
+      </tr>
+      <tr style="background:#f0ebff;font-weight:700;">
+        <td><strong>Annualized (MRR × 12)</strong></td>
+        <td><strong>₦58M (~$38K ARR)</strong></td>
+        <td><strong>₦564M (~$376K ARR)</strong></td>
+        <td><strong>₦2.99B (~$2M ARR)</strong></td>
+      </tr>
+    </table>
+
+    <h2>Unit Economics</h2>
+    <table>
+      <tr><th>Metric</th><th>Per Venue</th><th>Per User</th></tr>
+      <tr><td>Revenue</td><td>₦80K–500K/month</td><td>₦0–3,000/month (30% converting at scale)</td></tr>
+      <tr><td>Cost to Serve</td><td>~₦5K/month (infra + Claude cache)</td><td>~₦50/month (Claude: &lt;₦1.50/AI call × ~30 calls/mo)</td></tr>
+      <tr><td>Gross Margin</td><td><strong>90%+</strong></td><td><strong>98%+</strong> (AI features cached)</td></tr>
+      <tr><td>CAC</td><td>₦0 (direct outreach, no paid)</td><td>₦750–3,000 (word of mouth + scout referral)</td></tr>
+      <tr><td>LTV</td><td>₦960K–6M (12mo contract)</td><td>₦15K–90K (5yr × Vibe+ sub + Pulse revenue)</td></tr>
+      <tr><td>LTV/CAC Ratio</td><td><strong>200–400×</strong></td><td><strong>20–30×</strong></td></tr>
+    </table>
+
+    <h2>AI Cost Model (Claude Haiku)</h2>
+    <table>
+      <tr><th>Feature</th><th>Calls/Day</th><th>Cost/Call</th><th>Daily Cost</th><th>Monthly Cost</th></tr>
+      <tr><td>Vibe Brief (cached 4h)</td><td>~6 unique</td><td>$0.001</td><td>$0.006</td><td>$0.18</td></tr>
+      <tr><td>Roast &amp; Toast (cached 6h)</td><td>~4 per venue</td><td>$0.001</td><td>$0.40 (100 venues)</td><td>$12</td></tr>
+      <tr><td>Night Planner (live)</td><td>~50 queries</td><td>$0.002</td><td>$0.10</td><td>$3</td></tr>
+      <tr><td>DNA Narrative (cached 24h)</td><td>~20</td><td>$0.001</td><td>$0.02</td><td>$0.60</td></tr>
+      <tr><td>Debrief + Advisor (cached)</td><td>~30</td><td>$0.001</td><td>$0.03</td><td>$0.90</td></tr>
+      <tr style="font-weight:700;background:#fef3c7;">
+        <td><strong>Total (at 1,000 MAU)</strong></td><td>—</td><td>—</td><td><strong>~$0.60</strong></td><td><strong>~$18/mo</strong></td></tr>
+      <tr style="font-weight:700;background:#d1fae5;">
+        <td><strong>Total (at 10K MAU)</strong></td><td>—</td><td>—</td><td><strong>~$6</strong></td><td><strong>~$180/mo</strong></td></tr>
+      <tr style="font-weight:700;background:#dbeafe;">
+        <td><strong>Total (at 100K MAU)</strong></td><td>—</td><td>—</td><td><strong>~$60</strong></td><td><strong>~$1,800/mo</strong></td></tr>
+    </table>
+    <p style="font-size:13px;color:#555;">At 100K MAU, Claude AI costs ~$1,800/month. Vibe+ subscription revenue at 5% conversion = $10,000/month. <strong>Claude pays for itself 5.5× over.</strong></p>
+
+    <h2>Path to ₦100M MRR ($67K/mo)</h2>
+    <ul>
+      <li><strong>500 venues</strong> on Starter plan (₦50K avg) = ₦25M/mo</li>
+      <li><strong>10K Vibe+ subscribers</strong> (₦3K/mo) = ₦30M/mo</li>
+      <li><strong>300 Pulse Drops/mo</strong> (₦50K avg) = ₦15M/mo</li>
+      <li><strong>5 brand partnerships</strong> (₦5M/qtr each) = ₦8.3M/mo</li>
+      <li><strong>Ticketing + data</strong> = ₦10M/mo</li>
+      <li>Transactions + misc = ₦11.7M/mo</li>
+      <li><strong>Total: ₦100M/mo (~$67K/mo = $800K ARR)</strong></li>
+    </ul>
+    <p>This is reachable at <strong>500 venues + 100K MAU</strong> — achievable by Month 18–24 with the pre-seed capital deployed correctly.</p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 9 — LAUNCH STRATEGY -->
+  <div class="section page-break">
+    <div class="section-label">Section 9</div>
+    <h1>Launch Strategy — "The Cartel"</h1>
+
+    <h2>Step 1: Venue Onboarding (Weeks 1–4)</h2>
+    <p>Identify and approach <strong>20 premium Lagos venues</strong> across categories:</p>
+    <ul>
+      <li><strong>Clubs:</strong> Quilox, Escape, Club Joker, DNA Nightclub</li>
+      <li><strong>Lounges:</strong> Shiro, Rhapsody's, The Vault</li>
+      <li><strong>Bars:</strong> Hard Rock Cafe, Sky Lounge, Cactus</li>
+      <li><strong>Restaurants:</strong> The Place, Circa, NOK by Alara</li>
+      <li><strong>Events Spaces:</strong> Eko Hotel, Landmark Centre, Muri Okunola Park</li>
+    </ul>
+    <p>Offer free 6-month trial + "Founding Venue Partner" badge (permanent premium listing).</p>
+
+    <h2>Step 2: Scout Recruitment (Weeks 2–6)</h2>
+    <ul>
+      <li>Recruit <strong>200 "Elite Scouts"</strong> — Lagos influencers, party promoters, socialites</li>
+      <li>Target: DJ networks, event promoters, club photographers, socialite groups</li>
+      <li>Pre-load accounts with clout points · WhatsApp groups for coordination</li>
+      <li>They ARE the content engine — their ratings create the live data</li>
+    </ul>
+
+    <h2>Step 3: The Vibe Drop — Launch Night (Week 6)</h2>
+    <ul>
+      <li>Coordinated launch across all 20 venues on a Friday night</li>
+      <li>Every scout checks in, rates, posts stories simultaneously</li>
+      <li>PR push: TechCabal, Techpoint Africa, Disrupt Africa</li>
+      <li>Social media blitz: Instagram stories, Twitter/X threads, TikTok content</li>
+    </ul>
+
+    <h2>Step 4: Growth Loop (Weeks 6–52)</h2>
+    <ul>
+      <li>Scouts rate venues → venues get data → venues promote app to customers</li>
+      <li>Weekly leaderboard competitions — top scouts win prizes</li>
+      <li>"Vibe Report" — weekly newsletter/Instagram ranking Lagos venues</li>
+      <li>Partnerships with alcohol brands for sponsored Pulse Drops</li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 10 — COMPETITIVE LANDSCAPE -->
+  <div class="section">
+    <div class="section-label">Section 10</div>
+    <h1>Competitive Landscape</h1>
+
+    <table>
+      <tr><th>Platform</th><th>Data</th><th>Africa</th><th>Real-Time</th><th>AI</th></tr>
+      <tr>
+        <td>Google Maps</td>
+        <td>Historical averages</td>
+        <td class="lose">❌</td><td class="lose">❌</td><td class="lose">❌</td>
+      </tr>
+      <tr>
+        <td>Yelp / TripAdvisor</td>
+        <td>Static reviews</td>
+        <td class="lose">❌</td><td class="lose">❌</td><td class="lose">❌</td>
+      </tr>
+      <tr>
+        <td>Instagram</td>
+        <td>Unstructured posts</td>
+        <td>Partial</td><td>Partial</td><td class="lose">❌</td>
+      </tr>
+      <tr>
+        <td>Eventbrite / Tix.africa</td>
+        <td>Ticketing only</td>
+        <td>Partial</td><td class="lose">❌</td><td class="lose">❌</td>
+      </tr>
+      <tr style="background: #f0ebff;">
+        <td><strong>VibeApp ✦</strong></td>
+        <td><strong>Live vibe from scouts</strong></td>
+        <td class="win">✅ Lagos-built</td>
+        <td class="win">✅ Minutes</td>
+        <td class="win">✅ 8 Claude AI features live</td>
+      </tr>
+    </table>
+
+    <div class="highlight-card">
+      <strong>The data moat compounds every night.</strong> First-mover advantage in real-time venue intelligence is nearly impossible to replicate — every rating, check-in, and behavioral data point from day one is a permanent competitive barrier. By the time a competitor tries to build this, we'll have 12 months of labeled training data they can never buy.
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 11 — FUNDRAISING -->
+  <div class="section page-break">
+    <div class="section-label">Section 11</div>
+    <h1>Fundraising Roadmap &amp; The $250M Exit Path</h1>
+
+    <h2>Round-by-Round Plan</h2>
+    <table>
+      <tr><th>Round</th><th>Amount</th><th>Valuation</th><th>Timeline</th><th>Use of Funds</th></tr>
+      <tr><td><strong>Pre-seed</strong></td><td><strong>$150–300K</strong></td><td>$2–3M</td><td>Now</td><td>Lagos launch · 3-person team · 20 venues · server costs</td></tr>
+      <tr><td>Seed</td><td>$1–2M</td><td>$8–12M</td><td>Month 10</td><td>Nigeria expansion · 10-person team · 200 venues</td></tr>
+      <tr><td>Series A</td><td>$5–10M</td><td>$40–60M</td><td>Month 24</td><td>West Africa · product expansion · 20-person team</td></tr>
+      <tr><td>Series B</td><td>$20–30M</td><td>$120–180M</td><td>Month 36</td><td>Pan-Africa · AI model training · data products</td></tr>
+      <tr><td><strong>Exit / Series C</strong></td><td>—</td><td><strong>$250M+</strong></td><td>Month 42–54</td><td>Strategic acquisition or growth round</td></tr>
+    </table>
+
+    <h2>Who Buys This &amp; Why — Tier 1 Strategic Acquirers</h2>
+    <table>
+      <tr><th>Buyer</th><th>Why They'd Acquire Us</th></tr>
+      <tr><td><strong>Booking.com / Tripadvisor</strong></td><td>Real-time nightlife layer they don't have for Africa (Tripadvisor acquired TheFork for $616M)</td></tr>
+      <tr><td><strong>Spotify</strong></td><td>Social + location layer for music discovery in Africa — the missing piece of their African expansion</td></tr>
+      <tr><td><strong>Google Maps</strong></td><td>Live crowd data — things Google shows as "Popular Times" but only historically; we have it live</td></tr>
+      <tr><td><strong>Meta</strong></td><td>Real-world social behavior data to improve ad targeting for 200M+ African users</td></tr>
+      <tr><td><strong>Uber / Bolt</strong></td><td>Predict surge demand from nightlife patterns before it happens — 30min advance notice = millions in revenue</td></tr>
+      <tr><td><strong>MTN / Safaricom</strong></td><td>Super-app play — nightlife as lifestyle vertical (MTN has 280M subscribers)</td></tr>
+      <tr><td><strong>Flutterwave / Paystack</strong></td><td>Nightlife commerce layer + 500+ venue merchant network already on the platform</td></tr>
+    </table>
+
+    <h2>Three Paths to $250M</h2>
+    <table>
+      <tr><th>Path</th><th>What's Needed</th><th>Timeline</th></tr>
+      <tr><td><strong>Path A — Revenue Multiple</strong></td><td>$15–25M ARR at 10–15× SaaS/marketplace multiple</td><td>Month 36–42</td></tr>
+      <tr><td><strong>Path B — User/Data Value</strong></td><td>2–5M MAU across 5+ countries + unique real-time dataset nobody else has</td><td>Month 36–42</td></tr>
+      <tr><td><strong>Path C — Strategic Value</strong></td><td>Undisputed "nightlife graph" of Africa — whoever buys you owns the category</td><td>Month 30+</td></tr>
+    </table>
+
+    <h2>Current Valuation Assessment (February 2026)</h2>
+    <table>
+      <tr><th>Component</th><th>Estimate</th></tr>
+      <tr><td>Codebase (12–16 months equivalent dev work, 3 full user tiers, full-stack)</td><td>$120–200K</td></tr>
+      <tr><td>8 live Claude AI features (Vibe Brief, Roast, DNA, Advisor, Debrief, Planner, Oracle, Control Tower)</td><td>$60–100K</td></tr>
+      <tr><td>20+ proprietary algorithms (Score, Trending, DNA, VibeMatch, Oracle heuristic…)</td><td>$30–60K</td></tr>
+      <tr><td>Product design &amp; UX (glass UI, persona system, animated components)</td><td>$20–35K</td></tr>
+      <tr><td>Demo-ready state (full demo mode + scripted investor walkthrough)</td><td>$15–25K</td></tr>
+      <tr><td>Deployed backend + infrastructure (Vercel + Railway, confirmed live)</td><td>$5–10K</td></tr>
+      <tr><td>First-mover positioning in Africa real-time venue intelligence</td><td>$10–30K</td></tr>
+      <tr><td><strong>Total current value</strong></td><td><strong>$260K–460K</strong></td></tr>
+    </table>
+
+    <h2>Target Investors</h2>
+    <table>
+      <tr><th>Stage</th><th>Funds</th></tr>
+      <tr><td>Pre-seed / Seed</td><td>Launch Africa · Microtraction · Future Africa · Voltron Capital · Ingressive Capital</td></tr>
+      <tr><td>Seed / Series A</td><td>Partech Africa · TLcom Capital · Norrsken22 · 4DX Ventures · Ventures Platform</td></tr>
+      <tr><td>Series A / B</td><td>a16z Africa · QED Investors · Tiger Global · Prosus Ventures · SoftBank Vision Fund</td></tr>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 12 — NAMING -->
+  <div class="section">
+    <div class="section-label">Section 12</div>
+    <h1>Naming &amp; Brand Strategy</h1>
+
+    <p>"VibeApp" is already taken on Google Play Store. Publishing with this name risks listing rejection, legal trademark challenges, and weak brand identity.</p>
+
+    <table>
+      <tr><th>Name</th><th>Rationale</th><th>Verdict</th></tr>
+      <tr style="background: #f0ebff;">
+        <td><strong>Gbedu ⭐ TOP PICK</strong></td>
+        <td>"Where's the gbedu?" is literally the problem we solve. Deeply Nigerian, globally memorable (like "karaoke")</td>
+        <td><strong>Highly trademarkable — nobody owns it in tech</strong></td>
+      </tr>
+      <tr>
+        <td>Pulse</td>
+        <td>Clean, universal, premium. Already in product language (Pulse Drops, CartelPulse)</td>
+        <td>Common word — check conflicts first</td>
+      </tr>
+      <tr>
+        <td>Nocturn</td>
+        <td>Latin root for "night" — premium, global, easy to spell</td>
+        <td>Likely clear</td>
+      </tr>
+      <tr>
+        <td>Turnup</td>
+        <td>Self-explanatory — "TurnUp: Lagos"</td>
+        <td>Needs checking</td>
+      </tr>
+    </table>
+
+    <p><strong>Criteria for final name:</strong> Memorable (4–6 letters) · Pronounceable globally · Available on App Store / Play Store · Trademarkable · Works as a verb ("Let me check Gbedu")</p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SECTION 13 — ACTION ITEMS -->
+  <div class="section page-break">
+    <div class="section-label">Section 13</div>
+    <h1>Immediate Action Items</h1>
+
+    <h2>Completed ✅</h2>
+    <table>
+      <tr><th>Action</th><th>Status</th></tr>
+      <tr><td>Full-stack build (React Native + FastAPI + MongoDB)</td><td><span class="feature-status status-built">✅ Done</span></td></tr>
+      <tr><td>Deploy to Vercel (frontend) + Railway (backend)</td><td><span class="feature-status status-built">✅ Live</span></td></tr>
+      <tr><td>Set ANTHROPIC_API_KEY in Railway → Claude firing on 7 AI endpoints</td><td><span class="feature-status status-ai-live">✦ Live</span></td></tr>
+      <tr><td>Seed 10 real Lagos venues with coordinates</td><td><span class="feature-status status-built">✅ Done</span></td></tr>
+      <tr><td>Demo mode with realistic mock data</td><td><span class="feature-status status-built">✅ Done</span></td></tr>
+      <tr><td>Feature Control Tower (admin toggles for all 16 features)</td><td><span class="feature-status status-built">✅ Done</span></td></tr>
+    </table>
+
+    <h2>This Week — Critical</h2>
+    <table>
+      <tr><th>#</th><th>Action</th><th>Priority</th></tr>
+      <tr><td>1</td><td>Fix EXPO_PUBLIC_BACKEND_URL in Vercel env vars → empty string (so rewrites handle it)</td><td><strong>🔴 Critical</strong></td></tr>
+      <tr><td>2</td><td>Register a company (Nigeria CAC or Delaware LLC)</td><td><strong>🔴 Critical</strong></td></tr>
+      <tr><td>3</td><td>Choose final app name + check trademark availability</td><td>🟡 High</td></tr>
+      <tr><td>4</td><td>Deploy to App Store / Play Store (TestFlight first)</td><td>🟡 High</td></tr>
+      <tr><td>5</td><td>Get 10 friends to use it next Friday night and collect feedback</td><td>🟡 High</td></tr>
+    </table>
+
+    <h2>This Month</h2>
+    <table>
+      <tr><th>#</th><th>Action</th><th>Priority</th></tr>
+      <tr><td>6</td><td>Onboard 3 real venue managers to merchant dashboard</td><td>🟡 High</td></tr>
+      <tr><td>7</td><td>Create 12-slide visual pitch deck (Notion/Canva) from this document</td><td>🟡 High</td></tr>
+      <tr><td>8</td><td>Record 2-minute demo video walkthrough</td><td>🟡 High</td></tr>
+      <tr><td>9</td><td>Apply to: Future Africa, Launch Africa, Y Combinator (W26)</td><td>🟡 High</td></tr>
+      <tr><td>10</td><td>Wire Oracle Premium "Go Premium" button to Vibe+ subscription paywall</td><td>🟡 High</td></tr>
+    </table>
+
+    <h2>Technical Roadmap (Pending)</h2>
+    <ul>
+      <li><strong>Split app into 3 separate but linked deployments</strong> — Public app, Merchant portal, Admin portal — each independent, sharing one backend + MongoDB</li>
+      <li>Oracle Premium frontend — "Go Premium" upgrade path in VibeOracle.tsx wired to /oracle/premium + Paystack</li>
+      <li>Merchant venue onboarding (manually add venues for new merchants via Admin panel)</li>
+      <li>Unit tests for core business logic</li>
+      <li>Frontend component cleanup + error boundaries</li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+
+  <!-- APPENDIX -->
+  <div class="section">
+    <div class="section-label">Appendix</div>
+    <h1>Key Metrics to Track</h1>
+
+    <h2>Product Metrics</h2>
+    <ul>
+      <li>Daily / Weekly / Monthly Active Users (DAU / WAU / MAU)</li>
+      <li>Ratings per user per week · Check-ins per user per week</li>
+      <li>Scout-to-user conversion rate (what % of users actually rate)</li>
+      <li>Retention: D1, D7, D30</li>
+      <li>AI feature engagement rate (% of users who interact with Claude features)</li>
+      <li>Session duration and frequency</li>
+    </ul>
+
+    <h2>Revenue Metrics</h2>
+    <ul>
+      <li>MRR breakdown by stream (subscriptions vs. Pulse Drops vs. Vibe+ vs. brand)</li>
+      <li>Average Revenue Per Venue (ARPV) · Average Revenue Per User (ARPU)</li>
+      <li>CAC · LTV · Gross margin per stream</li>
+      <li>Vibe+ conversion rate (free → paying)</li>
+      <li>Claude API cost as % of Vibe+ revenue</li>
+    </ul>
+
+    <h2>Engagement Metrics</h2>
+    <ul>
+      <li>Venues with 5+ ratings per week (data coverage)</li>
+      <li>Scout accuracy scores (data quality)</li>
+      <li>Crew/Cartel formation rate (social stickiness)</li>
+      <li>Streak completion rate (retention driver)</li>
+      <li>Night Planner sessions per week (AI engagement)</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="doc-footer">
+  <strong>VibeApp — $250M Exit Strategy Blueprint</strong><br>
+  Real-Time Social Venue Intelligence for Africa · 8 Claude AI Features Live<br>
+  <em>v3.0 · February 2026 · Confidential · For Internal Use &amp; Investor Distribution Only</em><br><br>
+  Built with conviction. Launching from Lagos. Scaling across Africa.<br>
+  <strong>Yoriajagun08@gmail.com</strong>
+</div>
+
+</body>
+</html>

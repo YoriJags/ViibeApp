@@ -28,7 +28,11 @@ import AchievementBadge, { Badge } from '../../src/components/AchievementBadge';
 import CrewCard from '../../src/components/CrewCard';
 import AuraLevelUp from '../../src/components/AuraLevelUp';
 import SkinPicker from '../../src/components/SkinPicker';
+import ZodiacPicker from '../../src/components/ZodiacPicker';
+import NarrativeDivider from '../../src/components/NarrativeDivider';
+import analytics, { EVENT } from '../../src/services/analytics';
 import { getSkinPreset, resolveSkinPalette } from '../../src/config/skins';
+import { getZodiacSign } from '../../src/config/zodiac';
 import { DEMO_BADGES, DEMO_CREW } from '../../src/data/demoData';
 
 const { width: W } = Dimensions.get('window');
@@ -64,7 +68,7 @@ const DEMO_DEBRIEF = {
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode, isFeatureEnabled, isVibePlus, avatarConfig, updateAvatar, crew, fetchCrew, replayAppTutorial } = useVibeStore();
-  const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
+  const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup' | 'zodiac'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [debrief, setDebrief] = useState<{ debrief: string; night_title?: string; stats?: any } | null>(null);
@@ -75,6 +79,7 @@ export default function ProfileScreen() {
   const [showAfterParty, setShowAfterParty] = useState(false);
   const [showSkinPicker, setShowSkinPicker] = useState(false);
   const [savingSkin, setSavingSkin] = useState(false);
+  const [showZodiacPicker, setShowZodiacPicker] = useState(false);
   const [showAuraLevelUp, setShowAuraLevelUp] = useState(false);
   const [showNightSummary, setShowNightSummary] = useState(false);
   const prevScoutStatus = useRef<string | null>(null);
@@ -121,10 +126,61 @@ export default function ProfileScreen() {
 
     const success = await createUser(username.trim(), phone.trim());
     if (success) {
-      setAuthMode('welcome');
+      // Go to optional zodiac step before landing on profile
+      setAuthMode('zodiac');
     } else {
       Alert.alert('Error', 'Username might already exist. Try another.');
     }
+  };
+
+  const handleZodiacSelect = async (signKey: string) => {
+    try {
+      await fetch(`${API_URL}/api/users/me/zodiac`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...useVibeStore.getState().getAuthHeaders() },
+        body: JSON.stringify({ sign: signKey }),
+      });
+      useVibeStore.setState(s => ({
+        user: s.user ? { ...s.user, zodiac_sign: signKey } : s.user,
+      }));
+      analytics.track(EVENT.ZODIAC_SET, { sign: signKey, context: 'onboarding' });
+    } catch {
+      // Non-critical — sign just won't be set
+    } finally {
+      setAuthMode('welcome');
+    }
+  };
+
+  const handleZodiacChange = async (signKey: string) => {
+    try {
+      await fetch(`${API_URL}/api/users/me/zodiac`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...useVibeStore.getState().getAuthHeaders() },
+        body: JSON.stringify({ sign: signKey }),
+      });
+      useVibeStore.setState(s => ({
+        user: s.user ? { ...s.user, zodiac_sign: signKey } : s.user,
+      }));
+      analytics.track(EVENT.ZODIAC_SET, { sign: signKey, context: 'profile_edit' });
+    } catch {
+      Alert.alert('Error', 'Could not save sign.');
+    } finally {
+      setShowZodiacPicker(false);
+    }
+  };
+
+  const handleZodiacClear = async () => {
+    try {
+      await fetch(`${API_URL}/api/users/me/zodiac`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...useVibeStore.getState().getAuthHeaders() },
+        body: JSON.stringify({ sign: null }),
+      });
+      useVibeStore.setState(s => ({
+        user: s.user ? { ...s.user, zodiac_sign: undefined } : s.user,
+      }));
+    } catch {}
+    setShowZodiacPicker(false);
   };
 
   const handleLogin = async () => {
@@ -165,6 +221,7 @@ export default function ProfileScreen() {
       useVibeStore.setState(s => ({
         user: s.user ? { ...s.user, reactor_skin: skinKey } : s.user,
       }));
+      analytics.track(EVENT.SKIN_CHANGED, { skin: skinKey });
     } catch {
       Alert.alert('Error', 'Could not save skin. Try again.');
     } finally {
@@ -371,6 +428,19 @@ export default function ProfileScreen() {
     );
   }
 
+  // Zodiac onboarding step — shown after account creation
+  if (authMode === 'zodiac') {
+    return (
+      <ZodiacPicker
+        visible={true}
+        isOnboarding={true}
+        onSelect={handleZodiacSelect}
+        onSkip={() => setAuthMode('welcome')}
+        onClose={() => setAuthMode('welcome')}
+      />
+    );
+  }
+
   // User Profile Screen
   return (
     <SafeAreaView style={styles.container}>
@@ -442,6 +512,30 @@ export default function ProfileScreen() {
             {user?.scout_status?.toUpperCase()} SCOUT
           </Text>
 
+          {/* Zodiac badge */}
+          {user?.zodiac_sign ? (() => {
+            const z = getZodiacSign(user.zodiac_sign);
+            return z ? (
+              <TouchableOpacity
+                style={[styles.zodiacBadge, { borderColor: z.elementColor + '40' }]}
+                onPress={() => setShowZodiacPicker(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.zodiacSymbol}>{z.symbol}</Text>
+                <Text style={[styles.zodiacName, { color: z.elementColor }]}>{z.name.toUpperCase()}</Text>
+                <Ionicons name="pencil" size={9} color="#333" style={{ marginLeft: 2 }} />
+              </TouchableOpacity>
+            ) : null;
+          })() : (
+            <TouchableOpacity
+              style={styles.zodiacAdd}
+              onPress={() => setShowZodiacPicker(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.zodiacAddText}>✦ Add cosmic sign</Text>
+            </TouchableOpacity>
+          )}
+
           {/* Vibe+ badge or upgrade CTA */}
           {isVibePlus() ? (
             <View style={styles.vibePlusBadge}>
@@ -455,6 +549,8 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           )}
         </View>
+
+        <NarrativeDivider mode="chapter" label="YOUR NUMBERS" color="#FF3366" topGap={8} botGap={4} />
 
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
@@ -630,6 +726,8 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        <NarrativeDivider mode="chapter" label="YOUR SCENE" color="#9933FF" topGap={8} botGap={4} />
+
         {/* Scout Progress */}
         <View style={styles.progressCard}>
           <Text style={styles.progressTitle}>Scout Progress</Text>
@@ -700,6 +798,8 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        <NarrativeDivider mode="chapter" label="YOUR SIGNATURE" color="#FFD700" topGap={8} botGap={4} />
+
         {/* ── Reactor Skin ── */}
         <View style={styles.skinSection}>
           <View style={styles.skinSectionHeader}>
@@ -768,6 +868,15 @@ export default function ProfileScreen() {
         isVibePlus={isVibePlus()}
         onSelect={handleSkinSelect}
         onClose={() => setShowSkinPicker(false)}
+      />
+
+      <ZodiacPicker
+        visible={showZodiacPicker}
+        currentSign={user?.zodiac_sign}
+        isOnboarding={false}
+        onSelect={handleZodiacChange}
+        onSkip={handleZodiacClear}
+        onClose={() => setShowZodiacPicker(false)}
       />
 
       <VibePassport
@@ -1284,6 +1393,34 @@ const styles = StyleSheet.create({
   dashboardDesc: {
     fontSize: 13,
     color: '#888',
+  },
+  zodiacBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginTop: 8,
+    borderWidth: 0.5,
+  },
+  zodiacSymbol: {
+    fontSize: 13,
+  },
+  zodiacName: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  zodiacAdd: {
+    marginTop: 8,
+    paddingVertical: 3,
+  },
+  zodiacAddText: {
+    fontSize: 11,
+    color: '#333',
+    letterSpacing: 0.5,
   },
   vibePlusBadge: {
     flexDirection: 'row',

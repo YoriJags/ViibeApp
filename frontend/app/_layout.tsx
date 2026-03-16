@@ -12,9 +12,13 @@ import SplashAnimation from '../src/components/SplashAnimation';
 import DemoTutorial from '../src/components/DemoTutorial';
 import ErrorBoundary from '../src/components/ErrorBoundary';
 import GlobalVibePill from '../src/components/GlobalVibePill';
+import { initPostHog } from '../src/services/posthog';
 
 // Keep native splash visible until we're ready to show our animated one
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Init PostHog as early as possible (before any user interaction)
+initPostHog();
 
 // App Initializer Component — manages splash → content transition
 function AppInitializer({ children }: { children: React.ReactNode }) {

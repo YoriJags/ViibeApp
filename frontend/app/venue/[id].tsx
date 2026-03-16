@@ -52,6 +52,8 @@ import VenueInsiderPanel from '../../src/components/VenueInsiderPanel';
 import ScoutPressureChip from '../../src/components/ScoutPressureChip';
 import VibeMomentum from '../../src/components/VibeMomentum';
 import TorchButton from '../../src/components/TorchButton';
+import NarrativeDivider from '../../src/components/NarrativeDivider';
+import analytics, { EVENT } from '../../src/services/analytics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -100,7 +102,6 @@ export default function VenueDetailScreen() {
     getAuthHeaders,
     setVenueGeofence,
     isInsideVenue,
-    user,
   } = useVibeStore();
   const [venue, setVenue] = useState<any>(null);
   const [ratingStatus, setRatingStatus] = useState<any>(null);
@@ -205,6 +206,7 @@ export default function VenueDetailScreen() {
       fetchStories(id);
       fetchVenueCheckins(id);
       fetchTimeline(id);
+      analytics.track(EVENT.VENUE_VIEWED, { venue_id: id });
     }
     if (isAuthenticated) fetchActiveCheckin();
 
@@ -241,10 +243,16 @@ export default function VenueDetailScreen() {
     if (!isAuthenticated || !id) return;
     if (inLobby) {
       const removed = await removeFromLobby(id);
-      if (removed) setInLobby(false);
+      if (removed) {
+        setInLobby(false);
+        analytics.track(EVENT.VENUE_LOBBY_REMOVE, { venue_id: id, venue_name: venue?.name });
+      }
     } else {
       const added = await addToLobby(id);
-      if (added) setInLobby(true);
+      if (added) {
+        setInLobby(true);
+        analytics.track(EVENT.VENUE_LOBBY_ADD, { venue_id: id, venue_name: venue?.name, energy_level: venue?.energy_level, vibe_score: venue?.current_vibe_score });
+      }
     }
   };
 
@@ -254,8 +262,10 @@ export default function VenueDetailScreen() {
     try {
       if (activeCheckin && activeCheckin.venue_id === venue.id) {
         await ghostCheckOut(venue.id);
+        analytics.track(EVENT.CHECKIN_END, { venue_id: venue.id, venue_name: venue.name });
       } else {
         const result = await ghostCheckIn(venue.id, userLocation.lat, userLocation.lng);
+        analytics.track(EVENT.CHECKIN_START, { venue_id: venue.id, venue_name: venue.name, venue_type: (venue as any).venue_type, area: (venue as any).area, energy_level: venue.energy_level, vibe_score: venue.current_vibe_score });
         setShowCelebration(true);
         if (result?.is_first_tonight || isDemoMode) setShowFirstScout(true);
       }
@@ -385,8 +395,8 @@ export default function VenueDetailScreen() {
 
   const handleGetDirections = () => {
     if (!venue) return;
-    
     recordDirectionClick(venue.id);
+    analytics.track(EVENT.VENUE_DIRECTIONS, { venue_id: venue.id, venue_name: venue.name, area: (venue as any).area });
     
     const { lat, lng } = venue.coordinates;
     const label = encodeURIComponent(venue.name);
@@ -809,6 +819,8 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
           </Text>
         </View>
 
+        <NarrativeDivider mode="breath" topGap={2} botGap={2} />
+
         {/* ====== TAB BAR ====== */}
         <View style={styles.tabBar}>
           {([
@@ -982,6 +994,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
                   <VenueRoastCard venueId={id} venueName={venue.name} isDemoMode={isDemoMode} />
                 </ErrorBoundary>
               )}
+              <NarrativeDivider mode="scene" label="CROWD INTEL" color="#3399FF" topGap={4} botGap={4} />
               {id && (
                 <ErrorBoundary label="Arrival Intel">
                   <ArrivalIntelCard venueId={id} isDemoMode={isDemoMode} />
@@ -992,6 +1005,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
                   <CrowdCompositionBar venueId={id} isDemoMode={isDemoMode} />
                 </ErrorBoundary>
               )}
+              <NarrativeDivider mode="scene" label="TIMELINE" color="#9B59B6" topGap={4} botGap={4} />
               {venueTimeline.length > 0 && (
                 <ErrorBoundary label="Timeline">
                   <VibeTimeline timeline={venueTimeline} peakHour={timelinePeakHour} />

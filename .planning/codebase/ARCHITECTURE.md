@@ -1,197 +1,179 @@
 # Architecture
 
-**Analysis Date:** 2025-02-24
+**Analysis Date:** 2026-03-13
 
 ## Pattern Overview
 
-**Overall:** 3-Storey Multi-Floor Architecture with Shared Backend & Modular Frontend Routing
+**Overall:** Decoupled monolith (frontend) + modular monolith (backend) deployed as separate services
 
 **Key Characteristics:**
-- Three independent user floors (Public, Merchant, Admin) each with distinct visual identity and permissions
-- Frontend: Expo Router v5 file-based routing with route groups (`(public)`, `(merchant)`, `(admin)`)
-- Backend: FastAPI modular routes + Socket.IO real-time layer, with separate Vercel serverless entry point
-- State: Zustand v5 persisted store (AsyncStorage) as single source of truth for frontend
-- Real-time: Socket.IO rooms for venue updates, leaderboard broadcasts, check-in counts
-- Two separate backend entry points kept in sync: `server.py` (local/Railway) and `api/index.py` (Vercel)
+- 3-Storey access model: Public (scouts), Merchant (venue owners), Admin (super admins) — enforced at both routing and auth layers
+- FastAPI modular backend with 50+ domain route files, each owning a slice of business logic
+- Single Zustand store for all frontend state — persisted to AsyncStorage, hydrated at boot
+- Real-time layer via Socket.IO running as an ASGI app wrapping the FastAPI app
+- Vercel rewrites proxy all `/api/*` requests from the frontend to Railway (backend)
 
 ## Layers
 
-**Frontend Application Layer:**
-- Purpose: User-facing screens for each floor with authentication-based routing
+**Frontend Screens (Expo Router):**
+- Purpose: File-based routing maps directly to user-facing screens
 - Location: `frontend/app/`
-- Contains: Floor-specific layouts, screens, and modal routes
-- Depends on: `vibeStore`, `floors.ts` theme system, `components/`
-- Used by: Direct user interaction (touch, navigation)
+- Contains: Page components organized by access storey (`(public)`, `(merchant)`, `(admin)`) plus shared route screens (`venue/[id]`, `rate/[id]`, `claim.tsx`)
+- Depends on: `vibeStore`, `src/components/`, `src/theme/`
+- Used by: End users navigating the app
 
-**Frontend Business Logic Layer:**
-- Purpose: State management, API calls, real-time subscriptions
+**Frontend Components:**
+- Purpose: Reusable UI building blocks, many self-fetching their own data via `vibeStore`
+- Location: `frontend/src/components/`
+- Contains: 100+ components ranging from atomic (`AvatarDisplay.tsx`, `SkeletonLoader.tsx`) to complex features (`VibeOracle.tsx`, `RateVibeModal.tsx`, `SurgeFullScreen.tsx`)
+- Depends on: `vibeStore`, `src/theme/`, `src/utils/`
+- Used by: Screen files in `frontend/app/`
+
+**Frontend Store (Zustand):**
+- Purpose: Global state + API communication layer — the only place where fetch calls are made
 - Location: `frontend/src/store/vibeStore.ts`
-- Contains: Zustand store with persist middleware, Socket.IO client connection, API methods
-- Depends on: `axios`-like fetch calls to `EXPO_PUBLIC_BACKEND_URL`, Socket.IO client
-- Used by: All frontend screens and components
+- Contains: All app state (auth, venues, crews, streaks, socket connection), actions that call the backend, persist configuration
+- Depends on: `API_URL` from `process.env.EXPO_PUBLIC_BACKEND_URL`, `src/data/demoData.ts`
+- Used by: All components and screens via `useVibeStore()`
 
-**Frontend Presentation Layer:**
-- Purpose: Reusable UI components with accessibility and animations
-- Location: `frontend/src/components/` (52+ components)
-- Contains: GlassCard, VenueCard, AnimatedTabBar, RateVibeModal, VibeOracle, etc.
-- Depends on: Theme system (`floors.ts`), animations, icons
-- Used by: Application and Business Logic layers
+**Backend Routes:**
+- Purpose: HTTP request handlers — validate input, call services, return JSON
+- Location: `backend/app/routes/`
+- Contains: 50+ domain modules (e.g., `ratings.py`, `venues.py`, `merchant.py`, `intelligence.py`, `oracle.py`)
+- Depends on: `app.services.*`, `app.config.db`, `app.models`
+- Used by: FastAPI router registered in `backend/server.py`
 
-**Backend API Layer:**
-- Purpose: HTTP request handling and route registration
-- Location: `backend/server.py` (FastAPI ASGI + Socket.IO)
-- Contains: Middleware (CORS, rate limiting), route inclusion, startup hooks
-- Depends on: FastAPI, all route modules, Socket.IO config
-- Used by: Client HTTP requests and WebSocket connections
+**Backend Services:**
+- Purpose: Reusable business logic and integrations shared across route modules
+- Location: `backend/app/services/`
+- Contains: `vibe.py` (score calculation, geofencing, clout), `auth.py` (sessions, FastAPI dependencies), `realtime.py` (Socket.IO event handlers), `payments.py` (Paystack), `notifications.py`, `streaks.py`, `forecast.py`, `economy.py`, `email.py`, `sms.py`
+- Depends on: `app.config.db`, `app.models`, external APIs (Paystack, Anthropic)
+- Used by: Route handlers via direct import
 
-**Backend Routes Layer:**
-- Purpose: Endpoint logic organized by feature domain
-- Location: `backend/app/routes/` (22+ route modules: `auth.py`, `venues.py`, `ratings.py`, etc.)
-- Contains: @router.get/@router.post endpoints with validation
-- Depends on: Services layer, models, database config
-- Used by: Frontend API calls via HTTP
+**Backend Config & Models:**
+- Purpose: Centralized database connection, environment variables, Pydantic models, constants
+- Location: `backend/app/config.py`, `backend/app/models.py`
+- Contains: MongoDB Motor client, Socket.IO server instance, index creation, city definitions, Pydantic request/response models
+- Depends on: Environment variables (`MONGO_URL`, `DB_NAME`, `PAYSTACK_SECRET_KEY`, etc.)
+- Used by: All route and service modules
 
-**Backend Services Layer:**
-- Purpose: Business logic extracted from routes (queries, calculations, integrations)
-- Location: `backend/app/services/` (auth.py, payments.py, realtime.py, economy.py, etc.)
-- Contains: Functions for auth validation, Paystack processing, Socket.IO broadcasts, vibe calculations
-- Depends on: Database, external APIs (Paystack)
-- Used by: Routes layer
-
-**Backend Data Layer:**
-- Purpose: Database connection and schema definitions
-- Location: `backend/app/config.py` (Motor async client, indexes) + `backend/app/models.py` (Pydantic)
-- Contains: MongoDB async client, collections setup, TTL indexes, Pydantic models
-- Depends on: Motor (async MongoDB), environment variables
-- Used by: Routes and Services layers
+**Middleware:**
+- Purpose: Cross-cutting request concerns applied before routes execute
+- Location: `backend/app/middleware/rate_limit.py`
+- Contains: In-memory sliding-window rate limiter keyed by `IP:path`
+- Depends on: `app.config.logger`
+- Used by: FastAPI app in `backend/server.py`
 
 ## Data Flow
 
-**Public Floor Scout Rating Submission → Backend → Live Leaderboard Broadcast:**
+**Scout Rating a Venue:**
 
-1. Scout opens RateVibeModal in VenueCard (Public floor)
-2. Selects energy (chill/popping/electric), capacity (sparse/vibrant/full), gate (clear/slow/blocked)
-3. Submits POST `/api/ratings` with venue_id + venue_type + vibe_score calculation
-4. Backend route `ratings.py` validates, stores to MongoDB `ratings` collection
-5. Rating triggers vibe_score recalculation (50% energy + 30% capacity + 20% gate)
-6. Backend broadcasts `venue_update` via Socket.IO room `venue_{venue_id}` to map subscribers
-7. Backend broadcasts `leaderboard_update` to room `leaderboard_city_{city}` with top 50 venues
-8. Frontend vibeStore receives real-time update and triggers component re-render
-9. VenueCard shows live vibe_score change, CheckInCelebration confetti fires, Clout points awarded
+1. User at venue opens `RateVibeModal.tsx`, selects energy/capacity/gate/venue_specific
+2. `vibeStore.submitRating()` calls `POST /api/ratings` with geolocation coordinates
+3. Backend `ratings.py` checks geofence (`services/vibe.is_within_geofence`), cooldown, daily limit
+4. On pass: saves `Rating` doc to MongoDB, calls `services/vibe.calculate_vibe_score()`, updates venue aggregate
+5. `services/realtime.broadcast_venue_update()` emits `venue_update` Socket.IO event
+6. `services/streaks.update_streak()` increments user streak
+7. Clout awarded via `services/vibe.update_user_clout()`; coins via `routes/coins.award_coins()`
+8. Frontend receives Socket.IO `venue_update` event → `vibeStore` updates venue in local state → all subscribed components re-render
 
-**Merchant Floor Check-In Campaign Activation:**
+**App Boot / Initialization:**
 
-1. Merchant logged in to `/merchant` floor (authenticated via `is_merchant` flag)
-2. Views active campaigns at `/merchant/index` showing venue name, multiplier, expiry
-3. Backend broadcasts active campaigns via Socket.IO on merchant login
-4. vibeStore hydrates `activeCampaigns` array from `GET /api/campaigns/active?city=...`
-5. Campaign multiplier applied when scouts rate that venue (50% base + multiplier boost)
-6. Wallet balance updated via Paystack integration (`POST /api/webhooks/paystack`)
+1. `frontend/app/_layout.tsx` renders `AppInitializer`
+2. Zustand `persist` middleware rehydrates state from AsyncStorage (`hasHydrated = true`)
+3. `fetchCities()` and `fetchFeatureFlags()` called in parallel
+4. `connectSocket()` opens Socket.IO connection to Railway backend
+5. Native splash hidden → custom `SplashAnimation` plays → OnboardingFlow shown if first launch
+6. `index.tsx` redirects to `/(public)` → PublicLayout renders with `AnimatedTabBar`
 
-**Admin Floor Treasury Dashboard Data Fetch:**
+**Vibe Score Calculation:**
 
-1. Admin authenticated to `/admin` floor (via `is_super_admin` flag)
-2. Navigates to `/admin/index` (Treasury tab)
-3. Fetches `GET /api/admin/treasury` → MongoDB aggregation on `platform_revenue`, `wallet_transactions`
-4. Backend returns city-level breakdowns, top merchants, revenue trend data
-5. Dashboard renders charts + tables via admin theme (slate/royal blue)
+1. Raw inputs: energy (quiet/chill/warming/lit/peak) = 80% weight; venue_specific context = 20%
+2. Capacity acts as multiplier: sparse=0.92x, vibrant=1.05x, full=1.15x
+3. Final score: 0–100 float, clamped at 100
+4. Venue aggregate = time-windowed rolling average of recent ratings stored in `vibe_snapshots`
+5. `vibe_tier` (Elite/Established/Solid/Building/New) derived from 30-day average, cached on venue doc
+
+**Demo Mode:**
+
+1. `vibeStore.isDemoMode` toggled from `DemoModeBanner`
+2. When true, store actions return data from `frontend/src/data/demoData.ts` instead of calling the backend
+3. Geofence enforcement bypassed; rating cooldown bypassed
+4. `require()` is used inside Zustand action bodies for demoData imports to avoid circular dependency issues
+
+**State Management:**
+
+Zustand store split into `PersistedState` (survives app restart via AsyncStorage) and transient state (lives only in memory). Persisted fields include: `user`, `sessionToken`, `selectedCity`, `hasSeenOnboarding`, `isDemoMode`, `avatarConfig`, `vibePersona`, `userMode`, `pendingRatings`.
 
 ## Key Abstractions
 
-**Floor System (3-Storey Model):**
-- Purpose: Isolate user types into separate navigation stacks with permission guards
-- Examples: `frontend/app/(public)/`, `frontend/app/(merchant)/`, `frontend/app/(admin)/`
-- Pattern: Expo Router route groups with nested Tabs layout, permission middleware in each layout component (checks `user.is_merchant`, `user.is_super_admin`)
+**Vibe Score:**
+- Purpose: 0-100 numeric representation of a venue's current energy
+- Examples: `backend/app/services/vibe.py` (`calculate_vibe_score()`), `frontend/src/components/VibeMeter.tsx`
+- Pattern: Computed from scout inputs; aggregated as rolling average; displayed as energy_level label + color
 
-**Venue Vibe Score (Real-time Scoring):**
-- Purpose: Aggregate crowd energy into single numerical metric
-- Examples: `backend/app/services/vibe.py`, frontend `vibeMaster.ts`
-- Pattern: Weighted average of user ratings (energy 50%, capacity 30%, gate 20%) with 1-hour sliding window, superseded stale ratings
+**The Three Storeys:**
+- Purpose: Role-based access zones, each with their own visual theme, navigation, and API scope
+- Examples: `frontend/app/(public)/`, `frontend/app/(merchant)/`, `frontend/app/(admin)/`, `frontend/src/theme/floors.ts`
+- Pattern: Expo Router route groups with `_layout.tsx` acting as auth guard; merchant/admin layouts redirect unauthorized users to `/(public)` via `useEffect`
 
-**Theme Token System (Per-Floor Branding):**
-- Purpose: Enforce consistent colors/typography across each floor
-- Examples: `frontend/src/theme/floors.ts` → `publicTheme`, `merchantTheme`, `adminTheme`
-- Pattern: Export theme objects with nested colors/gradients/typography; components pull via `const { colors } = publicTheme`
+**Scout Persona:**
+- Purpose: User archetype affecting venue feed sort order and display copy
+- Examples: `vibeStore.vibePersona`, `frontend/app/(public)/index.tsx` persona sort, `backend/app/routes/intelligence.py` crowd composition
+- Pattern: 4 values: `turn_up`, `grown_sexy` (The Luxe), `culture`, `chill_set`; set during onboarding; persisted in Zustand
 
-**Socket.IO Rooms (Pub/Sub Architecture):**
-- Purpose: Broadcast updates to specific subscriber groups
-- Examples: `venue_{venue_id}`, `city_{city}`, `leaderboard_all`, `leaderboard_{city}`
-- Pattern: Clients call `join_venue({venue_id})` to enter room; backend calls `sio.emit(event, data, room=room_name)`
+**Pulse Drops:**
+- Purpose: Merchant-paid promotion tiers that boost a venue's visibility, glow, and chart position
+- Examples: `backend/app/config.py` (`PULSE_DROP_TIERS`), `backend/app/routes/pulse_drops.py`, `frontend/src/components/VibeSurgeBar.tsx`
+- Pattern: 3 tiers (spark/flare/supernova), time-limited, expire via MongoDB TTL + `pulse_expires_at`
 
-**Zustand Persist Store (State Hydration):**
-- Purpose: Persist auth state + UI state to AsyncStorage across app restarts
-- Examples: `vibeStore.ts` with `persist` middleware, selectors `useVibeStore(state => state.user)`
-- Pattern: Split interfaces `PersistedState` (user, token, city, ratings) vs transient state (venues, loading)
+**Kinetic Tap / Vibe Reactor:**
+- Purpose: Real-time crowd tap mechanic — aggregate BPM triggers resonance quests and surge events
+- Examples: `frontend/src/components/VibeReactor.tsx`, `backend/app/services/realtime.py` (`_venue_kinetics`), `backend/app/routes/resonance.py`
+- Pattern: In-memory state on backend keyed by `venue_id`; Socket.IO events; resets on server restart
 
 ## Entry Points
 
-**Frontend Web:**
-- Location: `frontend/app/_layout.tsx` (RootLayout)
-- Triggers: App.json Expo config + metro.config.js bundler
-- Responsibilities: Error boundary wrapper, app initializer (splash → onboarding → floors), Socket.IO connect on app start
-
-**Frontend Mobile (iOS/Android):**
-- Location: `frontend/app/_layout.tsx` (same as web via Expo universal)
-- Triggers: Expo Go app or native build
-- Responsibilities: Same as web, plus Location permissions handler for geofence checks
-
-**Backend Local/Railway:**
+**Backend (Railway/Production):**
 - Location: `backend/server.py`
-- Triggers: `uvicorn app.server:socket_app --host 0.0.0.0 --port 8000`
-- Responsibilities: Assemble FastAPI app with all routes + Socket.IO, run startup hooks (ensure_indexes), serve /api/* endpoints
+- Triggers: `uvicorn server:socket_app --host 0.0.0.0 --port $PORT` via Docker CMD
+- Responsibilities: Assembles FastAPI app, registers all 50+ route modules, attaches middleware, wraps in Socket.IO ASGI app, creates MongoDB indexes on startup
 
-**Backend Vercel Serverless:**
+**Backend (Vercel Serverless):**
 - Location: `backend/api/index.py`
-- Triggers: Vercel deployment (routes POST /api/*)
-- Responsibilities: BaseHTTPRequestHandler entry point (sync pymongo, no async) for short-lived function execution; MUST KEEP IN SYNC with server.py
+- Triggers: Vercel serverless invocation on `/api/*` requests to the frontend domain
+- Responsibilities: Standalone BaseHTTPRequestHandler (no FastAPI) — reimplements core routes (ratings, venues, auth) using synchronous pymongo. Must be kept in sync with `server.py` manually.
 
-**Merchant Portal Static Fallback:**
-- Location: `backend/static/merchant.html`
-- Triggers: `GET /merchant` (SPA fallback route in backend rewrites)
-- Responsibilities: Serve merchant portal if frontend build unavailable
+**Frontend:**
+- Location: `frontend/app/_layout.tsx`
+- Triggers: Expo app launch (web, iOS, Android)
+- Responsibilities: SafeAreaProvider, ErrorBoundary, AppInitializer (Zustand hydration → fetchCities → connectSocket), splash animation, onboarding gate, root Stack navigator, GlobalVibePill overlay
 
-**Admin Portal Static Fallback:**
-- Location: `backend/static/admin.html`
-- Triggers: `GET /admin` (SPA fallback route in backend rewrites)
-- Responsibilities: Serve admin portal if frontend build unavailable
+**Frontend Default Route:**
+- Location: `frontend/app/index.tsx`
+- Triggers: Navigation to `/`
+- Responsibilities: Immediate redirect to `/(public)`
 
 ## Error Handling
 
-**Strategy:** Layered error handling with user-facing fallbacks and logging
+**Strategy:** Lightweight — FastAPI HTTP exceptions at the route layer; no central error service
 
 **Patterns:**
-
-- **API Errors (Frontend):** Catch in `useVibeStore` API methods, set error state, show toast/banner to user, retry-able
-- **API Errors (Backend):** HTTPException with status code + detail dict; FastAPI auto-serializes to JSON 400/404/500
-- **Database Errors:** Try-catch in services layer, log to console, return 500 to client
-- **Real-time Errors:** Socket.IO disconnect/reconnect handled in `connectSocket()` with exponential backoff
-- **Validation Errors:** Pydantic model validation (types, constraints) on route POST body; FastAPI returns 422 with field errors
-- **Auth Errors:** Bearer token expired → 401, redirect to onboarding; missing token → 401, allow guest access to public floor
-- **Component Errors:** ErrorBoundary in `frontend/app/_layout.tsx` catches unhandled render errors; displays error message + restart hint
+- Route handlers raise `HTTPException(status_code=..., detail=...)` for expected errors (400, 401, 403, 404, 429)
+- `ErrorBoundary` component (`frontend/src/components/ErrorBoundary.tsx`) wraps key component trees; `variant="screen"` shows full-screen fallback, default shows inline
+- `vibeStore` actions use try/catch; initialization failures call `setIsReady(true)` anyway to avoid hang
+- Rating route returns `X-Cooldown-Remaining` header alongside 429 for UI countdown
 
 ## Cross-Cutting Concerns
 
-**Logging:**
-- Backend: Python logging to stdout (picked up by Railway logs)
-- Frontend: console.log/error to debugger (Expo Dev Client, Metro logs)
-- No centralized log aggregation (Sentry/Datadog not integrated)
+**Logging:** Python `logging` module, `logger = logging.getLogger('vibe_app')` in `backend/app/config.py`; structured as `INFO` level; no external log aggregator
 
-**Validation:**
-- Backend routes: Pydantic models on POST body validate types + constraints (e.g., rating must be 0-100)
-- Frontend: Basic type checking via TypeScript, runtime validation on API responses
-- Database: MongoDB schema validation on inserts via models.py Pydantic
+**Validation:** Pydantic models (`backend/app/models.py`) enforce request body types; in-memory `RateLimitStore` in `backend/app/middleware/rate_limit.py` enforces per-endpoint rate limits
 
-**Authentication:**
-- Phone-based local auth: `POST /api/users/signup` → session_token stored in AsyncStorage
-- Session token: Sent as `Authorization: Bearer {token}` header on each API request
-- Token expiry: 7 days (SESSION_EXPIRY_DAYS), TTL index auto-deletes expired sessions
-- Floor routing: Role check in layout component (`useEffect` guards + redirect if permission missing)
+**Authentication:** Session token pattern — UUID stored in `user_sessions` MongoDB collection with TTL index; extracted from `Authorization: Bearer <token>` header or `session_token` cookie; FastAPI dependencies `require_auth`, `require_admin`, `require_merchant`, `require_venue_owner` in `backend/app/services/auth.py`; frontend stores `sessionToken` in Zustand persist (AsyncStorage)
 
-**Rate Limiting:**
-- Backend: `RateLimitMiddleware` in `app/middleware/rate_limit.py`
-- Applied to all routes via middleware stack
-- Tracks requests per IP address, returns 429 if exceeded
+**Real-time:** Socket.IO server (`sio`) defined in `backend/app/config.py`, event handlers registered in `backend/app/services/realtime.py` via side-effect import; broadcasts on `venue_update`, `leaderboard_update`, `city_pulse`, `global_vibe_charge`, `kinetic_tap` events
 
 ---
 
-*Architecture analysis: 2025-02-24*
+*Architecture analysis: 2026-03-13*

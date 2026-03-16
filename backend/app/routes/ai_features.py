@@ -14,7 +14,8 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Request
 
 from app.config import db, logger
-from app.services.auth import get_current_user
+from app.services.auth import get_current_user, require_auth
+from fastapi import Depends
 
 router = APIRouter(tags=["ai-features"])
 
@@ -106,6 +107,89 @@ async def get_vibe_brief(city: str):
             "powered_by": "fallback",
             "city": city,
         }
+        return result
+
+
+# ── 1b. Vibe Brief — Personalised (auth required, DNA-aware) ─────────────────
+
+@router.get("/city/{city}/vibe-brief/me")
+async def get_vibe_brief_me(city: str, user: dict = Depends(require_auth)):
+    """Personalised daily briefing — DNA-aware, cached 4h per user+city+day."""
+    city = city.lower()
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    user_id = user["id"]
+    cache_key = f"vibe_brief_me_{user_id}_{city}_{today_str}"
+
+    cached = await _get_cache(cache_key, ttl_seconds=4 * 3600)
+    if cached:
+        return cached
+
+    venues = await db.venues.find({"city": city}, {"_id": 0}).sort("current_vibe_score", -1).to_list(10)
+    if not venues:
+        raise HTTPException(status_code=404, detail="No venues found for city")
+
+    now = datetime.now(timezone.utc)
+    day = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][now.weekday()]
+    top3 = [f"{v['name']} ({v['venue_type']}, score {v['current_vibe_score']}, {v['energy_level']}, {v.get('area','')})" for v in venues[:5]]
+    hot_area = venues[0].get("area", "VI") if venues else "Victoria Island"
+
+    # Fetch DNA
+    dna_ctx = ""
+    try:
+        from app.routes.dna import _compute_dna
+        dna = await _compute_dna(user_id)
+        if not dna.get("insufficient_data"):
+            dom   = dna.get("dominant_type", "")
+            style = dna.get("night_style_label", "")
+            areas = [a["area"] for a in dna.get("top_areas", [])[:2]]
+            eng   = dna.get("energy_preference", {}).get("label", "")
+            peak_day = dna.get("peak_day", "")
+            dna_ctx = (
+                f"Scout DNA: dominant scene={dom}, {style}, favours {'/'.join(areas)} area, {eng}. "
+                f"Most active on {peak_day}s."
+            )
+    except Exception:
+        pass
+
+    api_key = _get_api_key()
+    if not api_key:
+        result = {
+            "headline": f"Tonight in {city.title()}: {venues[0]['name']} is leading",
+            "briefing": "Check the live leaderboard for tonight's hottest spots.",
+            "top_pick": venues[0]["name"],
+            "hot_area": hot_area,
+            "powered_by": "fallback",
+            "personalised": False,
+        }
+        await _set_cache(cache_key, result)
+        return result
+
+    try:
+        prompt = (
+            f"You are a nightlife journalist for {city.title()}, Nigeria. Tonight is {day}.\n"
+            f"{dna_ctx}\n"
+            f"Live venue list: {', '.join(top3)}\n"
+            f"Write a punchy, PERSONALISED daily nightlife brief for this scout. Nigerian-casual tone. "
+            f"Reference their DNA (favourite scene, area, energy) naturally — make it feel like it was written just for them. Max 3 sentences.\n"
+            f"Pick ONE venue that best matches their DNA for tonight.\n"
+            f"Respond JSON only: {{\"headline\": \"...\", \"briefing\": \"...\", \"top_pick\": \"venue name\", \"hot_area\": \"area name\"}}"
+        )
+        parsed = json.loads(_claude(prompt, max_tokens=300))
+        result = {**parsed, "powered_by": "claude", "city": city, "personalised": True, "dna_used": bool(dna_ctx)}
+        await _set_cache(cache_key, result)
+        return result
+    except Exception as e:
+        logger.warning(f"Personalised Vibe Brief Claude failed: {e}")
+        result = {
+            "headline": f"Tonight in {city.title()}: {venues[0]['name']} is leading",
+            "briefing": "Check the live leaderboard for tonight's hottest spots.",
+            "top_pick": venues[0]["name"],
+            "hot_area": hot_area,
+            "powered_by": "fallback",
+            "city": city,
+            "personalised": False,
+        }
+        await _set_cache(cache_key, result)
         return result
 
 

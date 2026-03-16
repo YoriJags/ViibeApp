@@ -18,6 +18,7 @@ class PlannerChatRequest(BaseModel):
     message: str
     history: list = []
     conversation_id: str | None = None
+    user_id: str | None = None
 
 
 @router.post("/planner/chat")
@@ -30,6 +31,26 @@ async def planner_chat(body: PlannerChatRequest):
 
     conversation_id = body.conversation_id or str(uuid.uuid4())
     venues = await db.venues.find({"city": city}, {"_id": 0}).to_list(30)
+
+    # ── Fetch scout DNA for personalisation ──────────────────────────────
+    dna_context = ""
+    if body.user_id:
+        try:
+            from app.routes.dna import _compute_dna
+            dna = await _compute_dna(body.user_id)
+            if not dna.get("insufficient_data"):
+                dom   = dna.get("dominant_type", "")
+                style = dna.get("night_style_label", "")
+                areas = [a["area"] for a in dna.get("top_areas", [])[:2]]
+                eng   = dna.get("energy_preference", {}).get("label", "")
+                top_types = [a["venue_type"] for a in dna.get("affinities", [])[:3]]
+                dna_context = (
+                    f"\nScout DNA: dominant scene={dom}, {style}, favours {'/'.join(areas)} areas, {eng}. "
+                    f"Top affinities: {', '.join(top_types)}. "
+                    f"Prioritise venues that match their DNA profile."
+                )
+        except Exception:
+            pass
 
     # ── Claude path ──────────────────────────────────────────────────────
     api_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -47,6 +68,7 @@ async def planner_chat(body: PlannerChatRequest):
             system = (
                 "You are Vibe, a nightlife AI concierge for Nigeria. Tonight's live venue data:\n"
                 f"{venue_ctx}\n\n"
+                f"{dna_context}\n"
                 "Rules: Recommend 1-3 venues max from the data. Be warm, Nigerian-casual (use 'squad', 'vibe', 'mad'). "
                 "Respond in JSON only: {\"reply\": \"...\", \"venue_ids\": [\"id1\",\"id2\"], \"follow_up_prompts\": [\"...\",\"...\"]}"
             )

@@ -75,11 +75,12 @@ interface SceneMoodSelectorProps {
   visible: boolean;
   onSelect: (mood: SceneMood) => void;
   onSkip: () => void;
+  suggestedMood?: SceneMood;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function SceneMoodSelector({ visible, onSelect, onSkip }: SceneMoodSelectorProps) {
+export default function SceneMoodSelector({ visible, onSelect, onSkip, suggestedMood }: SceneMoodSelectorProps) {
   const translateY     = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const cardScales     = useRef(MOODS.map(() => new Animated.Value(1))).current;
@@ -168,6 +169,11 @@ export default function SceneMoodSelector({ visible, onSelect, onSkip }: SceneMo
                       style={StyleSheet.absoluteFill}
                     />
                     <View style={[styles.cardBorder, { borderColor: mood.color + '35' }]} />
+                    {suggestedMood === mood.key && (
+                      <View style={[styles.suggestedBadge, { backgroundColor: mood.color + '25', borderColor: mood.color + '60' }]}>
+                        <Text style={[styles.suggestedText, { color: mood.color }]}>🧬 YOUR DNA</Text>
+                      </View>
+                    )}
                     <Text style={styles.cardEmoji}>{mood.emoji}</Text>
                     <Text style={[styles.cardLabel, { color: mood.color }]}>{mood.label}</Text>
                     <Text style={styles.cardSub}>{mood.sub}</Text>
@@ -233,6 +239,8 @@ const styles = StyleSheet.create({
   cardEmoji: { fontSize: 28, lineHeight: 34 },
   cardLabel: { fontSize: 14, fontWeight: '800', letterSpacing: -0.3 },
   cardSub: { fontSize: 10, color: '#666', textAlign: 'center', lineHeight: 14 },
+  suggestedBadge: { borderRadius: 4, borderWidth: 1, paddingHorizontal: 5, paddingVertical: 2, marginBottom: 4 },
+  suggestedText: { fontSize: 7, fontWeight: '900', letterSpacing: 0.5 },
   skipBtn: {
     alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 24,
     marginTop: 4,

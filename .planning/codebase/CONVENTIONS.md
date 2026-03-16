@@ -1,406 +1,163 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-02-24
+**Analysis Date:** 2026-03-13
 
 ## Naming Patterns
 
 **Files:**
-- React components: PascalCase, one component per file (e.g., `RateVibeModal.tsx`, `VenueCard.tsx`, `GlassCard.tsx`)
-- Utilities/hooks: camelCase (e.g., `demoData.ts`, `vibeStore.ts`)
-- Backend routes: snake_case module names (e.g., `users.py`, `ratings.py`, `pulse_drops.py`)
-- Backend services: snake_case modules (e.g., `vibe.py`, `auth.py`, `streaks.py`)
-- Backend models: `models.py` — all Pydantic model classes defined centrally
+- React components: PascalCase TSX files — `DailyPulseCard.tsx`, `VenueBattle.tsx`, `VibePassport.tsx`
+- Utility modules: camelCase TS files — `vibeMaster.ts`, `sceneIntel.ts`, `hapticVibe.ts`
+- Route files (backend): snake_case Python — `venue_live.py`, `ai_features.py`, `pulse_drops.py`
+- Expo Router pages: camelCase TSX in route groups — `index.tsx`, `crew.tsx`, `trending.tsx`
 
-**Functions:**
-- TypeScript: camelCase (e.g., `fetchVenues`, `submitRating`, `handleSelect`, `calculateDistance`)
-- Python: snake_case (e.g., `calculate_vibe_score`, `is_within_geofence`, `ensure_indexes`)
-- Zustand actions: camelCase (e.g., `setUser`, `updateVenue`, `fetchLobby`, `toggleDemoMode`)
-- Event handlers: prefix with `handle` or `on` (e.g., `handleSubmit`, `onPress`, `handleSelect`, `onClose`)
+**Functions (TypeScript):**
+- Components: PascalCase — `export default function DailyPulseCard(...)`
+- Hooks: camelCase with `use` prefix — `useVibeStore`, `useResponsive`
+- Helpers/utilities: camelCase — `generateDailyPulse`, `getSceneIntel`, `calculateDistance`
+- Store actions: camelCase verbs — `fetchVenues`, `createUser`, `loginUser`, `submitRating`
+
+**Functions (Python):**
+- Public route handlers: snake_case async functions — `create_rating`, `get_current_user`
+- Private helpers: underscore-prefixed — `_update_venue_scores`, `_check_burst`, `_is_dark_spot`
+- Service functions: snake_case — `calculate_vibe_score`, `compute_scout_credibility`
 
 **Variables:**
-- TypeScript state: camelCase (e.g., `energy`, `capacity`, `gate`, `venueSpec`)
-- React hooks state: camelCase (e.g., `const [loading, setLoading] = useState(false)`)
-- Python constants: UPPER_SNAKE_CASE (e.g., `MAX_RATINGS_PER_VENUE_PER_DAY`, `GEOFENCE_RADIUS_METERS`, `SESSION_EXPIRY_DAYS`)
-- Type/Interface names: PascalCase (e.g., `RateVibeModalProps`, `EmojiOption`, `VibeStore`)
+- TypeScript: camelCase — `isDemoMode`, `pulseAnim`, `getAuthHeaders`
+- Python: snake_case — `venue_id`, `session_token`, `rating_data`
+- Constants: SCREAMING_SNAKE_CASE in both languages — `API_URL`, `DEMO_BATTLE`, `PULSE_DROP_TIERS`, `MAX_RATINGS_PER_VENUE_PER_DAY`
 
-**Types:**
-- Pydantic models: PascalCase (e.g., `User`, `Venue`, `Rating`, `Coordinates`)
-- Literal unions use snake_case values (e.g., `Literal["chill", "popping", "electric"]`, `Literal["spark", "flare", "supernova"]`)
-- TypeScript interfaces: PascalCase, suffix `Props` for component props (e.g., `RateVibeModalProps`, `VenueCardProps`)
+**Types/Interfaces:**
+- TypeScript interfaces: PascalCase — `DailyPulseCardProps`, `BattleVenue`, `SceneInput`
+- Props interface naming: either `interface Props` (simple) or `interface ComponentNameProps` (when exported)
+- Python Pydantic models: PascalCase — `User`, `Venue`, `RatingCreate`, `AirdropRequest`
+- Python type hints: stdlib `Literal`, `Optional` — `Literal["club", "lounge", "bar"]`
+
+**React Native Record Maps:**
+- Named with SCREAMING_SNAKE_CASE, typed as `Record<string, ...>` — `ENERGY_COLORS`, `PERSONA_COLORS`, `HEAT_COLORS`, `TIER_CONFIG`
 
 ## Code Style
 
 **Formatting:**
-- Frontend: TypeScript 5.8.3, React Native with Expo 54
-- No explicit prettier config — uses ESLint flat config for linting
-- Line length: Implicit convention ~80-100 characters
-- Indentation: 2 spaces (TypeScript), 4 spaces (Python)
+- No Prettier config found — formatting enforced via ESLint (expo flat config at `frontend/eslint.config.js`)
+- Expo ESLint preset: `eslint-config-expo/flat` via `defineConfig`
+- Python: no formatter config detected; standard Python formatting conventions followed
 
 **Linting:**
-- Frontend: `eslint-config-expo` v9.2.0 with ESLint 9.25.0
-- Config file: `frontend/eslint.config.js` (flat config format)
-- Rule: `react-native/no-raw-text` triggers false positives on JS string literals in object maps — these are safe to ignore
-- Pre-existing TS errors in `tsc_errors.txt`: Venue type conflicts in `index.tsx`, merchant style types, MockMap cursor — acknowledged but not blocking
+- Frontend: `expo lint` command (`frontend/package.json` scripts)
+- Config: `frontend/eslint.config.js` — uses `expoConfig` with `dist/*` ignored
+- Known suppressed false positives: `react-native/no-raw-text` fires on JS string literals in Record objects — ignore these
+- TypeScript strict mode enabled in `frontend/tsconfig.json` (`"strict": true`)
+- Pre-existing TS errors exist: Venue type conflict in `app/(public)/index.tsx`, merchant style types, `MockMap` cursor
 
 **Backend:**
-- Python 3.x, FastAPI with async/await
-- Pydantic v2 for model validation
-- No explicit formatter — follows Python conventions (PEP 8 style)
+- No linter config detected in `backend/`; code follows PEP 8 conventions
 
 ## Import Organization
 
-**TypeScript/React:**
-Order:
-1. External React/Expo imports (React, React Native, Expo modules)
-2. Third-party libraries (zustand, socket.io-client, date-fns, axios)
-3. Local absolute imports using `@/` alias (components, store, data, theme)
-4. Local relative imports (sibling files, styles)
+**TypeScript (observed pattern):**
+1. React and React Native stdlib — `import React, { useEffect, useState } from 'react'` then RN primitives
+2. Expo SDK packages — `expo-blur`, `expo-haptics`, `expo-linear-gradient`
+3. Third-party libs — `@expo/vector-icons`, `socket.io-client`
+4. Local store — `import { useVibeStore } from '../store/vibeStore'`
+5. Local components — `import AvatarDisplay from './AvatarDisplay'`
+6. Local utils/theme — `import { publicTheme, spacing } from '../theme/floors'`
+
+**Python (observed pattern):**
+1. stdlib — `from typing import Optional`, `from datetime import datetime`
+2. FastAPI/third-party — `from fastapi import APIRouter, HTTPException`
+3. Internal app modules — `from app.config import db`, `from app.models import Rating`
+4. Internal services — `from app.services.vibe import calculate_vibe_score`
 
 **Path Aliases:**
-- `@/*` maps to `frontend/` root (configured in `tsconfig.json`)
-- Used throughout components: `import { useVibeStore } from '@/store/vibeStore'`
-
-**Python:**
-Order:
-1. Standard library (os, logging, asyncio, datetime, etc.)
-2. Third-party (fastapi, motor, pydantic, socketio, pymongo)
-3. Local app imports (from app.config, from app.models, from app.services)
+- `@/*` maps to `./` (repo root of `frontend/`) — defined in `frontend/tsconfig.json`
+- In practice, components use **relative paths** (`../store/vibeStore`, `./AvatarDisplay`) not the `@/` alias
+- Expo Router pages use relative paths to `src/` — `'../../src/store/vibeStore'`
 
 ## Error Handling
 
-**Frontend:**
-- Try/catch blocks wrap async operations (fetch, store actions)
-- Errors logged to console with `console.error('Operation name:', error)`
-- User-facing errors returned in store state (e.g., `setError()`)
-- HTTP errors caught with `response.ok` checks before parsing JSON
-- Fallback messages for network errors: `'Connection error'`, `'Failed to fetch venues'`
+**Frontend (TypeScript):**
+- API calls wrapped in `try { } catch { }` — catch blocks are often empty (`catch {}`) to silently swallow network errors
+- Store actions (`vibeStore.ts`) use `try/catch` with `console.error('Error [action]:', error)` in the catch
+- Fetch pattern: check `response.ok` before consuming JSON; on failure, set loading state or return `false`/`null`
+- HTTP status-specific handling: `if (res.status === 429) { setTapped(side); }` for rate limit
+- `ErrorBoundary` component exists at `frontend/src/components/ErrorBoundary.tsx` for render errors
 
-**Backend:**
-- `HTTPException` raised for client errors with appropriate status codes
-  - 404: Resource not found
-  - 403: Permission denied (geofence violations)
-  - 429: Rate limited
-  - 400: Bad request (validation)
-- Error details passed in `detail` field: `HTTPException(status_code=403, detail="...")`
-- Server errors logged via `logger.error()` but not exposed to client
-- Route handlers catch exceptions and re-raise with user-friendly messages
-
-**Example (Frontend - `vibeStore.ts`):**
-```typescript
-try {
-  const response = await fetch(`${API_URL}/api/ratings`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(ratingData),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || 'Failed to submit rating');
-  }
-
-  return data;
-} catch (error) {
-  console.error('Error submitting rating:', error);
-  throw error;
-}
-```
-
-**Example (Backend - `ratings.py`):**
-```python
-venue = await db.venues.find_one({"id": rating_data.venue_id})
-if not venue:
-    raise HTTPException(status_code=404, detail="Venue not found")
-
-if not is_within_geofence(rating_data.coordinates, venue_coords, radius_m=venue_radius):
-    raise HTTPException(
-        status_code=403,
-        detail=f"You must be within {int(venue_radius)}m of the venue to rate.",
-    )
-```
+**Backend (Python):**
+- Route handlers raise `HTTPException` directly — no try/except at route level unless wrapping external calls
+- Auth errors: `raise HTTPException(status_code=401, detail="Not authenticated")`
+- Permission errors: `raise HTTPException(status_code=403, detail="Super admin access required")`
+- Not found: `raise HTTPException(status_code=404, detail="Venue not found")`
+- Validation errors: `raise HTTPException(status_code=400, detail="...")`
+- Rate limiting: `raise HTTPException(status_code=429, detail="...", headers={"X-Cooldown-Remaining": str(remaining)})`
+- AI/Claude calls wrapped in try/except with `logger.warning(f"Claude failed: {e}")` and fallback to rule-based response
 
 ## Logging
 
-**Framework:**
-- Frontend: `console.log()`, `console.error()` for client-side logging
-- Backend: Python `logging` module with centralized config in `app/config.py`
+**Backend:**
+- Logger: Python stdlib `logging` — `logger = logging.getLogger('vibe_app')` in `backend/app/config.py`
+- Format: `%(asctime)s - %(name)s - %(levelname)s - %(message)s`
+- Usage: `logger.info(...)`, `logger.warning(...)`, `logger.error(...)` — only in config, middleware, routes with AI/push calls
+- Most route handlers do **not** log; only error paths and infra events are logged
 
-**Patterns:**
-- Backend logs initialized with `logger = logging.getLogger('vibe_app')`
-- Socket.IO events logged at key connection points: `console.log('Socket connected')`
-- Error logs always include operation context: `logger.error('Operation name:', error)`
-- Demo mode transitions logged: `console.log('Entering demo mode')`
+**Frontend:**
+- `console.error('Error [action]:', error)` in Zustand store catch blocks
+- `console.warn(...)` for non-critical issues (e.g., network unavailable during city fetch)
+- Components generally have no logging — errors are silent (`catch {}`)
 
 ## Comments
 
 **When to Comment:**
-- Complex business logic (e.g., time-decay vibe score calculation, geofence validation)
-- Non-obvious algorithm choices (e.g., Haversine formula for distance)
-- Workarounds or known limitations (e.g., ".metro-cache stale refs after code changes — normal")
-- Sections marked with heading dividers for clarity
+- File-level JSDoc block at top of every component and utility — describes purpose and usage
+- Section dividers using `// ==================== SECTION NAME ====================` in theme/config files
+- Section dividers using `// ── Section name ──` (Unicode dashes) in utility files like `sceneIntel.ts`
+- Inline comments for non-obvious logic — animation sequences, rate-limit logic, timezone conversions
+- `# ===== Section =====` dividers in Python files
 
 **JSDoc/TSDoc:**
-- Component props documented with inline interface comments (implicit)
-- Function parameters described via TypeScript types (types as documentation)
-- No dedicated JSDoc blocks in use — rely on type hints
-
-**Example (Backend - `vibe.py`):**
-```python
-def calculate_vibe_score(energy: str, capacity: str, gate: str) -> float:
-    """Calculate a 0-100 vibe score from the three rating dimensions.
-    Energy: chill(1) < buzzing(1.5) < popping(2) < electric(3)
-    Capacity: sparse(1) < vibrant(2) < full(3)
-    Gate: blocked(1) < slow(2) < clear(3)
-    """
-    # Scoring weights...
-```
-
-**Example (Frontend - Component header):**
-```typescript
-/**
- * RateVibeModal — World-Class Rating Experience
- *
- * Emoji-first option cards, venue-type-specific 4th dimension,
- * 2×2 energy grid, haptic feedback, neon glow, drag-to-dismiss.
- */
-```
+- JSDoc-style blocks on utility functions in `src/utils/` — includes `@returns` annotation (`geo.ts`, `responsive.ts`, `sceneIntel.ts`)
+- `/** Multi-line description */` blocks on components with brief purpose + behavior description
+- Python: triple-quoted docstrings on all modules, classes, and service functions
 
 ## Function Design
 
-**Size:**
-- Target: 20–50 lines for most functions
-- Store actions (`vibeStore.ts`): Often 15–40 lines, some async operations span 30–50 lines
-- Complex flows (e.g., `submitRating`, `fetchLobby`): 40–80 lines including error handling
-- One responsibility per function
+**Size:** Functions generally short (< 50 lines). Longer components exist but are exceptions; `(public)/index.tsx` is 1,339 lines and should be split.
 
-**Parameters:**
-- Use TypeScript/Pydantic types to enforce structure
-- Zustand actions use destructuring from `state` and `get()`: `(set, get) => ({ ... })`
-- React components receive props as single typed object: `React.FC<RateVibeModalProps>`
-- Avoid deeply nested parameters — spread objects or create intermediate types
+**Parameters:** Components receive typed `Props` interface. Utility functions use named positional args. Store actions use minimal params — `fetchVenue(id: string)`.
 
 **Return Values:**
-- Async functions return typed data or throw errors
-- Zustand actions return `void` for setters, `Promise<void>` for async operations
-- Query functions return typed objects or null: `Promise<Venue | null>`
-- Success responses include data + metadata: `{ success: boolean; error?: string; clout_earned?: number }`
-
-**Example (Zustand Action):**
-```typescript
-submitRating: async (venueId, energy, capacity, gate, coordinates, photoBase64) => {
-  const { user, isOnline, isDemoMode } = get();
-  if (!user) {
-    throw new Error('User not logged in');
-  }
-
-  // Demo mode: simulate successful rating
-  if (isDemoMode) {
-    set((state) => ({
-      demoRatedVenues: { ...state.demoRatedVenues, [venueId]: Date.now() },
-    }));
-    return { success: true, clout_earned: 15, ... };
-  }
-
-  // Online submission
-  const response = await fetch(`${API_URL}/api/ratings`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: user.id, venue_id: venueId, ... }),
-  });
-  // ... handle response
-}
-```
+- Store async actions return `boolean` (success/fail) or `null`/typed object
+- Utility functions return typed values — `string`, `number`, `ResponsiveInfo`
+- Python route handlers return `dict` — FastAPI auto-serializes to JSON
 
 ## Module Design
 
 **Exports:**
-- Frontend components export as default: `export default RateVibeModal;`
-- Utilities/stores export named exports: `export const useVibeStore = create(...)`
-- Demo data exports multiple named constants: `export const DEMO_USER = ...`, `export const DEMO_VENUES = ...`
-- Backend routes export single router: `router = APIRouter(...)`
+- React components: `export default function ComponentName(...)` — single default export per file
+- Utilities: named exports — `export const calculateDistance`, `export function getSceneIntel`
+- Some utility files also have a default export object aggregating named exports (e.g., `responsive.ts`)
+- Store: `export { useVibeStore }` as named export; some interfaces exported too (`export interface ActiveCheckin`)
 
 **Barrel Files:**
-- `frontend/src/store/vibeStore.ts` is primary store export
-- No barrel index files used in frontend — explicit path imports preferred
-- Backend routes imported individually in `server.py` and included via `api_router.include_router()`
+- Theme has `frontend/src/theme/index.ts` re-exporting from `floors.ts` and `styles.ts`
+- No barrel files in `components/`, `utils/`, or `data/` — each module imported directly
 
-**Example (Frontend store export):**
-```typescript
-export const useVibeStore = create<VibeStore>()(
-  persist(
-    (set, get) => ({ /* actions */ }),
-    { name: 'vibe-store', storage: createJSONStorage(...) }
-  )
-);
-```
+## TypeScript Specifics
 
-**Example (Backend route export):**
-```python
-router = APIRouter(tags=["users"])
+**`any` usage:**
+- ~103 occurrences of `any` in components — primarily `as any` casts for Ionicons icon names (type safety gap in `@expo/vector-icons`)
+- `AnimatedTabBar.tsx` uses `state: any; descriptors: any; navigation: any` for React Navigation internals
+- Acceptable pattern: `as any` for Ionicons names, `as any` on Animated interpolated values passed to style props
 
-@router.post("/users/login")
-async def login_user(login_data: UserLogin):
-  ...
-```
+**Animation pattern:**
+- All animation values: `useRef(new Animated.Value(N)).current` at top of component
+- Loops: `Animated.loop(Animated.sequence([...]))`.start() in `useEffect`
+- `useNativeDriver: true` for transform/opacity; `useNativeDriver: false` for color/layout props
 
-## Zustand Pattern
-
-**Store Structure:**
-- Split persisted vs transient state via interfaces `PersistedState` and `TransientState`
-- Persisted fields: user, session token, selected city, auth flag, pending ratings, onboarding flags, demo flags, avatar, privacy settings, vibe persona
-- Transient (memory-only): venues, cities, loading, error, socket, pulse drops, online status, geofence status, lobby data, crew data, etc.
-- Hydration tracked with `hasHydrated` flag, set in `onRehydrateStorage` callback
-
-**Action Patterns:**
-- Setters follow naming: `set<Field>` (e.g., `setUser`, `setVenues`, `setLoading`)
-- Queries follow naming: `fetch<Resource>` (e.g., `fetchVenues`, `fetchUser`, `fetchStreak`)
-- Update operations: `update<Field>` (e.g., `updateVenue`, `updateUserClout`, `updateAvatar`)
-- Toggles: `toggle<Field>` (e.g., `toggleDemoMode`, `toggleGhostMode`, `toggleLocationSharing`)
-
-**Demo Mode Integration:**
-- `isDemoMode` flag toggles mock data injection across all actions
-- Actions check `if (get().isDemoMode)` and return demo data without API calls
-- Demo data imported on-demand inside action bodies to avoid circular dependencies: `const { DEMO_LOBBY } = require('../data/demoData')`
-
-**Example (Zustand action pattern):**
-```typescript
-fetchVenues: async (city?: string) => {
-  set({ loading: true });
-  try {
-    const cityParam = city || get().selectedCity;
-    const response = await fetch(`${API_URL}/api/venues?city=${cityParam}`);
-    if (response.ok) {
-      const venues = await response.json();
-      set({ venues, loading: false });
-    } else {
-      set({ loading: false, error: 'Failed to fetch venues' });
-    }
-  } catch (error) {
-    console.error('Error fetching venues:', error);
-    set({ loading: false, error: 'Network error' });
-  }
-}
-```
-
-## FastAPI Route Pattern
-
-**File Organization:**
-- Each domain gets one route file in `backend/app/routes/` (e.g., `users.py`, `ratings.py`, `crews.py`)
-- Each route file imports: FastAPI APIRouter, database config, models, services
-- Route handlers are async by default
-
-**Endpoint Structure:**
-```python
-@router.post("/endpoint-name")
-async def handler_name(request_data: ModelClass):
-    """Docstring describing endpoint."""
-    # Validate: check resource exists, check permissions
-    resource = await db.collection.find_one({"id": resource_id})
-    if not resource:
-        raise HTTPException(status_code=404, detail="Resource not found")
-
-    # Authorize: geofence, ownership, rate limits
-    if not is_authorized(user, resource):
-        raise HTTPException(status_code=403, detail="Not authorized")
-
-    # Execute: call service, update database
-    result = await db.collection.insert_one(data.dict())
-
-    # Broadcast: emit socket updates if needed
-    await broadcast_venue_update(venue)
-
-    # Return: typed response
-    return {"success": True, "data": result}
-```
-
-**Service Integration:**
-- Complex calculations delegated to `backend/app/services/` (e.g., vibe score, auth tokens, streaks)
-- Services imported at top of route file: `from app.services.vibe import calculate_vibe_score`
-- Services are pure functions or async functions with single responsibility
-
-**Example (ratings.py endpoint):**
-```python
-@router.post("/ratings")
-async def create_rating(rating_data: RatingCreate):
-    """Submit a vibe rating for a venue. Geofence-enforced."""
-    # Validate venue exists
-    venue = await db.venues.find_one({"id": rating_data.venue_id})
-    if not venue:
-        raise HTTPException(status_code=404, detail="Venue not found")
-
-    # Validate geofence
-    venue_coords = Coordinates(**venue["coordinates"])
-    venue_radius = venue.get("geofence_radius_m", 100)
-    if not is_within_geofence(rating_data.coordinates, venue_coords, radius_m=venue_radius):
-        raise HTTPException(status_code=403, detail=f"You must be within {int(venue_radius)}m...")
-
-    # Calculate score
-    vibe_score = calculate_vibe_score(rating_data.energy, rating_data.capacity, rating_data.gate)
-
-    # Insert & update
-    rating = Rating(**rating_data.dict(), vibe_score=vibe_score)
-    await db.ratings.insert_one(rating.dict())
-
-    # Broadcast update
-    aggregate = await calculate_venue_aggregate(rating_data.venue_id)
-    await broadcast_venue_update(venue)
-
-    return {"success": True, "clout_earned": 15}
-```
-
-## Component Design Pattern
-
-**React Native Component Template:**
-- Import statement block with React + Native at top
-- Type definitions/interfaces before component
-- Component receives `React.FC<PropsInterface>`
-- Animated values and refs initialized in useRef
-- useEffect hooks for side effects
-- Event handlers with typed callbacks
-- StyleSheet at bottom with all styles
-
-**Example (RateVibeModal.tsx structure):**
-```typescript
-// 1. Imports
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ... } from 'react-native';
-
-// 2. Type definitions
-type EnergyLevel = 'chill' | 'buzzing' | 'popping' | 'electric';
-interface RateVibeModalProps {
-  visible: boolean;
-  onClose: () => void;
-  ...
-}
-
-// 3. Constants
-const ENERGY_OPTIONS: EmojiOption[] = [...]
-
-// 4. Component
-const RateVibeModal: React.FC<RateVibeModalProps> = ({ visible, onClose, ... }) => {
-  // State
-  const [energy, setEnergy] = useState<EnergyLevel | null>(null);
-
-  // Animated values
-  const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
-
-  // Effects
-  useEffect(() => { /* animation logic */ }, [visible]);
-
-  // Handlers
-  const handleSubmit = async () => { /* logic */ };
-
-  // Render
-  return <Modal>...</Modal>;
-};
-
-// 5. Styles
-const styles = StyleSheet.create({ /* all styles */ });
-
-export default RateVibeModal;
-```
+**Demo mode pattern:**
+- Components accept `isDemoMode?: boolean` prop
+- Pattern: `if (isDemoMode) { return DEMO_DATA; }` before API fetch
+- Demo data objects colocated with component or imported from `frontend/src/data/demoData.ts`
 
 ---
 
-*Convention analysis: 2026-02-24*
+*Convention analysis: 2026-03-13*

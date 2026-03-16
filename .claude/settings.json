@@ -15,7 +15,25 @@
       "Bash(cat \"app/\\(tabs\\)/_layout.tsx\")",
       "Bash(cat \"app/\\(public\\)/_layout.tsx\")",
       "Bash(grep -l \"fullscreen\\\\|Modal.*fullScreen\" c:/Users/OAJAGUN/OneDrive/Documents/Code/VibeApp/frontend/src/components/*.tsx)",
-      "Bash(xargs -I{} basename {} .tsx)"
+      "Bash(xargs -I{} basename {} .tsx)",
+      "Bash(head -60 app/venue/[id].tsx)",
+      "Bash(grep -o \"var pt\\\\|const pt\\\\|let pt\\\\|function pt\" dist/_expo/static/js/web/entry-*.js)",
+      "Bash(wc -c dist/_expo/static/js/web/entry-*.js)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\(''scripts'', {}\\), indent=2\\)\\)\")",
+      "WebSearch",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" commit \"docs: initialize project\" --files .planning/PROJECT.md)",
+      "Read(//c/Users/OAJAGUN/.claude/get-shit-done/templates/**)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(node_modules/.bin/tsc --noEmit --skipLibCheck)",
+      "Bash(dir \"app\\\\\\(tabs\\)\")",
+      "Bash(python3 -c \":*)",
+      "Bash(attrib \"C:\\\\Users\\\\OAJAGUN\\\\OneDrive\\\\Documents\\\\Code\\\\VibeApp\\\\frontend\\\\app\\\\\\(tabs\\)\\\\index.tsx\")",
+      "Bash(attrib \"C:\\\\Users\\\\OAJAGUN\\\\OneDrive\\\\Documents\\\\Code\\\\VibeApp\\\\frontend\\\\src\\\\components\\\\TonightCard.tsx\")",
+      "Bash(git -C \"C:\\\\Code\\\\VibeApp\" status)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\OAJAGUN\\OneDrive\\Documents\\Code\\VibeApp\\.planning",
+      "c:\\Users\\OAJAGUN\\OneDrive\\Documents\\Code\\VibeApp\\backend\\app\\routes"
     ]
   }
 }

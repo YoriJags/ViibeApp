@@ -32,9 +32,13 @@ const DEMO_BRIEF: VibeBrief = {
   powered_by: 'claude',
 };
 
+interface VibeBriefWithPersonalised extends VibeBrief {
+  personalised?: boolean;
+}
+
 export default function VibeBriefCard({ city, isDemoMode }: Props) {
-  const { isVibePlus } = useVibeStore();
-  const [brief, setBrief] = useState<VibeBrief | null>(null);
+  const { isVibePlus, user, getAuthHeaders } = useVibeStore();
+  const [brief, setBrief] = useState<VibeBriefWithPersonalised | null>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [showVibePlus, setShowVibePlus] = useState(false);
@@ -45,11 +49,22 @@ export default function VibeBriefCard({ city, isDemoMode }: Props) {
       setLoading(false);
       return;
     }
-    fetch(`${API_URL}/api/city/${city}/vibe-brief`)
+    // Use personalised endpoint when logged in (DNA-aware)
+    const endpoint = user?.id
+      ? `${API_URL}/api/city/${city}/vibe-brief/me`
+      : `${API_URL}/api/city/${city}/vibe-brief`;
+    const headers = user?.id ? { ...getAuthHeaders() } : {};
+    fetch(endpoint, { headers })
       .then(r => r.json())
       .then(d => { setBrief(d); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [city, isDemoMode]);
+      .catch(() => {
+        // Fallback to generic brief on personalised endpoint failure
+        fetch(`${API_URL}/api/city/${city}/vibe-brief`)
+          .then(r => r.json())
+          .then(d => { setBrief(d); setLoading(false); })
+          .catch(() => setLoading(false));
+      });
+  }, [city, isDemoMode, user?.id]);
 
   if (loading) {
     return (
@@ -74,7 +89,7 @@ export default function VibeBriefCard({ city, isDemoMode }: Props) {
         <View style={styles.topRow}>
           <View style={styles.badgeRow}>
             <View style={styles.aiBadge}>
-              <Text style={styles.aiBadgeText}>AI BRIEF</Text>
+              <Text style={styles.aiBadgeText}>{brief.personalised ? '🧬 YOUR BRIEF' : 'AI BRIEF'}</Text>
             </View>
             <Text style={styles.hotArea}>{brief.hot_area} is HOT tonight</Text>
           </View>

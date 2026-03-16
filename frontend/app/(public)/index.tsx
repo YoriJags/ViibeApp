@@ -66,6 +66,8 @@ import NightArcStrip from '../../src/components/NightArcStrip';
 import FeatureStoryStrip from '../../src/components/FeatureStoryStrip';
 import StreakFireModal from '../../src/components/StreakFireModal';
 import OracleTease from '../../src/components/OracleTease';
+import NarrativeDivider from '../../src/components/NarrativeDivider';
+import analytics, { EVENT } from '../../src/services/analytics';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [CityWelcomeCard, WeekendCard, InsiderFeed extracted to src/components/]
@@ -215,6 +217,7 @@ export default function MapScreen() {
 
   useEffect(() => {
     initializeApp();
+    analytics.track(EVENT.SESSION_START, { city: selectedCity });
   }, []);
 
   // Single source of truth for venue fetching — handles initial load + city changes + demo toggle
@@ -408,6 +411,28 @@ export default function MapScreen() {
       .sort((a, b) => b.matchPercent - a.matchPercent)[0];
     return top ?? null;
   }, [vibeDNA, venues, isDemoMode]);
+
+  // DNA → suggested Scene Mood
+  const suggestedSceneMood = useMemo((): import('../../src/components/SceneMoodSelector').SceneMood | undefined => {
+    if (!vibeDNA) return undefined;
+    const energyLabel = vibeDNA.energy_preference?.label ?? '';
+    const domType = vibeDNA.dominant_type ?? '';
+    if (energyLabel === 'Peak Seeker' || energyLabel === 'High Energy') return 'high_energy';
+    if (domType === 'lounge' || domType === 'restaurant' || energyLabel === 'Low Key') return 'low_key';
+    if (domType === 'club' || domType === 'bar') return 'easy_flow';
+    return 'mixed_scene';
+  }, [vibeDNA]);
+
+  // DNA match score per venue (for chip display on cards)
+  const dnaMatchMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    if (!vibeDNA?.affinities?.length) return map;
+    for (const v of venues) {
+      const affinity = vibeDNA.affinities.find((a: any) => a.venue_type === (v as any).venue_type);
+      if (affinity) map[(v as any).id] = affinity.score;
+    }
+    return map;
+  }, [vibeDNA, venues]);
 
   // Night phase detection
   const nightPhase = useMemo(() =>
@@ -666,15 +691,17 @@ export default function MapScreen() {
             </TouchableOpacity>
           )}
 
-          {/* Scout Aura chip — persistent level indicator above the feed */}
+          {/* ═══════════════════════════════════════════════════
+               ACT I — WHO YOU ARE TONIGHT
+               Orient the scout. Identity + tonight's arc.
+          ═══════════════════════════════════════════════════ */}
+
+          {/* Scout Aura chip — your level, always visible */}
           <ErrorBoundary label="Scout Aura Chip">
             <ScoutAuraChip />
           </ErrorBoundary>
 
-          {/* Live activity ribbon — subtle ticker, not a blocking card */}
-          <ActivityTicker items={DEMO_ACTIVITY_FEED} />
-
-          {/* Night Arc — tonight's journey progress */}
+          {/* Night Arc — tonight's journey progress steps */}
           <ErrorBoundary label="Night Arc">
             <NightArcStrip
               hasSetMood={!!sceneMood}
@@ -682,6 +709,7 @@ export default function MapScreen() {
               hasCheckedIn={!!activeCheckin}
               hasCrewActive={!!((crew as any)?.member_details?.length && (crew as any).member_details.length > 1)}
               onStepPress={(step) => {
+                analytics.track(EVENT.NIGHT_ARC_STEP, { step, city: selectedCity });
                 if (step === 'mood') setShowSceneMood(true);
                 else if (step === 'rate') setShowSwipeRate(true);
                 else if (step === 'checkin') router.push(('/venue/' + (venues[0]?.id ?? '')) as any);
@@ -690,45 +718,27 @@ export default function MapScreen() {
             />
           </ErrorBoundary>
 
-          {/* Oracle Tease — pulls users back with a cliffhanger */}
-          <ErrorBoundary label="Oracle Tease">
-            <OracleTease
-              venues={isDemoMode ? (require('../../src/data/demoData').DEMO_VENUES as any[]) : venues}
-              onVenuePress={(id) => router.push(`/venue/${id}`)}
-              isDemoMode={isDemoMode}
-            />
-          </ErrorBoundary>
+          {/* Live activity ribbon — the scene is alive */}
+          <ActivityTicker items={DEMO_ACTIVITY_FEED} />
 
-          {/* Missed Peaks — FOMO card for followed venues that peaked while you were away */}
-          <ErrorBoundary label="Missed Peaks">
-            <MissedPeaksBanner
-              isDemoMode={isDemoMode}
-              authToken={(getAuthHeaders() as any)?.Authorization?.replace('Bearer ', '')}
-              onVenuePress={(id) => router.push(`/venue/${id}`)}
-            />
-          </ErrorBoundary>
+          <NarrativeDivider mode="chapter" label="TONIGHT" color="#FF3366" topGap={6} botGap={6} />
 
-          {/* AI Scout Briefing — personalised Claude morning/evening/night message */}
+          {/* ═══════════════════════════════════════════════════
+               ACT II — WHAT'S HAPPENING
+               City intelligence. What's alive right now.
+          ═══════════════════════════════════════════════════ */}
+
+          {/* AI Scout Briefing — personalised Claude message */}
           <ErrorBoundary label="Scout Briefing">
             <AIScoutBriefing city={selectedCity} isDemoMode={isDemoMode} />
           </ErrorBoundary>
 
-          {/* AI Daily Brief — star feature, Vibe+ full brief */}
+          {/* AI Daily Brief — star feature, full city brief */}
           <ErrorBoundary label="Vibe Brief">
             <VibeBriefCard city={selectedCity} isDemoMode={isDemoMode} />
           </ErrorBoundary>
 
-          {/* Venue Battle — real-time tap-off */}
-          <ErrorBoundary label="Venue Battle">
-            <VenueBattle isDemoMode={isDemoMode} />
-          </ErrorBoundary>
-
-          {/* City Heat Map — neighborhood heat intensity grid */}
-          <ErrorBoundary label="Heat Map">
-            <HeatMapCard city={selectedCity} isDemoMode={isDemoMode} />
-          </ErrorBoundary>
-
-          {/* Tonight's Hero — adaptive journey card; collapses for new users */}
+          {/* Tonight's Hero — adaptive journey card */}
           {isNewUser ? (
             <CityWelcomeCard
               cityPulse={cityPulse}
@@ -772,7 +782,7 @@ export default function MapScreen() {
             />
           )}
 
-          {/* Top 3 Strip — tonight's hottest, immediately after hero */}
+          {/* Top 3 Strip — tonight's hottest */}
           {vibeMarketVenues.length > 0 && (
             <TopThreeStrip
               venues={vibeMarketVenues}
@@ -781,15 +791,16 @@ export default function MapScreen() {
             />
           )}
 
-          {/* Feature Story Strip — discover & explore VIIBE features */}
-          <ErrorBoundary label="Feature Story">
-            <FeatureStoryStrip
-              onUnlockPress={() => setShowVibePlus(true)}
-              onOpenSelector={() => {/* handled inside strip */}}
+          {/* Oracle Tease — prediction hook */}
+          <ErrorBoundary label="Oracle Tease">
+            <OracleTease
+              venues={isDemoMode ? (require('../../src/data/demoData').DEMO_VENUES as any[]) : venues}
+              onVenuePress={(id) => router.push(`/venue/${id}`)}
+              isDemoMode={isDemoMode}
             />
           </ErrorBoundary>
 
-          {/* City Pulse + Live Push: only show if there is real data */}
+          {/* City Pulse + Live Push */}
           {cityPulse && (
             <CityPulseBar
               pulse={cityPulse}
@@ -800,7 +811,24 @@ export default function MapScreen() {
             <LivePushFeed />
           </ErrorBoundary>
 
-          {/* WeekendCard — Friday 6PM+ and Saturday only, dismissable */}
+          {/* Heat Map + Venue Battle */}
+          <ErrorBoundary label="Heat Map">
+            <HeatMapCard city={selectedCity} isDemoMode={isDemoMode} />
+          </ErrorBoundary>
+          <ErrorBoundary label="Venue Battle">
+            <VenueBattle isDemoMode={isDemoMode} />
+          </ErrorBoundary>
+
+          {/* Missed Peaks — FOMO */}
+          <ErrorBoundary label="Missed Peaks">
+            <MissedPeaksBanner
+              isDemoMode={isDemoMode}
+              authToken={(getAuthHeaders() as any)?.Authorization?.replace('Bearer ', '')}
+              onVenuePress={(id) => router.push(`/venue/${id}`)}
+            />
+          </ErrorBoundary>
+
+          {/* WeekendCard */}
           {isWeekendActive && !weekendDismissed && (
             <WeekendCard
               pulseScore={cityPulse?.pulse_score ?? 50}
@@ -808,6 +836,21 @@ export default function MapScreen() {
               onExplore={() => router.push('/(public)/trending')}
             />
           )}
+
+          {/* Feature Story Strip */}
+          <ErrorBoundary label="Feature Story">
+            <FeatureStoryStrip
+              onUnlockPress={() => setShowVibePlus(true)}
+              onOpenSelector={() => {/* handled inside strip */}}
+            />
+          </ErrorBoundary>
+
+          <NarrativeDivider mode="chapter" label="YOUR MOVE" color="#FF9933" topGap={6} botGap={6} />
+
+          {/* ═══════════════════════════════════════════════════
+               ACT III — MAKE YOUR MOVE
+               NoDulling, quick rate, then the venue list.
+          ═══════════════════════════════════════════════════ */}
 
           {/* NoDulling — Quick pulse drop when near a venue */}
           {nearbyVenue && nearbyVenueFullData && (
@@ -831,11 +874,11 @@ export default function MapScreen() {
             </View>
           )}
 
-          {/* ── Quick Rate strip — swipe-to-rate entry point ── */}
+          {/* Quick Rate strip — swipe-to-rate entry */}
           {filteredVenues.length > 0 && (
             <TouchableOpacity
               style={styles.quickRateStrip}
-              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowSwipeRate(true); }}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowSwipeRate(true); analytics.track(EVENT.QUICK_RATE_OPENED, { city: selectedCity, venue_count: filteredVenues.length }); }}
               activeOpacity={0.8}
             >
               <View style={styles.quickRateDot} />
@@ -845,7 +888,7 @@ export default function MapScreen() {
             </TouchableOpacity>
           )}
 
-          {/* ── VENUE LIST: Category filter → cards → inline VibeMatch ── */}
+          {/* VENUE LIST */}
           <VenueCategoryFilter
             selected={selectedCategory}
             onSelect={handleCategoryChange}
@@ -868,6 +911,7 @@ export default function MapScreen() {
                   venue={venue}
                   onPress={() => setSpotlightVenue(venue)}
                   isNearby={nearbyVenue?.id === venue.id}
+                  dnaMatch={dnaMatchMap[(venue as any).id]}
                   onRatePress={nearbyVenue?.id === venue.id ? () => {
                     router.push({
                       pathname: '/venue/[id]',
@@ -1022,8 +1066,9 @@ export default function MapScreen() {
       {/* Scene Mood — pre-session intent (once per evening) */}
       <SceneMoodSelector
         visible={showSceneMood}
-        onSelect={(mood: SceneMood) => { setSceneMood(mood); setShowSceneMood(false); }}
+        onSelect={(mood: SceneMood) => { setSceneMood(mood); setShowSceneMood(false); analytics.track(EVENT.SCENE_MOOD_SET, { mood, city: selectedCity }); }}
         onSkip={() => setShowSceneMood(false)}
+        suggestedMood={suggestedSceneMood}
       />
 
       {/* Vibe Shift toast — venue tier change alert */}

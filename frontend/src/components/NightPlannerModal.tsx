@@ -142,7 +142,7 @@ interface NightPlannerModalProps {
 
 export default function NightPlannerModal({ visible, onClose, city }: NightPlannerModalProps) {
   const router = useRouter();
-  const { isDemoMode, getAuthHeaders } = useVibeStore();
+  const { isDemoMode, getAuthHeaders, user } = useVibeStore();
   const [messages, setMessages] = useState<PlannerMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -204,7 +204,7 @@ export default function NightPlannerModal({ visible, onClose, city }: NightPlann
       const res = await fetch(`${API_URL}/api/planner/chat`, {
         method: 'POST',
         headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, city, conversation_id: conversationId, history }),
+        body: JSON.stringify({ message: msg, city, conversation_id: conversationId, history, user_id: user?.id }),
       });
       if (res.ok) {
         const data = await res.json();

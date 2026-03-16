@@ -25,6 +25,9 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useVibeStore } from '../../src/store/vibeStore';
 import VibeDNACard from '../../src/components/VibeDNACard';
+import CosmicVibeCard from '../../src/components/CosmicVibeCard';
+import NarrativeDivider from '../../src/components/NarrativeDivider';
+import analytics, { EVENT } from '../../src/services/analytics';
 import NightPlannerModal from '../../src/components/NightPlannerModal';
 import VibePlusModal from '../../src/components/VibePlusModal';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
@@ -151,12 +154,18 @@ function CityZones({ city, isDemoMode, onZonePress }: {
 
 // ─── Dark Horse ───────────────────────────────────────────────────────────────
 
-function DarkHorse({ venues, isDemoMode, onVenuePress }: {
-  venues: any[]; isDemoMode: boolean; onVenuePress: (id: string) => void;
+function DarkHorse({ venues, isDemoMode, onVenuePress, vibeDNA }: {
+  venues: any[]; isDemoMode: boolean; onVenuePress: (id: string) => void; vibeDNA?: any;
 }) {
   const darkHorses = (isDemoMode ? DEMO_VENUES : venues)
     .filter((v: any) => v.vibe_velocity === 'heating_up' && v.current_vibe_score < 62)
-    .sort((a: any, b: any) => b.current_vibe_score - a.current_vibe_score)
+    .map((v: any) => {
+      const affinity = vibeDNA?.affinities?.find((a: any) => a.venue_type === v.venue_type);
+      const dnaScore = affinity?.score ?? 50;
+      const rankScore = dnaScore * 0.5 + v.current_vibe_score * 0.5;
+      return { ...v, _rankScore: rankScore, _dnaMatch: affinity ? dnaScore : null };
+    })
+    .sort((a: any, b: any) => b._rankScore - a._rankScore)
     .slice(0, 3);
 
   if (!darkHorses.length) {
@@ -176,6 +185,11 @@ function DarkHorse({ venues, isDemoMode, onVenuePress }: {
                   <View style={s.risingChip}>
                     <Text style={s.risingChipText}>▲ CLIMBING</Text>
                   </View>
+                  {v._dnaMatch !== null && v._dnaMatch >= 60 && (
+                    <View style={s.darkHorseDnaChip}>
+                      <Text style={s.darkHorseDnaText}>🧬 {v._dnaMatch}%</Text>
+                    </View>
+                  )}
                 </View>
                 <Text style={s.darkHorseArea}>{v.area}</Text>
               </View>
@@ -255,7 +269,9 @@ export default function IntelScreen() {
   const isDemoMode  = useVibeStore(s => s.isDemoMode);
   const selectedCity = useVibeStore(s => s.selectedCity);
   const venues   = useVibeStore(s => s.venues);
-  const user     = useVibeStore(s => s.user);
+  const user        = useVibeStore(s => s.user);
+  const vibeDNA     = useVibeStore(s => s.vibeDNA);
+  const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
 
   const [showPlanner,  setShowPlanner]  = useState(false);
   const [showVibePlus, setShowVibePlus] = useState(false);
@@ -289,6 +305,17 @@ export default function IntelScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
 
+        {/* ── COSMIC VIBE READING — only when logged in ── */}
+        {user?.id && (
+          <CosmicVibeCard
+            apiUrl={API_URL}
+            authHeaders={getAuthHeaders()}
+            zodiacSign={user.zodiac_sign}
+          />
+        )}
+
+        <NarrativeDivider mode="chapter" label="THE CITY" color="#3399FF" topGap={4} botGap={4} />
+
         {/* ── CITY ZONES ── */}
         <View style={s.section}>
           <SectionLabel
@@ -315,9 +342,11 @@ export default function IntelScreen() {
             sub="Heating up before the crowd arrives"
           />
           <ErrorBoundary label="DarkHorse">
-            <DarkHorse venues={venues} isDemoMode={isDemoMode} onVenuePress={goVenue} />
+            <DarkHorse venues={venues} isDemoMode={isDemoMode} onVenuePress={goVenue} vibeDNA={vibeDNA} />
           </ErrorBoundary>
         </View>
+
+        <NarrativeDivider mode="chapter" label="MAKE YOUR MOVE" color="#9B59B6" topGap={4} botGap={4} />
 
         {/* ── SCENE PLANNER ── */}
         <View style={s.section}>
@@ -326,6 +355,7 @@ export default function IntelScreen() {
             activeOpacity={0.82}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              analytics.track(EVENT.INTEL_SECTION_VIEWED, { section: 'scene_planner' });
               isVibePlus() ? setShowPlanner(true) : setShowVibePlus(true);
             }}
           >
@@ -370,6 +400,8 @@ export default function IntelScreen() {
             <ScoutLeaderboard city={city} isDemoMode={isDemoMode} />
           </ErrorBoundary>
         </View>
+
+        <NarrativeDivider mode="chapter" label="YOUR DNA" color="#FF3366" topGap={4} botGap={4} />
 
         {/* ── VIBE DNA ── */}
         <View style={s.section}>
@@ -481,6 +513,8 @@ const s = StyleSheet.create({
   darkHorseName: { fontSize: 13, fontWeight: '700', color: '#EEE', flexShrink: 1 },
   risingChip: { backgroundColor: 'rgba(153,51,255,0.15)', borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 },
   risingChipText: { fontSize: 7, fontWeight: '900', color: '#9933FF', letterSpacing: 0.5 },
+  darkHorseDnaChip: { backgroundColor: 'rgba(0,188,212,0.15)', borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 },
+  darkHorseDnaText: { fontSize: 7, fontWeight: '800', color: '#00BCD4' },
   darkHorseArea: { fontSize: 11, color: '#444' },
   darkHorseRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   darkHorseScore: { fontSize: 20, fontWeight: '900', color: '#9933FF' },

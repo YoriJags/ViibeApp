@@ -1,312 +1,229 @@
 # Codebase Structure
 
-**Analysis Date:** 2025-02-24
+**Analysis Date:** 2026-03-13
 
 ## Directory Layout
 
 ```
-VibeApp/
-├── frontend/                          # React Native (Expo) web + mobile
-│   ├── app/                           # Expo Router v5 file-based routing
-│   │   ├── _layout.tsx               # Root layout (ErrorBoundary, AppInitializer, SafeAreaProvider)
-│   │   ├── index.tsx                 # 3-floor redirect/auth gate
-│   │   ├── (public)/                 # PUBLIC FLOOR - Social experience
-│   │   │   ├── _layout.tsx          # Tab navigation (AnimatedTabBar)
-│   │   │   ├── index.tsx            # Map screen with VenueCard list
-│   │   │   ├── trending.tsx         # Top venues by vibe_score
-│   │   │   ├── lobby.tsx            # Saved venues + wishlist
-│   │   │   ├── profile.tsx          # Scout stats, streak, avatar
-│   │   │   └── crew.tsx             # Squad/crew management
-│   │   ├── (merchant)/              # MERCHANT FLOOR - Business experience
-│   │   │   ├── _layout.tsx          # Tab navigation (admin theme)
-│   │   │   ├── index.tsx            # Overview dashboard (revenue, campaigns)
-│   │   │   ├── wallet.tsx           # Wallet balance, topup options
-│   │   │   ├── pulse.tsx            # Pulse drop tier selector (spark/flare/supernova)
-│   │   │   └── settings.tsx         # Venue settings, AuraShield toggle
-│   │   ├── (admin)/                 # ADMIN FLOOR - Authority experience
-│   │   │   ├── _layout.tsx          # Tab navigation (royal blue theme)
-│   │   │   ├── index.tsx            # Treasury dashboard (revenue breakdown)
-│   │   │   ├── venues.tsx           # Admin venue management + suppression
-│   │   │   ├── users.tsx            # User admin panel + badge awards
-│   │   │   ├── logs.tsx             # API call logs + activity
-│   │   │   ├── economy.tsx          # Economy simulator + campaign controls
-│   │   │   └── [rest]/              # Nested admin routes
-│   │   ├── (tabs)/                  # LEGACY: tabs shared across floors (NOT USED - deprecated)
-│   │   ├── venue/[id].tsx           # Venue detail modal (VibeOracle, VibeForecast, TopScoutsCard)
-│   │   ├── rate/[id].tsx            # Rating form (RateVibeModal fullscreen)
-│   │   ├── merchant/                # Merchant nested routes
-│   │   │   ├── [venue_id].tsx      # Merchant venue detail
-│   │   │   └── topup/[venue_id].tsx # Wallet topup flow (Paystack)
-│   │   └── admin/                   # Admin nested routes
-│   │       └── treasury.tsx         # Extended treasury view
-│   ├── src/
-│   │   ├── store/
-│   │   │   └── vibeStore.ts        # Zustand store (user, venues, socket, real-time state)
-│   │   ├── components/             # 52+ UI components
-│   │   │   ├── GlassCard.tsx       # Glassmorphism base component
-│   │   │   ├── AnimatedTabBar.tsx  # Custom neon glow tab bar (public floor)
-│   │   │   ├── VenueCard.tsx       # Venue preview card (name, vibe_score, energy, gate)
-│   │   │   ├── RateVibeModal.tsx   # Rating energy/capacity/gate picker
-│   │   │   ├── VibeOracle.tsx      # Predicted peak windows for venue
-│   │   │   ├── VibeDNACard.tsx     # Scout affinity breakdown (club 96%, block_party 91%)
-│   │   │   ├── TopScoutsCard.tsx   # Venue top raters (tier + clout points)
-│   │   │   ├── NightPlannerModal.tsx # Claude AI conversation for night itinerary
-│   │   │   ├── CrewCard.tsx        # Squad display with member avatars
-│   │   │   ├── RatePromptFAB.tsx   # Floating map pin to rate nearby venue
-│   │   │   ├── CheckInCelebration.tsx # 30-particle confetti on rating
-│   │   │   ├── AvatarBuilder.tsx   # Emoji + color picker
-│   │   │   ├── DemoModeBanner.tsx  # Dev toggle banner
-│   │   │   └── [50+ more...]
-│   │   ├── theme/
-│   │   │   ├── floors.ts           # 3-floor theme tokens (publicTheme, merchantTheme, adminTheme)
-│   │   │   ├── index.ts            # Theme exports + neonGlow utility
-│   │   │   └── styles.ts           # Shared stylesheet utilities
-│   │   ├── utils/
-│   │   │   ├── geo.ts              # calculateDistance, haversine formula
-│   │   │   ├── vibeMaster.ts       # Vibe score calculations + night phase logic
-│   │   │   └── responsive.ts       # Screen size breakpoints
-│   │   ├── data/
-│   │   │   └── demoData.ts         # Mock venues, users, ratings for demo mode
-│   │   └── assets/
-│   │       ├── fonts/              # SpaceMono-Regular.ttf
-│   │       └── images/             # Icons, splash screens
-│   ├── package.json                # React Native + Expo deps (zustand, socket.io-client, expo-router)
-│   ├── app.json                    # Expo config (app name, icon, splash, plugins)
-│   ├── metro.config.js             # Bundler config (unstable_enablePackageExports=false for ESM fix)
-│   ├── tsconfig.json               # TypeScript strict mode
-│   ├── eslint.config.js            # ESLint + prettier integration
-│   └── vercel.json                 # Vercel deployment config (static routes fallback)
-│
-├── backend/
-│   ├── server.py                   # FastAPI app entry (local/Railway): create app, include routes, Socket.IO
+VibeApp/                         # Monorepo root
+├── backend/                     # FastAPI + Socket.IO API server
+│   ├── api/
+│   │   └── index.py             # Vercel serverless entry (BaseHTTPRequestHandler, sync pymongo)
 │   ├── app/
+│   │   ├── config.py            # DB connection, Socket.IO, constants, index creation
+│   │   ├── models.py            # All Pydantic request/response models
 │   │   ├── __init__.py
-│   │   ├── config.py               # Motor async client, indexes, PAYSTACK keys, CITIES config, Socket.IO sio
-│   │   ├── models.py               # Pydantic models (User, Venue, Rating, Crew, Campaign, etc.)
 │   │   ├── middleware/
-│   │   │   ├── __init__.py
-│   │   │   └── rate_limit.py       # Per-IP rate limiting middleware
-│   │   ├── routes/                 # 22+ feature-specific route modules
-│   │   │   ├── __init__.py
-│   │   │   ├── auth.py             # /api/auth/* (login, logout, me)
-│   │   │   ├── users.py            # /api/users/* (signup, get_user, update_user)
-│   │   │   ├── venues.py           # /api/venues/* (list, detail, direction_click)
-│   │   │   ├── ratings.py          # /api/ratings/* (submit, get_venue_ratings)
-│   │   │   ├── leaderboard.py      # /api/leaderboard/* (top venues by score, city-filtered)
-│   │   │   ├── merchant.py         # /api/merchant/* (dashboard, wallet, topup_status)
-│   │   │   ├── pulse_drops.py      # /api/pulse_drops/* (tier pricing, purchase)
-│   │   │   ├── admin.py            # /api/admin/* (treasury, users, venues, suppress)
-│   │   │   ├── campaigns.py        # /api/campaigns/* (active, create, track)
-│   │   │   ├── lobbies.py          # /api/lobbies/* (save, unsave venue)
-│   │   │   ├── checkins.py         # /api/checkins/* (create ghost, list active)
-│   │   │   ├── streaks.py          # /api/streaks/* (claim milestone, leaderboard)
-│   │   │   ├── stories.py          # /api/stories/* (upload venue story, list)
-│   │   │   ├── crews.py            # /api/crews/* (create, join, vote)
-│   │   │   ├── alerts.py           # /api/alerts/* (preferences, register)
-│   │   │   ├── vibe_intel.py       # /api/vibe/* (DNA affinity, match score)
-│   │   │   ├── forecast.py         # /api/forecast/* (peak window predictions)
-│   │   │   ├── timeline.py         # /api/timeline/* (hourly vibe snapshots)
-│   │   │   ├── certifications.py   # /api/certifications/* (verified venue badges)
-│   │   │   ├── webhooks.py         # /api/webhooks/* (Paystack, external integrations)
-│   │   │   ├── seed.py             # /api/seed/* (dev-only: seed test data)
-│   │   │   └── dashboard.py        # /api/dashboard/* (user home: activity feed, promotions)
-│   │   └── services/               # Business logic extracted from routes
-│   │       ├── __init__.py
-│   │       ├── auth.py             # get_current_user (token validation)
-│   │       ├── payments.py         # Paystack integration (verify, charge)
-│   │       ├── realtime.py         # Socket.IO event handlers + broadcast functions
-│   │       ├── economy.py          # Clout point calculations, multiplier logic
-│   │       ├── forecast.py         # Peak window heuristics (PEAK_WINDOWS constant)
-│   │       ├── notifications.py    # Push notification logic (SMS/email)
-│   │       ├── streaks.py          # Streak milestone calculations
-│   │       ├── vibe.py             # Vibe score aggregation + persona logic
-│   │       ├── sms.py              # SMS provider integration (Termii/Twilio)
-│   │       └── email.py            # Email templates + sending
-│   ├── api/                        # SEPARATE Vercel serverless entry point (SYNC WITH server.py!)
-│   │   ├── index.py               # BaseHTTPRequestHandler (sync pymongo, no async)
-│   │   └── requirements.txt        # Vercel Python dependencies
-│   ├── static/                     # HTML fallback for SPA
-│   │   ├── merchant.html          # Merchant portal fallback
-│   │   └── admin.html             # Admin portal fallback
-│   ├── tests/
-│   │   └── test_admin_endpoints.py # Admin route tests
-│   ├── server_legacy.py            # Old entry point (deprecated)
-│   ├── Procfile                    # Railway deployment config
-│   ├── requirements.txt            # Python deps (fastapi, motor, socket.io, pymongo)
-│   ├── vercel.json                 # Vercel function config (SEPARATE from frontend/vercel.json)
-│   └── README.md
-│
-├── .planning/                      # GSD planning documents
-│   └── codebase/                  # Architecture analysis (ARCHITECTURE.md, STRUCTURE.md, etc.)
-├── .emergent/                     # Emergent OAuth config (removed Feb 24)
-├── .env                           # Environment vars (MONGO_URL, PAYSTACK_SECRET_KEY, etc.)
-├── .gitignore                     # Excludes node_modules, .env, build artifacts
-├── README.md                      # Project overview
-├── VIBEAPP_STRATEGY_BLUEPRINT.md  # Product roadmap + feature specs
-└── [test files, exports, backups...]
+│   │   │   └── rate_limit.py    # Sliding-window rate limiter middleware
+│   │   ├── routes/              # 50+ domain route modules (one per feature area)
+│   │   └── services/            # Shared business logic (vibe, auth, realtime, payments, etc.)
+│   ├── server.py                # Railway entry — assembles FastAPI + Socket.IO ASGI app
+│   ├── server_legacy.py         # Legacy monolith (reference only, not deployed)
+│   ├── requirements.txt         # Python dependencies
+│   ├── vercel.json              # Vercel config for backend/api/ serverless function
+│   └── tests/                   # Backend test files
+├── frontend/                    # React Native (Expo 54) app
+│   ├── app/                     # Expo Router file-based routes
+│   │   ├── _layout.tsx          # Root layout — AppInitializer, Stack navigator, ErrorBoundary
+│   │   ├── index.tsx            # Default redirect → /(public)
+│   │   ├── (public)/            # PUBLIC storey: scout experience (neon/midnight theme)
+│   │   │   ├── _layout.tsx      # Tabs layout + AnimatedTabBar with neon glow
+│   │   │   ├── index.tsx        # Explore tab — venue feed, hero, map, filters
+│   │   │   ├── trending.tsx     # Trending tab — leaderboard, battles, top scouts
+│   │   │   ├── crew.tsx         # Crew tab — squad locations, votes, rolling deep
+│   │   │   ├── intel.tsx        # Intel tab — AI briefing, area pulse, insider feed
+│   │   │   ├── profile.tsx      # Profile tab — DNA, stats, streaks, avatar, vibe+
+│   │   │   └── lobby.tsx        # Shortlist screen (push nav, not a tab)
+│   │   ├── (merchant)/          # MERCHANT storey: venue owner dashboard (gold theme)
+│   │   │   ├── _layout.tsx      # Tabs layout + auth guard (redirects non-merchants)
+│   │   │   ├── index.tsx        # Overview tab — analytics, real-time dashboard
+│   │   │   ├── wallet.tsx       # Wallet tab — balance, top-up, transactions
+│   │   │   ├── pulse.tsx        # Pulse tab — buy pulse drops, campaigns, surge
+│   │   │   └── settings.tsx     # Settings tab — venue config, hours, geofence
+│   │   ├── (admin)/             # ADMIN storey: super admin panel (slate/blue theme)
+│   │   │   ├── _layout.tsx      # Tabs layout + super-admin guard
+│   │   │   ├── index.tsx        # Main admin dashboard — platform overview
+│   │   │   ├── venues.tsx       # Venue management — override, verify, suppress
+│   │   │   ├── users.tsx        # User management
+│   │   │   ├── economy.tsx      # Revenue analytics
+│   │   │   └── logs.tsx         # Activity logs
+│   │   ├── (tabs)/              # Legacy tab group (index.tsx redirects, kept for reference)
+│   │   │   └── index.tsx
+│   │   ├── venue/
+│   │   │   └── [id].tsx         # Venue detail — vibe score, oracle, DNA, top scouts, map
+│   │   ├── rate/
+│   │   │   └── [id].tsx         # Rating screen — geofenced submission flow
+│   │   ├── admin/               # Supplementary admin pages (flat, not grouped)
+│   │   ├── merchant/            # Supplementary merchant pages (flat, not grouped)
+│   │   └── claim.tsx            # Venue claim flow
+│   ├── src/
+│   │   ├── components/          # 100+ UI components (PascalCase .tsx)
+│   │   ├── store/
+│   │   │   └── vibeStore.ts     # Single Zustand store — all state + all API calls
+│   │   ├── data/
+│   │   │   └── demoData.ts      # Demo mode fixtures — venues, users, oracle, DNA, planner
+│   │   ├── theme/
+│   │   │   ├── floors.ts        # Per-storey theme objects + shared spacing/typography
+│   │   │   ├── index.ts         # Theme barrel file
+│   │   │   └── styles.ts        # Shared StyleSheet utilities
+│   │   ├── types/
+│   │   │   └── venue.ts         # Canonical Venue TypeScript interface (single source of truth)
+│   │   └── utils/
+│   │       ├── vibeMaster.ts    # Lagos-flavored dynamic copy engine (template library)
+│   │       ├── sceneIntel.ts    # Converts venue data to "Intel" scene sentences (Insider Mode)
+│   │       ├── geo.ts           # Haversine distance + geofence helpers
+│   │       ├── hapticVibe.ts    # Haptic feedback patterns per vibe event
+│   │       └── responsive.ts   # Screen dimension helpers
+│   ├── assets/                  # Images, icons, fonts
+│   ├── public/                  # Web-only static files
+│   ├── scripts/                 # Build/utility scripts
+│   ├── app.json                 # Expo config
+│   ├── metro.config.js          # Metro bundler config (unstable_enablePackageExports=false)
+│   ├── vercel.json              # Frontend deployment + /api/* rewrite to Railway
+│   ├── .npmrc                   # legacy-peer-deps=true (required for @expo/webpack-config)
+│   └── tsconfig.json            # TypeScript config
+├── .planning/                   # GSD planning documents
+├── docs/                        # Product documentation
+├── tests/                       # Integration / E2E test scripts (Python)
+├── Dockerfile                   # Backend container for Railway
+├── railway.toml                 # Railway build config (DOCKERFILE builder)
+└── nixpacks.toml                # Nixpacks fallback config
 ```
 
 ## Directory Purposes
 
-**`frontend/app/`:**
-- Purpose: Expo Router routing tree (file system → routes)
-- Contains: Nested directory structure where each .tsx file = one screen
-- Route groups `(public)`, `(merchant)`, `(admin)` isolate floors with separate tab stacks
-- Special files: `_layout.tsx` = nav container, `[id].tsx` = dynamic segments, `index.tsx` = default screen
-
-**`frontend/src/`:**
-- Purpose: Shared code modules outside routing tree
-- Contains: Store, components, theme, utilities, demo data
-- Imported by app screens and other components
-
-**`frontend/src/store/`:**
-- Purpose: Centralized state management (Zustand)
-- Key file: `vibeStore.ts` - single store instance with persist middleware
-
-**`frontend/src/components/`:**
-- Purpose: Reusable UI building blocks
-- Naming: PascalCase.tsx, one component per file
-- Exports: Default component export
-- Usage: Imported by screens and other components
-
-**`frontend/src/theme/`:**
-- Purpose: Design tokens organized by floor
-- Files: `floors.ts` (3 theme objects), `index.ts` (exports), `styles.ts` (utilities)
-
 **`backend/app/routes/`:**
-- Purpose: HTTP endpoint implementations organized by feature domain
-- Naming: kebab-case module names matching API prefix (e.g., `venues.py` → `/api/venues/*`)
-- Pattern: Each module has `router = APIRouter(tags=[...])` + multiple `@router.get/post` handlers
+- Purpose: One Python file per domain feature. Each exports a single `router = APIRouter(...)`. No shared state between route modules.
+- Contains: `ratings.py`, `venues.py`, `users.py`, `merchant.py`, `admin.py`, `intelligence.py`, `oracle.py`, `planner.py`, `ai_features.py`, `leaderboard.py`, `crews.py`, `coins.py`, `surge.py`, `battles.py`, `dna.py`, `momentum.py`, and 35+ more
+- Key files: `backend/app/routes/ratings.py` (core business flow), `backend/app/routes/merchant.py` (largest at 43KB), `backend/app/routes/intelligence.py` (scene intelligence, 34KB)
 
 **`backend/app/services/`:**
-- Purpose: Business logic callable from multiple routes
-- Naming: kebab-case module names by responsibility (e.g., `auth.py`, `payments.py`)
-- Pattern: Pure async functions, no FastAPI dependencies, easy to test
+- Purpose: Shared logic used by multiple route modules. Imported directly (not via FastAPI DI except auth dependencies).
+- Key files: `backend/app/services/vibe.py` (score calc, geofence, clout, aggregation), `backend/app/services/auth.py` (session, `require_auth`/`require_admin`/`require_merchant` FastAPI dependencies), `backend/app/services/realtime.py` (Socket.IO handlers + broadcast functions), `backend/app/services/payments.py` (Paystack), `backend/app/services/streaks.py`
 
-**`backend/api/`:**
-- Purpose: Separate Vercel serverless entry point
-- CRITICAL: `index.py` uses sync pymongo (not async Motor), must replicate routes from `server.py`
-- Kept in sync manually - changes to business logic go in both places
+**`frontend/src/components/`:**
+- Purpose: All reusable UI. Components vary widely in scope — from simple chips to full-screen modals with their own API calls via `useVibeStore`.
+- Key files: `VenueCard.tsx` (18KB, main venue list item), `RateVibeModal.tsx` (34KB, full rating UX), `MockMap.tsx` (35KB, map simulation), `VibeOracle.tsx` (21KB), `VibeDNACard.tsx` (17KB), `OnboardingFlow.tsx` (19KB), `SurgeFullScreen.tsx` (30KB), `VibeReactor.tsx` (30KB)
+- Barrel file: `frontend/src/components/index.ts` (partial re-exports only)
+
+**`frontend/src/store/vibeStore.ts`:**
+- Purpose: The single file that owns all state and API communication. At 62KB it is the largest frontend file.
+- Contains: TypeScript interfaces for all domain entities, `PersistedState` vs transient state split, Zustand `create` with `persist` middleware targeting `AsyncStorage`, all `fetch()` calls to the backend
+
+**`frontend/src/data/demoData.ts`:**
+- Purpose: Static fixtures for demo mode — bypasses all network calls when `isDemoMode = true`
+- Key exports: `DEMO_VENUES`, `DEMO_USER`, `DEMO_ORACLE_PREDICTIONS`, `DEMO_VIBE_DNA`, `DEMO_PLANNER_CONVERSATION`, `DEMO_VENUE_TOP_SCOUTS`, `DEMO_ACTIVITY_FEED`, `DEMO_BADGES`
 
 ## Key File Locations
 
 **Entry Points:**
-- Frontend web: `frontend/app/_layout.tsx` → RootLayout component
-- Frontend mobile: Same as web (Expo universal runtime)
-- Backend local/Railway: `backend/server.py` → FastAPI app with Socket.IO
-- Backend Vercel: `backend/api/index.py` → BaseHTTPRequestHandler sync handler
+- `backend/server.py`: Railway production entry — FastAPI + Socket.IO assembly
+- `backend/api/index.py`: Vercel serverless entry — standalone BaseHTTPRequestHandler
+- `frontend/app/_layout.tsx`: App boot, Zustand hydration, splash, onboarding gate
+- `frontend/app/index.tsx`: Default route redirect to `/(public)`
 
 **Configuration:**
-- Frontend env: `frontend/app.json` (Expo config), `metro.config.js` (bundler), `tsconfig.json` (TypeScript)
-- Backend env: `backend/app/config.py` (Motor client, constants, indexes), `.env` file (secrets - NOT committed)
-- Theme system: `frontend/src/theme/floors.ts` (3 theme definitions)
+- `backend/app/config.py`: MongoDB Motor client, Socket.IO server, all env vars, business constants
+- `backend/app/models.py`: All Pydantic models (User, Venue, Rating, MerchantWallet, etc.)
+- `frontend/src/theme/floors.ts`: Per-storey color themes + shared spacing/typography tokens
+- `frontend/app.json`: Expo app config (name, slug, icons, plugins)
+- `frontend/metro.config.js`: Metro bundler (`unstable_enablePackageExports=false` — fixes web ESM crash)
 
 **Core Logic:**
-- State management: `frontend/src/store/vibeStore.ts` (Zustand with persist)
-- API client: Fetch calls inside `vibeStore.ts` action methods (no separate HTTP client)
-- Real-time: `backend/app/services/realtime.py` (Socket.IO handlers), `frontend` connects in app initializer
-- Vibe scoring: `backend/app/services/vibe.py` (aggregation), `frontend/src/utils/vibeMaster.ts` (display)
+- `backend/app/services/vibe.py`: `calculate_vibe_score()`, `calculate_venue_aggregate()`, `is_within_geofence()`, `update_user_clout()`
+- `backend/app/services/auth.py`: `require_auth`, `require_admin`, `require_merchant`, `require_venue_owner` FastAPI dependencies
+- `backend/app/services/realtime.py`: Socket.IO event handlers, `broadcast_venue_update()`, Kinetic Quest state
+- `frontend/src/store/vibeStore.ts`: All frontend state + every API call
+- `frontend/src/types/venue.ts`: Canonical `Venue` TypeScript interface — import from here, never re-declare
 
 **Testing:**
-- Test files: Root level `backend_test*.py`, `comprehensive_merchant_test.py` (NOT in `backend/tests/` yet)
-- Test runner: Python pytest (run manually, no CI/CD)
+- `backend/tests/`: Backend test files
+- `tests/`: Root-level integration test scripts (`backend_test.py`, `backend_test_v3.py`, `comprehensive_merchant_test.py`, etc.)
 
 ## Naming Conventions
 
 **Files:**
-- Frontend screens: `PascalCase.tsx` (e.g., `profile.tsx` inside route group → `ProfileScreen` component)
-- Frontend components: `PascalCase.tsx` one per file (e.g., `VenueCard.tsx`)
-- Backend routes: `kebab_case.py` (e.g., `pulse_drops.py`)
-- Backend services: `kebab_case.py` (e.g., `payments.py`)
+- Backend route/service modules: `snake_case.py` (e.g., `venue_live.py`, `rolling_deep.py`)
+- Frontend components: `PascalCase.tsx` (e.g., `VenueCard.tsx`, `VibeOracle.tsx`)
+- Frontend screens: `lowercase.tsx` within route groups (e.g., `index.tsx`, `trending.tsx`, `profile.tsx`)
+- Frontend dynamic routes: `[param].tsx` (e.g., `venue/[id].tsx`, `rate/[id].tsx`)
+- Frontend utilities: `camelCase.ts` (e.g., `vibeMaster.ts`, `sceneIntel.ts`)
 
 **Directories:**
-- Route groups (Expo Router): Parentheses `(public)`, `(merchant)`, `(admin)`
-- Dynamic segments: Square brackets `[id]`, `[venue_id]`
-- Feature domains (routes): Plural nouns (`venues`, `ratings`, `users`)
-- Feature domains (services): Action/responsibility nouns (`auth`, `payments`, `realtime`)
-
-**Components:**
-- Uppercase first letter (PascalCase), descriptive name
-- Examples: `VenueCard`, `RateVibeModal`, `AnimatedTabBar`, `CheckInCelebration`
-
-**State (Zustand):**
-- Action methods: camelCase verbs (e.g., `fetchVenues`, `submitRating`, `connectSocket`)
-- Selectors: state property names (e.g., `venues`, `user`, `loading`)
-- Getters: utility functions on store (e.g., `getNightPhase`, `calculateVibeMatch`)
-
-**API Endpoints:**
-- Format: `/api/{domain}/{resource}?{query}` or `/api/{domain}/{resource}/{id}` or `/api/{domain}/{action}`
-- Examples: `GET /api/venues`, `POST /api/ratings`, `PUT /api/users/{id}`, `GET /api/admin/treasury`
-- Versioning: Not implemented (v1 implied)
+- Backend domain grouping: flat under `routes/` and `services/` — no sub-grouping
+- Frontend route groups: parenthesized `(groupName)` per Expo Router convention
+- Theme per storey: named `publicTheme`, `merchantTheme`, `adminTheme` in `floors.ts`
 
 ## Where to Add New Code
 
-**New Feature (e.g., Stories system):**
-- Backend:
-  - Routes: Create `backend/app/routes/stories.py` with `@router.get/post` endpoints
-  - Services: Extract logic to `backend/app/services/stories.py` (optional if simple)
-  - Models: Add Pydantic models to `backend/app/models.py`
-  - Register: Import router in `backend/server.py` and `backend/api/index.py` and call `api_router.include_router(stories_router)`
-- Frontend:
-  - Screens: Add screen file in appropriate floor `frontend/app/(public)/stories.tsx` or modal route
-  - Components: Create reusable UI in `frontend/src/components/StoryCard.tsx`
-  - State: Add actions/selectors to `frontend/src/store/vibeStore.ts`
-  - Connect: Call store actions from screen, handle Socket.IO updates in realtime listener
+**New backend API endpoint:**
+- Create: `backend/app/routes/<feature_name>.py` with `router = APIRouter(tags=["<tag>"])`
+- Register: Add `from app.routes.<feature_name> import router as <feature>_router` and `api_router.include_router(<feature>_router)` in `backend/server.py`
+- Mirror: If the endpoint must work on Vercel (web build), add equivalent handler in `backend/api/index.py`
 
-**New Component (e.g., StoryBubble):**
-- File: `frontend/src/components/StoryBubble.tsx`
-- Pattern: React functional component, export default
-- Dependencies: Import theme from `frontend/src/theme/floors.ts`, use destructured colors
-- Usage: Import in screen or parent component
+**New backend business logic shared by multiple routes:**
+- Create: `backend/app/services/<service_name>.py`
+- Import directly in route files: `from app.services.<service_name> import <function>`
 
-**Utility Function (e.g., geo helpers):**
-- File: Add to `frontend/src/utils/geo.ts` or create new `frontend/src/utils/calculator.ts`
-- Export: Named exports for tree-shaking
-- Usage: Import in components that need it
+**New frontend screen:**
+- Public tab screen: `frontend/app/(public)/<tab_name>.tsx` + register in `frontend/app/(public)/_layout.tsx`
+- Merchant tab screen: `frontend/app/(merchant)/<tab_name>.tsx` + register in `frontend/app/(merchant)/_layout.tsx`
+- Push/modal screen (not a tab): `frontend/app/<route_name>.tsx` or `frontend/app/<route_name>/[id].tsx` + add `Stack.Screen` in `frontend/app/_layout.tsx`
 
-**Backend Route (new endpoint):**
-- Pattern:
-  ```python
-  # backend/app/routes/new_feature.py
-  from fastapi import APIRouter
-  from app.services.auth import get_current_user
+**New frontend component:**
+- Implementation: `frontend/src/components/<ComponentName>.tsx`
+- If widely used: add re-export to `frontend/src/components/index.ts`
 
-  router = APIRouter(tags=["new_feature"])
+**New frontend state / API action:**
+- Add to `frontend/src/store/vibeStore.ts` — extend `PersistedState` for fields that survive restart, or add directly to the Zustand state for transient data
 
-  @router.get("/new-feature/{id}")
-  async def get_item(id: str, request: Request):
-      user = await get_current_user(request)
-      if not user: raise HTTPException(status_code=401)
-      # business logic
-      return result
-  ```
-- Register in `backend/server.py`: `api_router.include_router(new_feature_router)`
-- ALSO register in `backend/api/index.py` for Vercel
+**New type definition:**
+- Venue-related: extend `frontend/src/types/venue.ts`
+- Store-scoped types: define as interfaces inside `frontend/src/store/vibeStore.ts`
+- Backend input/output: add Pydantic model to `backend/app/models.py`
+
+**New theme token:**
+- Add to appropriate theme object in `frontend/src/theme/floors.ts` (or `frontend/src/theme/index.ts` for global tokens)
+
+**New demo fixture:**
+- Add to `frontend/src/data/demoData.ts` as a named export prefixed with `DEMO_`
+
+**New utility:**
+- Frontend: `frontend/src/utils/<utilName>.ts`
 
 ## Special Directories
 
-**`frontend/node_modules/`:**
-- Purpose: NPM dependencies (installed via `npm install`)
-- Generated: Yes (runs `npm install` on setup)
-- Committed: No (excluded by `.gitignore`)
+**`backend/api/`:**
+- Purpose: Vercel serverless function. Contains a single `index.py` that reimplements core routes using synchronous `pymongo` and Python's `BaseHTTPRequestHandler`.
+- Generated: No
+- Committed: Yes
+- Critical note: Must be manually kept in sync with `backend/server.py` — it is a completely separate implementation, not a shared module.
 
-**`backend/app/__pycache__/`:**
-- Purpose: Compiled Python bytecode cache
-- Generated: Yes (Python auto-generates on import)
-- Committed: No (excluded by `.gitignore`)
+**`frontend/.expo/`:**
+- Purpose: Expo build cache and generated type files
+- Generated: Yes
+- Committed: Partially (generated types committed, cache not)
 
-**`.env` (root)**:
-- Purpose: Environment variables (secrets, API keys, database URLs)
-- Contains: MONGO_URL, PAYSTACK_SECRET_KEY, ANTHROPIC_API_KEY, EXPO_PUBLIC_BACKEND_URL
-- Generated: No (created manually)
-- Committed: No (critical - never commit secrets)
-- Usage: Load in `backend/app/config.py`, read by Vercel/Railway from deployment settings
+**`frontend/dist/`:**
+- Purpose: Expo web build output
+- Generated: Yes
+- Committed: No (Vercel rebuilds from source)
 
-**`.planning/codebase/`:**
-- Purpose: GSD analysis documents (ARCHITECTURE.md, STRUCTURE.md, etc.)
-- Generated: Yes (by GSD map-codebase command)
-- Committed: Yes (versioned for team reference)
+**`frontend/android/`:**
+- Purpose: Android native project (generated by Expo prebuild)
+- Generated: Partially
+- Committed: Yes (for direct Android builds)
+
+**`.planning/`:**
+- Purpose: GSD project planning documents — phases, roadmap, requirements, codebase analysis
+- Generated: No
+- Committed: Yes
+
+**`exports/`:**
+- Purpose: Temporary export files (likely pitch deck / document exports)
+- Generated: Yes
+- Committed: No (untracked)
 
 ---
 
-*Structure analysis: 2025-02-24*
+*Structure analysis: 2026-03-13*

@@ -6,7 +6,7 @@ Returns session tokens on signup/login for proper auth.
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.config import db
-from app.models import User, UserCreate, UserLogin, MusicPreferencesUpdate, ReactorSkinUpdate
+from app.models import User, UserCreate, UserLogin, MusicPreferencesUpdate, ReactorSkinUpdate, ZodiacUpdate
 from app.services.auth import create_session_token, require_auth
 
 router = APIRouter(tags=["users"])
@@ -109,3 +109,32 @@ async def update_reactor_skin(
         {"$set": {"reactor_skin": skin}},
     )
     return {"success": True, "reactor_skin": skin}
+
+
+VALID_ZODIAC_SIGNS = {
+    "aries", "taurus", "gemini", "cancer", "leo", "virgo",
+    "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
+}
+
+@router.put("/users/me/zodiac")
+async def update_zodiac(
+    payload: ZodiacUpdate,
+    user: dict = Depends(require_auth),
+):
+    """
+    Save or clear the user's zodiac sign.
+    Purely optional — None clears it. Used for Cosmic Vibe readings.
+    """
+    sign = payload.sign.strip().lower() if payload.sign else None
+
+    if sign and sign not in VALID_ZODIAC_SIGNS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown sign. Valid: {', '.join(sorted(VALID_ZODIAC_SIGNS))}",
+        )
+
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"zodiac_sign": sign}},
+    )
+    return {"success": True, "zodiac_sign": sign}

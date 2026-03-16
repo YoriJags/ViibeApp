@@ -213,6 +213,34 @@ async def create_rating(rating_data: RatingCreate):
     await broadcast_leaderboard("all")
     await broadcast_city_pulse(venue.get("city", "lagos"))
 
+    # ── Analytics event (server-side — most reliable signal) ─────────────────
+    await db.events.insert_one({
+        "event":        "rating_submitted",
+        "user_id":      rating_data.user_id,
+        "properties": {
+            "venue_id":     rating_data.venue_id,
+            "venue_name":   venue.get("name", ""),
+            "venue_type":   venue.get("venue_type", "other"),
+            "area":         venue.get("area", ""),
+            "city":         venue.get("city", "lagos"),
+            "energy":       rating_data.energy,
+            "capacity":     rating_data.capacity,
+            "gate":         rating_data.gate,
+            "vibe_score":   vibe_score,
+            "is_correction": is_correction,
+            "has_photo":    bool(rating_data.photo_base64),
+            "session_id":   None,
+            "platform":     "mobile",
+        },
+        "session_id":   None,
+        "platform":     "mobile",
+        "city":         venue.get("city", "lagos"),
+        "scout_status": user_doc.get("scout_status", "newbie") if user_doc else "newbie",
+        "is_vibe_plus": bool(is_vibe_plus),
+        "server_ts":    now,
+        "client_ts":    now,
+    })
+
     # ── Icon Spotted: if rater is a Verified/Icon/Legend, fire signal to venue followers ──
     import asyncio as _asyncio
     _asyncio.create_task(_emit_icon_spotted(user_doc, venue, rating_data.venue_id))

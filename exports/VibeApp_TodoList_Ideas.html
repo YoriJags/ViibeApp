@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibeApp — Ideas & To-Do List · February 2026</title>
+<style>
+  :root {
+    --purple: #7C3AED;
+    --purple-light: #8B5CF6;
+    --gold: #D97706;
+    --green: #059669;
+    --blue: #2563EB;
+    --red: #DC2626;
+    --orange: #EA580C;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+    background: #fafafa;
+    color: #1a1a2e;
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  @media print {
+    body { font-size: 12px; background: white; }
+    .no-print { display: none; }
+    .page-break { page-break-before: always; }
+    .section { page-break-inside: avoid; }
+  }
+
+  /* Header */
+  header {
+    background: linear-gradient(135deg, #1a0a2e, #0a1a0a);
+    color: white;
+    padding: 48px;
+    text-align: center;
+  }
+  header .app-name {
+    font-size: 42px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #8B5CF6, #F59E0B);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -1px;
+  }
+  header h1 { font-size: 22px; color: #c0c0d8; font-weight: 400; margin-top: 8px; }
+  header .date { font-size: 13px; color: #7070a0; margin-top: 12px; }
+
+  .print-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #7C3AED;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 1000;
+  }
+
+  /* Layout */
+  .content { max-width: 960px; margin: 0 auto; padding: 48px 40px; }
+
+  /* Section headers */
+  .section { margin-bottom: 56px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e8e0ff;
+  }
+  .section-icon { font-size: 28px; }
+  .section-title { font-size: 22px; font-weight: 800; color: #1a1a2e; }
+  .section-sub { font-size: 13px; color: #7070a0; margin-top: 2px; }
+
+  /* Priority labels */
+  .priority {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .p-critical { background: #fee2e2; color: #991b1b; }
+  .p-high { background: #fef3c7; color: #92400e; }
+  .p-medium { background: #dbeafe; color: #1e40af; }
+  .p-low { background: #f3f4f6; color: #374151; }
+  .p-done { background: #d1fae5; color: #065f46; }
+  .p-idea { background: #ede9fe; color: #4c1d95; }
+
+  /* Todo items */
+  .todo-list { list-style: none; }
+  .todo-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 20px;
+    margin-bottom: 10px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e8e8f0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .todo-item:hover { border-color: #d4b8ff; }
+  .todo-checkbox {
+    width: 22px;
+    height: 22px;
+    border: 2px solid #c4b5fd;
+    border-radius: 6px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    cursor: pointer;
+  }
+  .todo-checkbox.done {
+    background: #7C3AED;
+    border-color: #7C3AED;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+  }
+  .todo-body { flex: 1; }
+  .todo-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .todo-title.strikethrough { text-decoration: line-through; color: #9090a0; }
+  .todo-desc { font-size: 13px; color: #5050a0; line-height: 1.5; }
+  .todo-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    background: #f0ebff;
+    color: #6D28D9;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* Idea cards */
+  .idea-card {
+    background: white;
+    border: 1px solid #e8e0ff;
+    border-left: 4px solid #8B5CF6;
+    border-radius: 0 12px 12px 0;
+    padding: 20px 24px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .idea-card.gold { border-left-color: #D97706; }
+  .idea-card.green { border-left-color: #059669; }
+  .idea-card.blue { border-left-color: #2563EB; }
+  .idea-card.red { border-left-color: #DC2626; }
+  .idea-title { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+  .idea-body { font-size: 14px; color: #404060; line-height: 1.6; }
+  .idea-why {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #6D28D9;
+    font-style: italic;
+  }
+
+  /* Divider */
+  hr { border: none; height: 2px; background: linear-gradient(90deg, #8B5CF6, #F59E0B, transparent); margin: 40px 0; }
+
+  /* Progress bar */
+  .progress-header { display: flex; justify-content: space-between; font-size: 13px; color: #7070a0; margin-bottom: 6px; }
+  .progress-bar { height: 8px; background: #e8e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #7C3AED, #8B5CF6); border-radius: 4px; }
+
+  /* Callout */
+  .callout {
+    background: linear-gradient(135deg, #f0ebff, #fff8e8);
+    border: 1px solid #c4b5fd;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    font-size: 15px;
+  }
+  .callout strong { color: #4C1D95; }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ Print to PDF</button>
+
+<header>
+  <div class="app-name">VibeApp</div>
+  <h1>Ideas, Plans &amp; Action To-Do List</h1>
+  <div class="date">February 2026 · Compiled from all strategy sessions · Confidential</div>
+</header>
+
+<div class="content">
+
+  <!-- PROGRESS SUMMARY -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">📊</span>
+      <div>
+        <div class="section-title">Build Progress Overview</div>
+        <div class="section-sub">Where we are right now</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Current Status (Feb 2026):</strong> Full-stack platform live. Frontend on Vercel (vibe-app-hc83.vercel.app). Backend on Railway (vibeapp-production.up.railway.app). MongoDB Atlas with 10 seeded Lagos venues. Socket.IO real-time confirmed. Phone-only auth (Emergent removed). 3-floor platform working: Public ✅ Merchant ✅ Admin ✅
+    </div>
+
+    <div class="progress-header"><span>Core Platform Build</span><span>~85% complete</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:85%"></div></div>
+
+    <div class="progress-header"><span>AI Feature Pipes</span><span>Scaffolded, heuristics active</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:60%; background: linear-gradient(90deg, #D97706, #F59E0B)"></div></div>
+
+    <div class="progress-header"><span>Real Users / Traction</span><span>0% — Launch needed</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:2%; background: #DC2626"></div></div>
+  </div>
+
+  <hr>
+
+  <!-- SECTION 1: IMMEDIATE TECHNICAL TO-DOS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🛠️</span>
+      <div>
+        <div class="section-title">Technical To-Dos</div>
+        <div class="section-sub">Things to build or fix in the codebase</div>
+      </div>
+    </div>
+
+    <ul class="todo-list">
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-critical">Critical</span> Set ANTHROPIC_API_KEY in Railway env vars</div>
+          <div class="todo-desc">Ask Vibe (Night Planner) instantly upgrades from keyword rules to Claude API — zero code change needed. Just add the env var in Railway dashboard and redeploy.</div>
+          <div class="todo-meta"><span class="tag">railway</span><span class="tag">ai</span><span class="tag">ask-vibe</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-critical">Critical</span> Deploy to App Store &amp; Google Play</div>
+          <div class="todo-desc">Currently web-only. Need to run expo build:ios and expo build:android, set up Apple Developer account ($99/yr) and Google Play account ($25 one-time). TestFlight first, then full App Store submission.</div>
+          <div class="todo-meta"><span class="tag">expo</span><span class="tag">mobile</span><span class="tag">launch</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-high">High</span> Split app into 3 separate deployments</div>
+          <div class="todo-desc">Major architecture: Public app (scouts), Merchant portal, Admin portal — each as independent Vercel/Railway deployments sharing one backend + MongoDB. This makes each product feel standalone and professional for each user tier. Discussed as future priority.</div>
+          <div class="todo-meta"><span class="tag">architecture</span><span class="tag">frontend</span><span class="tag">vercel</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-high">High</span> Merchant venue onboarding (real venues, not just seeded)</div>
+          <div class="todo-desc">Admin panel has the UI for adding venues. Need to actually onboard real Lagos venues with real coordinates, real photos, correct categories. Start with 20 venues as per launch strategy.</div>
+          <div class="todo-meta"><span class="tag">admin</span><span class="tag">data</span><span class="tag">launch</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-high">High</span> Fix pre-existing TypeScript errors</div>
+          <div class="todo-desc">Known pre-existing TS errors: Venue type conflict in index.tsx, merchant style types, MockMap cursor type. These don't break the app but should be cleaned up before App Store submission.</div>
+          <div class="todo-meta"><span class="tag">typescript</span><span class="tag">cleanup</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-medium">Medium</span> Frontend component cleanup + error boundaries</div>
+          <div class="todo-desc">Large components should be split. Add React error boundaries to prevent one crashing component from killing the whole screen. Important for production reliability.</div>
+          <div class="todo-meta"><span class="tag">frontend</span><span class="tag">refactor</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-medium">Medium</span> Unit tests for core business logic</div>
+          <div class="todo-desc">At minimum: vibe score calculation, time-decay algorithm, trending algorithm, scout accuracy scoring. These are the algorithms investors will ask about — tests prove they work correctly.</div>
+          <div class="todo-meta"><span class="tag">testing</span><span class="tag">backend</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-medium">Medium</span> Replace MockMap with real Google Maps / Mapbox</div>
+          <div class="todo-desc">Currently using a MockMap component. For real launch, need actual maps. Options: Google Maps SDK (paid, requires API key), Mapbox (free tier), or react-native-maps. Budget dependent.</div>
+          <div class="todo-meta"><span class="tag">maps</span><span class="tag">ux</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-medium">Medium</span> Add push notifications</div>
+          <div class="todo-desc">Essential for retention. Expo Push Notifications API is already available in the stack. Use cases: new check-in near you, vibe score spiked at your fav venue, crew member just checked in, leaderboard update.</div>
+          <div class="todo-meta"><span class="tag">notifications</span><span class="tag">expo</span><span class="tag">retention</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox done">✓</div>
+        <div class="todo-body">
+          <div class="todo-title strikethrough"><span class="priority p-done">Done</span> Remove Emergent OAuth — phone-only auth</div>
+          <div class="todo-desc">Completed. Google sign-in buttons removed from both profile screens. Backend auth.py session endpoint removed. .gitconfig with Emergent identity deleted.</div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox done">✓</div>
+        <div class="todo-body">
+          <div class="todo-title strikethrough"><span class="priority p-done">Done</span> Fix SPA routing for /merchant and /admin URLs</div>
+          <div class="todo-desc">Completed. Added catch-all rewrite in vercel.json: "/(.*)" → "/index.html". Both routes now load correctly.</div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox done">✓</div>
+        <div class="todo-body">
+          <div class="todo-title strikethrough"><span class="priority p-done">Done</span> Fix import.meta ESM crash on web</div>
+          <div class="todo-desc">Completed. Added unstable_enablePackageExports=false to metro.config.js. App loads successfully on web.</div>
+        </div>
+      </li>
+
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- SECTION 2: BUSINESS / LAUNCH TO-DOS -->
+  <div class="section page-break">
+    <div class="section-header">
+      <span class="section-icon">🚀</span>
+      <div>
+        <div class="section-title">Business &amp; Launch To-Dos</div>
+        <div class="section-sub">Things to do outside the codebase</div>
+      </div>
+    </div>
+
+    <ul class="todo-list">
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-critical">Critical</span> Register the company</div>
+          <div class="todo-desc">Without a legal entity, investors cannot wire money. Options: Nigeria CAC (Corporate Affairs Commission) — fast, local, familiar to Nigerian investors. Delaware LLC — preferred by US/international investors, easy to do online via Stripe Atlas ($500). Do CAC first, Delaware later when needed.</div>
+          <div class="todo-meta"><span class="tag">legal</span><span class="tag">investor-ready</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-critical">Critical</span> Choose &amp; trademark the final app name</div>
+          <div class="todo-desc">Top recommendation: <strong>Gbedu</strong> — "Where's the gbedu?" is the exact problem we solve. Deeply Nigerian, globally memorable. Check: WIPO trademark database, Nigerian IP office (FIPO), Google Play Store, Apple App Store, domain availability (.app, .ng, .com). "VibeApp" is already taken on Play Store.</div>
+          <div class="todo-meta"><span class="tag">brand</span><span class="tag">trademark</span><span class="tag">legal</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-high">High</span> Build the 12-slide investor pitch deck</div>
+          <div class="todo-desc">Structure: Cover → Problem → Solution → Demo screenshots → Market Size → Business Model → Traction → AI Vision → Competition → Team → Financials → The Ask ($150–300K). Use the PITCH_DECK.md already written as source material. Tools: Pitch.com, Canva, or Figma.</div>
+          <div class="todo-meta"><span class="tag">fundraising</span><span class="tag">pitch</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-high">High</span> Record 2-minute demo video</div>
+          <div class="todo-desc">Walk through: (1) Public floor — home screen with live vibes, tap venue card, Oracle prediction, DNA fingerprint; (2) Check in + rate a venue; (3) Ask Vibe — type a question, get venue recommendations; (4) Merchant floor — analytics dashboard; (5) Admin floor. Use demo mode for scripted data. Send to investors alongside pitch deck.</div>
+          <div class="todo-meta"><span class="tag">marketing</span><span class="tag">pitch</span><span class="tag">demo</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-high">High</span> Recruit 10 beta testers for next Friday night</div>
+          <div class="todo-desc">Get 10 real friends to use the app on a Friday night in Lagos. Even with demo data, their experience using the interface creates real product feedback. Their check-ins and ratings will be your first real data points. WhatsApp group to coordinate.</div>
+          <div class="todo-meta"><span class="tag">traction</span><span class="tag">beta</span><span class="tag">data</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-high">High</span> Onboard 3 real venue managers (merchant accounts)</div>
+          <div class="todo-desc">Walk into 3 real venues in Lagos. Show them the merchant dashboard on your phone. The analytics, the Pulse Drops, the Aura Shield. Offer free 6-month access. Goal: get them actively using it so you have "3 venue partners" for investor conversations.</div>
+          <div class="todo-meta"><span class="tag">merchants</span><span class="tag">traction</span><span class="tag">sales</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-high">High</span> Apply to investor programs</div>
+          <div class="todo-desc">Apply to: <strong>Future Africa</strong> (Iyinoluwa Aboyeji — strong Lagos network), <strong>Launch Africa</strong> (Nigeria-based, early stage), <strong>Microtraction</strong> (Nigeria pre-seed), <strong>Y Combinator W26</strong> (deadline typically October — plan ahead). All applications need company registration + pitch deck.</div>
+          <div class="todo-meta"><span class="tag">fundraising</span><span class="tag">accelerator</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-medium">Medium</span> Build social presence: Lagos tech circles</div>
+          <div class="todo-desc">Twitter/X: start posting about building VibeApp in public — #BuildInPublic. Instagram: behind-the-scenes Lagos nightlife content. TechCabal / Techpoint Africa: reach out for a founder feature story. Lagos tech WhatsApp/Discord groups. Goal: be known before launch.</div>
+          <div class="todo-meta"><span class="tag">marketing</span><span class="tag">community</span></div>
+        </div>
+      </li>
+
+      <li class="todo-item">
+        <div class="todo-checkbox"></div>
+        <div class="todo-body">
+          <div class="todo-title"><span class="priority p-medium">Medium</span> Find co-founder or key hires</div>
+          <div class="todo-desc">Investors price solo founder risk heavily. Look for: (1) Lagos City Lead — someone with deep venue relationships and party network, not a tech person; (2) Growth / Community Lead — social media savvy, knows Lagos influencers. These can be equity-only to start.</div>
+          <div class="todo-meta"><span class="tag">team</span><span class="tag">fundraising</span></div>
+        </div>
+      </li>
+
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- SECTION 3: PRODUCT IDEAS FROM CONVERSATIONS -->
+  <div class="section page-break">
+    <div class="section-header">
+      <span class="section-icon">💡</span>
+      <div>
+        <div class="section-title">Product Ideas from Our Sessions</div>
+        <div class="section-sub">Features and concepts discussed — not yet built</div>
+      </div>
+    </div>
+
+    <div class="idea-card">
+      <div class="idea-title">🚗 Uber Integration — Predict Surge Before It Happens</div>
+      <div class="idea-body">VibeApp knows a club has 500 people and it's 3am — Uber surge is coming in 30 minutes. Partnership opportunity: Uber pays for real-time VibeApp data to pre-position drivers near venues about to close. Or: In-app "Book Ride" button that auto-launches Uber with venue location.</div>
+      <div class="idea-why">Why it matters: Real revenue partnership + demonstrates the data moat's value to a $100B company</div>
+    </div>
+
+    <div class="idea-card gold">
+      <div class="idea-title">🥂 Alcohol Brand Sponsored Pulses ("Hennessy Night")</div>
+      <div class="idea-body">Hennessy, Ciroc, Johnnie Walker, Guinness all spend heavily in Nigerian nightlife. Sell them branded Pulse Drops: "Hennessy Night at Quilox — 2× clout for scouts, complimentary Hennessy shots for the first 30 check-ins." Estimated deal size: ₦2–10M per quarter per brand.</div>
+      <div class="idea-why">Why it matters: First brand partnership proves the B2B2C model and funds operations</div>
+    </div>
+
+    <div class="idea-card green">
+      <div class="idea-title">📸 Crowd Intelligence — Computer Vision Rating</div>
+      <div class="idea-body">Scout snaps a 5-second video. AI analyzes crowd density, energy level, lighting mood, queue length. Auto-fills the rating: "AI detected: Electric energy, 80% capacity, clear gate. Vibe Score: 88." Reduces friction for scouts, increases data quality. Planned for Month 12 when photo volume justifies training data.</div>
+      <div class="idea-why">Why it matters: Makes rating effortless, increases scout participation, creates visual proof layer</div>
+    </div>
+
+    <div class="idea-card blue">
+      <div class="idea-title">🤖 Vibe Autopilot — AI Runs Merchant Marketing</div>
+      <div class="idea-body">"Your vibe dropped below 60 for the 3rd Saturday in a row. Analysis: peak crowd leaves by 12am. Recommendation: Launch a 'Late Night Revival' Pulse Drop at 11:30pm targeting scouts within 3km." Venue owners don't understand digital marketing — an AI that says "do this specific thing, it'll bring 40 more people tonight" is worth ₦500K/month.</div>
+      <div class="idea-why">Why it matters: Dramatically increases merchant LTV and makes the product sticky / hard to cancel</div>
+    </div>
+
+    <div class="idea-card">
+      <div class="idea-title">🎟️ Event Ticketing Integration</div>
+      <div class="idea-body">Partner with Tix.africa and Eventbrite Nigeria to sell tickets in-app. 5–10% commission per ticket. When a vibe score spikes at a concert venue, show a "Buy Ticket" button right there. Converts live excitement into immediate purchase.</div>
+      <div class="idea-why">Why it matters: New revenue stream + makes VibeApp the full end-to-end going-out platform</div>
+    </div>
+
+    <div class="idea-card gold">
+      <div class="idea-title">🛋️ VIP Table Reservations</div>
+      <div class="idea-body">In-app booking for VIP tables at partner venues. 10–15% commission on reservations. Premium feature for high-value users (The Luxe persona). Similar to OpenTable but for Lagos nightlife. Venues love this — it guarantees revenue and fills premium inventory.</div>
+      <div class="idea-why">Why it matters: High commission, high-value users, strengthens merchant relationships</div>
+    </div>
+
+    <div class="idea-card green">
+      <div class="idea-title">📊 Nightlife Data API (B2B Data Licensing)</div>
+      <div class="idea-body">Sell anonymized nightlife data to: real estate developers (foot traffic patterns), urban planners (nightlife district optimization), alcohol brands (consumption patterns by venue type), tourism boards (visitor behavior). Estimated: ₦500K–2M per quarter per client. At scale, this becomes a pure-margin SaaS product on top of existing data.</div>
+      <div class="idea-why">Why it matters: 98% margin revenue stream that exists purely because we already collected the data</div>
+    </div>
+
+    <div class="idea-card blue">
+      <div class="idea-title">🍽️ Expand Beyond Nightlife — Daytime Economy</div>
+      <div class="idea-body">Brunch culture is massive in Lagos and Nairobi. "The Place Restaurant is peaking right now — 82 vibe score, no wait." Real-time wait times + ambiance ratings for restaurants during lunch rush. Same platform, same scouts, same algorithms — just new venue categories. Already supported in VenueCategoryFilter (Restaurants, Bars, Churches, Concerts).</div>
+      <div class="idea-why">Why it matters: 3× the TAM, same infrastructure cost</div>
+    </div>
+
+    <div class="idea-card">
+      <div class="idea-title">🏆 Weekly "Vibe Report" — Content Marketing Engine</div>
+      <div class="idea-body">Every Monday, auto-generate a "Top 5 Venues in Lagos Last Weekend" newsletter + Instagram post based on real vibe score data. "Escape had the highest average energy of the week (91.3). Quilox peaked at 3am Saturday with 96 score." This creates a weekly content asset that drives organic discovery and gives venues something to share.</div>
+      <div class="idea-why">Why it matters: Free marketing loop — venues share it, users trust it, press covers it</div>
+    </div>
+
+    <div class="idea-card gold">
+      <div class="idea-title">🎵 Spotify Taste → Venue Correlation</div>
+      <div class="idea-body">OAuth connect Spotify account. "Users who listen to Burna Boy go to Quilox and Escape on Saturday nights. Users who listen to Wizkid prefer Shiro and Rhapsody's." Gives Spotify a real-world layer they don't have. Potential partnership angle: Spotify could pay for this data or acquire us.</div>
+      <div class="idea-why">Why it matters: Strengthens Vibe DNA + creates clear strategic value for a Spotify acquisition</div>
+    </div>
+
+    <div class="idea-card red">
+      <div class="idea-title">🌍 Africa Expansion — Accra, Nairobi, Jo'burg</div>
+      <div class="idea-body">After Lagos dominance: replicate the playbook in each city. 15–20 venues, local scout network (100+ per city), merchant-first onboarding, city launch night. Each city's data adds to the pan-African behavioral dataset. Accra (Osu, East Legon) → Nairobi (Westlands corridor) → Johannesburg (Sandton, Maboneng) → Cairo (Zamalek).</div>
+      <div class="idea-why">Why it matters: Pan-African dataset is what triggers the $250M exit conversation</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- SECTION 4: THE "WHY USERS JOIN" STRATEGY -->
+  <div class="section page-break">
+    <div class="section-header">
+      <span class="section-icon">👥</span>
+      <div>
+        <div class="section-title">Why Users Join (The Incentive Strategy)</div>
+        <div class="section-sub">Our theory of public user motivation — discussed in our sessions</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>The core insight:</strong> Scouts are not just users — they're the intelligence network. Their incentive to participate is what powers the whole platform. Get this wrong and there's no data. Get it right and growth is exponential.
+    </div>
+
+    <div class="idea-card">
+      <div class="idea-title">Layer 1: Utility Value (The Practical Reason)</div>
+      <div class="idea-body">Before they contribute anything, the app must give immediate value: "I can find out where to go tonight, right now." Even with just 10 venues and basic data, the app solves a real problem every Friday night. First-time users don't need to rate anything — they just need to see a vibe score that saves them from showing up to a dead venue.</div>
+    </div>
+
+    <div class="idea-card gold">
+      <div class="idea-title">Layer 2: Status &amp; Clout (The Social Reason)</div>
+      <div class="idea-body">Clout points, scout tiers (Newbie → Elite), leaderboards, accuracy scores, achievement badges — these create a reputation system. In Lagos social culture, being the person who "knows where the party is" is real social capital. Being an "Elite Scout" is a flex. The leaderboard makes it competitive. People want to be ranked #1 at their favourite venue.</div>
+    </div>
+
+    <div class="idea-card green">
+      <div class="idea-title">Layer 3: Community (The Belonging Reason)</div>
+      <div class="idea-body">Crew system, Cartel Radar, squad locations, Vibe Persona archetypes — these create belonging. "My crew is all Turn Up personas" or "The Luxe Cartel runs Shiro on Saturdays." People join communities, not apps. The social graph creates lock-in that raw utility never can.</div>
+    </div>
+
+    <div class="idea-card blue">
+      <div class="idea-title">Solving the Cold Start Problem</div>
+      <div class="idea-body">
+        <strong>The chicken-and-egg problem:</strong> No scouts = no data. No data = no reason to join as a scout.<br><br>
+        <strong>Our solution:</strong><br>
+        1. <strong>Demo mode</strong> — app looks fully functional with seeded data from day one<br>
+        2. <strong>Recruit 200 "Elite Scouts" first</strong> — influencers, promoters, photographers (they have intrinsic motivation: their audience)<br>
+        3. <strong>Pay scouts for the first 3 months</strong> — small rewards (airtime, merch, cash prizes for leaderboard winners) until organic motivation kicks in<br>
+        4. <strong>Venue partnerships</strong> — venues incentivize their own customers to rate ("Rate us for free drinks before 11pm")<br>
+        5. <strong>WhatsApp groups</strong> — coordinate scout activity for high-density data on specific nights
+      </div>
+    </div>
+
+    <div class="idea-card">
+      <div class="idea-title">The Long-Term Flywheel</div>
+      <div class="idea-body">More scouts → more ratings → better vibe scores → more users come for the data → app gets known → more influencers want Elite Scout status → venues promote the app → venues send their own customers to rate → more ratings… The flywheel self-perpetuates once it starts spinning. The challenge is getting it spinning the first time — that's what the launch night strategy solves.</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- SECTION 5: MILESTONES TIMELINE -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">📅</span>
+      <div>
+        <div class="section-title">Milestones &amp; Targets</div>
+        <div class="section-sub">Where we need to be and when</div>
+      </div>
+    </div>
+
+    <table style="width:100%; border-collapse:collapse; font-size:14px;">
+      <tr style="background:#1a1a2e; color:white;">
+        <th style="padding:12px 16px; text-align:left;">Milestone</th>
+        <th style="padding:12px 16px;">Venues</th>
+        <th style="padding:12px 16px;">MAU</th>
+        <th style="padding:12px 16px;">MRR</th>
+        <th style="padding:12px 16px;">Next Round</th>
+      </tr>
+      <tr style="background:#fef9ff;">
+        <td style="padding:11px 16px; border-bottom:1px solid #e8e8f0;"><strong>Today (Feb 2026)</strong><br><small>Code only, no users</small></td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">10 (seeded)</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">0</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">₦0</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">—</td>
+      </tr>
+      <tr>
+        <td style="padding:11px 16px; border-bottom:1px solid #e8e8f0;"><strong>Pre-seed Ready</strong><br><small>20 venues, 500 beta users, company registered</small></td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">20</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">500</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">₦0</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;"><strong>$150–300K @ $2–3M</strong></td>
+      </tr>
+      <tr style="background:#fef9ff;">
+        <td style="padding:11px 16px; border-bottom:1px solid #e8e8f0;"><strong>Month 6</strong><br><small>Post pre-seed</small></td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">50</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">2,000</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">₦500K</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">—</td>
+      </tr>
+      <tr>
+        <td style="padding:11px 16px; border-bottom:1px solid #e8e8f0;"><strong>Month 12</strong><br><small>Lagos nightlife dominant</small></td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">50+</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">10,000</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">₦5M (~$3.3K)</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">Seed: $1–2M @ $8–12M</td>
+      </tr>
+      <tr style="background:#fef9ff;">
+        <td style="padding:11px 16px; border-bottom:1px solid #e8e8f0;"><strong>Month 24</strong><br><small>Nigeria + restaurants + events</small></td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">200+</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">100,000</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">$50,000</td>
+        <td style="padding:11px 16px; text-align:center; border-bottom:1px solid #e8e8f0;">Series A: $5–10M @ $40–60M</td>
+      </tr>
+      <tr>
+        <td style="padding:11px 16px;"><strong>Month 42–54</strong><br><small>Pan-Africa exit</small></td>
+        <td style="padding:11px 16px; text-align:center;">500+</td>
+        <td style="padding:11px 16px; text-align:center;">500,000</td>
+        <td style="padding:11px 16px; text-align:center;">$200,000</td>
+        <td style="padding:11px 16px; text-align:center;"><strong>Exit: $250M+</strong></td>
+      </tr>
+    </table>
+  </div>
+
+</div>
+
+<div style="background:#1a1a2e; color:#7070a0; text-align:center; padding:32px; font-size:13px;">
+  <strong style="color:#c0c0d8;">VibeApp — Ideas &amp; To-Do List</strong><br>
+  Compiled from strategy sessions, February 2026 · Confidential<br>
+  <em>Built with conviction. Launching from Lagos. Scaling across Africa.</em>
+</div>
+
+</body>
+</html>

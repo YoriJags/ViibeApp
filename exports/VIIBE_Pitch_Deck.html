@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VIIBE — Investor Pitch Deck</title>
+  <style>
+    
+  @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #080808;
+    color: #e8e8e8;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  /* ── COVER / H1 ─────────────────────────────── */
+  h1 {
+    font-size: 52px;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -1.5px;
+    background: linear-gradient(135deg, #ff3d6b 0%, #ff7043 40%, #ffb300 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    padding: 60px 72px 16px;
+    margin-bottom: 0;
+  }
+
+  /* Cover subtitle (em after h1) */
+  h1 + p em {
+    color: #888;
+    font-size: 14px;
+    font-style: normal;
+    padding: 0 72px;
+    display: block;
+    margin-bottom: 56px;
+  }
+
+  /* ── SLIDE SECTIONS (h2) ─────────────────────── */
+  h2 {
+    page-break-before: always;
+    font-size: 38px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    padding: 64px 72px 0;
+    margin-bottom: 40px;
+    color: #ffffff;
+    position: relative;
+  }
+
+  /* Slide label from h2 text before " — " */
+  h2::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: #ff3d6b;
+    margin-bottom: 12px;
+    -webkit-text-fill-color: #ff3d6b;
+  }
+
+  /* ── SUB-HEADINGS ────────────────────────────── */
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffb300;
+    margin: 32px 72px 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #4ade80;
+    margin: 24px 72px 8px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── BODY TEXT ───────────────────────────────── */
+  p {
+    margin: 0 72px 16px;
+    color: #bbb;
+    font-size: 13.5px;
+  }
+
+  strong {
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  em { color: #888; font-style: italic; }
+
+  /* ── LISTS ───────────────────────────────────── */
+  ul, ol {
+    margin: 0 72px 20px 96px;
+    color: #bbb;
+  }
+
+  li {
+    margin-bottom: 6px;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+
+  li strong { color: #fff; }
+
+  /* Custom bullet color */
+  ul li::marker { color: #ff3d6b; }
+  ol li::marker { color: #ffb300; font-weight: 700; }
+
+  /* ── TABLES ──────────────────────────────────── */
+  table {
+    width: calc(100% - 144px);
+    margin: 24px 72px 32px;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    border: 1px solid #1f1f1f;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  thead tr {
+    background: #111;
+    border-bottom: 2px solid #ff3d6b;
+  }
+
+  th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 11px 16px;
+    border-bottom: 1px solid #1a1a1a;
+    color: #ccc;
+    vertical-align: top;
+  }
+
+  tbody tr:nth-child(even) td { background: #0f0f0f; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: #141414; }
+
+  td strong, th strong { color: #fff; }
+
+  /* Highlight PEAK/LIT/CHARGED state rows */
+  td:first-child strong { color: #ffb300; }
+
+  /* ── BLOCKQUOTES (callout cards) ─────────────── */
+  blockquote {
+    margin: 24px 72px 28px;
+    padding: 18px 24px;
+    background: #101010;
+    border: 1px solid #1f1f1f;
+    border-left: 4px solid #ff3d6b;
+    border-radius: 0 10px 10px 0;
+    color: #ddd;
+    font-size: 13px;
+  }
+
+  blockquote p { margin: 0; color: #ddd; }
+  blockquote strong { color: #fff; }
+
+  /* ── CODE BLOCKS ─────────────────────────────── */
+  pre {
+    margin: 20px 72px 28px;
+    padding: 20px 24px;
+    background: #0d0d0d;
+    border: 1px solid #1f1f1f;
+    border-radius: 10px;
+    overflow-x: auto;
+  }
+
+  pre code {
+    background: none;
+    color: #4ade80;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  code {
+    background: #141414;
+    color: #ff9f1c;
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 12px;
+  }
+
+  /* ── HR (slide divider) ──────────────────────── */
+  hr {
+    border: none;
+    border-top: 1px solid #1a1a1a;
+    margin: 40px 72px;
+  }
+
+  /* ── COVER PAGE SPECIAL ──────────────────────── */
+  .cover-section {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 72px;
+    background: radial-gradient(ellipse at 20% 50%, #1a0a0a 0%, #080808 60%);
+  }
+
+  /* ── APPENDIX sections ───────────────────────── */
+  h2[data-appendix="true"] {
+    color: #888;
+    font-size: 28px;
+  }
+
+  /* ── NUMBER HIGHLIGHTS ───────────────────────── */
+  .stat-green { color: #4ade80; font-weight: 700; }
+  .stat-yellow { color: #ffb300; font-weight: 700; }
+  .stat-pink { color: #ff3d6b; font-weight: 700; }
+
+
+    /* Print / PDF settings */
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
+  </style>
+</head>
+<body>
+  <h1>VIIBE — Investor Pitch Deck</h1>
+<p><em>Seed Round | February 2026</em></p>
+<hr>
+<h2>SLIDE 1 — THE HOOK</h2>
+<p><strong>It&#39;s 11pm on a Friday in Lagos.</strong></p>
+<p>You&#39;re deciding between 6 venues. You&#39;ve checked 3 Instagram pages — all of them say &quot;come through, it&#39;s mad tonight.&quot; You make a call. Wrong venue. Empty room. Night wasted.</p>
+<p><strong>₦10,000 entry fee. 45 minutes of your life. Zero information.</strong></p>
+<hr>
+<h2>SLIDE 2 — THE PROBLEM</h2>
+<h3>The ₦2.3 Trillion Information Gap</h3>
+<p>Nigeria&#39;s entertainment industry generates ₦2.3 trillion in annual spend. Lagos alone has 4,000+ active nightlife venues across VI, Lekki, Ikoyi, Ikeja, and Surulere.</p>
+<p><strong>But the information layer is broken:</strong></p>
+<ul>
+<li>No live venue data exists anywhere — social media is staged, delayed, and curated by promoters.</li>
+<li>Promoters always say &quot;it&#39;s mad.&quot; There is no independent verification.</li>
+<li>A squad of 6 planning a night out needs a WhatsApp thread, phone calls, and someone willing to go first and report back.</li>
+<li>Venue owners have no real-time demand signal. They spend on influencer campaigns without knowing if their floor is empty or full.</li>
+</ul>
+<p><strong>The market has money. The market has venues. The market is missing intelligence.</strong></p>
+<hr>
+<h2>SLIDE 3 — THE SOLUTION</h2>
+<h3>VIIBE: Real-Time Nightlife Intelligence for Nigeria</h3>
+<p>VIIBE is a community-verified, live venue intelligence platform.</p>
+<p><strong>The core loop:</strong></p>
+<ol>
+<li><strong>Scouts</strong> (users) physically visit venues and submit 60-second vibe ratings from inside the geofence.</li>
+<li>Our <strong>scoring engine</strong> aggregates their reports into a live 0–100 Vibe Score per venue.</li>
+<li><strong>Anyone</strong> can see which venues are actually alive, right now, before they leave the house.</li>
+<li><strong>Merchants</strong> see the same data on their private dashboard and can amplify their signal with paid boosts.</li>
+<li><strong>More users → more data → more accuracy → more useful → more users.</strong> Flywheel.</li>
+</ol>
+<p>No staging. No curation. Verified by real people, physically on location, with GPS enforcement.</p>
+<hr>
+<h2>SLIDE 4 — THE PRODUCT</h2>
+<h3>Three Linked Products, One Platform</h3>
+<p><strong>The Public App — For Everyone</strong>
+The consumer experience. Find what&#39;s live tonight on a real-time map. See which venues are <code>peak</code>, <code>lit</code>, <code>charged</code>, <code>warming</code>, <code>chill</code>, or <code>quiet</code> — all from scouts actually inside right now.</p>
+<p><strong>The Merchant Portal — For Venue Owners</strong>
+A private dashboard showing your venue&#39;s live performance. Rating volume, energy trend, crowd level, gate reports, historical timeline. Push-notification alerts when your score drops. Paid visibility tools when you need to pull a crowd.</p>
+<p><strong>The Admin Console — For Platform Operators</strong>
+Full control over venue listings, merchant accounts, platform economics, and anti-cheat monitoring.</p>
+<p>All three share one backend and one MongoDB database. One coherent platform, role-based access.</p>
+<hr>
+<h2>SLIDE 5 — HOW IT WORKS (THE SCORING SYSTEM)</h2>
+<h3>The Most Defensible Piece of Our IP</h3>
+<p>A scout walks into Quilox at 11:30pm and submits a rating in under 60 seconds. They observe:</p>
+<ul>
+<li><strong>Energy:</strong> What is the room feeling right now? (<code>quiet</code> / <code>chill</code> / <code>warming</code> / <code>lit</code> / <code>peak</code>)</li>
+<li><strong>Capacity:</strong> How full is the venue? (<code>sparse</code> / <code>vibrant</code> / <code>full</code>)</li>
+<li><strong>Gate:</strong> How is entry flowing? (<code>clear</code> / <code>slow</code> / <code>blocked</code>)</li>
+<li><strong>Vibe-specific:</strong> Optional depth read — e.g., &quot;DJ is killing it&quot; vs &quot;DJ is mellow&quot;</li>
+</ul>
+<p>Our scoring engine calculates:</p>
+<pre><code>Vibe Score = min(100, (Energy × 80% + Context × 20%) × Crowd Multiplier)
+</code></pre>
+<p>Energy dominates at 80%. A full venue cannot rescue a dead crowd. A packed house amplifies real energy.</p>
+<p>Every score updates with time-decay weighting — a rating from 5 minutes ago counts 3× more than one from 45 minutes ago. When you look at a venue&#39;s score, you&#39;re seeing the freshest possible picture of the room.</p>
+<p>This produces 6 display states:</p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Trigger</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>PEAK</strong> 🔥</td>
+<td>Score ≥ 85</td>
+<td>Maximum energy. Get there now.</td>
+</tr>
+<tr>
+<td><strong>LIT</strong> ⚡</td>
+<td>Score ≥ 65</td>
+<td>High energy. Night is in full swing.</td>
+</tr>
+<tr>
+<td><strong>CHARGED</strong> ⚡</td>
+<td>Score 45–64, crowd full/vibrant</td>
+<td>Potential energy — packed, about to blow.</td>
+</tr>
+<tr>
+<td><strong>WARMING</strong> 🌡</td>
+<td>Score 45–64, sparse crowd</td>
+<td>Building slowly. Check back later.</td>
+</tr>
+<tr>
+<td><strong>CHILL</strong> 😌</td>
+<td>Score 20–44</td>
+<td>Low key. Good for a quiet night.</td>
+</tr>
+<tr>
+<td><strong>QUIET</strong> 🌙</td>
+<td>Score &lt; 20</td>
+<td>Nearly empty. Not tonight.</td>
+</tr>
+</tbody></table>
+<p><strong>CHARGED is our unique insight.</strong> A packed venue at score 52 is fundamentally different from an empty venue at score 52. CHARGED tells you: 300 people are in the room, the DJ hasn&#39;t hit the first drop yet — get there before it blows.</p>
+<hr>
+<h2>SLIDE 6 — THE DATA MOAT</h2>
+<h3>Why This Gets Harder to Replicate Over Time</h3>
+<p><strong>Network effects are the only moat that compounds.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>What accumulates</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Scout network</td>
+<td>More scouts → more coverage → more accurate scores → more useful → more users</td>
+</tr>
+<tr>
+<td>Historical snapshots</td>
+<td>90 days of nightly data enables Oracle predictions and pattern detection requiring no additional input</td>
+</tr>
+<tr>
+<td>Scout accuracy graph</td>
+<td>Consistently accurate scouts become <code>elite</code> tier — their reports carry implicit trust</td>
+</tr>
+<tr>
+<td>Vibe DNA profiles</td>
+<td>Every rating enriches each user&#39;s personalised nightlife fingerprint</td>
+</tr>
+</tbody></table>
+<p><strong>VIIBE Certified</strong> is the trust pinnacle: automatically awarded when a venue hits score ≥ 85 AND 80+ ratings in 24 hours simultaneously. Cannot be bought. Cannot be gamed. Certifies peak human activity with mathematical certainty.</p>
+<p>A competitor launching today inherits zero of this. No scout network, no historical baseline, no trust graph, no DNA profiles. They start from scratch on every dimension.</p>
+<hr>
+<h2>SLIDE 7 — MARKET SIZE</h2>
+<h3>Nigeria Is the Playbook. Africa Is the Prize.</h3>
+<p><strong>TAM — Total Addressable Market</strong>
+Sub-Saharan Africa nightlife + entertainment economy:</p>
+<ul>
+<li>Estimated market: $42B USD annually</li>
+<li>Smartphone penetration growing 18% YoY</li>
+<li>Primary markets: Nigeria, Ghana, Kenya, South Africa, Egypt</li>
+</ul>
+<p><strong>SAM — Serviceable Addressable Market</strong>
+Nigeria nightlife, events, and venue discovery:</p>
+<ul>
+<li>220 million population, median age 18.4</li>
+<li>₦2.3T ($1.5B) annual entertainment spend</li>
+<li>4,000+ licensed venues across 6 major cities</li>
+<li>Lagos alone: 15–20 million people, highest discretionary spend in SSA</li>
+</ul>
+<p><strong>SOM — Serviceable Obtainable Market (3-year target)</strong>
+Lagos-first, expanding to Abuja + Port Harcourt + Ibadan:</p>
+<ul>
+<li>50,000 MAU by Month 24</li>
+<li>500 active merchant venues by Month 24</li>
+<li>₦250M ($167K) ARR by end of Year 2</li>
+</ul>
+<p><strong>The Afrobeats angle:</strong> Nigerian nightlife culture is globalising. VIIBE has a natural export story into the African diaspora markets in London, New York, and Toronto — cities where Afrobeats events are among the fastest-growing categories.</p>
+<hr>
+<h2>SLIDE 8 — BUSINESS MODEL</h2>
+<h3>Four Revenue Streams, Two Compounding</h3>
+<p><strong>1. VIIBE+ Subscriptions — ₦1,500/month (~$1 USD)</strong>
+Consumer premium tier. Unlocks: bolt reactions, priority feed, exclusive persona badges, unlimited Night Planner conversations.</p>
+<ul>
+<li>Target: 5% of MAU on VIIBE+</li>
+<li>50K MAU × 5% × ₦1,500 = <strong>₦3.75M/month</strong> at Year 2 scale</li>
+</ul>
+<p><strong>2. Pulse Drops — ₦5,000 to ₦50,000 per activation</strong>
+Merchant paid visibility boost. Appears at top of trending feed. 2× clout multiplier for scouts during activation window incentivises real reports.</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Price</th>
+<th>Duration</th>
+<th>Radius</th>
+<th>Score Boost</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Spark</td>
+<td>₦5,000</td>
+<td>2 hours</td>
+<td>2km</td>
+<td>+20</td>
+</tr>
+<tr>
+<td>Flare</td>
+<td>₦15,000</td>
+<td>4 hours</td>
+<td>5km</td>
+<td>+40</td>
+</tr>
+<tr>
+<td>Supernova</td>
+<td>₦50,000</td>
+<td>8 hours</td>
+<td>City-wide</td>
+<td>+100</td>
+</tr>
+</tbody></table>
+<ul>
+<li>Target: 3 drops/month × 300 merchants × ₦15K avg = <strong>₦13.5M/month</strong> at Year 2 scale</li>
+</ul>
+<p><strong>3. Sponsored Campaigns — ₦3,000–₦20,000 per campaign</strong>
+Clout multiplier campaigns (2× or 3×) tied to specific venues and time windows. Merchant buys real scout activity as a side effect of their spend.</p>
+<p><strong>4. Data API — ₦50,000/month per enterprise subscriber</strong>
+Aggregated venue intelligence for event companies, taxi platforms, and F&amp;B brands. Activates Month 18+ when data depth is B2B-sellable.</p>
+<p><strong>Unit Economics:</strong></p>
+<ul>
+<li>VIIBE+ LTV: ₦27,000 | CAC: ₦800 → <strong>LTV:CAC = 33.75:1</strong></li>
+<li>Merchant LTV: ₦297,000 | CAC: ₦6,000 → <strong>LTV:CAC = 49.5:1</strong></li>
+</ul>
+<hr>
+<h2>SLIDE 9 — TRACTION</h2>
+<h3>What We&#39;ve Built (Pre-Seed, Self-Funded)</h3>
+<p><strong>Platform (Live):</strong></p>
+<ul>
+<li>Full-stack application deployed and running in production</li>
+<li>Frontend: Vercel (<code>vibe-app-hc83.vercel.app</code>)</li>
+<li>Backend: Railway (<code>vibeapp-production-1835.up.railway.app</code>)</li>
+<li>Database: MongoDB Atlas — 10 Lagos venues seeded with live data</li>
+</ul>
+<p><strong>Scoring Intelligence (Live):</strong></p>
+<ul>
+<li>6-state energy model with the CHARGED state differentiation</li>
+<li>Time-decay weighted aggregation (3× / 2× / 1× windows)</li>
+<li>Vibe Oracle: heuristic peak-time prediction per venue type + day of week</li>
+<li>Vibe DNA: personalised affinity fingerprints computed from rating history</li>
+<li>Night Planner: AI concierge powered by Claude Haiku (Anthropic)</li>
+<li>City Pulse: live city heartbeat with 30-minute sparkline</li>
+</ul>
+<p><strong>Monetisation (Built, Pending GTM):</strong></p>
+<ul>
+<li>VIIBE+ subscription flow via Paystack — end-to-end functional</li>
+<li>Pulse Drop purchasing and activation — end-to-end functional</li>
+<li>Merchant wallet top-up + spend tracking — functional</li>
+</ul>
+<p><strong>Anti-Cheat (Live):</strong></p>
+<ul>
+<li>GPS geofence enforcement on every rating</li>
+<li>30-minute cooldown + 3 ratings/day hard cap</li>
+<li>Burst detection with provisional rating holds</li>
+<li>VIIBE Certified automatic badge logic</li>
+</ul>
+<p><strong>Next milestone:</strong> First 100 paying VIIBE+ scouts + 10 merchant partnerships in Lagos Island.</p>
+<hr>
+<h2>SLIDE 10 — GO-TO-MARKET</h2>
+<h3>Island-First. Community-First. Network-First.</h3>
+<p><strong>Phase 1 — The Island (Months 1–3)</strong>
+Victoria Island, Lekki Phase 1, Ikoyi. Highest venue density, highest smartphone penetration, highest spend per capita.</p>
+<p>Activation: 3 &quot;scout ambassador&quot; nights per week. Select 10–15 early users per night, each assigned 2–3 venues. Compensate with VIIBE+ subscriptions (₦1,500/month value). We need their data more than their money in month 1.</p>
+<p><strong>Phase 2 — The Merchants (Months 3–6)</strong>
+Once 20 venues have 30+ days of live data, the merchant sales conversation is immediate: show them their own dashboard. Live score, crowd trend, timeline. &quot;This is your venue tonight. In real time.&quot; Free 30-day trial. No credit card required.</p>
+<p><strong>Phase 3 — The Flywheel (Months 6–18)</strong>
+Product drives itself. Accelerate with: nightlife content creator partnerships (they embed VIIBE scores in their content), university ambassador programs (Unilag, Covenant, LASU feeder networks into VI), WhatsApp community seeding in existing nightlife groups.</p>
+<p><strong>Phase 4 — City 2 (Month 12)</strong>
+Abuja. Smaller geography, tight social scene, predictable patterns for Oracle predictions, higher average spend per outing.</p>
+<hr>
+<h2>SLIDE 11 — COMPETITION</h2>
+<table>
+<thead>
+<tr>
+<th>Competitor</th>
+<th>What They Do</th>
+<th>Why We Win</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Yelp / Google Reviews</td>
+<td>Static, delayed reviews</td>
+<td>We are real-time. Reviews are after the fact.</td>
+</tr>
+<tr>
+<td>Instagram / TikTok</td>
+<td>Curated content by promoters</td>
+<td>We are verified, anonymous, anti-bias</td>
+</tr>
+<tr>
+<td>Table reservation apps</td>
+<td>Booking, not discovery</td>
+<td>We solve &quot;where tonight?&quot; not &quot;book my table&quot;</td>
+</tr>
+<tr>
+<td>No tool (status quo)</td>
+<td>WhatsApp, word of mouth</td>
+<td>We are creating a new behaviour, not displacing one</td>
+</tr>
+</tbody></table>
+<p><strong>Honest competitive risk:</strong> A well-funded international player (Google Maps with live data) could attempt this. But:</p>
+<ul>
+<li>Building a scout network in Lagos requires local trust, local knowledge, and local payment rails — not a cheque.</li>
+<li>Our data moat starts compounding from Day 1. A competitor starting in 12 months inherits nothing.</li>
+<li>We will be the cultural reference for Nigerian nightlife intelligence before they finish due diligence.</li>
+</ul>
+<hr>
+<h2>SLIDE 12 — TECHNOLOGY</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Tech</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Frontend</td>
+<td>React Native (Expo 54)</td>
+<td>iOS + Android + Web from one codebase</td>
+</tr>
+<tr>
+<td>State</td>
+<td>Zustand v5</td>
+<td>Offline-first, zero boilerplate</td>
+</tr>
+<tr>
+<td>Backend</td>
+<td>FastAPI (Python 3.11)</td>
+<td>Async, fast, production-grade</td>
+</tr>
+<tr>
+<td>Database</td>
+<td>MongoDB Atlas</td>
+<td>Flexible schema + native aggregation for scoring</td>
+</tr>
+<tr>
+<td>Real-time</td>
+<td>Socket.IO</td>
+<td>Live score broadcasts, leaderboard updates</td>
+</tr>
+<tr>
+<td>AI</td>
+<td>Claude Haiku 4.5 (Anthropic)</td>
+<td>Night Planner + Vibe Intelligence. $0.25/M tokens.</td>
+</tr>
+<tr>
+<td>Payments</td>
+<td>Paystack</td>
+<td>Only processor with full NG bank + USSD coverage</td>
+</tr>
+<tr>
+<td>Hosting</td>
+<td>Vercel + Railway</td>
+<td>Zero DevOps overhead. Scale to zero when idle.</td>
+</tr>
+</tbody></table>
+<p><strong>AI is a feature, not a dependency.</strong> The platform runs without Claude. If the API is unavailable, Night Planner falls back to keyword-based rules. We never put a third-party API on the critical path.</p>
+<hr>
+<h2>SLIDE 13 — TEAM</h2>
+<p><em>(Insert actual team bios here)</em></p>
+<p><strong>Founder / CEO:</strong> [Name]
+Lagos-native. Built [X]. Nightlife obsessive. Prior experience in [relevant domain].</p>
+<p><strong>Technical Lead:</strong> [Name]
+Full-stack. Previously [X]. Responsible for all production architecture.</p>
+<p><strong>What we&#39;re hiring with this round:</strong></p>
+<ul>
+<li>Community Manager — Lagos-based, runs scout ambassador program</li>
+<li>Backend Engineer — handles roadmap velocity</li>
+<li>Account Executive — merchant sales and onboarding</li>
+</ul>
+<hr>
+<h2>SLIDE 14 — FINANCIALS SUMMARY</h2>
+<p><em>(Full 5-year model in docs/FINANCIAL_MODEL.md)</em></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Year 1 (2026)</th>
+<th>Year 2 (2027)</th>
+<th>Year 3 (2028)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MAU</td>
+<td>5,000</td>
+<td>25,000</td>
+<td>80,000</td>
+</tr>
+<tr>
+<td>VIIBE+ Subscribers</td>
+<td>250</td>
+<td>1,250</td>
+<td>4,000</td>
+</tr>
+<tr>
+<td>Active Merchants</td>
+<td>50</td>
+<td>300</td>
+<td>800</td>
+</tr>
+<tr>
+<td>Revenue (₦)</td>
+<td>₦8.3M</td>
+<td>₦89M</td>
+<td>₦352M</td>
+</tr>
+<tr>
+<td>Revenue (USD)</td>
+<td>$5.5K</td>
+<td>$59K</td>
+<td>$235K</td>
+</tr>
+<tr>
+<td>Gross Margin</td>
+<td>78%</td>
+<td>88%</td>
+<td>92%</td>
+</tr>
+<tr>
+<td>Break-Even</td>
+<td>—</td>
+<td><strong>Month 18 (Q3 2027)</strong></td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>Revenue mix at Year 3 scale: Pulse Drops 55% · VIIBE+ 20% · Campaigns 15% · Data API 10%</p>
+<hr>
+<h2>SLIDE 15 — THE ASK</h2>
+<h3>Raising ₦112.5M ($75,000 USD) Seed Round</h3>
+<p><strong>18-month runway to break-even.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Use of Funds</th>
+<th>%</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Engineering (2 engineers × 12mo)</td>
+<td>35%</td>
+<td>₦39.4M</td>
+</tr>
+<tr>
+<td>Scout Network &amp; Community</td>
+<td>25%</td>
+<td>₦28.1M</td>
+</tr>
+<tr>
+<td>Merchant Sales (1 AE + events)</td>
+<td>20%</td>
+<td>₦22.5M</td>
+</tr>
+<tr>
+<td>Infrastructure &amp; AI</td>
+<td>12%</td>
+<td>₦13.5M</td>
+</tr>
+<tr>
+<td>Legal, compliance, admin</td>
+<td>8%</td>
+<td>₦9M</td>
+</tr>
+</tbody></table>
+<p><strong>What this buys:</strong></p>
+<ul>
+<li>10,000 MAU in Lagos by Month 12</li>
+<li>150 active paying merchants by Month 12</li>
+<li>Phase 1 Abuja expansion launched</li>
+<li>Series A ready: live data moat established, paying cohorts proven, unit economics validated</li>
+</ul>
+<p><strong>Terms:</strong> ₦562.5M pre-money valuation (20% equity). SAFE with standard pro-rata rights.</p>
+<hr>
+<p><em>VIIBE — Know before you go.</em></p>
+<hr>
+<h2>APPENDIX A — THE CHARGED STATE (DEEP DIVE FOR TECHNICAL INVESTORS)</h2>
+<p>Investors sometimes ask why 6 states and not a simple 1–5 scale.</p>
+<p><strong>CHARGED</strong> is the business case for the 6th state.</p>
+<p>A venue with score 52 and 300 people inside is fundamentally different from a venue with score 52 and 30 people inside. In the first case: the crowd is assembled, the DJ is about to hit the first peak set — the night is about to explode. In the second: the room is sparse and going nowhere.</p>
+<p>Both score 52 on a pure energy calculation. But the correct user action is completely opposite:</p>
+<ul>
+<li>300-person venue: <strong>&quot;Leave now, you&#39;ll miss the peak window.&quot;</strong></li>
+<li>30-person venue: <strong>&quot;Skip this one.&quot;</strong></li>
+</ul>
+<p>CHARGED surfaces this distinction in a single label that users act on in under a second. This is the kind of insight that no static review platform can produce — it requires live data from inside the room combined with crowd context that only a geofenced rating system captures.</p>
+<hr>
+<h2>APPENDIX B — ANTI-CHEAT SYSTEM (FOR TRUST-FOCUSED INVESTORS)</h2>
+<p>Five independent layers prevent rating manipulation:</p>
+<ol>
+<li><p><strong>GPS geofence:</strong> Rating rejected if coordinates are outside venue radius (100m default). You cannot rate a venue you are not physically at.</p>
+</li>
+<li><p><strong>Cooldown system:</strong> 30-minute cooldown between ratings at the same venue. Hard cap of 3 ratings per venue per 24 hours.</p>
+</li>
+<li><p><strong>Burst detection:</strong> Abnormal rating floods are flagged <code>provisional</code> and excluded from live aggregates. Coordinated promoter activity cannot move the score.</p>
+</li>
+<li><p><strong>Scout accuracy tracking:</strong> Each scout&#39;s ratings are evaluated against venue consensus after-the-fact. Consistently accurate scouts reach <code>elite</code> tier. Low-accuracy raters drift toward <code>newbie</code>, de-incentivising volume gaming.</p>
+</li>
+<li><p><strong>VIIBE Certified:</strong> Score ≥ 85 AND 80+ ratings simultaneously. Both must be true. Impossible to manufacture without genuine peak activity.</p>
+</li>
+</ol>
+<hr>
+<h2>APPENDIX C — VIBE DNA AS RETENTION FLYWHEEL</h2>
+<p>Vibe DNA creates a personalised affinity fingerprint per user from their full rating history. As users rate more venues, DNA becomes richer. The feed sorts venues by DNA match — high-club-affinity users see clubs higher.</p>
+<p>The product gets more personalised the more you use it. After 50 ratings, VIIBE knows your nightlife preferences better than you do. After 100 ratings, you stop searching and start trusting the feed.</p>
+<p>This is the personalisation compounding loop that consumer apps dream about — a recommendation layer that improves purely as a function of usage, requiring no additional ML infrastructure.</p>
+<hr>
+<h2>APPENDIX D — NIGHT PLANNER AS FUTURE REVENUE LINE</h2>
+<p>Currently free (rules-based) with Claude-powered premium path. Natural evolution:</p>
+<ol>
+<li><strong>VIIBE+ gating:</strong> Multi-turn conversations unlimited for subscribers. Direct subscription driver.</li>
+<li><strong>Venue referral model:</strong> Planner recommendations that lead to check-ins earn the merchant a performance credit.</li>
+<li><strong>Branded Planner experiences:</strong> &quot;Guinness Night Planner&quot; — F&amp;B brand-sponsored concierge powered by VIIBE data. B2B brand revenue.</li>
+</ol>
+<p>Night Planner is currently a feature. It is building toward a dedicated revenue line.</p>
+<hr>
+<p><em>Contact: [<a href="mailto:founder@viibe.app">founder@viibe.app</a>]</em>
+<em>Deck version: February 2026</em></p>
+
+</body>
+</html>

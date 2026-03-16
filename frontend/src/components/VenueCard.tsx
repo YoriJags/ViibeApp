@@ -37,6 +37,7 @@ interface VenueCardProps {
   showBoostBadge?: boolean;
   isNearby?: boolean;
   onRatePress?: () => void;
+  dnaMatch?: number;
 }
 
 // Premium gradient palettes per vibe state
@@ -65,7 +66,7 @@ const getVibeStateKey = (score: number, capacity: string): string => {
   return 'quiet';
 };
 
-export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostBadge = true, isNearby, onRatePress }) => {
+export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostBadge = true, isNearby, onRatePress, dnaMatch }) => {
   const isPulseBoosted = venue.active_pulse_tier !== null && venue.active_pulse_tier !== undefined;
   const maxOpacity = venue.current_vibe_score >= 80 ? 0.65 : venue.current_vibe_score >= 60 ? 0.4 : 0.18;
   const borderOpacity = useRef(new Animated.Value(0.08)).current;
@@ -287,6 +288,11 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
                 <Text style={styles.chipPeakingText}>🔥 PEAK NOW</Text>
               </View>
             )}
+            {dnaMatch !== undefined && dnaMatch >= 60 && (
+              <View style={[styles.chip, styles.chipDna]}>
+                <Text style={styles.chipDnaText}>🧬 {dnaMatch}% match</Text>
+              </View>
+            )}
           </ScrollView>
 
           {/* Sports-broadcast narrative */}
@@ -485,6 +491,8 @@ const styles = StyleSheet.create({
   chipFadingText: { fontSize: 11, fontWeight: '800', color: '#FF8C00' },
   chipPeaking: { backgroundColor: '#FF336612', borderColor: '#FF336635' },
   chipPeakingText: { fontSize: 11, fontWeight: '800', color: '#FF3366' },
+  chipDna: { backgroundColor: '#00BCD410', borderColor: '#00BCD430' },
+  chipDnaText: { fontSize: 11, fontWeight: '700', color: '#00BCD4' },
   openDot: {
     width: 5,
     height: 5,
