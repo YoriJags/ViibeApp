@@ -49,6 +49,7 @@ export interface AuthSlice {
   initializeVibePlus: () => Promise<{ authorization_url: string; reference: string }>;
   verifyVibePlus: (reference: string) => Promise<{ success: boolean; is_vibe_plus: boolean; expires_at?: string }>;
   refreshSubscriptionStatus: () => Promise<void>;
+  updateCallName: (callName: string | null) => Promise<boolean>;
 }
 
 export const createAuthSlice: StateCreator<
@@ -261,6 +262,22 @@ export const createAuthSlice: StateCreator<
   toggleLocationSharing: () => set({ locationSharingEnabled: !get().locationSharingEnabled }),
   setVibePersona: (persona) => set({ vibePersona: persona }),
   setUserMode: (mode) => set({ userMode: mode }),
+  updateCallName: async (callName) => {
+    const { sessionToken, user } = get();
+    if (!sessionToken || !user) return false;
+    try {
+      const res = await fetch(`${API_URL}/api/users/me/call-name`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` },
+        body: JSON.stringify({ call_name: callName }),
+      });
+      if (!res.ok) return false;
+      set({ user: { ...user, call_name: callName ?? undefined } });
+      return true;
+    } catch {
+      return false;
+    }
+  },
   setSceneMood: (mood) => set({ sceneMood: mood, sceneMoodSetAt: new Date().toISOString() }),
 
   isVibePlus: () => {

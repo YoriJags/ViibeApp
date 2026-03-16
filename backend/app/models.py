@@ -56,6 +56,7 @@ class User(BaseModel):
     music_preferences: list[str] = [] # genre list bridged from music streaming mock
     zodiac_sign: Optional[str] = None # optional — set during onboarding, drives Cosmic Vibe reading
     reactor_skin: Optional[str] = None # preset key or "custom:#RRGGBB"
+    call_name: Optional[str] = None    # what the user wants to be called in the app
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

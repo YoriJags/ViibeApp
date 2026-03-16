@@ -1195,7 +1195,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
             vibeColor={vibeColor}
             isDemoMode={isDemoMode}
             authHeaders={getAuthHeaders()}
-            userName={user?.display_name ?? user?.username}
+            userName={user?.call_name ?? user?.display_name ?? user?.username}
           />
         )}
 

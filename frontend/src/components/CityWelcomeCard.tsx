@@ -12,9 +12,10 @@ interface CityWelcomeProps {
   cityPulse: { pulse_score: number; pulse_label: string; active_scouts: number; live_venues: number } | null;
   cityName: string;
   onPlannerPress: () => void;
+  callName?: string;
 }
 
-export default function CityWelcomeCard({ cityPulse, cityName, onPlannerPress }: CityWelcomeProps) {
+export default function CityWelcomeCard({ cityPulse, cityName, onPlannerPress, callName }: CityWelcomeProps) {
   const score = cityPulse?.pulse_score ?? 42;
   const label = (cityPulse?.pulse_label ?? 'BUZZING').toUpperCase();
   const scouts = cityPulse?.active_scouts ?? 0;
@@ -26,11 +27,12 @@ export default function CityWelcomeCard({ cityPulse, cityName, onPlannerPress }:
     score >= 30 ? '#9933FF' :
     '#3399FF';
 
+  const greeting = callName ? `${callName}, ` : '';
   const headline =
-    label === 'ELECTRIC' ? `🔥 ${cityName} is going absolutely OFF` :
-    label === 'POPPING'  ? `🎉 ${cityName} is popping right now` :
-    label === 'BUZZING'  ? `✨ The ${cityName} scene is building` :
-    `🌙 ${cityName} is quiet — early spots available`;
+    label === 'ELECTRIC' ? `🔥 ${greeting}${cityName} is going absolutely OFF` :
+    label === 'POPPING'  ? `🎉 ${greeting}${cityName} is popping right now` :
+    label === 'BUZZING'  ? `✨ ${greeting}the ${cityName} scene is building` :
+    `🌙 ${greeting}${cityName} is quiet — early spots available`;
 
   const subline =
     label === 'ELECTRIC' ? "Don't sleep — the best spots are filling fast" :

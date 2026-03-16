@@ -64,6 +64,7 @@ export interface User {
   rating_accuracy_score?: number;
   reactor_skin?: string;      // preset key or 'custom:#RRGGBB'
   zodiac_sign?: string;       // optional, set during onboarding
+  call_name?: string;         // what they want to be called in the app
 }
 
 export interface PendingRating {

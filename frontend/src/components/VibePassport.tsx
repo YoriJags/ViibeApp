@@ -169,10 +169,10 @@ export default function VibePassport({ visible, onClose, isDemoMode }: Props) {
             <View style={styles.identityRow}>
               <AvatarDisplay config={avatarConfig} username={user.username} size={72} />
               <View style={styles.identityInfo}>
+                {user.call_name ? (
+                  <Text style={styles.callName}>{user.call_name}</Text>
+                ) : null}
                 <Text style={styles.username}>@{user.username}</Text>
-                {user.display_name && (
-                  <Text style={styles.displayName}>{user.display_name}</Text>
-                )}
                 <View style={[styles.personaBadge, { borderColor: personaColor + '60', backgroundColor: personaColor + '18' }]}>
                   <Text style={[styles.personaText, { color: personaColor }]}>{personaLabel}</Text>
                 </View>
@@ -263,8 +263,9 @@ const styles = StyleSheet.create({
   passportTitle: { fontSize: 10, color: '#3A3A4E', fontWeight: '800', letterSpacing: 2 },
   passportSub:   { fontSize: 9, color: '#2A2A4A', fontWeight: '600', letterSpacing: 1 },
   identityRow:  { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 20, paddingBottom: 16 },
-  identityInfo: { flex: 1, gap: 4 },
-  username:     { fontSize: 20, fontWeight: '900', color: '#EEE', letterSpacing: -0.3 },
+  identityInfo: { flex: 1, gap: 3 },
+  callName:     { fontSize: 22, fontWeight: '900', color: '#FFF', letterSpacing: -0.5 },
+  username:     { fontSize: 13, fontWeight: '600', color: '#666', letterSpacing: 0.3 },
   displayName:  { fontSize: 13, color: '#666', fontWeight: '500' },
   personaBadge: {
     alignSelf: 'flex-start', borderWidth: 1, borderRadius: 8,

@@ -65,9 +65,25 @@ const DEMO_DEBRIEF = {
   stats: { spots_visited: 3, ratings_dropped: 3, avg_vibe_given: 87 },
 };
 
+const profileCallNameStyles = StyleSheet.create({
+  row:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  placeholder:  { fontSize: 14, color: '#555', fontWeight: '500', fontStyle: 'italic' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
+  modalCard:    { width: '100%', backgroundColor: '#0E0E1A', borderRadius: 20, borderWidth: 1, borderColor: '#9933FF44', padding: 24, gap: 8 },
+  modalTitle:   { fontSize: 18, fontWeight: '900', color: '#FFF', letterSpacing: -0.3 },
+  modalSub:     { fontSize: 12, color: '#555', lineHeight: 17, marginBottom: 8 },
+  modalInput:   { backgroundColor: '#111118', borderRadius: 14, borderWidth: 1.5, borderColor: '#9933FF55', paddingHorizontal: 18, paddingVertical: 16, fontSize: 18, fontWeight: '700', color: '#FFF', textAlign: 'center', letterSpacing: 0.3 },
+  charCount:    { fontSize: 11, color: '#555', textAlign: 'right' },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  cancelBtn:    { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#333', alignItems: 'center' },
+  cancelText:   { fontSize: 14, fontWeight: '700', color: '#555' },
+  saveBtn:      { flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: '#9933FF', alignItems: 'center' },
+  saveText:     { fontSize: 14, fontWeight: '800', color: '#FFF', letterSpacing: 0.3 },
+});
+
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode, isFeatureEnabled, isVibePlus, avatarConfig, updateAvatar, crew, fetchCrew, replayAppTutorial } = useVibeStore();
+  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode, isFeatureEnabled, isVibePlus, avatarConfig, updateAvatar, crew, fetchCrew, replayAppTutorial, updateCallName } = useVibeStore();
   const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup' | 'zodiac'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
@@ -82,6 +98,9 @@ export default function ProfileScreen() {
   const [showZodiacPicker, setShowZodiacPicker] = useState(false);
   const [showAuraLevelUp, setShowAuraLevelUp] = useState(false);
   const [showNightSummary, setShowNightSummary] = useState(false);
+  const [showCallNameEdit, setShowCallNameEdit] = useState(false);
+  const [callNameDraft, setCallNameDraft] = useState('');
+  const [savingCallName, setSavingCallName] = useState(false);
   const prevScoutStatus = useRef<string | null>(null);
 
   useEffect(() => {
@@ -494,7 +513,17 @@ export default function ProfileScreen() {
               <Ionicons name={getStatusIcon(user?.scout_status || 'newbie') as any} size={12} color="#FFF" />
             </View>
           </View>
-          <Text style={styles.userName}>{user?.name || user?.username}</Text>
+          <TouchableOpacity
+            onPress={() => { setCallNameDraft(user?.call_name ?? ''); setShowCallNameEdit(true); }}
+            activeOpacity={0.75}
+            style={profileCallNameStyles.row}
+          >
+            <Text style={user?.call_name ? styles.userName : profileCallNameStyles.placeholder}>
+              {user?.call_name ?? 'Set your name in the scene'}
+            </Text>
+            <Ionicons name="pencil-outline" size={14} color="#555" style={{ marginLeft: 6, marginTop: 2 }} />
+          </TouchableOpacity>
+          <Text style={[styles.userEmail, { marginTop: 2 }]}>@{user?.username}</Text>
           {user?.email && (
             <Text style={styles.userEmail}>{user.email}</Text>
           )}
@@ -878,6 +907,59 @@ export default function ProfileScreen() {
         onSkip={handleZodiacClear}
         onClose={() => setShowZodiacPicker(false)}
       />
+
+      {/* ── Call Name Edit Modal ── */}
+      <Modal visible={showCallNameEdit} transparent animationType="fade" onRequestClose={() => setShowCallNameEdit(false)}>
+        <View style={profileCallNameStyles.modalOverlay}>
+          <View style={profileCallNameStyles.modalCard}>
+            <Text style={profileCallNameStyles.modalTitle}>Your name in the scene</Text>
+            <Text style={profileCallNameStyles.modalSub}>Shown on your passport, leaderboard, and surge feed.</Text>
+            <TextInput
+              style={profileCallNameStyles.modalInput}
+              placeholder="e.g. The Don, Yori, King Push"
+              placeholderTextColor="#444"
+              value={callNameDraft}
+              onChangeText={t => setCallNameDraft(t.slice(0, 30))}
+              autoFocus
+              returnKeyType="done"
+              selectionColor="#9933FF"
+              onSubmitEditing={async () => {
+                setSavingCallName(true);
+                await updateCallName(callNameDraft.trim() || null);
+                setSavingCallName(false);
+                setShowCallNameEdit(false);
+              }}
+            />
+            {callNameDraft.length > 0 && (
+              <Text style={profileCallNameStyles.charCount}>{callNameDraft.length}/30</Text>
+            )}
+            <View style={profileCallNameStyles.modalActions}>
+              <TouchableOpacity
+                style={profileCallNameStyles.cancelBtn}
+                onPress={() => setShowCallNameEdit(false)}
+                activeOpacity={0.75}
+              >
+                <Text style={profileCallNameStyles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={profileCallNameStyles.saveBtn}
+                activeOpacity={0.8}
+                disabled={savingCallName}
+                onPress={async () => {
+                  setSavingCallName(true);
+                  await updateCallName(callNameDraft.trim() || null);
+                  setSavingCallName(false);
+                  setShowCallNameEdit(false);
+                }}
+              >
+                <Text style={profileCallNameStyles.saveText}>
+                  {savingCallName ? 'Saving…' : 'Save'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <VibePassport
         visible={showPassport}
@@ -1640,3 +1722,4 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 });
+

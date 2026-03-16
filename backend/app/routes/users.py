@@ -7,6 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.config import db
 from app.models import User, UserCreate, UserLogin, MusicPreferencesUpdate, ReactorSkinUpdate, ZodiacUpdate
+from pydantic import BaseModel as PydanticBase
+
+class CallNameUpdate(PydanticBase):
+    call_name: str | None = None
 from app.services.auth import create_session_token, require_auth
 
 router = APIRouter(tags=["users"])
@@ -138,3 +142,20 @@ async def update_zodiac(
         {"$set": {"zodiac_sign": sign}},
     )
     return {"success": True, "zodiac_sign": sign}
+
+
+@router.put("/users/me/call-name")
+async def update_call_name(
+    payload: CallNameUpdate,
+    user: dict = Depends(require_auth),
+):
+    """Save what the user wants to be called inside the app. Max 30 chars."""
+    name = payload.call_name.strip() if payload.call_name else None
+    if name and len(name) > 30:
+        raise HTTPException(status_code=400, detail="Call name must be 30 characters or less.")
+
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"call_name": name}},
+    )
+    return {"success": True, "call_name": name}

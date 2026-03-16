@@ -11,6 +11,9 @@ import {
   TouchableOpacity,
   FlatList,
   Animated,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -111,13 +114,16 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showPersona, setShowPersona] = useState(false);
   const [showModeSelect, setShowModeSelect] = useState(false);
+  const [showCallName, setShowCallName] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState<VibePersona | null>(null);
   const [selectedMode, setSelectedMode] = useState<UserMode | null>(null);
+  const [callNameInput, setCallNameInput] = useState('');
+  const [savingCallName, setSavingCallName] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
   // Import store actions lazily to avoid circular deps
-  const { setVibePersona, setUserMode } = require('../store/vibeStore').useVibeStore.getState();
+  const { setVibePersona, setUserMode, updateCallName } = require('../store/vibeStore').useVibeStore.getState();
 
   const handleNext = () => {
     if (currentIndex < pages.length - 1) {
@@ -145,6 +151,17 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const handleModeConfirm = () => {
     const mode = selectedMode ?? 'scout';
     setUserMode(mode);
+    setShowModeSelect(false);
+    setShowCallName(true);
+  };
+
+  const handleCallNameConfirm = async () => {
+    const name = callNameInput.trim();
+    if (name.length > 0) {
+      setSavingCallName(true);
+      await updateCallName(name);
+      setSavingCallName(false);
+    }
     onComplete();
   };
 
@@ -225,6 +242,65 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           </TouchableOpacity>
         </View>
       </View>
+    );
+  }
+
+  // ── Call Name Screen ────────────────────────────────────────
+  if (showCallName) {
+    return (
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={styles.personaScreen}>
+          <View style={callNameStyles.iconWrap}>
+            <LinearGradient colors={['#9933FF30', '#9933FF10']} style={callNameStyles.iconGradient}>
+              <Text style={callNameStyles.iconEmoji}>✦</Text>
+            </LinearGradient>
+          </View>
+
+          <Text style={styles.personaTitle}>What do we{'\n'}call you?</Text>
+          <Text style={styles.personaSubtitle}>
+            Your name in the scene. Shown on your passport, the leaderboard, and the surge feed.
+          </Text>
+
+          <View style={callNameStyles.inputWrap}>
+            <TextInput
+              style={callNameStyles.input}
+              placeholder="e.g. The Don, Yori, King Push"
+              placeholderTextColor="#444"
+              value={callNameInput}
+              onChangeText={t => setCallNameInput(t.slice(0, 30))}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleCallNameConfirm}
+              selectionColor="#9933FF"
+            />
+            {callNameInput.length > 0 && (
+              <Text style={callNameStyles.charCount}>{callNameInput.length}/30</Text>
+            )}
+          </View>
+
+          <TouchableOpacity
+            onPress={handleCallNameConfirm}
+            activeOpacity={0.8}
+            style={{ width: '100%' }}
+            disabled={savingCallName}
+          >
+            <LinearGradient
+              colors={callNameInput.trim().length > 0 ? ['#9933FF', '#4169E1'] : ['#333', '#444']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.ctaButton}
+            >
+              <Text style={styles.ctaText}>
+                {savingCallName ? 'Saving...' : callNameInput.trim().length > 0 ? `Enter as ${callNameInput.trim()}` : 'Skip for now'}
+              </Text>
+              {!savingCallName && <Text style={{ fontSize: 18 }}>✦</Text>}
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -591,5 +667,54 @@ const modeStyles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(255,255,255,0.55)',
     lineHeight: 17,
+  },
+});
+
+const callNameStyles = StyleSheet.create({
+  iconWrap: {
+    alignSelf: 'center',
+    marginBottom: 28,
+    shadowColor: '#9933FF',
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 12,
+  },
+  iconGradient: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconEmoji: {
+    fontSize: 46,
+    color: '#9933FF',
+  },
+  inputWrap: {
+    width: '100%',
+    marginVertical: 24,
+    position: 'relative',
+  },
+  input: {
+    width: '100%',
+    backgroundColor: '#111118',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#9933FF55',
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFF',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  charCount: {
+    position: 'absolute',
+    right: 14,
+    bottom: -20,
+    fontSize: 11,
+    color: '#555',
   },
 });

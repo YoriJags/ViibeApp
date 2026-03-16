@@ -744,6 +744,7 @@ export default function MapScreen() {
               cityPulse={cityPulse}
               cityName={cityName}
               onPlannerPress={() => setShowPlanner(true)}
+              callName={user?.call_name}
             />
           ) : (
             <TonightHero
