@@ -7,11 +7,12 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.config import db
 from app.models import User, UserCreate, UserLogin, MusicPreferencesUpdate, ReactorSkinUpdate, ZodiacUpdate
+from app.services.auth import create_session_token, require_auth
 from pydantic import BaseModel as PydanticBase
+
 
 class CallNameUpdate(PydanticBase):
     call_name: str | None = None
-from app.services.auth import create_session_token, require_auth
 
 router = APIRouter(tags=["users"])
 
