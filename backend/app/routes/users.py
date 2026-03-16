@@ -14,6 +14,10 @@ from pydantic import BaseModel as PydanticBase
 class CallNameUpdate(PydanticBase):
     call_name: str | None = None
 
+
+class PushTokenUpdate(PydanticBase):
+    push_token: str
+
 router = APIRouter(tags=["users"])
 
 
@@ -143,6 +147,22 @@ async def update_zodiac(
         {"$set": {"zodiac_sign": sign}},
     )
     return {"success": True, "zodiac_sign": sign}
+
+
+@router.put("/users/me/push-token")
+async def register_push_token(
+    payload: PushTokenUpdate,
+    user: dict = Depends(require_auth),
+):
+    """Register or update the user's Expo push token for re-engagement notifications."""
+    token = payload.push_token.strip()
+    if not token.startswith("ExponentPushToken"):
+        raise HTTPException(status_code=400, detail="Invalid Expo push token format.")
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"push_token": token}},
+    )
+    return {"success": True}
 
 
 @router.put("/users/me/call-name")

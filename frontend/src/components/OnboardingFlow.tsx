@@ -1,6 +1,11 @@
 /**
- * OnboardingFlow - Story-driven 4-screen onboarding
- * Narrative that teaches the app - inclusive of all live events & gatherings
+ * OnboardingFlow — Fastest path to the reactor.
+ *
+ * 2 info slides → mode pick → call name → done.
+ * Target: new user hits "Locked In" within 90 seconds of completing onboarding.
+ *
+ * Removed: persona picker (moved to profile settings — not needed at door).
+ * Cut: 4 info slides → 2 (one concept per slide, no padding).
  */
 import React, { useRef, useState } from 'react';
 import {
@@ -19,7 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { publicTheme, spacing, borderRadius, typography } from '../theme/floors';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const { colors } = publicTheme;
 
 interface OnboardingFlowProps {
@@ -41,42 +46,17 @@ const pages: OnboardingPage[] = [
     icon: 'map',
     iconColor: '#FF3366',
     headline: "Know exactly where\nto be tonight.",
-    body: "Clubs. Restaurants. Concerts. Lounges. Anywhere people gather, there's an atmosphere worth knowing about.\n\nViibez shows you the real-time energy of every venue and event in your city.",
+    body: "Clubs. Restaurants. Concerts. Lounges. Anywhere people gather, there's a live energy score.\n\nVIIBE shows you what's actually happening — right now, not last week.",
     accent: '#FF3366',
   },
   {
     id: '2',
-    icon: 'pulse',
-    iconColor: '#FF6B35',
-    headline: 'Step in. Feel the room.\nShare it with the city.',
-    body: "Rate the energy, the crowd, the door. Three taps and you've just updated the city's live pulse.\n\nEight visual skins — AURA, TERRAIN, MATRIX and more — show the crowd's energy in totally different ways.",
-    accent: '#FF6B35',
-  },
-  {
-    id: '3',
     icon: 'flash',
-    iconColor: '#FFD700',
-    headline: 'Your insight\nearns you Clout.',
-    body: "Build rating streaks. Earn multipliers. Rise through Scout ranks from Newcomer to City Elite.\n\nHold IGNITE with other scouts to fire a synchronized flashlight moment — the crowd goes off together.",
-    accent: '#FFD700',
+    iconColor: '#9933FF',
+    headline: 'Tap. Feel the vibe.\nOwn the night.',
+    body: "Step inside a venue and tap to power its live energy. The reactor ring responds to your rhythm — solo or with a crowd.\n\nBuild your scout rank, earn clout, and rise through the city.",
+    accent: '#9933FF',
   },
-  {
-    id: '4',
-    icon: 'people',
-    iconColor: '#00D4FF',
-    headline: "Go out together.\nStay connected all night.",
-    body: "Create a Cartel with your people. Vote on where to go. Find each other in any crowd with live location sharing.\n\nEvery great night is better when no one gets left behind.",
-    accent: '#00D4FF',
-  },
-];
-
-type VibePersona = 'turn_up' | 'grown_sexy' | 'culture' | 'chill_set';
-
-const PERSONAS: { key: VibePersona; emoji: string; label: string; subtitle: string; gradient: [string, string] }[] = [
-  { key: 'turn_up', emoji: '🎉', label: 'The Turn Up', subtitle: 'Clubs · Parties · High energy nights', gradient: ['#FF3366', '#9933FF'] },
-  { key: 'grown_sexy', emoji: '🍸', label: 'The Luxe', subtitle: 'Lounges · Rooftops · Fine dining', gradient: ['#9933FF', '#4169E1'] },
-  { key: 'culture', emoji: '🎵', label: 'The Culture', subtitle: 'Live music · Concerts · Art events', gradient: ['#FF9800', '#FFD700'] },
-  { key: 'chill_set', emoji: '🌙', label: 'The Chill Set', subtitle: 'Restaurants · Cafes · Low-key spots', gradient: ['#00D4FF', '#00E676'] },
 ];
 
 type UserMode = 'scout' | 'insider';
@@ -112,40 +92,23 @@ const MODES: {
 
 export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [showPersona, setShowPersona] = useState(false);
   const [showModeSelect, setShowModeSelect] = useState(false);
   const [showCallName, setShowCallName] = useState(false);
-  const [selectedPersona, setSelectedPersona] = useState<VibePersona | null>(null);
   const [selectedMode, setSelectedMode] = useState<UserMode | null>(null);
   const [callNameInput, setCallNameInput] = useState('');
   const [savingCallName, setSavingCallName] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
-  // Import store actions lazily to avoid circular deps
-  const { setVibePersona, setUserMode, updateCallName } = require('../store/vibeStore').useVibeStore.getState();
+  const { setUserMode, updateCallName } = require('../store/vibeStore').useVibeStore.getState();
 
   const handleNext = () => {
     if (currentIndex < pages.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
       setCurrentIndex(currentIndex + 1);
     } else {
-      // Last info page → show persona picker
-      setShowPersona(true);
+      setShowModeSelect(true);
     }
-  };
-
-  const handlePersonaSelect = (persona: VibePersona) => {
-    setSelectedPersona(persona);
-  };
-
-  const handlePersonaConfirm = () => {
-    if (selectedPersona) {
-      setVibePersona(selectedPersona);
-    }
-    // After persona, show mode picker
-    setShowPersona(false);
-    setShowModeSelect(true);
   };
 
   const handleModeConfirm = () => {
@@ -180,88 +143,23 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     </View>
   );
 
-  // ── Persona Picker Screen ────────────────────────────────────
-  if (showPersona) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.personaScreen}>
-          <Text style={styles.personaTitle}>What kind of nights{'\n'}do you live for?</Text>
-          <Text style={styles.personaSubtitle}>We'll personalise your experience. You can change this anytime.</Text>
-
-          <View style={styles.personaGrid}>
-            {PERSONAS.map((p) => {
-              const isSelected = selectedPersona === p.key;
-              return (
-                <TouchableOpacity
-                  key={p.key}
-                  style={[styles.personaCard, isSelected && styles.personaCardSelected]}
-                  onPress={() => handlePersonaSelect(p.key)}
-                  activeOpacity={0.8}
-                >
-                  {isSelected ? (
-                    <LinearGradient
-                      colors={p.gradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.personaCardGradient}
-                    >
-                      <Text style={styles.personaEmoji}>{p.emoji}</Text>
-                      <Text style={styles.personaLabel}>{p.label}</Text>
-                      <Text style={styles.personaCardSubtitle}>{p.subtitle}</Text>
-                    </LinearGradient>
-                  ) : (
-                    <View style={styles.personaCardInner}>
-                      <Text style={styles.personaEmoji}>{p.emoji}</Text>
-                      <Text style={[styles.personaLabel, { color: '#CCC' }]}>{p.label}</Text>
-                      <Text style={styles.personaCardSubtitle}>{p.subtitle}</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <TouchableOpacity
-            onPress={handlePersonaConfirm}
-            activeOpacity={0.8}
-            style={{ width: '100%' }}
-          >
-            <LinearGradient
-              colors={selectedPersona
-                ? (PERSONAS.find(p => p.key === selectedPersona)?.gradient ?? ['#FF3366', '#FF6B35'])
-                : ['#333', '#444']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.ctaButton}
-            >
-              <Text style={styles.ctaText}>
-                {selectedPersona ? "Let's Go" : 'Skip for now'}
-              </Text>
-              <Ionicons name="arrow-forward" size={20} color="#FFF" />
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  // ── Call Name Screen ────────────────────────────────────────
+  // ── Call Name Screen ─────────────────────────────────────────
   if (showCallName) {
     return (
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.personaScreen}>
+        <View style={styles.centeredScreen}>
           <View style={callNameStyles.iconWrap}>
             <LinearGradient colors={['#9933FF30', '#9933FF10']} style={callNameStyles.iconGradient}>
               <Text style={callNameStyles.iconEmoji}>✦</Text>
             </LinearGradient>
           </View>
 
-          <Text style={styles.personaTitle}>What do we{'\n'}call you?</Text>
-          <Text style={styles.personaSubtitle}>
-            Your name in the scene. Shown on your passport, the leaderboard, and the surge feed.
+          <Text style={styles.screenTitle}>What do we{'\n'}call you?</Text>
+          <Text style={styles.screenSubtitle}>
+            Your name in the scene. Shown on your passport and the surge feed.
           </Text>
 
           <View style={callNameStyles.inputWrap}>
@@ -288,7 +186,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
             disabled={savingCallName}
           >
             <LinearGradient
-              colors={callNameInput.trim().length > 0 ? ['#9933FF', '#4169E1'] : ['#333', '#444']}
+              colors={callNameInput.trim().length > 0 ? ['#9933FF', '#4169E1'] : ['#222', '#333']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.ctaButton}
@@ -304,13 +202,13 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     );
   }
 
-  // ── Mode Picker Screen ──────────────────────────────────────
+  // ── Mode Picker Screen ───────────────────────────────────────
   if (showModeSelect) {
     return (
       <View style={styles.container}>
-        <View style={styles.personaScreen}>
-          <Text style={styles.personaTitle}>How do you{'\n'}roll tonight?</Text>
-          <Text style={styles.personaSubtitle}>This shapes your home experience. You can switch anytime.</Text>
+        <View style={styles.centeredScreen}>
+          <Text style={styles.screenTitle}>How do you{'\n'}roll tonight?</Text>
+          <Text style={styles.screenSubtitle}>This shapes your home experience. Switch anytime.</Text>
 
           <View style={{ width: '100%', gap: 14, marginBottom: 8, flex: 1, justifyContent: 'center' }}>
             {MODES.map((m) => {
@@ -363,7 +261,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
             <LinearGradient
               colors={selectedMode
                 ? (MODES.find(m => m.key === selectedMode)?.gradient ?? ['#FF3366', '#FF6B35'])
-                : ['#333', '#444']}
+                : ['#222', '#333']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.ctaButton}
@@ -379,12 +277,12 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     );
   }
 
-  // ── Info Pages ───────────────────────────────────────────────
+  // ── Info Slides ──────────────────────────────────────────────
   const isLastPage = currentIndex === pages.length - 1;
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.skipButton} onPress={() => setShowPersona(true)}>
+      <TouchableOpacity style={styles.skipButton} onPress={() => setShowModeSelect(true)}>
         <Text style={styles.skipText}>Skip</Text>
       </TouchableOpacity>
 
@@ -415,7 +313,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
               index * SCREEN_WIDTH,
               (index + 1) * SCREEN_WIDTH,
             ];
-            const dotWidth = scrollX.interpolate({ inputRange, outputRange: [8, 24, 8], extrapolate: 'clamp' });
+            const dotWidth   = scrollX.interpolate({ inputRange, outputRange: [8, 24, 8], extrapolate: 'clamp' });
             const dotOpacity = scrollX.interpolate({ inputRange, outputRange: [0.3, 1, 0.3], extrapolate: 'clamp' });
             return (
               <Animated.View
@@ -429,12 +327,12 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         {isLastPage ? (
           <TouchableOpacity onPress={handleNext} activeOpacity={0.8}>
             <LinearGradient
-              colors={['#FF3366', '#FF6B35']}
+              colors={['#9933FF', '#4169E1']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.ctaButton}
             >
-              <Text style={styles.ctaText}>Almost Done</Text>
+              <Text style={styles.ctaText}>Choose your role</Text>
               <Ionicons name="arrow-forward" size={20} color="#FFF" />
             </LinearGradient>
           </TouchableOpacity>
@@ -553,8 +451,7 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.semibold,
   },
-  // Persona screen styles
-  personaScreen: {
+  centeredScreen: {
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 80,
@@ -562,7 +459,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  personaTitle: {
+  screenTitle: {
     fontSize: 28,
     fontWeight: '800',
     color: '#FFF',
@@ -570,59 +467,12 @@ const styles = StyleSheet.create({
     lineHeight: 36,
     letterSpacing: -0.5,
   },
-  personaSubtitle: {
+  screenSubtitle: {
     fontSize: 13,
     color: '#888',
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 8,
-  },
-  personaGrid: {
-    width: '100%',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 8,
-  },
-  personaCard: {
-    width: '47%',
-    borderRadius: 18,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  personaCardSelected: {
-    borderColor: 'transparent',
-  },
-  personaCardGradient: {
-    padding: 20,
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 120,
-    justifyContent: 'center',
-  },
-  personaCardInner: {
-    padding: 20,
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 120,
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-  },
-  personaEmoji: {
-    fontSize: 32,
-  },
-  personaLabel: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#FFF',
-    textAlign: 'center',
-  },
-  personaCardSubtitle: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.7)',
-    textAlign: 'center',
-    lineHeight: 14,
   },
 });
 
@@ -643,9 +493,7 @@ const modeStyles = StyleSheet.create({
   cardInnerUnselected: {
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
-  modeEmoji: {
-    fontSize: 38,
-  },
+  modeEmoji: { fontSize: 38 },
   labelRow: {
     flexDirection: 'row',
     alignItems: 'baseline',

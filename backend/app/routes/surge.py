@@ -28,15 +28,16 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.config import db, sio, logger
 from app.services.auth import require_auth
+from app.services.expo_push import send_push_notifications
 
 router = APIRouter(tags=["surge"])
 
 LEVELS = [
-    (0.00, 0.20, "dormant",  "DORMANT",   "#333344"),
-    (0.20, 0.40, "stirring", "STIRRING",  "#3399FF"),
-    (0.40, 0.60, "buzzing",  "BUZZING",   "#9933FF"),
-    (0.60, 0.85, "popping",  "POPPING",   "#FF9933"),
-    (0.85, 1.01, "electric", "ELECTRIC",  "#FF3366"),
+    (0.00, 0.08, "dormant",  "DORMANT",   "#3A3A4E"),
+    (0.08, 0.32, "stirring", "STIRRING",  "#5544FF"),
+    (0.32, 0.58, "buzzing",  "BUZZING",   "#AA00FF"),
+    (0.58, 0.84, "popping",  "POPPING",   "#FF7700"),
+    (0.84, 1.01, "electric", "ELECTRIC",  "#FF0055"),
 ]
 
 NEXT_LEVEL = {
@@ -63,7 +64,16 @@ async def _compute_surge(venue_id):
     bolts = await db.venue_bolts.find({"venue_id": venue_id, "ts": {"$gte": cutoff}}).to_list(2000)
     weighted = sum(_time_weight((now - b["ts"]).total_seconds() / 60) * b.get("multiplier", 1.0) for b in bolts)
     checkin_count = await db.checkins.count_documents({"venue_id": venue_id, "checked_out_at": None})
-    threshold = max(checkin_count * 2, 50)
+    # Diversity-scaled threshold: solo is harder, crowd gets easier as unique tappers grow
+    unique_tappers = len(set(b["user_id"] for b in bolts))
+    base = max(checkin_count * 4, 120)
+    if unique_tappers <= 1:
+        diversity_factor = 1.5   # solo — hardest
+    elif unique_tappers <= 3:
+        diversity_factor = 1.0   # small crew — normal
+    else:
+        diversity_factor = max(0.4, 1.0 - (unique_tappers - 3) * 0.06)  # crowd — easier
+    threshold = round(base * diversity_factor)
     charge_pct = min(weighted / threshold, 1.0)
     level, label, color = _level_for(charge_pct)
     level_idx = next(i for i, row in enumerate(LEVELS) if row[2] == level)
@@ -130,4 +140,28 @@ async def drop_bolt(venue_id: str, user: dict = Depends(require_auth)):
             })
         except Exception as e:
             logger.warning(f"surge_update emit failed: {e}")
+
+        # ── ELECTRIC reached: push notify recent tappers who aren't here right now ──
+        if surge["level"] == "electric" and prev_level != "electric":
+            try:
+                venue_name = venue.get("name", "A venue near you")
+                # All users who tapped this venue in the last 3 hours, excluding trigger user
+                recent_tapper_ids = await db.venue_bolts.distinct(
+                    "user_id",
+                    {"venue_id": venue_id, "ts": {"$gte": now - timedelta(hours=3)}, "user_id": {"$ne": user_id}},
+                )
+                if recent_tapper_ids:
+                    tappers = await db.users.find(
+                        {"id": {"$in": recent_tapper_ids}, "push_token": {"$ne": None}},
+                        {"push_token": 1},
+                    ).to_list(500)
+                    tokens = [u["push_token"] for u in tappers if u.get("push_token")]
+                    await send_push_notifications(
+                        tokens,
+                        title=f"⚡ {venue_name} just hit ELECTRIC",
+                        body="Peak energy — the room is alive. Get in now.",
+                        data={"venue_id": venue_id, "type": "electric_alert"},
+                    )
+            except Exception as e:
+                logger.warning(f"ELECTRIC push failed: {e}")
     return {**surge, "squad_multiplier": multiplier, "is_squad_surge": is_squad_surge}

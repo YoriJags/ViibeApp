@@ -70,19 +70,21 @@ interface Ripple {
 }
 
 interface Props {
-  visible:    boolean;
-  surge:      SurgeState;
-  venueName:  string;
-  venueId?:   string;
-  onClose:    () => void;
-  onTap:      () => void;
-  tapping?:   boolean;
-  cooldown?:  boolean;
-  socket?:    any;
-  userId?:    string;
-  syncPct?:   ReturnType<typeof useSharedValue<number>>;
-  questState?: QuestState | null;
-  bpmNow?:    number;
+  visible:       boolean;
+  surge:         SurgeState;
+  venueName:     string;
+  venueId?:      string;
+  onClose:       () => void;
+  onTap:         () => void;
+  tapping?:      boolean;
+  cooldown?:     boolean;
+  socket?:       any;
+  userId?:       string;
+  syncPct?:      ReturnType<typeof useSharedValue<number>>;
+  syncPctValue?: number;
+  bpmLocked?:    boolean;
+  questState?:   QuestState | null;
+  bpmNow?:       number;
 }
 
 // ─── Skia Canvas (identical logic to VibeReactor, sized for full screen) ──────
@@ -244,7 +246,7 @@ const KineticCanvas = React.memo(function KineticCanvas({
 
 export default function SurgeFullScreen({
   visible, surge, venueName, venueId, onClose, onTap, tapping, cooldown,
-  socket, userId, syncPct: syncPctProp, questState, bpmNow,
+  socket, userId, syncPct: syncPctProp, syncPctValue, bpmLocked, questState, bpmNow,
 }: Props) {
   const insets = useSafeAreaInsets();
 
@@ -591,6 +593,22 @@ export default function SurgeFullScreen({
             <Text style={s.hintText}>{cooldown ? 'Cooling down...' : 'Tap anywhere — power the venue'}</Text>
           )}
 
+          {/* Sync state */}
+          {(syncPctValue ?? 0) > 18 && (
+            <View style={[s.syncChip, {
+              borderColor:     (syncPctValue ?? 0) >= 65 ? '#00FFCC' : '#00FFCC44',
+              backgroundColor: (syncPctValue ?? 0) >= 65 ? 'rgba(0,255,204,0.10)' : 'rgba(0,255,204,0.03)',
+            }]}>
+              <Text style={[s.syncChipText, { color: (syncPctValue ?? 0) >= 65 ? '#00FFCC' : '#00FFCC66' }]}>
+                {(syncPctValue ?? 0) >= 65
+                  ? bpmLocked ? '⬡ LOCKED IN' : '⬡ IN SYNC'
+                  : (syncPctValue ?? 0) >= 40
+                  ? '◈ IN THE ZONE'
+                  : '◇ FINDING RHYTHM'}
+              </Text>
+            </View>
+          )}
+
           {/* BPM + surges row */}
           <View style={s.statsRow}>
             {(bpmNow ?? 0) > 0 && (
@@ -679,6 +697,8 @@ const s = StyleSheet.create({
   pctTrack:        { width: '100%', height: 4, backgroundColor: '#111120', borderRadius: 3, overflow: 'hidden' },
   pctFill:         { height: '100%', borderRadius: 3, shadowOffset: { width: 0, height: 0 } },
   bottomSub:       { fontSize: 10, color: '#2A2A3A', fontWeight: '600', letterSpacing: 1 },
+  syncChip:        { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10, borderWidth: 1 },
+  syncChipText:    { fontSize: 11, fontWeight: '700', letterSpacing: 1.2 },
   questBar:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: W - 48, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: 'rgba(255,214,10,0.06)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,214,10,0.15)', marginTop: 4 },
   questLeft:       { flex: 1, gap: 2 },
   questLabel:      { fontSize: 10, fontWeight: '700', color: '#FFD60A', letterSpacing: 1.2 },

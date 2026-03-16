@@ -373,7 +373,7 @@ export default function VibeReactor({
   }, [activeSkin]);
 
   // ── Coherence system ─────────────────────────────────────────────────────────
-  const { syncPct, isCoherent, recordVariance } = useKineticBuffer();
+  const { syncPct, isCoherent, recordTap, recordVariance } = useKineticBuffer();
   const syncPctShared   = useSharedValue(0);
   const wasCoherentRef  = useRef(false);
 
@@ -409,6 +409,12 @@ export default function VibeReactor({
   const windowPeakCount = useRef(0);
   const windowTapCount  = useRef(0);
   const windowMaxBpm    = useRef(0);
+
+  // ── BPM-lock tracking ────────────────────────────────────────────────────────
+  const recentBpmsRef      = useRef<number[]>([]);
+  const bpmLockedRef       = useRef(false);
+  const bpmLockTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [bpmLocked, setBpmLocked] = useState(false);
 
   const STATIONARY_G_THRESHOLD = 1.2;
 
@@ -524,7 +530,7 @@ export default function VibeReactor({
   // ── Ring progress + level color + electric glow ──────────────────────────────
   useEffect(() => {
     if (!surge) return;
-    ringProgress.value = withSpring(surge.level_progress, { stiffness: 55, damping: 11 });
+    ringProgress.value = withSpring(surge.charge_pct, { stiffness: 55, damping: 11 });
     levelIdx.value = withTiming(LEVEL_INDICES[surge.level] ?? 1, { duration: 500 });
 
     if (surge.level === 'electric') {
@@ -544,7 +550,7 @@ export default function VibeReactor({
       setTimeout(() => onElectric?.(surge.tap_count), 200);
     }
     prevLevel.current = surge.level;
-  }, [surge?.level_progress, surge?.level]);
+  }, [surge?.charge_pct, surge?.level]);
 
   // ── Socket ───────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -637,6 +643,7 @@ export default function VibeReactor({
   // ── Cleanup ──────────────────────────────────────────────────────────────────
   useEffect(() => () => {
     if (localTimer.current) clearTimeout(localTimer.current);
+    if (bpmLockTimerRef.current) clearTimeout(bpmLockTimerRef.current);
     cancelAnimationFrame(rafRef.current);
     windowGForces.current   = [];
     windowTapCount.current  = 0;
@@ -647,8 +654,9 @@ export default function VibeReactor({
   const handleTap = useCallback(async () => {
     onReact?.();
 
-    const intensity   = getIntensity();
-    const gForce      = getGForce();
+    const intensity = getIntensity();
+    const gForce    = getGForce();
+    recordTap(gForce);   // G-force weighted personal rhythm — fires immediately
     const uiIncrement = intensity === 'peak' ? 10 : 1;
 
     fireHaptic(intensity);
@@ -699,6 +707,30 @@ export default function VibeReactor({
     // Update BPM shared value for orb pulse + oscillator
     bpmShared.value = Math.round(bpm);
     onBpmUpdate?.(Math.round(bpm));
+
+    // ── BPM-lock: stable within ±8 BPM for last 4 readings ──────────────────
+    if (bpm > 40) {
+      recentBpmsRef.current.push(Math.round(bpm));
+      if (recentBpmsRef.current.length > 5) recentBpmsRef.current = recentBpmsRef.current.slice(-5);
+      if (recentBpmsRef.current.length >= 4) {
+        const range     = Math.max(...recentBpmsRef.current) - Math.min(...recentBpmsRef.current);
+        const nowLocked = range <= 8;
+        if (nowLocked && !bpmLockedRef.current && Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        bpmLockedRef.current = nowLocked;
+        setBpmLocked(nowLocked);
+        // Auto-unlock 8 s after the last tap if still locked
+        clearTimeout(bpmLockTimerRef.current ?? undefined);
+        if (nowLocked) {
+          bpmLockTimerRef.current = setTimeout(() => {
+            bpmLockedRef.current = false;
+            setBpmLocked(false);
+            recentBpmsRef.current = [];
+          }, 8000);
+        }
+      }
+    }
 
     socket?.emit('tap_velocity', {
       venue_id: venueId, user_id: user?.id,
@@ -806,7 +838,7 @@ export default function VibeReactor({
   }, [
     isEligible, socket, venueId, user?.id, surge,
     localCooldown, cooldown, tapping, isDemoMode,
-    onReact, getIntensity, getGForce, fireHaptic, spawnSparks,
+    onReact, getIntensity, getGForce, fireHaptic, spawnSparks, recordTap,
   ]);
 
   // ── Derived display values ────────────────────────────────────────────────────
@@ -911,15 +943,21 @@ export default function VibeReactor({
           syncPct={syncPctShared}
         />
 
-        {/* SYNC chip — appears as coherence rises, crystallises at isCoherent */}
+        {/* SYNC chip — personal rhythm or crowd lock, narrative label */}
         {syncPct > 18 && (
           <View style={[
             styles.syncChip,
-            { borderColor: isCoherent ? '#00FFCC' : '#00FFCC55',
-              backgroundColor: isCoherent ? 'rgba(0,255,204,0.12)' : 'rgba(0,255,204,0.05)' },
+            {
+              borderColor:     syncPct >= 65 ? '#00FFCC' : '#00FFCC44',
+              backgroundColor: syncPct >= 65 ? 'rgba(0,255,204,0.12)' : 'rgba(0,255,204,0.04)',
+            },
           ]}>
-            <Text style={[styles.syncChipText, { color: isCoherent ? '#00FFCC' : '#00FFCC88' }]}>
-              {isCoherent ? '⬡ ' : ''}SYNC {Math.round(syncPct)}%
+            <Text style={[styles.syncChipText, { color: syncPct >= 65 ? '#00FFCC' : '#00FFCC77' }]}>
+              {syncPct >= 65
+                ? bpmLocked ? '⬡ LOCKED IN' : '⬡ IN SYNC'
+                : syncPct >= 40
+                ? '◈ IN THE ZONE'
+                : '◇ FINDING RHYTHM'}
             </Text>
           </View>
         )}
@@ -1043,6 +1081,8 @@ export default function VibeReactor({
         socket={socket}
         userId={user?.id}
         syncPct={syncPctShared}
+        syncPctValue={syncPct}
+        bpmLocked={bpmLocked}
         questState={questState}
         bpmNow={bpmNow}
       />

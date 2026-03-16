@@ -13,6 +13,7 @@ import DemoTutorial from '../src/components/DemoTutorial';
 import ErrorBoundary from '../src/components/ErrorBoundary';
 import GlobalVibePill from '../src/components/GlobalVibePill';
 import { initPostHog } from '../src/services/posthog';
+import { registerForPushNotifications, attachNotificationTapHandler } from '../src/services/pushNotifications';
 
 // Keep native splash visible until we're ready to show our animated one
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -22,7 +23,7 @@ initPostHog();
 
 // App Initializer Component — manages splash → content transition
 function AppInitializer({ children }: { children: React.ReactNode }) {
-  const { hasHydrated, fetchCities, connectSocket, hasSeenOnboarding, completeOnboarding, fetchFeatureFlags, hasSeenAppTutorial, completeAppTutorial } = useVibeStore();
+  const { hasHydrated, fetchCities, connectSocket, hasSeenOnboarding, completeOnboarding, fetchFeatureFlags, hasSeenAppTutorial, completeAppTutorial, sessionToken } = useVibeStore();
   const [isReady, setIsReady] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
@@ -35,6 +36,12 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Attach notification tap handler once on mount
+  useEffect(() => {
+    const cleanup = attachNotificationTapHandler();
+    return cleanup;
+  }, []);
+
   useEffect(() => {
     const initializeApp = async () => {
       try {
@@ -44,6 +51,11 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
         await Promise.all([fetchCities(), fetchFeatureFlags()]);
         connectSocket();
         setIsReady(true);
+
+        // Register push token after init — non-blocking
+        if (sessionToken) {
+          registerForPushNotifications(sessionToken);
+        }
       } catch (error) {
         console.error('App initialization error:', error);
         setIsReady(true);
