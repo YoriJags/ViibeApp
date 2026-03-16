@@ -28,7 +28,7 @@ const CANVAS_SIZE = Math.min(W - 32, 340);
 const CX = CANVAS_SIZE / 2;
 const CY = CANVAS_SIZE / 2;
 const RING_R  = CANVAS_SIZE * 0.43;
-const RING_T  = 10;
+const RING_T  = 14;
 const OUTER_R = RING_R + 15;
 const INNER_R = RING_R - 16;
 
@@ -93,9 +93,20 @@ interface KineticCanvasProps {
   syncPct:      ReturnType<typeof useSharedValue<number>>;
 }
 
+const FS_DIAL_MARKS = [
+  { pct: 0.08, color: '#5544FF' },
+  { pct: 0.32, color: '#AA00FF' },
+  { pct: 0.58, color: '#FF7700' },
+  { pct: 0.84, color: '#FF0055' },
+] as const;
+
 const KineticCanvas = React.memo(function KineticCanvas({
   ringProgress, coreColor, syncPct,
 }: KineticCanvasProps) {
+  const tickDimColor    = useDerivedValue(() => coreColor.value + '28');
+  const tickBrightColor = useDerivedValue(() => coreColor.value + '55');
+  const bezelColor      = useDerivedValue(() => coreColor.value + '18');
+
   const coherenceOpacity = useDerivedValue(() =>
     Math.max(0, (syncPct.value - 15) / 85)
   );
@@ -139,14 +150,14 @@ const KineticCanvas = React.memo(function KineticCanvas({
     return p;
   });
 
-  const { minorTicks, majorTicks } = React.useMemo(() => {
+  const { minorTicks, majorTicks, dialMarks } = React.useMemo(() => {
     const minor = Skia.Path.Make();
     const major = Skia.Path.Make();
     const TICK_OUT = OUTER_R - 1;
-    for (let i = 0; i < 24; i++) {
-      const isMajor = i % 6 === 0;
-      const rad = ((i / 24) * 360 - 90) * (Math.PI / 180);
-      const inR = isMajor ? OUTER_R - 10 : OUTER_R - 5;
+    for (let i = 0; i < 48; i++) {
+      const isMajor = i % 12 === 0;
+      const rad = ((i / 48) * 360 - 90) * (Math.PI / 180);
+      const inR = isMajor ? OUTER_R - 10 : OUTER_R - 4;
       const xi = CX + inR      * Math.cos(rad);
       const yi = CY + inR      * Math.sin(rad);
       const xo = CX + TICK_OUT * Math.cos(rad);
@@ -154,49 +165,70 @@ const KineticCanvas = React.memo(function KineticCanvas({
       (isMajor ? major : minor).moveTo(xi, yi);
       (isMajor ? major : minor).lineTo(xo, yo);
     }
-    return { minorTicks: minor, majorTicks: major };
+    const marks = FS_DIAL_MARKS.map(({ pct, color }) => {
+      const angle = (-90 + pct * 360) * (Math.PI / 180);
+      const tx = CX + RING_R * Math.cos(angle);
+      const ty = CY + RING_R * Math.sin(angle);
+      const p = Skia.Path.Make();
+      p.addOval({ x: tx - 4, y: ty - 4, width: 8, height: 8 });
+      return { path: p, color };
+    });
+    return { minorTicks: minor, majorTicks: major, dialMarks: marks };
   }, []);
 
   return (
     <Canvas style={{ width: CANVAS_SIZE, height: CANVAS_SIZE }} pointerEvents="none">
+      {/* Outer bezel ring */}
       <Circle cx={CX} cy={CY} r={OUTER_R}>
-        <Paint style="stroke" strokeWidth={0.75} color="rgba(255,255,255,0.06)" />
+        <Paint style="stroke" strokeWidth={0.75} color={bezelColor} />
       </Circle>
+      {/* Minor ticks (7.5° spacing) */}
       <Path path={minorTicks}>
-        <Paint style="stroke" strokeWidth={1} color="rgba(255,255,255,0.10)" strokeCap="round" />
+        <Paint style="stroke" strokeWidth={1} color={tickDimColor} strokeCap="round" />
       </Path>
+      {/* Major ticks (cardinal) */}
       <Path path={majorTicks}>
-        <Paint style="stroke" strokeWidth={1.75} color="rgba(255,255,255,0.28)" strokeCap="round" />
+        <Paint style="stroke" strokeWidth={2} color={tickBrightColor} strokeCap="round" />
       </Path>
+      {/* Ring track */}
       <Circle cx={CX} cy={CY} r={RING_R}>
-        <Paint style="stroke" strokeWidth={RING_T} color="rgba(14,14,30,0.95)" />
+        <Paint style="stroke" strokeWidth={RING_T} color="rgba(10,10,24,0.97)" />
       </Circle>
+      {/* Level dial marks */}
+      {dialMarks.map((m, i) => (
+        <Path key={i} path={m.path}>
+          <Paint color={m.color} opacity={0.55} />
+        </Path>
+      ))}
+      {/* Inner detail ring */}
       <Circle cx={CX} cy={CY} r={INNER_R}>
-        <Paint style="stroke" strokeWidth={0.75} color="rgba(255,255,255,0.04)" />
+        <Paint style="stroke" strokeWidth={0.75} color={bezelColor} />
       </Circle>
-      {/* Bloom glow */}
+      {/* Wide bloom glow */}
       <Path path={arcPath}>
-        <Paint style="stroke" strokeWidth={RING_T + 24} strokeCap="round" color={coreColor} opacity={0.18}>
-          <BlurMask blur={28} style="normal" />
+        <Paint style="stroke" strokeWidth={RING_T + 28} strokeCap="round" color={coreColor} opacity={0.18}>
+          <BlurMask blur={30} style="normal" />
         </Paint>
       </Path>
+      {/* Mid glow */}
       <Path path={arcPath}>
-        <Paint style="stroke" strokeWidth={RING_T + 10} strokeCap="round" color={coreColor} opacity={0.30}>
-          <BlurMask blur={10} style="normal" />
+        <Paint style="stroke" strokeWidth={RING_T + 12} strokeCap="round" color={coreColor} opacity={0.30}>
+          <BlurMask blur={12} style="normal" />
         </Paint>
       </Path>
       {/* Sharp arc */}
       <Path path={arcPath}>
         <Paint style="stroke" strokeWidth={RING_T} strokeCap="round" color={coreColor} />
       </Path>
-      {/* Arc tip */}
+      {/* Arc tip bloom */}
       <Path path={arcTipGlow}>
-        <Paint color={coreColor} opacity={0.50}>
-          <BlurMask blur={10} style="solid" />
+        <Paint color={coreColor} opacity={0.60}>
+          <BlurMask blur={12} style="solid" />
         </Paint>
       </Path>
+      {/* Arc tip core dot (accent color, no white) */}
       <Path path={arcTipCore}>
-        <Paint color="rgba(255,255,255,0.95)" />
+        <Paint color={coreColor} opacity={0.95} />
       </Path>
       {/* Coherence ring */}
       <Circle cx={CX} cy={CY} r={RING_R + 8}>
@@ -513,7 +545,7 @@ export default function SurgeFullScreen({
             <Animated.View style={{ transform: [{ scale: boltScale }] }}>
               <Ionicons
                 name="flash"
-                size={72}
+                size={80}
                 color={localCooldown ? '#252535' : color}
                 style={{
                   textShadowColor: color,
@@ -631,15 +663,15 @@ const s = StyleSheet.create({
   centerContent:   { position: 'absolute', alignItems: 'center', gap: 4 },
   levelLabel:      { fontSize: 20, fontWeight: '900', letterSpacing: 3 },
   bigNumber:       { fontSize: 44, fontWeight: '900', lineHeight: 48, letterSpacing: -1 },
-  bigNumberSub:    { fontSize: 10, color: '#333', fontWeight: '600', letterSpacing: 0.5 },
+  bigNumberSub:    { fontSize: 10, color: 'rgba(130,125,170,0.55)', fontWeight: '600', letterSpacing: 0.5 },
   infoBlock:       { width: W - 48, alignItems: 'center', gap: 6, marginTop: 2 },
   comboLabel:      { fontSize: 13, fontWeight: '800', color: '#FFD60A', letterSpacing: 1 },
   hintText:        { fontSize: 13, color: '#555', fontWeight: '600', textAlign: 'center' },
   hintDim:         { color: '#444' },
   statsRow:        { flexDirection: 'row', gap: 16, marginTop: 2 },
   statChip:        { flexDirection: 'row', alignItems: 'baseline' },
-  statNum:         { fontSize: 14, fontWeight: '800', color: 'rgba(255,255,255,0.45)' },
-  statLabel:       { fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.25)', letterSpacing: 1 },
+  statNum:         { fontSize: 14, fontWeight: '800', color: 'rgba(160,155,200,0.70)' },
+  statLabel:       { fontSize: 10, fontWeight: '600', color: 'rgba(140,135,180,0.45)', letterSpacing: 1 },
   bottom:          { width: W - 48, alignItems: 'center', gap: 8 },
   pctRow:          { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
   pctNum:          { fontSize: 56, fontWeight: '900', lineHeight: 60 },

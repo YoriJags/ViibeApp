@@ -39,7 +39,7 @@ const CANVAS_SIZE = 300;
 const CX          = CANVAS_SIZE / 2;
 const CY          = CANVAS_SIZE / 2;
 const RING_R      = 130;
-const RING_T      = 9;
+const RING_T      = 14;
 const ORB_R       = 98;   // inner tap circle radius
 const OUTER_R     = 144;  // outer bezel ring (precision dial)
 const INNER_R     = 114;  // inner detail ring (depth layer)
@@ -154,9 +154,22 @@ interface KineticCanvasProps {
   syncPct:      ReturnType<typeof useSharedValue<number>>;
 }
 
+// Level threshold positions on ring (progress 0–1) and their colors
+const DIAL_MARKS = [
+  { pct: 0.08, color: '#5544FF' },
+  { pct: 0.32, color: '#AA00FF' },
+  { pct: 0.58, color: '#FF7700' },
+  { pct: 0.84, color: '#FF0055' },
+] as const;
+
 const KineticCanvas = React.memo(function KineticCanvas({
   ringProgress, coreColor, sparks, syncPct,
 }: KineticCanvasProps) {
+
+  // ── Tick / bezel colors derived from coreColor ────────────────────────────
+  const tickDimColor    = useDerivedValue(() => coreColor.value + '28');
+  const tickBrightColor = useDerivedValue(() => coreColor.value + '55');
+  const bezelColor      = useDerivedValue(() => coreColor.value + '18');
 
   // ── Coherence arc ─────────────────────────────────────────────────────────
   const coherenceOpacity = useDerivedValue(() =>
@@ -204,16 +217,15 @@ const KineticCanvas = React.memo(function KineticCanvas({
     return p;
   });
 
-  // ── Precision bezel ticks — computed once, static ─────────────────────────
-  // 24 ticks at 15° intervals; 4 major ticks at cardinal points (0/90/180/270°)
-  const { minorTicks, majorTicks } = React.useMemo(() => {
+  // ── Precision bezel ticks + level dial marks — computed once, static ───────
+  const { minorTicks, majorTicks, dialMarks } = React.useMemo(() => {
     const minor = Skia.Path.Make();
     const major = Skia.Path.Make();
     const TICK_OUT = OUTER_R - 1;
-    for (let i = 0; i < 24; i++) {
-      const isMajor = i % 6 === 0;
-      const rad = ((i / 24) * 360 - 90) * (Math.PI / 180);
-      const inR  = isMajor ? OUTER_R - 10 : OUTER_R - 5;
+    for (let i = 0; i < 48; i++) {
+      const isMajor = i % 12 === 0;
+      const rad = ((i / 48) * 360 - 90) * (Math.PI / 180);
+      const inR  = isMajor ? OUTER_R - 10 : OUTER_R - 4;
       const xi = CX + inR      * Math.cos(rad);
       const yi = CY + inR      * Math.sin(rad);
       const xo = CX + TICK_OUT * Math.cos(rad);
@@ -221,7 +233,16 @@ const KineticCanvas = React.memo(function KineticCanvas({
       (isMajor ? major : minor).moveTo(xi, yi);
       (isMajor ? major : minor).lineTo(xo, yo);
     }
-    return { minorTicks: minor, majorTicks: major };
+    // Level threshold dots on the ring track
+    const marks = DIAL_MARKS.map(({ pct, color }) => {
+      const angle = (-90 + pct * 360) * (Math.PI / 180);
+      const tx = CX + RING_R * Math.cos(angle);
+      const ty = CY + RING_R * Math.sin(angle);
+      const p = Skia.Path.Make();
+      p.addOval({ x: tx - 4, y: ty - 4, width: 8, height: 8 });
+      return { path: p, color };
+    });
+    return { minorTicks: minor, majorTicks: major, dialMarks: marks };
   }, []);
 
   return (
@@ -229,58 +250,65 @@ const KineticCanvas = React.memo(function KineticCanvas({
 
       {/* ── 1. Outer bezel ring ── */}
       <Circle cx={CX} cy={CY} r={OUTER_R}>
-        <Paint style="stroke" strokeWidth={0.75} color="rgba(255,255,255,0.06)" />
+        <Paint style="stroke" strokeWidth={0.75} color={bezelColor} />
       </Circle>
 
-      {/* ── 2. Minor tick marks (15° spacing) ── */}
+      {/* ── 2. Minor tick marks (7.5° spacing) ── */}
       <Path path={minorTicks}>
-        <Paint style="stroke" strokeWidth={1} color="rgba(255,255,255,0.10)" strokeCap="round" />
+        <Paint style="stroke" strokeWidth={1} color={tickDimColor} strokeCap="round" />
       </Path>
 
       {/* ── 3. Major tick marks (90° — cardinal) ── */}
       <Path path={majorTicks}>
-        <Paint style="stroke" strokeWidth={1.75} color="rgba(255,255,255,0.28)" strokeCap="round" />
+        <Paint style="stroke" strokeWidth={2} color={tickBrightColor} strokeCap="round" />
       </Path>
 
       {/* ── 4. Ring track ── */}
       <Circle cx={CX} cy={CY} r={RING_R}>
-        <Paint style="stroke" strokeWidth={RING_T} color="rgba(14,14,30,0.95)" />
+        <Paint style="stroke" strokeWidth={RING_T} color="rgba(10,10,24,0.97)" />
       </Circle>
 
-      {/* ── 5. Inner detail ring (depth) ── */}
+      {/* ── 5. Level dial marks (threshold dots) ── */}
+      {dialMarks.map((m, i) => (
+        <Path key={i} path={m.path}>
+          <Paint color={m.color} opacity={0.55} />
+        </Path>
+      ))}
+
+      {/* ── 6. Inner detail ring (depth) ── */}
       <Circle cx={CX} cy={CY} r={INNER_R}>
-        <Paint style="stroke" strokeWidth={0.75} color="rgba(255,255,255,0.04)" />
+        <Paint style="stroke" strokeWidth={0.75} color={bezelColor} />
       </Circle>
 
-      {/* ── 6. Wide bloom glow behind arc ── */}
+      {/* ── 7. Wide bloom glow behind arc ── */}
       <Path path={arcPath}>
-        <Paint style="stroke" strokeWidth={RING_T + 22} strokeCap="round" color={coreColor} opacity={0.18}>
-          <BlurMask blur={26} style="normal" />
+        <Paint style="stroke" strokeWidth={RING_T + 28} strokeCap="round" color={coreColor} opacity={0.18}>
+          <BlurMask blur={30} style="normal" />
         </Paint>
       </Path>
 
-      {/* ── 7. Mid glow ── */}
+      {/* ── 8. Mid glow ── */}
       <Path path={arcPath}>
-        <Paint style="stroke" strokeWidth={RING_T + 8} strokeCap="round" color={coreColor} opacity={0.28}>
-          <BlurMask blur={10} style="normal" />
+        <Paint style="stroke" strokeWidth={RING_T + 12} strokeCap="round" color={coreColor} opacity={0.30}>
+          <BlurMask blur={12} style="normal" />
         </Paint>
       </Path>
 
-      {/* ── 8. Progress arc (sharp, crisp) ── */}
+      {/* ── 9. Progress arc (sharp, crisp) ── */}
       <Path path={arcPath}>
         <Paint style="stroke" strokeWidth={RING_T} strokeCap="round" color={coreColor} />
       </Path>
 
-      {/* ── 9. Arc tip — outer bloom ── */}
+      {/* ── 10. Arc tip — outer bloom ── */}
       <Path path={arcTipGlow}>
-        <Paint color={coreColor} opacity={0.50}>
-          <BlurMask blur={10} style="solid" />
+        <Paint color={coreColor} opacity={0.60}>
+          <BlurMask blur={12} style="solid" />
         </Paint>
       </Path>
 
-      {/* ── 10. Arc tip — core dot (bright white center) ── */}
+      {/* ── 11. Arc tip — core dot (accent color) ── */}
       <Path path={arcTipCore}>
-        <Paint color="rgba(255,255,255,0.95)" />
+        <Paint color={coreColor} opacity={0.95} />
       </Path>
 
       {/* ── 11. Coherence ring — crowd sync crystalliser ── */}
@@ -932,14 +960,14 @@ export default function VibeReactor({
 
             {/* Bolt */}
             <Animated.View style={boltStyle}>
-              <Ionicons name="flash" size={44} color={color} />
+              <Ionicons name="flash" size={60} color={color} />
             </Animated.View>
 
             {/* Level text — glitches on transition */}
             <GlitchText text={surge.level_label} color={color} />
 
             {/* Tap count */}
-            <Text style={styles.tapCount}>{displayTaps}</Text>
+            <Text style={[styles.tapCount, { color: color + '99' }]}>{displayTaps}</Text>
           </Animated.View>
         </Pressable>
 
@@ -1113,7 +1141,7 @@ const styles = StyleSheet.create({
   },
   tapCount: {
     fontSize: 16,
-    color:    'rgba(255,255,255,0.55)',
+    color:    'transparent',  // overridden inline with accent color
     marginTop: 2,
   },
 
@@ -1130,7 +1158,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   surgeBadgeNum:   { fontSize: 13, fontWeight: '800', lineHeight: 15 },
-  surgeBadgeLabel: { fontSize: 7, color: 'rgba(255,255,255,0.3)', letterSpacing: 1.2 },
+  surgeBadgeLabel: { fontSize: 7, color: 'rgba(160,155,200,0.40)', letterSpacing: 1.2 },
 
   expandBtn: {
     position: 'absolute', bottom: 14, left: 14,
@@ -1142,7 +1170,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between',
     marginTop: 12, paddingHorizontal: 4,
   },
-  subText: { fontSize: 13, color: 'rgba(255,255,255,0.60)', fontWeight: '600' },
+  subText: { fontSize: 13, color: 'rgba(160,155,200,0.70)', fontWeight: '600' },
 
   dangerText: {
     textAlign: 'center', fontSize: 12, color: '#FF3B30',
