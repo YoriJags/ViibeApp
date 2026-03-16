@@ -380,7 +380,7 @@ export default function SurgeFullScreen({
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
-      <Animated.View style={[styles.overlay, { opacity: bgOpacity, transform: [{ translateX: shakeAnim }] }]}>
+      <Animated.View style={[styles.overlay, { opacity: bgOpacity, transform: [{ translateX: shakeAnim }], paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }]}>
 
         <LinearGradient colors={['#000010', '#040412', '#000008']} style={StyleSheet.absoluteFill} />
 
@@ -614,7 +614,7 @@ export default function SurgeFullScreen({
 }
 
 const styles = StyleSheet.create({
-  overlay:          { flex: 1, alignItems: 'center', justifyContent: 'space-between', paddingTop: 56, paddingBottom: 44 },
+  overlay:          { flex: 1, alignItems: 'center', justifyContent: 'space-between' },
   closeBtn:         { position: 'absolute', left: 18, width: 40, height: 40, borderRadius: 20, backgroundColor: '#0E0E1A', borderWidth: 1, borderColor: '#1C1C2C', justifyContent: 'center', alignItems: 'center', zIndex: 10 },
   surgeBanner:      { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,214,10,0.08)', zIndex: 5 },
   surgeBannerText:  { fontSize: 28, fontWeight: '900', color: '#FFD60A', letterSpacing: 3, textAlign: 'center' },
