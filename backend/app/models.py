@@ -344,3 +344,7 @@ class SurgeBookingCreate(BaseModel):
 
 class MusicPreferencesUpdate(BaseModel):
     genres: list[str]  # e.g. ["Afrobeats", "Amapiano", "House", "Afro-Pop"]
+
+
+class ReactorSkinUpdate(BaseModel):
+    skin: str  # preset key (e.g. "gold") or "custom:#RRGGBB"

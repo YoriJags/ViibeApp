@@ -100,6 +100,7 @@ export default function VenueDetailScreen() {
     getAuthHeaders,
     setVenueGeofence,
     isInsideVenue,
+    user,
   } = useVibeStore();
   const [venue, setVenue] = useState<any>(null);
   const [ratingStatus, setRatingStatus] = useState<any>(null);
@@ -1197,6 +1198,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
                     venueCoordinates={venue.coordinates ?? null}
                     userLocation={userLocation}
                     isDemoMode={isDemoMode}
+                    skinKey={user?.reactor_skin}
                     onElectric={(tc) => { setSurgeTapCount(tc); setShowSurgeCelebration(true); }}
                     onReact={handleReact}
                     onQuestSucceeded={(participants) => {

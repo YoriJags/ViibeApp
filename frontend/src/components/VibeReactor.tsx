@@ -25,6 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVibeStore } from '../store/vibeStore';
 import { calculateDistance } from '../utils/geo';
+import { resolveSkinPalette } from '../config/skins';
 import SurgeFullScreen, { SurgeState } from './SurgeFullScreen';
 import { useHapticVelocity } from '../hooks/useHapticVelocity';
 import { useRetryFetch } from '../hooks/useRetryFetch';
@@ -57,7 +58,7 @@ const LEVEL_INDICES: Record<string, number> = {
   dormant: 0, stirring: 1, buzzing: 2, popping: 3, electric: 4,
 };
 // deep electric blue → volatile neon purple → fire → crimson
-const LEVEL_PALETTE = ['#3A3A4E', '#5544FF', '#AA00FF', '#FF7700', '#FF0055'];
+const DEFAULT_PALETTE = ['#3A3A4E', '#5544FF', '#AA00FF', '#FF7700', '#FF0055'];
 
 const DEMO_SURGE: SurgeState = {
   charge_pct: 0.08, level: 'stirring', level_label: 'STIRRING',
@@ -103,6 +104,7 @@ export interface VibeReactorProps {
   venueCoordinates?: { lat: number; lng: number } | null;
   userLocation?:     { lat: number; lng: number } | null;
   isDemoMode?:       boolean;
+  skinKey?:          string;   // preset key or 'custom:#RRGGBB'
   onElectric?:       (tapCount: number) => void;
   onReact?:          () => void;
   onQuestSucceeded?: (participants: number) => void;
@@ -324,6 +326,7 @@ export default function VibeReactor({
   venueCoordinates,
   userLocation,
   isDemoMode = false,
+  skinKey,
   onElectric,
   onReact,
   onQuestSucceeded,
@@ -333,6 +336,13 @@ export default function VibeReactor({
   const socket         = useVibeStore(s => s.socket);
   const user           = useVibeStore(s => s.user);
   const activeSurge    = useVibeStore(s => s.activeSurge);
+
+  // ── Skin palette — shared value so color transitions are smooth ──────────────
+  const activeSkin     = skinKey ?? user?.reactor_skin;
+  const skinPalette    = useSharedValue<string[]>(resolveSkinPalette(activeSkin));
+  useEffect(() => {
+    skinPalette.value = resolveSkinPalette(activeSkin);
+  }, [activeSkin]);
 
   // ── Coherence system ─────────────────────────────────────────────────────────
   const { syncPct, isCoherent, recordVariance } = useKineticBuffer();
@@ -446,7 +456,7 @@ export default function VibeReactor({
 
   // Smooth level color transition
   const coreColor = useDerivedValue<string>(() =>
-    interpolateColor(levelIdx.value, [0, 1, 2, 3, 4], LEVEL_PALETTE),
+    interpolateColor(levelIdx.value, [0, 1, 2, 3, 4], skinPalette.value),
   );
 
   // ── Role / geofence gate ─────────────────────────────────────────────────────

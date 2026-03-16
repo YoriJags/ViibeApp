@@ -62,6 +62,8 @@ export interface User {
   merchant_venue_id?: string;
   token?: string;
   rating_accuracy_score?: number;
+  reactor_skin?: string;      // preset key or 'custom:#RRGGBB'
+  zodiac_sign?: string;       // optional, set during onboarding
 }
 
 export interface PendingRating {

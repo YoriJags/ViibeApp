@@ -6,7 +6,7 @@ Returns session tokens on signup/login for proper auth.
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.config import db
-from app.models import User, UserCreate, UserLogin, MusicPreferencesUpdate
+from app.models import User, UserCreate, UserLogin, MusicPreferencesUpdate, ReactorSkinUpdate
 from app.services.auth import create_session_token, require_auth
 
 router = APIRouter(tags=["users"])
@@ -75,3 +75,37 @@ async def update_music_preferences(
         {"$set": {"music_preferences": genres}},
     )
     return {"success": True, "music_preferences": genres}
+
+
+VALID_PRESET_KEYS = {"default", "gold", "emerald", "arctic", "rose", "void", "inferno"}
+
+@router.put("/users/me/reactor-skin")
+async def update_reactor_skin(
+    payload: ReactorSkinUpdate,
+    user: dict = Depends(require_auth),
+):
+    """
+    Save the user's reactor skin preference.
+    Accepts a preset key (e.g. "gold") or a custom hex value ("custom:#FF6D00").
+    Custom skins are gated to VIBE+ users on the frontend; the API stores
+    whatever is sent so the app can enforce the gate without backend round-trips.
+    """
+    skin = payload.skin.strip()
+
+    if skin.startswith("custom:"):
+        # Validate hex portion: must be #RRGGBB
+        hex_part = skin[7:]
+        import re
+        if not re.fullmatch(r"#[0-9A-Fa-f]{6}", hex_part):
+            raise HTTPException(status_code=400, detail="Invalid hex color. Use #RRGGBB format.")
+    elif skin not in VALID_PRESET_KEYS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown skin. Valid presets: {', '.join(sorted(VALID_PRESET_KEYS))}",
+        )
+
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"reactor_skin": skin}},
+    )
+    return {"success": True, "reactor_skin": skin}
