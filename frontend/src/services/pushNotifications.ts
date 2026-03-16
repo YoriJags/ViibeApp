@@ -8,7 +8,7 @@
  * authenticated. It is idempotent — safe to call on every app launch.
  */
 import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { router } from 'expo-router';
 
@@ -17,9 +17,11 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 // How the app handles a notification while foregrounded
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge:  false,
+    shouldShowAlert:  true,
+    shouldShowBanner: true,
+    shouldShowList:   true,
+    shouldPlaySound:  true,
+    shouldSetBadge:   false,
   }),
 });
 
@@ -28,7 +30,7 @@ Notifications.setNotificationHandler({
  * No-ops on simulators or web (physical device required for push).
  */
 export async function registerForPushNotifications(sessionToken: string): Promise<void> {
-  if (!Device.isDevice || Platform.OS === 'web') return;
+  if (!Constants.isDevice || Platform.OS === 'web') return;
 
   const { status: existing } = await Notifications.getPermissionsAsync();
   let finalStatus = existing;

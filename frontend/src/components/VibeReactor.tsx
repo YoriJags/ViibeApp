@@ -58,21 +58,24 @@ const LEVEL_INDICES: Record<string, number> = {
   dormant: 0, stirring: 1, buzzing: 2, popping: 3, electric: 4,
 };
 // deep electric blue → volatile neon purple → fire → crimson
-const DEFAULT_PALETTE = ['#3A3A4E', '#5544FF', '#AA00FF', '#FF7700', '#FF0055'];
-
 const DEMO_SURGE: SurgeState = {
   charge_pct: 0.08, level: 'stirring', level_label: 'STIRRING',
-  level_color: '#5544FF', level_progress: 0.08, taps_to_next: 3,
+  level_color: '#1155EE', level_progress: 0.08, taps_to_next: 3,
   next_level: 'BUZZING', tap_count: 0, total_surges: 0,
 };
 
 const DEMO_LEVELS = [
-  { level: 'dormant',  label: 'DORMANT',  color: '#3A3A4E', min: 0,    next: 'BUZZING'   },
-  { level: 'stirring', label: 'STIRRING', color: '#5544FF', min: 0.08, next: 'BUZZING'   },
-  { level: 'buzzing',  label: 'BUZZING',  color: '#AA00FF', min: 0.32, next: 'POPPING'   },
-  { level: 'popping',  label: 'POPPING',  color: '#FF7700', min: 0.58, next: 'ELECTRIC'  },
-  { level: 'electric', label: 'ELECTRIC', color: '#FF0055', min: 0.84, next: null        },
+  { level: 'dormant',  label: 'DORMANT',  color: '#1A1040', min: 0,    next: 'STIRRING'  },
+  { level: 'stirring', label: 'STIRRING', color: '#1155EE', min: 0.08, next: 'BUZZING'   },
+  { level: 'buzzing',  label: 'BUZZING',  color: '#8800EE', min: 0.32, next: 'POPPING'   },
+  { level: 'popping',  label: 'POPPING',  color: '#FF6600', min: 0.58, next: 'ELECTRIC'  },
+  { level: 'electric', label: 'ELECTRIC', color: '#FF0044', min: 0.84, next: null        },
 ];
+
+// ── Segmented ring geometry (module-level for worklet access) ──────────────
+const SEGMENT_COUNT = 20;
+const SEGMENT_SWEEP = 360 / SEGMENT_COUNT;  // 18° per slot
+const SEGMENT_ARC   = SEGMENT_SWEEP - 2;    // 16° arc, 2° gap between chambers
 
 const GLITCH_CHARS = '!@#$%^&*<>?/|~';
 
@@ -152,26 +155,28 @@ interface KineticCanvasProps {
   coreColor:    ReturnType<typeof useDerivedValue<string>>;
   sparks:       Spark[];
   syncPct:      ReturnType<typeof useSharedValue<number>>;
+  emberAngle:   ReturnType<typeof useSharedValue<number>>;
+  emberColor:   ReturnType<typeof useDerivedValue<string>>;
 }
 
 // Level threshold positions on ring (progress 0–1) and their colors
 const DIAL_MARKS = [
-  { pct: 0.08, color: '#5544FF' },
-  { pct: 0.32, color: '#AA00FF' },
-  { pct: 0.58, color: '#FF7700' },
-  { pct: 0.84, color: '#FF0055' },
+  { pct: 0.08, color: '#1155EE' },
+  { pct: 0.32, color: '#8800EE' },
+  { pct: 0.58, color: '#FF6600' },
+  { pct: 0.84, color: '#FFD700' },  // ELECTRIC threshold — gold
 ] as const;
 
 const KineticCanvas = React.memo(function KineticCanvas({
-  ringProgress, coreColor, sparks, syncPct,
+  ringProgress, coreColor, sparks, syncPct, emberAngle, emberColor,
 }: KineticCanvasProps) {
 
-  // ── Tick / bezel colors derived from coreColor ────────────────────────────
-  const tickDimColor    = useDerivedValue(() => coreColor.value + '28');
-  const tickBrightColor = useDerivedValue(() => coreColor.value + '55');
-  const bezelColor      = useDerivedValue(() => coreColor.value + '18');
+  // ── Luxury gold bezel tones ────────────────────────────────────────────────
+  const tickDimColor    = useDerivedValue(() => '#C9A84C1A');
+  const tickBrightColor = useDerivedValue(() => '#C9A84C44');
+  const bezelColor      = useDerivedValue(() => '#C9A84C14');
 
-  // ── Coherence arc ─────────────────────────────────────────────────────────
+  // ── Coherence ring ─────────────────────────────────────────────────────────
   const coherenceOpacity = useDerivedValue(() =>
     Math.max(0, (syncPct.value - 15) / 85)
   );
@@ -182,42 +187,98 @@ const KineticCanvas = React.memo(function KineticCanvas({
     interpolate(syncPct.value, [0, 100], [1.5, 4])
   );
 
-  // ── Progress arc ──────────────────────────────────────────────────────────
-  const arcPath = useDerivedValue(() => {
-    const sweep = Math.max(0, ringProgress.value * 360);
-    if (sweep < 0.5) return Skia.Path.Make();
-    const path = Skia.Path.Make();
-    path.addArc(
+  // ── All 20 unlit chamber outlines — always visible, dim gold ──────────────
+  const chamberPath = React.useMemo(() => {
+    const p = Skia.Path.Make();
+    for (let i = 0; i < SEGMENT_COUNT; i++) {
+      p.addArc(
+        { x: CX - RING_R, y: CY - RING_R, width: RING_R * 2, height: RING_R * 2 },
+        -90 + i * SEGMENT_SWEEP + 1,
+        SEGMENT_ARC,
+      );
+    }
+    return p;
+  }, []);
+
+  // ── Filled chamber arcs — charged segments only ───────────────────────────
+  const filledPath = useDerivedValue(() => {
+    const sweep = ringProgress.value * 360;
+    if (sweep < 1) return Skia.Path.Make();
+    const p = Skia.Path.Make();
+    for (let i = 0; i < SEGMENT_COUNT; i++) {
+      const slotStart = i * SEGMENT_SWEEP;
+      if (slotStart >= sweep) break;
+      const fillArc = Math.min(SEGMENT_ARC, sweep - slotStart);
+      if (fillArc < 0.5) continue;
+      p.addArc(
+        { x: CX - RING_R, y: CY - RING_R, width: RING_R * 2, height: RING_R * 2 },
+        -90 + slotStart + 1,
+        fillArc,
+      );
+    }
+    return p;
+  });
+
+  // ── Frontier — the leading (actively filling) segment, hotter glow ────────
+  const frontierPath = useDerivedValue(() => {
+    const sweep = ringProgress.value * 360;
+    if (sweep < 2) return Skia.Path.Make();
+    const slot = Math.floor(sweep / SEGMENT_SWEEP);
+    if (slot >= SEGMENT_COUNT) return Skia.Path.Make();
+    const fillArc = Math.min(SEGMENT_ARC, sweep - slot * SEGMENT_SWEEP);
+    if (fillArc < 0.5) return Skia.Path.Make();
+    const p = Skia.Path.Make();
+    p.addArc(
       { x: CX - RING_R, y: CY - RING_R, width: RING_R * 2, height: RING_R * 2 },
-      -90,
-      sweep,
+      -90 + slot * SEGMENT_SWEEP + 1,
+      fillArc,
     );
-    return path;
-  });
-
-  // ── Arc leading-edge tip — glowing dot tracks the progress head ───────────
-  const arcTipGlow = useDerivedValue(() => {
-    const sweep = Math.max(0, ringProgress.value * 360);
-    if (sweep < 3) return Skia.Path.Make();
-    const a = (-90 + sweep) * (Math.PI / 180);
-    const tx = CX + RING_R * Math.cos(a);
-    const ty = CY + RING_R * Math.sin(a);
-    const p = Skia.Path.Make();
-    p.addOval({ x: tx - 10, y: ty - 10, width: 20, height: 20 });
-    return p;
-  });
-  const arcTipCore = useDerivedValue(() => {
-    const sweep = Math.max(0, ringProgress.value * 360);
-    if (sweep < 3) return Skia.Path.Make();
-    const a = (-90 + sweep) * (Math.PI / 180);
-    const tx = CX + RING_R * Math.cos(a);
-    const ty = CY + RING_R * Math.sin(a);
-    const p = Skia.Path.Make();
-    p.addOval({ x: tx - 3.5, y: ty - 3.5, width: 7, height: 7 });
     return p;
   });
 
-  // ── Precision bezel ticks + level dial marks — computed once, static ───────
+  // ── Traveling ember — races through charged area, shifts color with level ──
+  const emberGlow = useDerivedValue(() => {
+    const maxSweep = ringProgress.value * 360;
+    if (maxSweep < 10) return Skia.Path.Make();
+    const pos = emberAngle.value % maxSweep;
+    const a = (-90 + pos) * (Math.PI / 180);
+    const p = Skia.Path.Make();
+    p.addOval({
+      x: CX + RING_R * Math.cos(a) - 10,
+      y: CY + RING_R * Math.sin(a) - 10,
+      width: 20, height: 20,
+    });
+    return p;
+  });
+  const emberCore = useDerivedValue(() => {
+    const maxSweep = ringProgress.value * 360;
+    if (maxSweep < 10) return Skia.Path.Make();
+    const pos = emberAngle.value % maxSweep;
+    const a = (-90 + pos) * (Math.PI / 180);
+    const p = Skia.Path.Make();
+    p.addOval({
+      x: CX + RING_R * Math.cos(a) - 3,
+      y: CY + RING_R * Math.sin(a) - 3,
+      width: 6, height: 6,
+    });
+    return p;
+  });
+
+  // ── Mouth focal diamond — 6 o'clock, where energy converges at ELECTRIC ───
+  const mouthMarker = React.useMemo(() => {
+    const a  = 90 * (Math.PI / 180);
+    const mx = CX + RING_R * Math.cos(a);
+    const my = CY + RING_R * Math.sin(a);
+    const p  = Skia.Path.Make();
+    p.moveTo(mx,     my - 7);
+    p.lineTo(mx + 5, my    );
+    p.lineTo(mx,     my + 7);
+    p.lineTo(mx - 5, my    );
+    p.close();
+    return p;
+  }, []);
+
+  // ── Bezel ticks + threshold diamonds ──────────────────────────────────────
   const { minorTicks, majorTicks, dialMarks } = React.useMemo(() => {
     const minor = Skia.Path.Make();
     const major = Skia.Path.Make();
@@ -233,7 +294,6 @@ const KineticCanvas = React.memo(function KineticCanvas({
       (isMajor ? major : minor).moveTo(xi, yi);
       (isMajor ? major : minor).lineTo(xo, yo);
     }
-    // Level threshold dots on the ring track
     const marks = DIAL_MARKS.map(({ pct, color }) => {
       const angle = (-90 + pct * 360) * (Math.PI / 180);
       const tx = CX + RING_R * Math.cos(angle);
@@ -253,77 +313,99 @@ const KineticCanvas = React.memo(function KineticCanvas({
         <Paint style="stroke" strokeWidth={0.75} color={bezelColor} />
       </Circle>
 
-      {/* ── 2. Minor tick marks (7.5° spacing) ── */}
+      {/* ── 2. Minor tick marks ── */}
       <Path path={minorTicks}>
         <Paint style="stroke" strokeWidth={1} color={tickDimColor} strokeCap="round" />
       </Path>
 
-      {/* ── 3. Major tick marks (90° — cardinal) ── */}
+      {/* ── 3. Major tick marks ── */}
       <Path path={majorTicks}>
         <Paint style="stroke" strokeWidth={2} color={tickBrightColor} strokeCap="round" />
       </Path>
 
-      {/* ── 4. Ring track ── */}
+      {/* ── 4. Ring track — deep void ── */}
       <Circle cx={CX} cy={CY} r={RING_R}>
-        <Paint style="stroke" strokeWidth={RING_T} color="rgba(10,10,24,0.97)" />
+        <Paint style="stroke" strokeWidth={RING_T} color="rgba(4,3,14,0.98)" />
       </Circle>
 
-      {/* ── 5. Level dial marks (threshold dots) ── */}
-      {dialMarks.map((m, i) => (
-        <Path key={i} path={m.path}>
-          <Paint color={m.color} opacity={0.55} />
-        </Path>
-      ))}
+      {/* ── 5. Unlit chamber outlines — dim gold channels ── */}
+      <Path path={chamberPath}>
+        <Paint style="stroke" strokeWidth={RING_T - 2} strokeCap="butt" color="#C9A84C" opacity={0.07} />
+      </Path>
 
-      {/* ── 6. Inner detail ring (depth) ── */}
-      <Circle cx={CX} cy={CY} r={INNER_R}>
-        <Paint style="stroke" strokeWidth={0.75} color={bezelColor} />
-      </Circle>
-
-      {/* ── 7. Wide bloom glow behind arc ── */}
-      <Path path={arcPath}>
-        <Paint style="stroke" strokeWidth={RING_T + 28} strokeCap="round" color={coreColor} opacity={0.18}>
-          <BlurMask blur={30} style="normal" />
+      {/* ── 6. Deep bloom behind charged chambers ── */}
+      <Path path={filledPath}>
+        <Paint style="stroke" strokeWidth={RING_T + 34} strokeCap="butt" color={coreColor} opacity={0.12}>
+          <BlurMask blur={32} style="normal" />
         </Paint>
       </Path>
 
-      {/* ── 8. Mid glow ── */}
-      <Path path={arcPath}>
-        <Paint style="stroke" strokeWidth={RING_T + 12} strokeCap="round" color={coreColor} opacity={0.30}>
+      {/* ── 7. Mid aura ── */}
+      <Path path={filledPath}>
+        <Paint style="stroke" strokeWidth={RING_T + 14} strokeCap="butt" color={coreColor} opacity={0.26}>
           <BlurMask blur={12} style="normal" />
         </Paint>
       </Path>
 
-      {/* ── 9. Progress arc (sharp, crisp) ── */}
-      <Path path={arcPath}>
-        <Paint style="stroke" strokeWidth={RING_T} strokeCap="round" color={coreColor} />
+      {/* ── 8. Crisp chamber fill ── */}
+      <Path path={filledPath}>
+        <Paint style="stroke" strokeWidth={RING_T - 1} strokeCap="butt" color={coreColor} opacity={0.94} />
       </Path>
 
-      {/* ── 10. Arc tip — outer bloom ── */}
-      <Path path={arcTipGlow}>
-        <Paint color={coreColor} opacity={0.60}>
-          <BlurMask blur={12} style="solid" />
+      {/* ── 9. Frontier leading-edge heat ── */}
+      <Path path={frontierPath}>
+        <Paint style="stroke" strokeWidth={RING_T + 8} strokeCap="butt" color="#FFFFFF" opacity={0.15}>
+          <BlurMask blur={8} style="normal" />
         </Paint>
       </Path>
 
-      {/* ── 11. Arc tip — core dot (accent color) ── */}
-      <Path path={arcTipCore}>
-        <Paint color={coreColor} opacity={0.95} />
-      </Path>
+      {/* ── 10. Level threshold diamonds ── */}
+      {dialMarks.map((m, i) => (
+        <Path key={i} path={m.path}>
+          <Paint color={m.color} opacity={0.75} />
+        </Path>
+      ))}
 
-      {/* ── 11. Coherence ring — crowd sync crystalliser ── */}
+      {/* ── 11. Inner depth ring ── */}
+      <Circle cx={CX} cy={CY} r={INNER_R}>
+        <Paint style="stroke" strokeWidth={0.75} color={bezelColor} />
+      </Circle>
+
+      {/* ── 12. Coherence crystalliser — gold sync ring ── */}
       <Circle cx={CX} cy={CY} r={RING_R + 8}>
         <Paint
           style="stroke"
           strokeWidth={coherenceWidth}
-          color="#00FFCC"
+          color="#C9A84C"
           opacity={coherenceOpacity}
         >
           <BlurMask blur={coherenceBlur} style="solid" />
         </Paint>
       </Circle>
 
-      {/* ── 12. Particle sparks ── */}
+      {/* ── 13. Ember outer bloom ── */}
+      <Path path={emberGlow}>
+        <Paint color={emberColor} opacity={0.50}>
+          <BlurMask blur={14} style="solid" />
+        </Paint>
+      </Path>
+
+      {/* ── 14. Ember core ── */}
+      <Path path={emberCore}>
+        <Paint color={emberColor} opacity={1.0} />
+      </Path>
+
+      {/* ── 15. Mouth focal diamond — glow then crisp ── */}
+      <Path path={mouthMarker}>
+        <Paint color="#C9A84C" opacity={0.35}>
+          <BlurMask blur={10} style="normal" />
+        </Paint>
+      </Path>
+      <Path path={mouthMarker}>
+        <Paint color="#C9A84C" opacity={0.90} />
+      </Path>
+
+      {/* ── 16. Particle sparks ── */}
       {sparks.map(spark => (
         <Circle
           key={spark.id}
@@ -472,6 +554,7 @@ export default function VibeReactor({
   }, [tickSparks]);
 
   // ── Reanimated shared values ─────────────────────────────────────────────────
+  const emberAngle       = useSharedValue(0);
   const ringProgress     = useSharedValue(0);
   const shakeX           = useSharedValue(0);
   const pressScale       = useSharedValue(1);
@@ -491,6 +574,17 @@ export default function VibeReactor({
   // Smooth level color transition
   const coreColor = useDerivedValue<string>(() =>
     interpolateColor(levelIdx.value, [0, 1, 2, 3, 4], skinPalette.value),
+  );
+
+  // Ember color: jewel tones per level, turns pure gold at ELECTRIC
+  const emberColor = useDerivedValue<string>(() =>
+    interpolateColor(levelIdx.value, [0, 1, 2, 3, 4], [
+      '#7744CC',  // dormant  — deep violet
+      '#3388FF',  // stirring — sapphire
+      '#CC55FF',  // buzzing  — amethyst
+      '#FFAA00',  // popping  — liquid amber
+      '#FFD700',  // electric — pure gold
+    ]),
   );
 
   // ── Role / geofence gate ─────────────────────────────────────────────────────
@@ -526,6 +620,14 @@ export default function VibeReactor({
   }, [venueId, isDemoMode]);
 
   useEffect(() => { fetchSurge(); }, [venueId]);
+
+  // ── Ember — continuous rotation, speed increases with charge ─────────────────
+  useEffect(() => {
+    emberAngle.value = withRepeat(
+      withTiming(360, { duration: 2800, easing: Easing.linear }),
+      -1, false,
+    );
+  }, []);
 
   // ── Ring progress + level color + electric glow ──────────────────────────────
   useEffect(() => {
@@ -941,6 +1043,8 @@ export default function VibeReactor({
           coreColor={coreColor}
           sparks={sparksRef.current}
           syncPct={syncPctShared}
+          emberAngle={emberAngle}
+          emberColor={emberColor}
         />
 
         {/* SYNC chip — personal rhythm or crowd lock, narrative label */}
