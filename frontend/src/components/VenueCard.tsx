@@ -386,7 +386,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#0E0E1A',
     borderRadius: 19,
-    overflow: 'hidden',
     paddingRight: 14,
     margin: 1,
   },
@@ -460,7 +459,7 @@ const styles = StyleSheet.create({
   chips: {
     flexDirection: 'row',
     gap: 6,
-    paddingRight: 4,
+    paddingRight: 16,
   },
   chip: {
     flexDirection: 'row',
