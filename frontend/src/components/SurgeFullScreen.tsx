@@ -485,30 +485,6 @@ export default function SurgeFullScreen({
           )}
         </View>
 
-        {/* Quest + BPM bar */}
-        {questState && questState.unique_scouts > 0 && (
-          <View style={s.questBar}>
-            <View style={s.questLeft}>
-              <Text style={s.questLabel}>COLLECTIVE QUEST</Text>
-              <Text style={s.questSub}>
-                {questState.quest_state === 'cooldown'
-                  ? 'Quest cooldown — keep tapping'
-                  : `${questState.unique_scouts} scout${questState.unique_scouts !== 1 ? 's' : ''} · target ${questState.resonance_min}–${questState.resonance_max} BPM`}
-              </Text>
-            </View>
-            <View style={s.bpmBadge}>
-              <Text style={s.bpmBadgeNum}>{Math.round(questState.aggregate_bpm)}</Text>
-              <Text style={s.bpmBadgeLabel}>BPM</Text>
-            </View>
-          </View>
-        )}
-        {!questState && (bpmNow ?? 0) > 0 && (
-          <View style={s.bpmRow}>
-            <Text style={s.bpmRowNum}>{Math.round(bpmNow!)}</Text>
-            <Text style={s.bpmRowLabel}> BPM</Text>
-          </View>
-        )}
-
         {/* ── Tap zone with Skia canvas ── */}
         <Animated.View
           style={[s.tapZone, { transform: [{ scale: entryScale }] }]}
@@ -537,20 +513,18 @@ export default function SurgeFullScreen({
             <Animated.View style={{ transform: [{ scale: boltScale }] }}>
               <Ionicons
                 name="flash"
-                size={52}
+                size={72}
                 color={localCooldown ? '#252535' : color}
                 style={{
                   textShadowColor: color,
                   textShadowOffset: { width: 0, height: 0 },
-                  textShadowRadius: isElectric ? 30 : 12,
+                  textShadowRadius: isElectric ? 40 : 16,
                 } as any}
               />
             </Animated.View>
-
             <Animated.Text style={[s.levelLabel, { color, opacity: isElectric ? glowAnim : 1 }]}>
               {surge.level_label}
             </Animated.Text>
-
             <Animated.Text style={[s.bigNumber, { color, transform: [{ scale: bigNumScale }] }]}>
               {displayTapCount.toLocaleString()}
             </Animated.Text>
@@ -558,35 +532,65 @@ export default function SurgeFullScreen({
               {localTapCount > 0 ? 'taps this session' : 'taps tonight'}
             </Text>
           </View>
+        </Animated.View>
 
+        {/* ── Info row below canvas — combo, hint, BPM, quest ── */}
+        <View style={s.infoBlock} pointerEvents="none">
           {/* Combo */}
           {comboCount > 0 && (
-            <View style={s.comboRow}>
-              <Text style={[s.comboLabel, comboFired && { color: '#00E676' }]}>
-                {comboFired ? `COMBO ×${COMBO_TARGET} 🔥` : `COMBO ${comboCount}/${COMBO_TARGET}`}
-              </Text>
-            </View>
+            <Text style={[s.comboLabel, comboFired && { color: '#00E676' }]}>
+              {comboFired ? `COMBO ×${COMBO_TARGET} 🔥` : `COMBO ${comboCount}/${COMBO_TARGET}`}
+            </Text>
           )}
 
           {/* Hint */}
-          <View style={s.hintBlock} pointerEvents="none">
-            {localCooldown ? (
-              <Text style={s.hintText}><Text style={{ color: color + '88' }}>⏱ </Text>visual cooldown — 15s</Text>
-            ) : surge.next_level && surge.taps_to_next > 0 ? (
-              <Text style={s.hintText}>
-                <Text style={s.hintDim}>{surge.taps_to_next} taps to </Text>
-                <Text style={{ color, fontWeight: '900' }}>{surge.next_level}</Text>
-              </Text>
-            ) : isElectric ? (
-              <Animated.Text style={[s.hintText, { color, opacity: glowAnim }]}>
-                ELECTRIC — KEEP IT ALIVE
-              </Animated.Text>
-            ) : (
-              <Text style={s.hintText}>{cooldown ? 'Cooling down...' : 'Tap anywhere — power the venue'}</Text>
+          {localCooldown ? (
+            <Text style={s.hintText}><Text style={{ color: color + '88' }}>⏱ </Text>visual cooldown — 15s</Text>
+          ) : surge.next_level && surge.taps_to_next > 0 ? (
+            <Text style={s.hintText}>
+              <Text style={s.hintDim}>{surge.taps_to_next} taps to </Text>
+              <Text style={{ color, fontWeight: '900' }}>{surge.next_level}</Text>
+            </Text>
+          ) : isElectric ? (
+            <Animated.Text style={[s.hintText, { color, opacity: glowAnim }]}>
+              ELECTRIC — KEEP IT ALIVE
+            </Animated.Text>
+          ) : (
+            <Text style={s.hintText}>{cooldown ? 'Cooling down...' : 'Tap anywhere — power the venue'}</Text>
+          )}
+
+          {/* BPM + surges row */}
+          <View style={s.statsRow}>
+            {(bpmNow ?? 0) > 0 && (
+              <View style={s.statChip}>
+                <Text style={s.statNum}>{Math.round(bpmNow!)}</Text>
+                <Text style={s.statLabel}> BPM</Text>
+              </View>
             )}
-            <Text style={s.hintSub}>{surge.total_surges} surges lit this venue</Text>
+            <View style={s.statChip}>
+              <Text style={s.statNum}>{surge.total_surges}</Text>
+              <Text style={s.statLabel}> SURGES</Text>
+            </View>
           </View>
-        </Animated.View>
+
+          {/* Quest bar — only when active */}
+          {questState && questState.unique_scouts > 0 && (
+            <View style={s.questBar}>
+              <View style={s.questLeft}>
+                <Text style={s.questLabel}>COLLECTIVE QUEST</Text>
+                <Text style={s.questSub}>
+                  {questState.quest_state === 'cooldown'
+                    ? 'Quest cooldown — keep tapping'
+                    : `${questState.unique_scouts} scout${questState.unique_scouts !== 1 ? 's' : ''} · target ${questState.resonance_min}–${questState.resonance_max} BPM`}
+                </Text>
+              </View>
+              <View style={s.bpmBadge}>
+                <Text style={s.bpmBadgeNum}>{Math.round(questState.aggregate_bpm)}</Text>
+                <Text style={s.bpmBadgeLabel}>BPM</Text>
+              </View>
+            </View>
+          )}
+        </View>
 
         {/* Bottom % bar */}
         <View style={s.bottom} pointerEvents="none">
@@ -622,18 +626,20 @@ const s = StyleSheet.create({
   headerVenue:     { fontSize: 22, color: '#EEEEF5', fontWeight: '800', letterSpacing: 0.3, maxWidth: W - 80, textAlign: 'center' },
   squadBadge:      { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#140024', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: '#9933FF44' },
   squadBadgeText:  { fontSize: 9, color: '#9933FF', fontWeight: '800', letterSpacing: 1 },
-  tapZone:         { alignItems: 'center', justifyContent: 'center', width: CANVAS_SIZE, position: 'relative' },
+  tapZone:         { alignItems: 'center', justifyContent: 'center', width: CANVAS_SIZE, height: CANVAS_SIZE, position: 'relative' },
   ripple:          { position: 'absolute', width: 180, height: 180, borderRadius: 90, borderWidth: 1.5 },
-  centerContent:   { position: 'absolute', alignItems: 'center', gap: 2 },
-  levelLabel:      { fontSize: 20, fontWeight: '900', letterSpacing: 3, marginTop: 4 },
-  bigNumber:       { fontSize: 48, fontWeight: '900', lineHeight: 52, letterSpacing: -1 },
+  centerContent:   { position: 'absolute', alignItems: 'center', gap: 4 },
+  levelLabel:      { fontSize: 20, fontWeight: '900', letterSpacing: 3 },
+  bigNumber:       { fontSize: 44, fontWeight: '900', lineHeight: 48, letterSpacing: -1 },
   bigNumberSub:    { fontSize: 10, color: '#333', fontWeight: '600', letterSpacing: 0.5 },
-  comboRow:        { position: 'absolute', bottom: -30, alignItems: 'center' },
+  infoBlock:       { width: W - 48, alignItems: 'center', gap: 6, marginTop: 2 },
   comboLabel:      { fontSize: 13, fontWeight: '800', color: '#FFD60A', letterSpacing: 1 },
-  hintBlock:       { position: 'absolute', bottom: -70, alignItems: 'center', gap: 4 },
-  hintText:        { fontSize: 14, color: '#555', fontWeight: '600', textAlign: 'center' },
+  hintText:        { fontSize: 13, color: '#555', fontWeight: '600', textAlign: 'center' },
   hintDim:         { color: '#444' },
-  hintSub:         { fontSize: 10, color: '#2A2A3A', fontWeight: '500' },
+  statsRow:        { flexDirection: 'row', gap: 16, marginTop: 2 },
+  statChip:        { flexDirection: 'row', alignItems: 'baseline' },
+  statNum:         { fontSize: 14, fontWeight: '800', color: 'rgba(255,255,255,0.45)' },
+  statLabel:       { fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.25)', letterSpacing: 1 },
   bottom:          { width: W - 48, alignItems: 'center', gap: 8 },
   pctRow:          { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
   pctNum:          { fontSize: 56, fontWeight: '900', lineHeight: 60 },
@@ -641,14 +647,11 @@ const s = StyleSheet.create({
   pctTrack:        { width: '100%', height: 4, backgroundColor: '#111120', borderRadius: 3, overflow: 'hidden' },
   pctFill:         { height: '100%', borderRadius: 3, shadowOffset: { width: 0, height: 0 } },
   bottomSub:       { fontSize: 10, color: '#2A2A3A', fontWeight: '600', letterSpacing: 1 },
-  questBar:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: W - 48, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: 'rgba(255,214,10,0.06)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,214,10,0.15)' },
+  questBar:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: W - 48, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: 'rgba(255,214,10,0.06)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,214,10,0.15)', marginTop: 4 },
   questLeft:       { flex: 1, gap: 2 },
   questLabel:      { fontSize: 10, fontWeight: '700', color: '#FFD60A', letterSpacing: 1.2 },
   questSub:        { fontSize: 11, color: 'rgba(255,255,255,0.45)' },
   bpmBadge:        { alignItems: 'center', backgroundColor: 'rgba(255,214,10,0.10)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
   bpmBadgeNum:     { fontSize: 20, fontWeight: '800', color: '#FFD60A', lineHeight: 22 },
   bpmBadgeLabel:   { fontSize: 9, fontWeight: '700', color: 'rgba(255,214,10,0.6)', letterSpacing: 1 },
-  bpmRow:          { flexDirection: 'row', alignItems: 'baseline' },
-  bpmRowNum:       { fontSize: 22, fontWeight: '800', color: 'rgba(255,255,255,0.55)' },
-  bpmRowLabel:     { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.30)', letterSpacing: 1 },
 } as any);
