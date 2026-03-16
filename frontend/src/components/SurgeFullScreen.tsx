@@ -56,22 +56,33 @@ export interface SurgeState {
   is_squad_surge?: boolean;
 }
 
+export interface QuestState {
+  aggregate_bpm: number;
+  unique_scouts: number;
+  quest_state:   'idle' | 'active' | 'cooldown';
+  resonance_min: number;
+  resonance_max: number;
+}
+
 interface Ripple {
   id: number; x: number; y: number;
   scale: Animated.Value; opacity: Animated.Value;
 }
 
 interface Props {
-  visible:   boolean;
-  surge:     SurgeState;
-  venueName: string;
-  venueId?:  string;
-  onClose:   () => void;
-  onTap:     () => void;
-  tapping?:  boolean;
-  cooldown?: boolean;
-  socket?:   any;
-  userId?:   string;
+  visible:    boolean;
+  surge:      SurgeState;
+  venueName:  string;
+  venueId?:   string;
+  onClose:    () => void;
+  onTap:      () => void;
+  tapping?:   boolean;
+  cooldown?:  boolean;
+  socket?:    any;
+  userId?:    string;
+  syncPct?:   ReturnType<typeof useSharedValue<number>>;
+  questState?: QuestState | null;
+  bpmNow?:    number;
 }
 
 // ─── Skia Canvas (identical logic to VibeReactor, sized for full screen) ──────
@@ -147,7 +158,7 @@ const KineticCanvas = React.memo(function KineticCanvas({
   }, []);
 
   return (
-    <Canvas style={{ width: CANVAS_SIZE, height: CANVAS_SIZE }}>
+    <Canvas style={{ width: CANVAS_SIZE, height: CANVAS_SIZE }} pointerEvents="none">
       <Circle cx={CX} cy={CY} r={OUTER_R}>
         <Paint style="stroke" strokeWidth={0.75} color="rgba(255,255,255,0.06)" />
       </Circle>
@@ -201,14 +212,15 @@ const KineticCanvas = React.memo(function KineticCanvas({
 
 export default function SurgeFullScreen({
   visible, surge, venueName, venueId, onClose, onTap, tapping, cooldown,
-  socket, userId,
+  socket, userId, syncPct: syncPctProp, questState, bpmNow,
 }: Props) {
   const insets = useSafeAreaInsets();
 
   // Reanimated shared values for Skia
-  const ringProgress = useSharedValue(surge.charge_pct);
-  const syncPct      = useSharedValue(0);
-  const coreColor    = useDerivedValue(() => surge.level_color);
+  const ringProgress   = useSharedValue(surge.charge_pct);
+  const localSyncPct   = useSharedValue(0);
+  const syncPct        = syncPctProp ?? localSyncPct;
+  const coreColor      = useDerivedValue(() => surge.level_color);
 
   // Sync ring progress when surge updates
   useEffect(() => {
@@ -473,6 +485,30 @@ export default function SurgeFullScreen({
           )}
         </View>
 
+        {/* Quest + BPM bar */}
+        {questState && questState.unique_scouts > 0 && (
+          <View style={s.questBar}>
+            <View style={s.questLeft}>
+              <Text style={s.questLabel}>COLLECTIVE QUEST</Text>
+              <Text style={s.questSub}>
+                {questState.quest_state === 'cooldown'
+                  ? 'Quest cooldown — keep tapping'
+                  : `${questState.unique_scouts} scout${questState.unique_scouts !== 1 ? 's' : ''} · target ${questState.resonance_min}–${questState.resonance_max} BPM`}
+              </Text>
+            </View>
+            <View style={s.bpmBadge}>
+              <Text style={s.bpmBadgeNum}>{Math.round(questState.aggregate_bpm)}</Text>
+              <Text style={s.bpmBadgeLabel}>BPM</Text>
+            </View>
+          </View>
+        )}
+        {!questState && (bpmNow ?? 0) > 0 && (
+          <View style={s.bpmRow}>
+            <Text style={s.bpmRowNum}>{Math.round(bpmNow!)}</Text>
+            <Text style={s.bpmRowLabel}> BPM</Text>
+          </View>
+        )}
+
         {/* ── Tap zone with Skia canvas ── */}
         <Animated.View
           style={[s.tapZone, { transform: [{ scale: entryScale }] }]}
@@ -605,4 +641,14 @@ const s = StyleSheet.create({
   pctTrack:        { width: '100%', height: 4, backgroundColor: '#111120', borderRadius: 3, overflow: 'hidden' },
   pctFill:         { height: '100%', borderRadius: 3, shadowOffset: { width: 0, height: 0 } },
   bottomSub:       { fontSize: 10, color: '#2A2A3A', fontWeight: '600', letterSpacing: 1 },
+  questBar:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: W - 48, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: 'rgba(255,214,10,0.06)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,214,10,0.15)' },
+  questLeft:       { flex: 1, gap: 2 },
+  questLabel:      { fontSize: 10, fontWeight: '700', color: '#FFD60A', letterSpacing: 1.2 },
+  questSub:        { fontSize: 11, color: 'rgba(255,255,255,0.45)' },
+  bpmBadge:        { alignItems: 'center', backgroundColor: 'rgba(255,214,10,0.10)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  bpmBadgeNum:     { fontSize: 20, fontWeight: '800', color: '#FFD60A', lineHeight: 22 },
+  bpmBadgeLabel:   { fontSize: 9, fontWeight: '700', color: 'rgba(255,214,10,0.6)', letterSpacing: 1 },
+  bpmRow:          { flexDirection: 'row', alignItems: 'baseline' },
+  bpmRowNum:       { fontSize: 22, fontWeight: '800', color: 'rgba(255,255,255,0.55)' },
+  bpmRowLabel:     { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.30)', letterSpacing: 1 },
 } as any);

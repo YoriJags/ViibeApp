@@ -1014,6 +1014,9 @@ export default function VibeReactor({
         cooldown={cooldown}
         socket={socket}
         userId={user?.id}
+        syncPct={syncPctShared}
+        questState={questState}
+        bpmNow={bpmNow}
       />
     </Animated.View>
   );
