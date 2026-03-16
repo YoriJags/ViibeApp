@@ -34,6 +34,8 @@ import ErrorBoundary from '../../src/components/ErrorBoundary';
 import {
   DEMO_VENUES,
   DEMO_ORACLE_PREDICTIONS,
+  DEMO_DARK_HORSES,
+  DEMO_COSMIC_READING,
 } from '../../src/data/demoData';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -157,8 +159,9 @@ function CityZones({ city, isDemoMode, onZonePress }: {
 function DarkHorse({ venues, isDemoMode, onVenuePress, vibeDNA }: {
   venues: any[]; isDemoMode: boolean; onVenuePress: (id: string) => void; vibeDNA?: any;
 }) {
-  const darkHorses = (isDemoMode ? DEMO_VENUES : venues)
-    .filter((v: any) => v.vibe_velocity === 'heating_up' && v.current_vibe_score < 62)
+  const darkHorses = (isDemoMode ? DEMO_DARK_HORSES : venues.filter(
+    (v: any) => v.vibe_velocity === 'heating_up' && v.current_vibe_score < 62
+  ))
     .map((v: any) => {
       const affinity = vibeDNA?.affinities?.find((a: any) => a.venue_type === v.venue_type);
       const dnaScore = affinity?.score ?? 50;
@@ -305,12 +308,13 @@ export default function IntelScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
 
-        {/* ── COSMIC VIBE READING — only when logged in ── */}
-        {user?.id && (
+        {/* ── COSMIC VIBE READING — logged in or demo mode ── */}
+        {(user?.id || isDemoMode) && (
           <CosmicVibeCard
             apiUrl={API_URL}
             authHeaders={getAuthHeaders()}
-            zodiacSign={user.zodiac_sign}
+            zodiacSign={user?.zodiac_sign}
+            isDemoMode={isDemoMode}
           />
         )}
 

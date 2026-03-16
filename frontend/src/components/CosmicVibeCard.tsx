@@ -26,19 +26,30 @@ interface CosmicVibeCardProps {
   apiUrl:       string;
   authHeaders:  Record<string, string>;
   zodiacSign?:  string;
+  isDemoMode?:  boolean;
 }
 
+const DEMO_READING: CosmicReading = {
+  reading: "Lagos is charging up and the frequency tonight is in your favour. Trust the pull — the city has something lined up for scouts who move with purpose.",
+  zodiac_sign: null,
+  city: 'lagos',
+  hot_venue: 'Quilox',
+  city_mood: 'heating up fast',
+  powered_by: 'demo',
+};
+
 export default function CosmicVibeCard({
-  apiUrl, authHeaders, zodiacSign,
+  apiUrl, authHeaders, zodiacSign, isDemoMode,
 }: CosmicVibeCardProps) {
-  const [reading, setReading]   = useState<CosmicReading | null>(null);
+  const [reading, setReading]   = useState<CosmicReading | null>(isDemoMode ? DEMO_READING : null);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(false);
-  const [revealed, setRevealed] = useState(false);
+  const [revealed, setRevealed] = useState(isDemoMode ?? false);
 
   const sign = zodiacSign ? getZodiacSign(zodiacSign) : undefined;
 
   const fetch_reading = useCallback(async () => {
+    if (isDemoMode) { setReading(DEMO_READING); setRevealed(true); return; }
     setLoading(true);
     setError(false);
     try {
@@ -54,11 +65,11 @@ export default function CosmicVibeCard({
     } finally {
       setLoading(false);
     }
-  }, [apiUrl, authHeaders]);
+  }, [apiUrl, authHeaders, isDemoMode]);
 
   useEffect(() => {
-    fetch_reading();
-  }, [fetch_reading]);
+    if (!isDemoMode) fetch_reading();
+  }, [fetch_reading, isDemoMode]);
 
   // Accent color from sign element, fallback to purple
   const accentColor = sign?.elementColor ?? '#7B68EE';

@@ -297,6 +297,38 @@ export const DEMO_VENUES = [
   },
 ];
 
+// ===== DEMO DARK HORSES — heating venues under the radar =====
+export const DEMO_DARK_HORSES = [
+  {
+    id: 'dh1', name: 'Zinnia Rooftop', area: 'Lekki Phase 1', city: 'lagos',
+    venue_type: 'lounge', current_vibe_score: 48, energy_level: 'warming' as const,
+    capacity_level: 'vibrant' as const, gate_level: 'clear' as const,
+    vibe_velocity: 'heating_up' as const, is_featured: false,
+  },
+  {
+    id: 'dh2', name: 'Contrast Bar', area: 'Surulere', city: 'lagos',
+    venue_type: 'bar', current_vibe_score: 54, energy_level: 'warming' as const,
+    capacity_level: 'vibrant' as const, gate_level: 'clear' as const,
+    vibe_velocity: 'heating_up' as const, is_featured: false,
+  },
+  {
+    id: 'dh3', name: 'Club Voltage', area: 'Ikeja GRA', city: 'lagos',
+    venue_type: 'club', current_vibe_score: 41, energy_level: 'chill' as const,
+    capacity_level: 'sparse' as const, gate_level: 'clear' as const,
+    vibe_velocity: 'heating_up' as const, is_featured: false,
+  },
+];
+
+// ===== DEMO COSMIC VIBE READING =====
+export const DEMO_COSMIC_READING = {
+  reading: "Lagos is charging up and the frequency tonight is in your favour. Trust the pull — the city has something lined up for scouts who move with purpose.",
+  zodiac_sign: null,
+  city: 'lagos',
+  hot_venue: 'Quilox',
+  city_mood: 'heating up fast',
+  powered_by: 'demo',
+};
+
 // ===== MERCHANT DEMO DATA =====
 export const DEMO_VENUE_STATS = {
   venue: DEMO_VENUES[0], // Quilox
