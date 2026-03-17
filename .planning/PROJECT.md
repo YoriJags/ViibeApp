@@ -8,6 +8,22 @@ VIIBE is the real-time intelligence layer for city experiences — it crowdsourc
 
 **The city's energy, visible in real-time** — so anyone knows where the night is peaking before they get there, and scouts who report it earn clout for being first.
 
+## The Problem We're Solving
+
+Going out is a gamble. You don't know where the energy is until you're already there — or until someone texts you at midnight saying "you should've come here." By then it's too late.
+
+Word of mouth is delayed. Social media is curated, not live. There's no real-time, ground-truth signal for where the scene is tonight. People solve it through group chats and gut feel — fragmented, unreliable, always late.
+
+**VIIBE gives you that signal.** A live map of the city's energy, verified by people physically in the room.
+
+Someone opens VIIBE to answer one question: **Where's the scene tonight?**
+
+Scouts — people already out — rate venues in real time. They have to be inside (geofenced) to rate. Their phones passively contribute motion data. The system combines human judgment + physical signals to produce a live vibe score for every venue in the city. You see it before you leave the house. You redirect mid-night without wasting time.
+
+This isn't Yelp for going out. It's a live sensor network made of people.
+
+**Why now:** Real-time everything is the expectation. People track Ubers to the second, check live prices, watch live streams. But where to go tonight? Still group chats and vibes. That gap is the opportunity.
+
 ## Requirements
 
 ### Validated

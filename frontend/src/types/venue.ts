@@ -65,6 +65,24 @@ export interface Venue {
   profile_views?: number;
   direction_clicks?: number;
 
+  // Score transparency
+  active_scouts?: number;
+  last_rated_mins_ago?: number | null;
+  score_confidence?: 'high' | 'medium' | 'low';
+
+  // Dwell
+  long_dwell_count?: number;
+  avg_dwell_minutes?: number;
+
+  // Scout consensus
+  consensus_count?: number;
+  consensus_rate?: number;
+  consensus_label?: string;
+
+  // Ambient sound
+  ambient_db_avg?: number | null;
+  ambient_scout_count?: number;
+
   // Rich display
   pulse?: VenuePulse;
   icon_spotted?: IconSpotted | null;

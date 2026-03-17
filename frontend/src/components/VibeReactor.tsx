@@ -323,9 +323,9 @@ const KineticCanvas = React.memo(function KineticCanvas({
         <Paint style="stroke" strokeWidth={2} color={tickBrightColor} strokeCap="round" />
       </Path>
 
-      {/* ── 4. Ring track — deep void ── */}
+      {/* ── 4. Ring track — subtle void ── */}
       <Circle cx={CX} cy={CY} r={RING_R}>
-        <Paint style="stroke" strokeWidth={RING_T} color="rgba(4,3,14,0.98)" />
+        <Paint style="stroke" strokeWidth={RING_T} color="rgba(255,255,255,0.05)" />
       </Circle>
 
       {/* ── 5. Unlit chamber outlines — dim gold channels ── */}
@@ -342,8 +342,8 @@ const KineticCanvas = React.memo(function KineticCanvas({
 
       {/* ── 7. Mid aura ── */}
       <Path path={filledPath}>
-        <Paint style="stroke" strokeWidth={RING_T + 14} strokeCap="butt" color={coreColor} opacity={0.26}>
-          <BlurMask blur={12} style="normal" />
+        <Paint style="stroke" strokeWidth={RING_T + 16} strokeCap="butt" color={coreColor} opacity={0.30}>
+          <BlurMask blur={20} style="normal" />
         </Paint>
       </Path>
 

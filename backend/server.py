@@ -44,6 +44,8 @@ from app.routes.analytics import router as analytics_router
 from app.routes.feature_flags import router as feature_flags_router
 from app.routes.platform_settings import router as platform_settings_router
 from app.routes.subscriptions import router as subscriptions_router
+from app.routes.dwell import router as dwell_router
+from app.routes.ambient import router as ambient_router
 from app.routes.reactions import router as reactions_router
 from app.routes.city_pulse import router as city_pulse_router
 from app.routes.venue_live import router as venue_live_router
@@ -132,6 +134,8 @@ api_router.include_router(quests_router)
 api_router.include_router(vibe_quest_router)
 api_router.include_router(quest_timeline_router)
 api_router.include_router(insider_router)
+api_router.include_router(dwell_router)
+api_router.include_router(ambient_router)
 
 # Include the API router in the main app
 app.include_router(api_router)

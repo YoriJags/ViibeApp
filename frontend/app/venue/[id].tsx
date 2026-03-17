@@ -54,6 +54,10 @@ import VibeMomentum from '../../src/components/VibeMomentum';
 import TorchButton from '../../src/components/TorchButton';
 import NarrativeDivider from '../../src/components/NarrativeDivider';
 import analytics, { EVENT } from '../../src/services/analytics';
+import { useDwellTracker } from '../../src/hooks/useDwellTracker';
+import { useAmbientMeter } from '../../src/hooks/useAmbientMeter';
+import AmbientOptInModal from '../../src/components/AmbientOptInModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -108,6 +112,33 @@ export default function VenueDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isWithinGeofence, setIsWithinGeofence] = useState(false);
+  useDwellTracker(id as string, isWithinGeofence);
+
+  const [ambientOptedIn, setAmbientOptedIn]       = useState(false);
+  const [showAmbientModal, setShowAmbientModal]   = useState(false);
+  useAmbientMeter(id as string, isWithinGeofence, ambientOptedIn);
+
+  // Show opt-in prompt once when scout first enters geofence
+  useEffect(() => {
+    if (!isWithinGeofence) return;
+    AsyncStorage.getItem('ambient_opt_in').then(val => {
+      if (val === 'true')  { setAmbientOptedIn(true); return; }
+      if (val === 'false') return; // declined before — respect it
+      setShowAmbientModal(true);   // first time — ask
+    });
+  }, [isWithinGeofence]);
+
+  const handleAmbientAccept = async () => {
+    await AsyncStorage.setItem('ambient_opt_in', 'true');
+    setAmbientOptedIn(true);
+    setShowAmbientModal(false);
+  };
+
+  const handleAmbientDecline = async () => {
+    await AsyncStorage.setItem('ambient_opt_in', 'false');
+    setShowAmbientModal(false);
+  };
+
   const [checkingLocation, setCheckingLocation] = useState(false);
   const [showGeofenceTooltip, setShowGeofenceTooltip] = useState(false);
   const [showRateModal, setShowRateModal] = useState(false);
@@ -901,6 +932,51 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
                         );
                       })}
                     </View>
+                    {/* Score transparency pill */}
+                    {(() => {
+                      const scouts = venue.active_scouts ?? 0;
+                      const minsAgo = venue.last_rated_mins_ago;
+                      const conf = venue.score_confidence ?? 'low';
+                      if (scouts === 0) return null;
+                      const confColor = conf === 'high' ? '#22c55e' : conf === 'medium' ? '#f59e0b' : 'rgba(255,255,255,0.3)';
+                      const confLabel = conf === 'high' ? 'High confidence' : conf === 'medium' ? 'Mid confidence' : 'Low confidence';
+                      const minsLabel = minsAgo != null ? (minsAgo <= 1 ? 'just now' : `${minsAgo}m ago`) : '';
+                      return (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: confColor }} />
+                          <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: '600' }}>
+                            {scouts} scout{scouts !== 1 ? 's' : ''}{minsLabel ? `  ·  ${minsLabel}` : ''}{'  ·  '}
+                            <Text style={{ color: confColor }}>{confLabel}</Text>
+                          </Text>
+                        </View>
+                      );
+                    })()}
+
+                    {/* Scout consensus */}
+                    {(venue.consensus_count ?? 0) >= 2 && venue.consensus_label !== 'insufficient' && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                        <Text style={{ fontSize: 13 }}>
+                          {venue.consensus_label === 'mixed' ? '🔀' : '🎯'}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>
+                          {venue.consensus_label === 'mixed'
+                            ? `${venue.consensus_count} scouts — mixed reads right now`
+                            : `${venue.consensus_count} scouts agree: ${venue.consensus_label}`
+                          }
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* Scouts still here */}
+                    {(venue.long_dwell_count ?? 0) > 0 && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                        <Text style={{ fontSize: 13 }}>🕐</Text>
+                        <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>
+                          {venue.long_dwell_count} scout{(venue.long_dwell_count ?? 0) !== 1 ? 's' : ''} still here 30+ mins
+                        </Text>
+                      </View>
+                    )}
+
                     {/* Sports-broadcast narrative line */}
                     {venue.venue_narrative ? (
                       <View style={{
@@ -1333,6 +1409,12 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
         visible={showVibePlusModal}
         onClose={() => setShowVibePlusModal(false)}
         onSuccess={() => {}}
+      />
+
+      <AmbientOptInModal
+        visible={showAmbientModal}
+        onAccept={handleAmbientAccept}
+        onDecline={handleAmbientDecline}
       />
 
       {/* Booking Modal */}

@@ -650,6 +650,36 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
     else:
         velocity = "stable"
 
+    # ── Scout consensus ───────────────────────────────────────────────────────
+    # Independent scouts agreeing on energy within 10 mins = strong signal
+    ten_min_ago      = now - timedelta(minutes=10)
+    consensus_window = [
+        r for r in ratings
+        if r.get("timestamp", now) >= ten_min_ago
+    ]
+    # Deduplicate by user — only count each scout once
+    seen_users: set = set()
+    unique_consensus: list = []
+    for r in consensus_window:
+        uid = r.get("user_id")
+        if uid and uid not in seen_users:
+            seen_users.add(uid)
+            unique_consensus.append(r)
+
+    consensus_count = len(unique_consensus)
+    if consensus_count >= 2:
+        energy_votes = {}
+        for r in unique_consensus:
+            e = r.get("energy", "quiet")
+            energy_votes[e] = energy_votes.get(e, 0) + 1
+        top_energy      = max(energy_votes, key=energy_votes.get)
+        top_vote_count  = energy_votes[top_energy]
+        consensus_rate  = round(top_vote_count / consensus_count, 2)  # 0.0–1.0
+        consensus_label = top_energy if consensus_rate >= 0.6 else "mixed"
+    else:
+        consensus_rate  = 0.0
+        consensus_label = "insufficient"
+
     # ── 24h count ─────────────────────────────────────────────────────────────
     day_ago     = now - timedelta(hours=24)
     ratings_24h = await db.ratings.count_documents({
@@ -681,6 +711,92 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         total_ratings=len(ratings),
     )
 
+    # ── Ambient sound signal ──────────────────────────────────────────────────
+    from app.routes.ambient import get_ambient_signal
+    ambient = await get_ambient_signal(venue_id, now)
+
+    # ── Dwell data ────────────────────────────────────────────────────────────
+    four_hours_ago = now - timedelta(hours=4)
+    dwell_sessions = await db.dwell_sessions.find({
+        "venue_id":  venue_id,
+        "last_ping": {"$gte": four_hours_ago},
+    }).to_list(500)
+    long_dwell_count = sum(1 for s in dwell_sessions if s.get("duration_minutes", 0) >= 30)
+    avg_dwell_minutes = (
+        round(sum(s.get("duration_minutes", 0) for s in dwell_sessions) / len(dwell_sessions))
+        if dwell_sessions else 0
+    )
+
+    # ── Multi-signal weighted blend ───────────────────────────────────────────
+    #
+    # Scouts are always the primary driver (minimum 67% weight).
+    # Each corroborating signal contributes proportionally to its data quality.
+    #
+    # Max signal contributions:
+    #   Ambient audio  → up to 15%  (requires 3+ scouts contributing)
+    #   Scout consensus→ up to 10%  (requires 5+ independent scouts)
+    #   Dwell time     → up to  8%  (requires 5+ long-stay scouts)
+    #   Scouts         → minimum 67%, always dominant
+    #
+    # Each signal produces its own energy score (0–100) and a reliability
+    # weight (0–1) scaled by sample size. Low data = low influence.
+
+    ENERGY_SCORES = {
+        "quiet": 0, "chill": 25, "warming": 50, "lit": 75, "peak": 100,
+    }
+
+    # ── Signal 1: Ambient audio ───────────────────────────────────────────────
+    ambient_db      = ambient["ambient_db_avg"]
+    ambient_scouts  = ambient["ambient_scout_count"]
+    if ambient_db is not None and ambient_scouts >= 1:
+        # expo-av metering: 0 dB = full scale, -80 dB ≈ silence in typical rooms
+        ambient_score  = max(0.0, min(100.0, (ambient_db + 80) / 0.80))
+        ambient_weight = 0.15 * min(1.0, ambient_scouts / 3)
+    else:
+        ambient_score  = avg_score   # neutral — don't drag the score
+        ambient_weight = 0.0
+
+    # ── Signal 2: Scout consensus ─────────────────────────────────────────────
+    if consensus_label not in ("mixed", "insufficient") and consensus_count >= 2:
+        consensus_score  = float(ENERGY_SCORES.get(consensus_label, avg_score))
+        # Scale by agreement strength × sample depth
+        consensus_weight = 0.10 * consensus_rate * min(1.0, consensus_count / 5)
+    else:
+        consensus_score  = avg_score   # neutral
+        consensus_weight = 0.0
+
+    # ── Signal 3: Dwell time ──────────────────────────────────────────────────
+    # Long dwell confirms real energy; we nudge toward a slightly higher score
+    # proportional to how many scouts chose to stay.
+    if long_dwell_count >= 1:
+        # Dwell doesn't generate its own energy reading — it amplifies the base
+        dwell_score  = min(100.0, avg_score + (long_dwell_count * 2))
+        dwell_weight = 0.08 * min(1.0, long_dwell_count / 5)
+    else:
+        dwell_score  = avg_score
+        dwell_weight = 0.0
+
+    # ── Blend ─────────────────────────────────────────────────────────────────
+    scout_weight = max(0.67, 1.0 - ambient_weight - consensus_weight - dwell_weight)
+    total_blend  = scout_weight + ambient_weight + consensus_weight + dwell_weight
+
+    avg_score = min(100.0, (
+        avg_score       * scout_weight
+        + ambient_score * ambient_weight
+        + consensus_score * consensus_weight
+        + dwell_score   * dwell_weight
+    ) / total_blend)
+
+    # ── Transparency fields ───────────────────────────────────────────────────
+    active_scouts = len({r.get("user_id") for r in ratings if r.get("user_id")})
+    timestamps = [r.get("timestamp") for r in ratings if r.get("timestamp")]
+    if timestamps:
+        most_recent = max(timestamps, key=lambda t: t if isinstance(t, datetime) else datetime.fromisoformat(str(t).replace("Z", "+00:00")))
+        last_rated_mins_ago = round(_minutes_since(most_recent, now))
+    else:
+        last_rated_mins_ago = None
+    score_confidence = "high" if active_scouts >= 5 else "medium" if active_scouts >= 2 else "low"
+
     result = {
         "current_vibe_score": round(avg_score, 1),
         "energy_level":       energy_level,
@@ -698,6 +814,27 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         "vibe_signature":     sig,
         # Oracle forward prediction
         "oracle":             oracle,
+        # Transparency
+        "active_scouts":      active_scouts,
+        "last_rated_mins_ago": last_rated_mins_ago,
+        "score_confidence":   score_confidence,
+        # Dwell
+        "long_dwell_count":   long_dwell_count,
+        "avg_dwell_minutes":  avg_dwell_minutes,
+        # Scout consensus
+        "consensus_count":    consensus_count,
+        "consensus_rate":     consensus_rate,
+        "consensus_label":    consensus_label,
+        # Ambient sound
+        "ambient_db_avg":       ambient["ambient_db_avg"],
+        "ambient_scout_count":  ambient["ambient_scout_count"],
+        # Signal blend weights (for transparency + debugging)
+        "signal_weights": {
+            "scouts":    round(scout_weight, 3),
+            "ambient":   round(ambient_weight, 3),
+            "consensus": round(consensus_weight, 3),
+            "dwell":     round(dwell_weight, 3),
+        },
     }
 
     from app.routes.alerts import check_venue_alerts
