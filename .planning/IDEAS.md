@@ -40,6 +40,7 @@ From the March 14 feature pipeline.
 
 | # | Feature | What it is |
 |---|---------|-----------|
+| 7 | **User-Created Events** | Anyone can create an event (pop-up, party, rooftop, brand activation) on VIIBE. It becomes a temporary venue — geofenced location, live Vibe Score, scout ratings run in real time. Free for personal events. Paid merchant tier for commercial events. Needs: event creation flow, temporary venue model, expiry logic, event pin on map. **Not currently in codebase — needs full build.** |
 | 1 | **Cartel Battle (cross-venue)** | Cartel members in different venues challenge each other. Extend VenueBattle.tsx to cartel-initiated cross-venue battles. |
 | 2 | **Quest Timeline** | Scheduled collective venue boosts with visible countdown. Show in advance so people can anticipate and plan. |
 | 3 | **Admin Control Tower Update** | Refresh the admin control tower. Specifics TBD. |

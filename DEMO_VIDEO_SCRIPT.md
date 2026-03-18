@@ -1,4 +1,4 @@
-# VIBEZ — 2-Minute Demo Video Script
+# VIIBE — 2-Minute Demo Video Script
 ## Investor Walkthrough · Demo Mode ON
 
 **Total runtime:** 2:00 — 2:15
@@ -12,7 +12,8 @@
 **Screen:** Black screen, app logo fades in
 
 > *(Voiceover)*
-> "You want to go out tonight. But where's the energy?"
+> "You're heading out tonight. A concert. A rooftop. A festival. Anywhere the scene is.
+> But where's the energy right now?"
 
 ---
 
@@ -22,7 +23,7 @@
 **Action:** Slow scroll through the venue list — Quilox at 91, Escape at 87, Shiro at 74 — borders pulsing faster on hotter venues
 
 > *(Voiceover)*
-> "This is Vibez. Real-time vibe scores from scouts on the ground in Lagos, updated every few minutes.
+> "This is VIIBE. Real-time vibe scores from scouts on the ground — clubs, concerts, festivals, day parties, rooftops — updated every few minutes.
 > Not last week's reviews. Not historical averages.
 > Right now."
 
@@ -136,20 +137,23 @@
 > *(Voiceover)*
 > "Vibe Oracle. Vibe DNA. Ask Vibe. Live scout ratings. Merchant analytics.
 >
-> We're not building a review app.
-> We're building the real-time intelligence layer for human social behavior in Africa.
+> This is not a discovery app.
+> This is infrastructure — a live intelligence terminal for the experience economy.
+> The app is how we get to 100 million data contributors.
+> The data layer underneath it — that's the business.
 >
-> We started with nightlife. Next: restaurants, events, retail, tourism.
+> Wherever people gather and feel something — VIIBE measures it.
+> Starting in Lagos. Scaling globally.
 >
-> This is Vibez. The energy is live."
+> The energy is live."
 
 **Action:** Screen fades to logo + tagline card
 
 **Final card text:**
 ```
-VIBEZ
-Where's the energy?
-Pre-Seed · $150–300K · Lagos 2026
+VIIBE
+Wherever people gather and feel something.
+Pre-Seed · Lagos 2026
 Yoriajagun08@gmail.com
 ```
 
@@ -215,10 +219,14 @@ This is what they pay for.
 
 [1:56] Vibe Oracle. Vibe DNA. Ask Vibe. Live scout ratings. Merchant analytics.
 
-We're building the real-time intelligence layer for human social behavior in Africa.
-We started with nightlife. Next: restaurants, events, retail, tourism.
+This is not a discovery app. This is infrastructure.
+A live intelligence terminal for the experience economy.
+The app is how we get to 100 million data contributors.
 
-This is Vibez. The energy is live.
+Wherever people gather and feel something — VIIBE measures it.
+Starting in Lagos. Scaling globally.
+
+The energy is live.
 ```
 
 ---
