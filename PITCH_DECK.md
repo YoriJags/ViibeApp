@@ -6,15 +6,15 @@
 
 ## SLIDE 1 — COVER
 
-# Where's the energy?
+# The live intelligence terminal for city experiences.
 
-**Real-time social venue intelligence for Africa**
+**Not a nightlife app. Not a discovery tool. Infrastructure.**
 
-Clubs. Restaurants. Concerts. Brunch spots. Rooftops. Events. Any venue. Any hour. Live.
+The data layer underneath Africa's $20B+ experience economy — starting in Lagos.
 
-`Africa-First` · `Real-Time` · `AI-Powered` · `Beyond Nightlife`
+`Africa-First` · `Real-Time` · `AI-Powered` · `Terminal, Not App`
 
-*Pre-Seed Round · Seeking $150–300K · $2–3M Valuation*
+*Pre-Seed Round · Seeking $500K–$2M · $4–6M Valuation*
 
 ---
 
@@ -164,11 +164,35 @@ Clubs. Restaurants. Concerts. Brunch spots. Rooftops. Events. Any venue. Any hou
 
 ---
 
-## SLIDE 8 — AI STRATEGY (THE REAL MOAT)
+## SLIDE 8 — THE TERMINAL THESIS
+
+# Most apps are discovery tools. VIIBE is infrastructure.
+
+> A terminal implies outputs that others act on — not just consumers deciding where to go tonight, but venues, promoters, brands, and city planners querying live crowd intelligence.
+
+### What the terminal produces
+
+| Output | Who acts on it |
+|--------|---------------|
+| Live Vibe Score (0–100) per venue | Consumers — where to go tonight |
+| Hourly energy curve + peak detection | Venue owners — staff, spend, promotions |
+| City-wide heat map — real-time | Promoters, brands — activation targeting |
+| Crowd density + footfall patterns | City planners, tourism boards, investors |
+| Taste profiles + movement between venues | Acquirers — Meta, Google, Spotify, Uber |
+
+### The data flywheel
+
+The more people participate, the richer the signal. The richer the signal, the more the terminal is worth. The more it's worth, the more people participate.
+
+**100 million data contributors is the ceiling, not the dream.** The app lowers the barrier to zero — anyone physically near a venue is already a data point. VIIBE makes contributing that signal frictionless and rewarding.
+
+---
+
+## SLIDE 9 (OLD 8) — AI STRATEGY (THE REAL MOAT)
 
 # The app is the data collection device. The AI is the actual product.
 
-> After 12 months in Lagos we'll own a real-world behavior dataset — across nightlife, restaurants, events, and more — that doesn't exist anywhere else on earth.
+> After 12 months in Lagos we'll own a real-world behavior dataset — across nightlife, restaurants, events, and more — that doesn't exist anywhere else on earth. The Vibe Score is the Bloomberg Terminal of social energy — consistent, auditable, manipulation-resistant, versioned.
 
 ### AI Features — Status
 
@@ -184,11 +208,11 @@ Clubs. Restaurants. Concerts. Brunch spots. Rooftops. Events. Any venue. Any hou
 - Real-time crowd behavior (nobody else in Africa)
 - Hour-by-hour venue performance patterns
 - Social graph of Lagos venues — who goes where, with whom, at every hour
-- Real-world taste profiles of 100K+ Nigerians
+- Real-world taste profiles of 100M+ participants
 - Location movement patterns between venues on a night out
 
-**The pitch that gets the $250M exit:**
-> "We're building the real-time intelligence layer for human social behavior in Africa. Our AI knows where 100,000 people will be tonight before they decide."
+**The pitch that gets the exit:**
+> "We're building the live intelligence terminal for human social behavior in Africa. The consumer app is how we get to 100 million data contributors. The terminal is what we sell."
 
 ---
 

@@ -2,11 +2,19 @@
 
 ## What This Is
 
-VIIBE is the real-time intelligence layer for city experiences — it crowdsources and measures the live energy of venues (clubs, bars, lounges, events) as they happen, then uses AI to get people to the right moment before it peaks. It is not a booking app. It is what Google Maps is to navigation: the authoritative signal layer for the experience economy, starting in Lagos and expanding Africa-first, then globally wherever the culture travels.
+VIIBE is a live social intelligence terminal for city experiences. It is not a discovery app. It is infrastructure — the data layer underneath the experience economy.
+
+The consumer app is the acquisition engine. Every person who opens VIIBE to find where the scene is tonight becomes a node in a distributed sensor network. Their ratings, motion, dwell time, and ambient signals feed a live data terminal that answers one question nobody else can: **where is the energy right now?**
+
+The long-term play is the terminal, not the app. The app is how we get to 100 million data contributors.
+
+**The one-liner:** A live sensor network made of people — starting in Lagos, scaling globally wherever the culture travels.
 
 ## Core Value
 
-**The city's energy, visible in real-time** — so anyone knows where the night is peaking before they get there, and scouts who report it earn clout for being first.
+**The city's energy, measured in real-time** — not curated, not historical, not algorithmic guesses. Ground-truth signal from humans physically inside venues, verified by geofence and motion data, blended with AI into a score that behaves like a financial instrument: consistent, auditable, manipulation-resistant.
+
+Anyone can be a scout. The more people participate, the richer the data. The goal is not 10 scouts per venue — it is mass participation at scale. 100 million data contributors is the ceiling, not the dream.
 
 ## The Problem We're Solving
 
@@ -20,9 +28,13 @@ Someone opens VIIBE to answer one question: **Where's the scene tonight?**
 
 Scouts — people already out — rate venues in real time. They have to be inside (geofenced) to rate. Their phones passively contribute motion data. The system combines human judgment + physical signals to produce a live vibe score for every venue in the city. You see it before you leave the house. You redirect mid-night without wasting time.
 
-This isn't Yelp for going out. It's a live sensor network made of people.
+This isn't Yelp for going out. It's a live sensor network made of people — and the sensor network is the product.
 
-**Why now:** Real-time everything is the expectation. People track Ubers to the second, check live prices, watch live streams. But where to go tonight? Still group chats and vibes. That gap is the opportunity.
+**The terminal framing:** Most apps in this space are discovery tools. VIIBE is infrastructure. A terminal implies outputs that others act on — not just consumers deciding where to go, but venues monitoring their own Pulse Score, promoters querying city-wide heat maps, brands targeting activations at peak-energy locations, and eventually city planners reading live crowd density. The Scout-facing app is the data collection engine. The commercial value compounds underneath it.
+
+**Why mass participation matters:** A terminal is only as good as its data density. Ten scouts per venue is a proof of concept. A hundred scouts per venue is a reliable signal. A million participants across a city is infrastructure that cannot be replicated. The barrier to contribute must be zero — anyone physically near a venue is already a data point. VIIBE's job is to make contributing that signal frictionless and rewarding enough that everyone does it.
+
+**Why now:** Real-time everything is the expectation. People track Ubers to the second, check live prices, watch live streams. But where to go tonight? Still group chats and vibes. That gap is the opportunity — and the data layer behind it is the business.
 
 ## Requirements
 
@@ -89,7 +101,8 @@ This isn't Yelp for going out. It's a live sensor network made of people.
 - Afrobeats going global creates Lagos → Africa → Diaspora expansion narrative
 
 **Exit Strategy:**
-- Primary targets: Google/Apple Maps (experience layer), Spotify/Apple Music (IRL music-to-venue bridge), Meta/TikTok (social graph + nightlife content), or independent IPO as Africa's first nightlife-intelligence unicorn
+- Primary targets: Google/Apple Maps (experience layer), Spotify/Apple Music (IRL music-to-venue bridge), Meta/TikTok (social graph + live social data), Uber/Bolt (destination intelligence), or independent IPO as Africa's first social intelligence terminal
+- The acquisition thesis: whoever buys VIIBE is buying the only real-time human social behaviour dataset in Africa — a proprietary data feed that compounds every night we operate
 - Seed milestone: 300+ active scouts, 20+ live venues, 5 paying merchants, 3 months Lagos retention data
 
 **Seed Funding Target:** $500K–$2M (Nigerian/African VC ecosystem; Detty December as proof-of-concept event)

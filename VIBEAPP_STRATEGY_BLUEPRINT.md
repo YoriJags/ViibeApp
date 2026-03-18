@@ -33,10 +33,13 @@ VIIBE is building the real-time intelligence layer for city experiences in Afric
 Unlike Yelp, Google Maps, or TripAdvisor — which show you where the energy WAS last week — VIIBE uses a network of on-the-ground scouts who report live vibe scores, crowd levels, and gate conditions from venues in real-time. This creates a dataset that doesn't exist anywhere else on the planet.
 
 **The One-Liner for Investors:**
-> "VIIBE is the real-time intelligence layer for city experiences — what Google Maps is to navigation, VIIBE is to the experience economy. We tell you where the energy is RIGHT NOW, not where it was last month."
+> "VIIBE is the live intelligence terminal for city experiences. The consumer app is the data collection engine. The terminal is the business."
+
+**The Terminal Thesis:**
+> Most apps in this space are discovery tools. VIIBE is infrastructure — the data layer underneath the experience economy. The Scout network is a distributed IoT layer for human social behaviour. A terminal implies outputs that others act on: consumers, venue owners, promoters, brands, city planners. The data has commercial value well beyond the consumer app, and it compounds every night we operate.
 
 **The Bigger Vision:**
-> "We're building the real-time intelligence layer for human social behavior in Africa. Our AI knows where 100,000 people will be tonight before they decide. We started with nightlife. Next: restaurants, events, retail, tourism."
+> "We're building the real-time social intelligence terminal for Africa. The goal is 100 million data contributors. Every person who opens the app to find where the scene is tonight becomes a node in the network. The AI is the product. The app is how we feed it."
 
 **Market Context:**
 > Nigeria is the #1 fastest-growing E&M market globally (PwC, 8.6% CAGR to 2028). Lagos ranked #6 globally for nightlife (Time Out 2024), rising. The Lagos nightlife economy generates ~₦1.5 trillion (~$930M) annually — ₦360M per day from clubs alone. Afrobeats global streams grew +34% in 2024. This cultural wave is the macro tailwind. VIIBE is the intelligence layer it's missing.

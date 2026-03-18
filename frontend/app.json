@@ -10,17 +10,18 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.viibe.nightlife",
+      "bundleIdentifier": "com.viibe.app",
       "config": {
         "googleMapsApiKey": "GOOGLE_MAPS_API_KEY_IOS"
       },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "See nearby venues and verify you're at a location to submit vibe checks",
-        "NSLocationAlwaysUsageDescription": "Get updates about nearby venues"
+        "NSLocationAlwaysUsageDescription": "Get updates about nearby venues",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.viibe.nightlife",
+      "package": "com.viibe.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0A0A0F"
@@ -33,7 +34,9 @@
       },
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
@@ -70,8 +73,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "842b6059-0690-47f5-8c65-51467918769c"
       }
-    }
+    },
+    "owner": "oluyori09"
   }
 }
