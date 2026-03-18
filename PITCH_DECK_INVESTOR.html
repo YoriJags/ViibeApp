@@ -548,6 +548,12 @@
   @media print {
     #nav, #dots { display: none !important; }
 
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+
     html {
       scroll-snap-type: none;
       overflow: visible;
@@ -555,6 +561,7 @@
 
     body {
       overflow: visible;
+      background: #08070F !important;
     }
 
     .slide {
@@ -710,6 +717,9 @@
       <div class="gold-line"></div>
       <p style="font-family: 'Playfair Display', serif; font-size: clamp(16px, 2vw, 24px); color: var(--white-60); font-style: italic;">
         A live sensor network made of people.
+      </p>
+      <p style="font-size: clamp(12px, 1.4vw, 16px); color: var(--white-35); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 20px;">
+        Energy is universal &mdash; any culture, any city, any crowd.
       </p>
     </div>
   </div>
