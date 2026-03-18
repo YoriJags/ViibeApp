@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VIIBE — Investor Pitch Deck · Pre-Seed 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  :root {
+    --bg: #08070F;
+    --gold: #C9A84C;
+    --gold-dim: rgba(201, 168, 76, 0.15);
+    --gold-glow: rgba(201, 168, 76, 0.25);
+    --gold-border: rgba(201, 168, 76, 0.4);
+    --white: #FFFFFF;
+    --white-60: rgba(255, 255, 255, 0.6);
+    --white-35: rgba(255, 255, 255, 0.35);
+    --white-10: rgba(255, 255, 255, 0.08);
+  }
+
+  html {
+    scroll-snap-type: y mandatory;
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+    background: var(--bg);
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--white);
+    overflow-x: hidden;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.35;
+  }
+
+  .slide {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 80px 100px;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  /* VIIBE wordmark — every slide */
+  .wordmark {
+    position: absolute;
+    top: 36px;
+    left: 52px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+    z-index: 10;
+  }
+
+  /* Slide number */
+  .slide-num {
+    position: absolute;
+    bottom: 36px;
+    right: 52px;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    opacity: 0.6;
+    z-index: 10;
+  }
+
+  /* Gold divider line */
+  .gold-line {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 28px auto;
+  }
+
+  .gold-line-full {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-border), var(--gold), var(--gold-border), transparent);
+    margin: 32px 0;
+  }
+
+  /* Typography */
+  .hero-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(42px, 5.5vw, 76px);
+    font-weight: 700;
+    line-height: 1.12;
+    color: var(--white);
+    text-align: center;
+    letter-spacing: -0.01em;
+  }
+
+  .section-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(32px, 4vw, 54px);
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+
+  .section-headline.gold {
+    color: var(--gold);
+  }
+
+  .subline {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(14px, 1.6vw, 20px);
+    font-weight: 300;
+    color: var(--white-60);
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  .label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  .body-text {
+    font-size: clamp(13px, 1.2vw, 16px);
+    color: var(--white-60);
+    line-height: 1.7;
+    font-weight: 400;
+  }
+
+  .body-text.small {
+    font-size: 13px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--gold-dim);
+    border: 1px solid var(--gold-border);
+    border-radius: 12px;
+    padding: 28px 32px;
+  }
+
+  .card-left-border {
+    background: rgba(255,255,255,0.03);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 8px 8px 0;
+    padding: 20px 24px;
+  }
+
+  /* Grid layouts */
+  .three-col {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    width: 100%;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    width: 100%;
+  }
+
+  /* Gold stat glow */
+  .gold-stat {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 3.5vw, 48px);
+    font-weight: 700;
+    color: var(--gold);
+    text-shadow: 0 0 40px rgba(201, 168, 76, 0.5), 0 0 80px rgba(201, 168, 76, 0.2);
+  }
+
+  .gold-tag {
+    display: inline-block;
+    background: var(--gold-dim);
+    border: 1px solid var(--gold-border);
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-weight: 600;
+  }
+
+  /* Navigation */
+  #nav {
+    position: fixed;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 100;
+  }
+
+  .nav-btn {
+    background: var(--gold-dim);
+    border: 1px solid var(--gold-border);
+    color: var(--gold);
+    font-size: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, box-shadow 0.2s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .nav-btn:hover {
+    background: rgba(201, 168, 76, 0.3);
+    box-shadow: 0 0 20px rgba(201, 168, 76, 0.3);
+  }
+
+  /* Dot indicators */
+  #dots {
+    position: fixed;
+    right: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--white-35);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+
+  .dot.active {
+    background: var(--gold);
+    transform: scale(1.4);
+    box-shadow: 0 0 8px rgba(201, 168, 76, 0.6);
+  }
+
+  /* ===========================
+     SLIDE 1 — COVER
+     =========================== */
+  #slide-1 {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+
+  #slide-1::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70vw;
+    height: 70vh;
+    background: radial-gradient(ellipse at center, rgba(201, 168, 76, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .cover-inner {
+    position: relative;
+    z-index: 2;
+    max-width: 860px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .cover-meta {
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--white-35);
+    font-weight: 500;
+  }
+
+  .pre-seed-badge {
+    margin-top: 48px;
+    padding: 12px 36px;
+    border: 1px solid var(--gold-border);
+    border-radius: 100px;
+    background: var(--gold-dim);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .pre-seed-badge .pre-seed-label {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .pre-seed-badge .pre-seed-amount {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  /* ===========================
+     SLIDE 2 — PROBLEM
+     =========================== */
+  .problem-stat {
+    margin-top: 24px;
+    background: rgba(201, 168, 76, 0.06);
+    border: 1px solid rgba(201, 168, 76, 0.2);
+    border-radius: 10px;
+    padding: 20px 32px;
+    text-align: center;
+    width: 100%;
+  }
+
+  /* ===========================
+     SLIDE 4 — TERMINAL
+     =========================== */
+  .terminal-statement {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(18px, 2.2vw, 28px);
+    color: var(--gold);
+    text-align: center;
+    font-style: italic;
+    text-shadow: 0 0 40px rgba(201, 168, 76, 0.35);
+    line-height: 1.4;
+  }
+
+  /* ===========================
+     SLIDE 5 — PRODUCT
+     =========================== */
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+
+  .status-dot.red { background: #FF4444; box-shadow: 0 0 8px #FF4444; }
+  .status-dot.yellow { background: #FFB800; box-shadow: 0 0 8px #FFB800; }
+  .status-dot.green { background: #00D084; box-shadow: 0 0 8px #00D084; }
+
+  .stats-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .stat-pill {
+    background: var(--gold-dim);
+    border: 1px solid var(--gold-border);
+    border-radius: 100px;
+    padding: 8px 20px;
+    font-size: 12px;
+    color: var(--gold);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+
+  /* ===========================
+     SLIDE 6 — MARKET
+     =========================== */
+  .market-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    width: 100%;
+  }
+
+  .market-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .market-card.highlight {
+    background: var(--gold-dim);
+    border-color: var(--gold-border);
+  }
+
+  .market-card .market-size {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(20px, 2.5vw, 32px);
+    font-weight: 700;
+    color: var(--gold);
+    text-shadow: 0 0 30px rgba(201, 168, 76, 0.4);
+  }
+
+  /* ===========================
+     SLIDE 9 — COMPETITION
+     =========================== */
+  .comp-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .comp-table th {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--white-35);
+    font-weight: 600;
+    padding: 12px 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .comp-table th:first-child {
+    text-align: left;
+  }
+
+  .comp-table td {
+    padding: 14px 20px;
+    font-size: 14px;
+    color: var(--white-60);
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .comp-table td:first-child {
+    text-align: left;
+    font-weight: 500;
+    color: var(--white);
+  }
+
+  .comp-table tr.viibe-row {
+    background: var(--gold-dim);
+  }
+
+  .comp-table tr.viibe-row td {
+    color: var(--gold);
+    font-weight: 600;
+    border-color: var(--gold-border);
+  }
+
+  .comp-table tr.viibe-row td:first-child {
+    color: var(--gold);
+  }
+
+  /* ===========================
+     SLIDE 11 — ASK
+     =========================== */
+  .use-of-funds {
+    display: flex;
+    gap: 0;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 56px;
+  }
+
+  .fund-block {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--bg);
+  }
+
+  .fund-block.a { width: 40%; background: var(--gold); }
+  .fund-block.b { width: 35%; background: rgba(201, 168, 76, 0.7); }
+  .fund-block.c { width: 25%; background: rgba(201, 168, 76, 0.45); color: var(--white); }
+
+  .milestone-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    width: 100%;
+  }
+
+  .milestone-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .milestone-item .m-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gold);
+  }
+
+  .contact-line {
+    font-size: 13px;
+    color: var(--white-35);
+    letter-spacing: 0.05em;
+  }
+
+  .contact-line a {
+    color: var(--gold);
+    text-decoration: none;
+  }
+
+  /* ===========================
+     PRINT STYLES
+     =========================== */
+  @media print {
+    #nav, #dots { display: none !important; }
+
+    html {
+      scroll-snap-type: none;
+      overflow: visible;
+    }
+
+    body {
+      overflow: visible;
+    }
+
+    .slide {
+      page-break-after: always;
+      page-break-inside: avoid;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    .slide:last-child {
+      page-break-after: avoid;
+    }
+
+    @page {
+      size: A4 landscape;
+      margin: 0;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav id="nav">
+  <button class="nav-btn" id="btn-prev" title="Previous slide">&#8592;</button>
+  <button class="nav-btn" id="btn-next" title="Next slide">&#8594;</button>
+</nav>
+
+<!-- Dot indicators -->
+<div id="dots">
+  <div class="dot active" data-slide="0"></div>
+  <div class="dot" data-slide="1"></div>
+  <div class="dot" data-slide="2"></div>
+  <div class="dot" data-slide="3"></div>
+  <div class="dot" data-slide="4"></div>
+  <div class="dot" data-slide="5"></div>
+  <div class="dot" data-slide="6"></div>
+  <div class="dot" data-slide="7"></div>
+  <div class="dot" data-slide="8"></div>
+  <div class="dot" data-slide="9"></div>
+  <div class="dot" data-slide="10"></div>
+</div>
+
+<!-- ============================================================
+     SLIDE 1 — COVER
+     ============================================================ -->
+<section class="slide" id="slide-1">
+  <div class="wordmark">VIIBE</div>
+
+  <div class="cover-inner">
+    <div class="gold-tag">Scene Intelligence · Lagos, Nigeria · 2026</div>
+
+    <h1 class="hero-headline" style="margin-top: 28px; max-width: 780px;">
+      "Wherever people gather<br>and feel something."
+    </h1>
+
+    <div class="gold-line"></div>
+
+    <p class="subline" style="font-size: clamp(16px, 2vw, 24px); color: var(--white-60);">
+      VIIBE measures it. <span style="color: var(--white);">Live.</span>
+    </p>
+
+    <p class="body-text" style="text-align: center; margin-top: 8px; letter-spacing: 0.12em; font-size: 12px; text-transform: uppercase;">
+      Real-time scene intelligence terminal &nbsp;·&nbsp; Lagos, Nigeria &nbsp;·&nbsp; 2026
+    </p>
+
+    <div class="pre-seed-badge">
+      <span class="pre-seed-label">Pre-Seed Round</span>
+      <span class="pre-seed-amount">Seeking $50K – $200K</span>
+    </div>
+  </div>
+
+  <div class="slide-num">01 / 11</div>
+</section>
+
+<!-- ============================================================
+     SLIDE 2 — THE PROBLEM
+     ============================================================ -->
+<section class="slide" id="slide-2">
+  <div class="wordmark">VIIBE</div>
+
+  <div style="width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 32px;">
+    <div>
+      <div class="label" style="margin-bottom: 14px;">The Problem</div>
+      <h2 class="section-headline">Going out is a gamble.</h2>
+    </div>
+
+    <div class="gold-line-full"></div>
+
+    <div class="three-col">
+      <div class="card" style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--white-35); font-weight: 600;">Google Maps</div>
+        <div style="width: 32px; height: 1px; background: var(--gold-border);"></div>
+        <p class="body-text">Historical averages. Months old. Built for navigation, not nightlife energy.</p>
+      </div>
+      <div class="card" style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--white-35); font-weight: 600;">Social Media</div>
+        <div style="width: 32px; height: 1px; background: var(--gold-border);"></div>
+        <p class="body-text">Curated. Not live. Always late. A highlight reel of a moment that has already passed.</p>
+      </div>
+      <div class="card" style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--white-35); font-weight: 600;">WhatsApp Groups</div>
+        <div style="width: 32px; height: 1px; background: var(--gold-border);"></div>
+        <p class="body-text">Fragmented. Unreliable. Too late. One person's experience, unverified, unscaled.</p>
+      </div>
+    </div>
+
+    <div class="problem-stat">
+      <p style="font-family: 'Playfair Display', serif; font-size: clamp(14px, 1.8vw, 20px); color: var(--white); line-height: 1.5;">
+        Nigeria's scene economy is worth <span style="color: var(--gold); font-weight: 700;">$5B+</span>.<br>
+        <span style="color: var(--white-60);">Not one platform tells you where the energy is right now.</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="slide-num">02 / 11</div>
+</section>
+
+<!-- ============================================================
+     SLIDE 3 — THE SOLUTION
+     ============================================================ -->
+<section class="slide" id="slide-3">
+  <div class="wordmark">VIIBE</div>
+
+  <div style="width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 32px;">
+    <div>
+      <div class="label" style="margin-bottom: 14px;">The Solution</div>
+      <h2 class="section-headline">The energy. <span style="color: var(--gold);">Live.</span></h2>
+    </div>
+
+    <div class="gold-line-full"></div>
+
+    <div style="display: flex; flex-direction: column; gap: 18px;">
+      <div class="card-left-border">
+        <p style="font-family: 'Playfair Display', serif; font-size: clamp(15px, 1.8vw, 22px); color: var(--white); font-style: italic; line-height: 1.5;">
+          "Quilox will be electric by 12:30am — <span style="color: var(--gold);">87% confidence.</span>"
+        </p>
+      </div>
+      <div class="card-left-border">
+        <p style="font-family: 'Playfair Display', serif; font-size: clamp(15px, 1.8vw, 22px); color: var(--white); font-style: italic; line-height: 1.5;">
+          "Afrobeats festival at Eko Hotel: energy building — <span style="color: var(--gold);">best time to arrive is now.</span>"
+        </p>
+      </div>
+      <div class="card-left-border">
+        <p style="font-family: 'Playfair Display', serif; font-size: clamp(15px, 1.8vw, 22px); color: var(--white); font-style: italic; line-height: 1.5;">
+          "Rooftop day party in Lekki: <span style="color: var(--gold);">Vibe Score 82 and climbing.</span>"
+        </p>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 8px;">
+      <div class="gold-line"></div>
+      <p style="font-family: 'Playfair Display', serif; font-size: clamp(16px, 2vw, 24px); color: var(--white-60); font-style: italic;">
+        A live sensor network made of people.
+      </p>
+    </div>
+  </div>
+
+  <div class="slide-num">03 / 11</div>
+</section>
+
+<!-- ============================================================
+     SLIDE 4 — TERMINAL THESIS
+     ============================================================ -->
+<section class="slide" id="slide-4">
+  <div class="wordmark">VIIBE</div>
+
+  <div style="width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 32px;">
+    <div>
+      <div class="label" style="margin-bottom: 14px;">The Thesis</div>
+      <h2 class="section-headline">Not an app. <span style="color: var(--gold);">Infrastructure.</span></h2>
+    </div>
+
+    <div class="gold-line-full"></div>
+
+    <div class="two-col" style="gap: 28px;">
+      <div class="card" style="display: flex; flex-direction: column; gap: 18px;">
+        <div class="label">What users see</div>
+        <div style="width: 32px; height: 1px; background: var(--gold-border);"></div>
+        <p style="font-family: 'Playfair Display', serif; font-size: clamp(18px, 2.2vw, 26px); color: var(--white); line-height: 1.4;">Consumer mobile app.</p>
+        <p class="body-text">Find the scene. Rate the vibe. Earn clout. A frictionless experience built for the culture that drives it.</p>
+      </div>
+      <div class="card" style="display: flex; flex-direction: column; gap: 18px; border-color: rgba(201,168,76,0.6);">
+        <div class="label">What we're building</div>
+        <div style="width: 32px; height: 1px; background: var(--gold);"></div>
+        <p style="font-family: 'Playfair Display', serif; font-size: clamp(18px, 2.2vw, 26px); color: var(--white); line-height: 1.4;">A proprietary real-time social behaviour dataset.</p>
+        <p class="body-text">The only one of its kind in Africa. Timestamped. Geolocated. Verified by presence.</p>
+      </div>
+    </div>
+
+    <div style="text-align: center; padding: 24px; border: 1px solid var(--gold-border); border-radius: 10px; background: rgba(201,168,76,0.05);">
+      <p class="terminal-statement">
+        "The app is the acquisition engine.<br>The terminal is the business."
+      </p>
+    </div>
+  </div>
+
+  <div class="slide-num">04 / 11</div>
+</section>
+
+<!-- ============================================================
+     SLIDE 5 — THE PRODUCT
+     ============================================================ -->
+<section class="slide" id="slide-5">
+  <div class="wordmark">VIIBE</div>
+
+  <div style="width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 28px;">
+    <div>
+      <div class="label" style="margin-bottom: 14px;">The Product</div>
+      <h2 class="section-headline">Built. Live. <span style="color: var(--gold);">Demo-ready.</span></h2>
+    </div>
+
+    <div class="gold-line-full"></div>
+
+    <div class="three-col">
+      <div class="card" style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="status-dot red"></span>
+          <span class="label">Scout Floor</span>
+        </div>
+        <p class="body-text small">Live venue map &amp; Vibe Score. Geofenced check-in ratings. VibeReactor. Oracle AI predictions. DNA scene profiling. Crew &amp; Cartel social layer.</p>
+      </div>
+      <div class="card" style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="status-dot yellow"></span>
+          <span class="label">Merchant Floor</span>
+        </div>
+        <p class="body-text small">Live analytics dashboard. Hourly energy curves. Pulse Drop promotional boosts. Scout intelligence feed for venue operators.</p>
+      </div>
+      <div class="card" style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="status-dot green"></span>
+          <span class="label">Admin Floor</span>
+        </div>
+        <p class="body-text small">Platform command centre. Treasury management. Venue certification pipeline. System-wide oversight and controls.</p>
+      </div>
+    </div>
+
+    <div style="text-align: center;">
+      <div class="stats-row">
+        <div class="stat-pill">15+ Algorithms</div>
+        <div class="stat-pill">3 AI Feature Pipes</div>
+        <div class="stat-pill">Full-Stack Solo Build</div>
+        <div class="stat-pill">Live in Production</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-num">05 / 11</div>
+</section>
+
+<!-- ============================================================
+     SLIDE 6 — MARKET
+     ============================================================ -->
+<section class="slide" id="slide-6">
+  <div class="wordmark">VIIBE</div>
+
+  <div style="width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 32px;">
+    <div>
+      <div class="label" style="margin-bottom: 14px;">Market Opportunity</div>
+      <h2 class="section-headline">A category <span style="color: var(--gold);">nobody owns.</span></h2>
+    </div>
+
+    <div class="gold-line-full"></div>
+
+    <div class="market-grid">
+      <div class="market-card">
+        <div class="label" style="color: var(--white-35);">Clubs &amp; Nightlife · Nigeria</div>
+        <div class="market-size">$1B+</div>
+      </div>
+      <div class="market-card">
+        <div class="label" style="color: var(--white-35);">Concerts &amp; Festivals</div>
+        <div class="market-size">$800M+</div>
+      </div>
+      <div class="market-card">
+        <div class="label" style="color: var(--white-35);">Brunch, Day Parties &amp; Pop-ups</div>
+        <div class="market-size">$600M+</div>
+      </div>
+      <div class="market-card highlight">
+        <div class="label">Africa Total</div>
+        <div class="market-size" style="font-size: clamp(28px, 3.5vw, 48px);">$20B+</div>
+      </div>
+      <div class="market-card highlight" style="grid-column: span 2; background: rgba(201,168,76,0.2);">
+        <div class="label">Global Scene &amp; Experience Economy</div>
+        <div class="market-size" style="font-size: clamp(36px, 5vw, 64px); text-shadow: 0 0 60px rgba(201,168,76,0.6);">$50B+</div>
+      </div>
+    </div>
+
+    <div style="text-align: center; padding: 16px; border-top: 1px solid rgba(201,168,76,0.2);">
+      <p class="body-text" style="color: var(--white-60); font-style: italic;">
+        Zero direct competition in real-time scene intelligence — anywhere in Africa.
+      </p>
+    </div>
+  </div>
+
+  <div class="slide-num">06 / 11</div>
+</section>
+
+<!-- ============================================================
+     SLIDE 7 — BUSINESS MODEL
+     ============================================================ -->
+<section class="slide" id="slide-7">
+  <div class="wordmark">VIIBE</div>
+
+  <div style="width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 32px;">
+    <div>
+      <div class="label" style="margin-bottom: 14px;">Business Model</div>
+      <h2 class="section-headline">Three revenue streams. <span style="color: var(--gold);">90%+ margin.</span></h2>
+    </div>
+
+    <div class="gold-line-full"></div>
+
+    <div class="three-col">
+      <div class="card" style="display: flex; flex-direction: column; gap: 16px; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--gold), transparent);"></div>
+        <div class="label">01 · Vibe+ Consumer</div>
+        <div style="font-family: 'Playfair Display', serif; font-size: clamp(20px, 2.5vw, 32px); color: var(--gold); font-weight: 700;">₦2,000<span style="font-size: 14px; color: var(--white-60); font-family: 'Inter', sans-serif;">/mo</span></div>
+        <p class="body-text small">Premium scout features, Oracle AI access, advanced scene DNA, exclusive leaderboards and early event intelligence.</p>
+      </div>
+      <div class="card" style="display: flex; flex-direction: column; gap: 16px; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--gold), transparent);"></div>
+        <div class="label">02 · Merchant SaaS</div>
+        <div style="font-family: 'Playfair Display', serif; font-size: clamp(20px, 2.5vw, 32px); color: var(--gold); font-weight: 700;">₦150K<span style="font-size: 14px; color: var(--white-60); font-family: 'Inter', sans-serif;">/mo</span></div>
+        <p class="body-text small">Live analytics dashboard, hourly energy curves, Pulse Drop campaign boosts, and full scout intelligence access.</p>
+      </div>
+      <div class="card" style="display: flex; flex-direction: column; gap: 16px; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--gold), transparent);"></div>
+        <div class="label">03 · Data Licensing</div>
+        <div style="font-family: 'Playfair Display', serif; font-size: clamp(20px, 2.5vw, 32px); color: var(--gold); font-weight: 700;">API</div>
+        <p class="body-text small">Raw API access, city intelligence reports, trend forecasting, and precision brand targeting by scene segment.</p>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: center; gap: 40px; padding: 20px; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; background: rgba(255,255,255,0.02);">
+      <div style="text-align: center;">
+        <div class="label" style="margin-bottom: 8px;">Unit Economics</div>
+        <div class="gold-stat" style="font-size: clamp(22px, 2.8vw, 36px);">LTV/CAC 10–25×</div>
+      </div>
+      <div style="width: 1px; background: rgba(255,255,255,0.08);"></div>
+      <div style="text-align: center;">
+        <div class="label" style="margin-bottom: 8px;">Gross Margin</div>
+        <div class="gold-stat" style="font-size: clamp(22px, 2.8vw, 36px);">90%+</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-num">07 / 11</div>
+</section>
+
+<!-- ============================================================
+     SLIDE 8 — TRACTION & MOAT
+     ============================================================ -->
+<section class="slide" id="slide-8">
+  <div class="wordmark">VIIBE</div>
+
+  <div style="width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 32px;">
+    <div>
+      <div class="label" style="margin-bottom: 14px;">Traction &amp; Moat</div>
+      <h2 class="section-headline">The moat compounds <span style="color: var(--gold);">every night.</span></h2>
+    </div>
+
+    <div class="gold-line-full"></div>
+
+    <div class="two-col">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="label" style="margin-bottom: 4px;">What's proven</div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; gap: 14px; align-items: flex-start;">
+            <div style="width: 6px; height: 6px; border-radius: 50%; background: var(--gold); margin-top: 6px; flex-shrink: 0;"></div>
+            <p class="body-text">Full platform built solo — Scout, Merchant, and Admin floors all live</p>
+          </div>
+          <div style="display: flex; gap: 14px; align-items: flex-start;">
+            <div style="width: 6px; height: 6px; border-radius: 50%; background: var(--gold); margin-top: 6px; flex-shrink: 0;"></div>
+            <p class="body-text">Deployed and demo-ready in production environment</p>
+          </div>
+          <div style="display: flex; gap: 14px; align-items: flex-start;">
+            <div style="width: 6px; height: 6px; border-radius: 50%; background: var(--gold); margin-top: 6px; flex-shrink: 0;"></div>
+            <p class="body-text">3 proprietary AI pipelines built and integrated</p>
+          </div>
+          <div style="display: flex; gap: 14px; align-items: flex-start;">
+            <div style="width: 6px; height: 6px; border-radius: 50%; background: var(--gold); margin-top: 6px; flex-shrink: 0;"></div>
+            <p class="body-text">15+ scoring algorithms generating live Vibe Scores</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="display: flex; flex-direction: column; gap: 18px; border-color: rgba(201,168,76,0.5);">
+        <div class="label">The Data Moat</div>
+        <p class="body-text" style="line-height: 1.8;">
+          Every scout rating, every dwell session, every ambient signal is a data point that cannot be replicated.
+          First-mover advantage in real-time scene intelligence is nearly impossible to rebuild.
+        </p>
+        <div style="border-top: 1px solid rgba(201,168,76,0.2); padding-top: 18px;">
+          <div class="label" style="margin-bottom: 8px;">Data Contributor Goal</div>
+          <div class="gold-stat">100M</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-num">08 / 11</div>
+</section>
+
+<!-- ============================================================
+     SLIDE 9 — COMPETITION
+     ============================================================ -->
+<section class="slide" id="slide-9">
+  <div class="wordmark">VIIBE</div>
+
+  <div style="width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 32px;">
+    <div>
+      <div class="label" style="margin-bottom: 14px;">Competitive Landscape</div>
+      <h2 class="section-headline">Nobody does real-time.<br><span style="color: var(--gold);">Nobody does Africa.</span></h2>
+    </div>
+
+    <div class="gold-line-full"></div>
+
+    <div style="border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden;">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Platform</th>
+            <th>Real-Time</th>
+            <th>Africa-Native</th>
+            <th>AI Layer</th>
+            <th>Scene Intelligence</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Google Maps</td>
+            <td style="color: #FF5555;">✕</td>
+            <td style="color: #FF5555;">✕</td>
+            <td style="color: #FF5555;">✕</td>
+            <td style="color: #FF5555;">✕</td>
+          </tr>
+          <tr>
+            <td>Yelp</td>
+            <td style="color: #FF5555;">✕</td>
+            <td style="color: #FF5555;">✕</td>
+            <td style="color: #FF5555;">✕</td>
+            <td style="color: #FF5555;">✕</td>
+          </tr>
+          <tr>
+            <td>Instagram</td>
+            <td style="color: rgba(201,168,76,0.7); font-size: 12px;">⚡ Partial</td>
+            <td style="color: rgba(201,168,76,0.7); font-size: 12px;">⚡ Partial</td>
+            <td style="color: #FF5555;">✕</td>
+            <td style="color: #FF5555;">✕</td>
+          </tr>
+          <tr class="viibe-row">
+            <td style="font-weight: 700; letter-spacing: 0.1em;">VIIBE</td>
+            <td>✓</td>
+            <td>✓</td>
+            <td>✓</td>
+            <td>✓</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="body-text" style="text-align: center; color: var(--white-35); font-style: italic;">
+      VIIBE is not competing on features. It is creating a new category.
+    </p>
+  </div>
+
+  <div class="slide-num">09 / 11</div>
+</section>
+
+<!-- ============================================================
+     SLIDE 10 — TEAM
+     ============================================================ -->
+<section class="slide" id="slide-10">
+  <div class="wordmark">VIIBE</div>
+
+  <div style="width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 32px;">
+    <div>
+      <div class="label" style="margin-bottom: 14px;">The Team</div>
+      <h2 class="section-headline">Built by someone <span style="color: var(--gold);">who lives it.</span></h2>
+    </div>
+
+    <div class="gold-line-full"></div>
+
+    <div class="card" style="padding: 36px 40px; display: flex; flex-direction: column; gap: 20px; border-color: var(--gold-border);">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="font-family: 'Playfair Display', serif; font-size: clamp(20px, 2.5vw, 30px); color: var(--white); font-weight: 700;">Oluwaseun Oluyori Ajagun</div>
+        <div class="label">CEO &amp; CTO · Lagos, Nigeria</div>
+      </div>
+      <div style="width: 60px; height: 1px; background: linear-gradient(90deg, var(--gold), transparent);"></div>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <p class="body-text">Full-stack engineer. Built the entire platform — backend, mobile, AI layer — solo. From concept to live production in a single development cycle.</p>
+        <p class="body-text">Deeply embedded in Lagos scene culture. This is not an outside bet on Africa. This is Africa building for Africa, with global-standard execution.</p>
+      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px;">
+        <div class="stat-pill">Speed</div>
+        <div class="stat-pill">Product Instinct</div>
+        <div class="stat-pill">AI-Forward</div>
+        <div class="stat-pill">Zero Wasted Builds</div>
+      </div>
+    </div>
+
+    <div style="padding: 20px 0; border-top: 1px solid rgba(255,255,255,0.06);">
+      <div class="label" style="margin-bottom: 14px;">Hiring with funding</div>
+      <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+        <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 18px;">
+          <p class="body-text small" style="color: var(--white-60);">Lagos City Lead</p>
+        </div>
+        <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 18px;">
+          <p class="body-text small" style="color: var(--white-60);">Growth &amp; Community</p>
+        </div>
+        <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 18px;">
+          <p class="body-text small" style="color: var(--white-60);">Venue Partnerships</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-num">10 / 11</div>
+</section>
+
+<!-- ============================================================
+     SLIDE 11 — THE ASK
+     ============================================================ -->
+<section class="slide" id="slide-11">
+  <div class="wordmark">VIIBE</div>
+
+  <!-- Subtle radial glow -->
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 60vw; height: 60vh; background: radial-gradient(ellipse at center, rgba(201,168,76,0.06) 0%, transparent 70%); pointer-events: none;"></div>
+
+  <div style="width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 28px; position: relative; z-index: 2;">
+    <div style="text-align: center;">
+      <div class="label" style="margin-bottom: 14px;">The Ask</div>
+      <h2 style="font-family: 'Playfair Display', serif; font-size: clamp(32px, 4.5vw, 60px); font-weight: 700; color: var(--gold); text-shadow: 0 0 60px rgba(201,168,76,0.4); line-height: 1.1;">
+        Raising $50K – $200K pre-seed.
+      </h2>
+    </div>
+
+    <div class="gold-line-full"></div>
+
+    <div class="two-col" style="gap: 32px; align-items: start;">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="label" style="margin-bottom: 4px;">Use of Funds</div>
+        <div class="use-of-funds">
+          <div class="fund-block a">
+            <span style="font-size: 13px; font-weight: 700;">Lagos Ops</span>
+            <span>40%</span>
+          </div>
+          <div class="fund-block b">
+            <span style="font-size: 13px; font-weight: 700;">Product &amp; Tech</span>
+            <span>35%</span>
+          </div>
+          <div class="fund-block c">
+            <span style="font-size: 12px; font-weight: 600; color: var(--gold);">Growth</span>
+            <span style="color: var(--gold);">25%</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 8px;">
+          <div class="label" style="margin-bottom: 12px;">6-Month Milestones</div>
+          <div class="milestone-grid">
+            <div class="milestone-item">
+              <div class="m-num">20</div>
+              <div class="body-text small">Venues live</div>
+            </div>
+            <div class="milestone-item">
+              <div class="m-num">500</div>
+              <div class="body-text small">Active scouts</div>
+            </div>
+            <div class="milestone-item">
+              <div class="m-num">5</div>
+              <div class="body-text small">Paying merchants</div>
+            </div>
+            <div class="milestone-item">
+              <div class="m-num">₦+</div>
+              <div class="body-text small">First recurring revenue</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="label" style="margin-bottom: 4px;">Seed Round Triggers ($500K–$2M)</div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; gap: 14px; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px;">
+            <div class="gold-stat" style="font-size: 18px; min-width: 80px;">10K MAU</div>
+            <p class="body-text small">Monthly active users sustained</p>
+          </div>
+          <div style="display: flex; gap: 14px; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px;">
+            <div class="gold-stat" style="font-size: 18px; min-width: 80px;">₦5M MRR</div>
+            <p class="body-text small">Monthly recurring revenue</p>
+          </div>
+          <div style="display: flex; gap: 14px; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px;">
+            <div class="gold-stat" style="font-size: 18px; min-width: 80px;">50 Venues</div>
+            <p class="body-text small">Certified on the platform</p>
+          </div>
+          <div style="display: flex; gap: 14px; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px;">
+            <div class="gold-stat" style="font-size: 18px; min-width: 80px;">D30 Data</div>
+            <p class="body-text small">Day-30 retention benchmarks proven</p>
+          </div>
+        </div>
+
+        <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+          <p class="contact-line">
+            <a href="mailto:yoriajagun08@gmail.com">yoriajagun08@gmail.com</a>
+          </p>
+          <p class="contact-line">
+            <a href="https://github.com/YoriJags" target="_blank">github.com/YoriJags</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; padding-top: 8px; border-top: 1px solid rgba(201,168,76,0.15);">
+      <p style="font-family: 'Playfair Display', serif; font-size: clamp(14px, 1.8vw, 21px); color: var(--gold); font-style: italic; text-shadow: 0 0 40px rgba(201,168,76,0.4); line-height: 1.5;">
+        "The energy is live. The terminal is being built.<br>The data compounds every night."
+      </p>
+    </div>
+  </div>
+
+  <div class="slide-num">11 / 11</div>
+</section>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dots = document.querySelectorAll('.dot');
+  let current = 0;
+  let isScrolling = false;
+
+  function goToSlide(index) {
+    if (index < 0 || index >= slides.length) return;
+    current = index;
+    slides[index].scrollIntoView({ behavior: 'smooth' });
+    dots.forEach((d, i) => d.classList.toggle('active', i === index));
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      goToSlide(current + 1);
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      goToSlide(current - 1);
+    }
+  });
+
+  // Button navigation
+  document.getElementById('btn-prev').addEventListener('click', () => goToSlide(current - 1));
+  document.getElementById('btn-next').addEventListener('click', () => goToSlide(current + 1));
+
+  // Dot navigation
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => goToSlide(i));
+  });
+
+  // Track current slide via IntersectionObserver
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+        const idx = Array.from(slides).indexOf(entry.target);
+        if (idx !== -1) {
+          current = idx;
+          dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+        }
+      }
+    });
+  }, { threshold: 0.5 });
+
+  slides.forEach(slide => observer.observe(slide));
+</script>
+</body>
+</html>

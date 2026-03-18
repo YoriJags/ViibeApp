@@ -14,7 +14,7 @@ The data layer underneath Africa's $20B+ experience economy — starting in Lago
 
 `Africa-First` · `Real-Time` · `AI-Powered` · `Terminal, Not App`
 
-*Pre-Seed Round · Seeking $500K–$2M · $4–6M Valuation*
+*Pre-Seed Round · Seeking $50K–$200K · $4–6M Valuation*
 
 ---
 
@@ -30,7 +30,7 @@ The data layer underneath Africa's $20B+ experience economy — starting in Lago
 | **Sunday brunch — any good spots open?** | Yelp reviews from last year. Dead before you read them. |
 | **Event tonight — worth going?** | WhatsApp group of 12. Unreliable. Unstructured. Too late. |
 
-> Nigeria's social experience economy is worth **$5B+ annually** — nightlife, restaurants, events combined.
+> Nigeria's social experience economy is worth **$5B+ annually** — nightlife, concerts, festivals, and the full scene combined.
 > Not a single platform tells you where the energy is **right now**, for any of it.
 
 ---
@@ -41,9 +41,9 @@ The data layer underneath Africa's $20B+ experience economy — starting in Lago
 
 > **"Quilox will be electric by 12:30am tonight — 87% confidence. Best time to arrive: 11:45pm."**
 >
-> **"The Place Restaurant is peaking right now — 82 vibe score. No wait at the door."**
->
 > **"Afrobeats concert at Eko Hotel: gates open, energy building — best time to arrive is now."**
+>
+> **"Rooftop day party in Lekki: vibe score 82 and climbing — go now."**
 
 **How it works:**
 
@@ -51,7 +51,7 @@ The data layer underneath Africa's $20B+ experience economy — starting in Lago
 - **⚡ Vibe Score** — Live composite score (0-100) updated every few minutes with time-decay weighting
 - **🧬 AI Intelligence** — Oracle predicts peaks. DNA learns your taste. Ask Vibe plans your night.
 
-`Clubs & Lounges` · `Restaurants` · `Concerts & Events` · `Brunch & Day Parties` · `Church Programs`
+`Clubs & Lounges` · `Concerts & Live Music` · `Festivals & Street Parties` · `Brunch & Day Parties` · `Rooftops & Pop-ups` · `Events`
 
 `3-Storey Platform` · `Scouts · Merchants · Admins` · `iOS + Android`
 
@@ -95,17 +95,17 @@ The data layer underneath Africa's $20B+ experience economy — starting in Lago
 
 | Segment | Size |
 |---------|------|
-| 🌙 Nightlife | $1B+ |
-| 🍽️ Restaurants & Dining | $1.5B+ |
-| 🎵 Events & Concerts | $800M+ |
+| 🌙 Nightlife & Clubs | $1B+ |
+| 🎵 Concerts & Festivals | $800M+ |
+| 🌅 Brunch, Day Parties & Pop-ups | $600M+ |
 | **Combined (Nigeria)** | **$5B+** |
 | 🌍 Africa Total | $20B+ |
 | 🌐 Global Experiences | $50B+ |
 
 ### Expansion Roadmap
-- **Phase 1** — Nightlife beachhead, Lagos (2026)
-- **Phase 2** — + Restaurants & Brunch, Lagos + Abuja (2027)
-- **Phase 3** — + Events, Retail, Tourism · Pan-Africa (2028)
+- **Phase 1** — Nightlife & clubs beachhead, Lagos (2026)
+- **Phase 2** — + Concerts, festivals, brunch & day parties, Lagos + Abuja (2027)
+- **Phase 3** — + Rooftops, pop-ups, street events · Pan-Africa (2028)
 
 **Serviceable Market (5-year):** $500M
 *(5 countries × SaaS + marketplace + data licensing)*
@@ -192,7 +192,7 @@ The more people participate, the richer the signal. The richer the signal, the m
 
 # The app is the data collection device. The AI is the actual product.
 
-> After 12 months in Lagos we'll own a real-world behavior dataset — across nightlife, restaurants, events, and more — that doesn't exist anywhere else on earth. The Vibe Score is the Bloomberg Terminal of social energy — consistent, auditable, manipulation-resistant, versioned.
+> After 12 months in Lagos we'll own a real-world behavior dataset — across clubs, concerts, festivals, day parties, and every corner of the scene — that doesn't exist anywhere else on earth. The Vibe Score is the Bloomberg Terminal of social energy — consistent, auditable, manipulation-resistant, versioned.
 
 ### AI Features — Status
 
@@ -239,7 +239,7 @@ The more people participate, the richer the signal. The richer the signal, the m
 
 ### Oluwaseun Oluyori Ajagun — CEO & CTO
 - Full-stack engineer. Built the entire platform — backend, mobile, AI layer — from scratch.
-- Deeply embedded in Lagos social culture: clubs, restaurants, events, and everything in between.
+- Deeply embedded in Lagos scene culture: clubs, concerts, festivals, day parties, and everything in between.
 - Stack: React Native · Python/FastAPI · MongoDB · Socket.IO · Paystack
 
 **What we've proven:**
@@ -248,7 +248,7 @@ The more people participate, the richer the signal. The richer the signal, the m
 - ✅ AI-forward — Oracle/DNA/Planner without being prompted
 
 **Immediate hires with funding:**
-- → Lagos City Lead — venue onboarding + scout recruitment (clubs AND restaurants AND events)
+- → Lagos City Lead — venue onboarding + scout recruitment (clubs, concerts, festivals, events)
 - → Growth / Community Lead — WhatsApp groups, influencer scouts
 - → Partnerships Lead — alcohol brands, F&B brands, venues, events
 
@@ -265,7 +265,7 @@ The more people participate, the richer the signal. The richer the signal, the m
 | Milestone | Venues | MAU | MRR |
 |-----------|--------|-----|-----|
 | Month 12 — Lagos (nightlife beachhead) | 50 | 10K | ₦5M (~$3.3K) |
-| Month 24 — Nigeria (+ restaurants/events) | 200+ | 100K | $50K |
+| Month 24 — Nigeria (+ concerts/festivals/brunch) | 200+ | 100K | $50K |
 | Month 36 — West Africa | 500+ | 500K | $200K |
 | Month 42 — Exit / Series B | Pan-Africa | — | $250M+ |
 
@@ -273,8 +273,8 @@ The more people participate, the richer the signal. The richer the signal, the m
 
 | Round | Amount | Valuation | Use |
 |-------|--------|-----------|-----|
-| **Pre-seed (Now)** | **$150–300K** | **$2–3M** | Lagos nightlife launch · 3-person team |
-| Seed (Month 10) | $1–2M | $8–12M | Nigeria expansion · restaurants + events |
+| **Pre-seed (Now)** | **$50K–$200K** | **$1–2M** | Lagos nightlife launch · 3-person team |
+| Seed (Month 10) | $1–2M | $8–12M | Nigeria expansion · concerts + festivals + brunch |
 | Series A (Month 24) | $5–10M | $40–60M | West Africa · AI feature upgrades |
 | Series B / Exit (Month 42) | — | $250M+ | Strategic acquisition |
 
@@ -284,9 +284,9 @@ The more people participate, the richer the signal. The richer the signal, the m
 
 ## SLIDE 12 — THE ASK
 
-# We're raising $150–300K pre-seed at a $2–3M valuation
+# We're raising $50K–$200K pre-seed at a $2–3M valuation
 
-*To plant our flag in Lagos — clubs, restaurants, events, brunch spots — before anyone else moves.*
+*To plant our flag in Lagos — clubs, concerts, festivals, brunch spots, rooftops — before anyone else moves.*
 
 ### Use of Funds
 
@@ -297,7 +297,7 @@ The more people participate, the richer the signal. The richer the signal, the m
 | 📣 Growth & Brand | 25% | PR (TechCabal, Techpoint) · influencer scouts · social blitz · launch events |
 
 ### 6-Month Milestones
-- 20 Lagos venues onboarded (clubs, restaurants, event spaces)
+- 20 Lagos venues onboarded (clubs, lounges, concert venues, event spaces)
 - 500 active scouts
 - 2,000 MAU
 - 5 paying merchants
