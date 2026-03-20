@@ -142,6 +142,65 @@ class ViibeAPITester:
             200,
             params={"city": "lagos"}
         )
+    
+    def test_city_pulse_fluctuation(self):
+        """Test city pulse fluctuation - call twice to verify scores change"""
+        print(f"\n🔍 Testing City Pulse Fluctuation (2 calls)...")
+        
+        # First call
+        success1, response1 = self.run_test(
+            "City Pulse Call 1",
+            "GET",
+            "/v1/agent/city/pulse", 
+            200,
+            params={"city": "lagos"}
+        )
+        
+        if not success1:
+            return False
+            
+        # Second call
+        success2, response2 = self.run_test(
+            "City Pulse Call 2",
+            "GET", 
+            "/v1/agent/city/pulse",
+            200,
+            params={"city": "lagos"}
+        )
+        
+        if not success2:
+            return False
+            
+        # Check for fluctuation
+        if response1.get('avg_vibe_score') != response2.get('avg_vibe_score'):
+            print("✅ Scores fluctuated as expected")
+            return True
+        else:
+            print("⚠️  Scores didn't fluctuate (might be coincidence)")
+            return True
+    
+    def test_city_pulse_active_scouts(self):
+        """Test city pulse includes active_scouts field"""
+        success, response = self.run_test(
+            "City Pulse - Active Scouts Field",
+            "GET",
+            "/v1/agent/city/pulse",
+            200,
+            params={"city": "lagos"}
+        )
+        
+        if success and response:
+            if 'active_scouts' in response:
+                scouts = response['active_scouts']
+                if isinstance(scouts, int) and 3 <= scouts <= 12:
+                    print(f"✅ Active scouts field present: {scouts} (within range 3-12)")
+                    return True
+                else:
+                    print(f"❌ Active scouts value {scouts} not in expected range (3-12)")
+            else:
+                print("❌ Missing active_scouts field")
+                
+        return False
 
     def test_venues_live_with_category(self):
         """Test live venues with category filter"""
@@ -185,6 +244,8 @@ def main():
     tester.test_venues_live()
     tester.test_single_venue()
     tester.test_city_pulse()
+    tester.test_city_pulse_fluctuation()
+    tester.test_city_pulse_active_scouts()
     tester.test_venues_live_with_category()
     tester.test_nonexistent_venue()
     

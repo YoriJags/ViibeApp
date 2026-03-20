@@ -8,6 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from typing import Optional
 import uuid
+import random
 from datetime import datetime, timezone
 
 ROOT_DIR = Path(__file__).parent
@@ -116,14 +117,23 @@ async def agent_city_pulse(city: str = "lagos"):
     if not venues:
         raise HTTPException(status_code=404, detail=f"No data for {city}")
 
-    scores = [v.get("vibe_score", 0) for v in venues]
+    # Add live fluctuation to simulate real-time scout ratings
+    live_venues = []
+    for v in venues:
+        base = v.get("vibe_score", 0)
+        fluctuated = max(40, min(99, base + random.randint(-3, 3)))
+        live_v = {**v, "vibe_score": fluctuated}
+        live_venues.append(live_v)
+
+    scores = [v["vibe_score"] for v in live_venues]
     avg = round(sum(scores) / len(scores), 1) if scores else 0
-    top3 = sorted(venues, key=lambda x: x.get("vibe_score", 0), reverse=True)[:3]
+    top3 = sorted(live_venues, key=lambda x: x["vibe_score"], reverse=True)[:3]
 
     return {
         "city": city,
         "avg_vibe_score": avg,
-        "total_venues": len(venues),
+        "total_venues": len(live_venues),
+        "active_scouts": random.randint(3, 12),
         "energy_tiers": {
             "electric": len([s for s in scores if s >= 80]),
             "warming": len([s for s in scores if 60 <= s < 80]),

@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { Activity, TrendingUp, Radio } from "lucide-react";
+import LagosPulse from "@/components/landing/LagosPulse";
 
 const LIVE_VENUES = [
   { name: "Escape", score: 91, state: "peak", district: "VI" },
   { name: "Quilox", score: 87, state: "electric", district: "VI" },
   { name: "Club Joker", score: 83, state: "electric", district: "VI" },
-  { name: "Rhapsody's", score: 81, state: "electric", district: "VI" },
-  { name: "NOK by Alara", score: 78, state: "warming", district: "Ikoyi" },
 ];
 
 const stateColor = {
@@ -32,32 +31,21 @@ function LiveTerminal() {
   }, []);
 
   return (
-    <div className="neon-border bg-viibe-base/80 backdrop-blur-xl p-5 w-full max-w-sm" data-testid="live-terminal">
-      <div className="flex items-center gap-2 mb-4">
-        <Radio size={12} className="text-viibe-coral animate-glow-pulse" />
-        <span className="font-mono text-[10px] text-viibe-coral uppercase tracking-widest">Live — Lagos VI</span>
+    <div className="neon-border bg-viibe-base/80 backdrop-blur-xl p-4 w-full max-w-sm" data-testid="live-terminal">
+      <div className="flex items-center gap-2 mb-3">
+        <Radio size={10} className="text-viibe-coral animate-glow-pulse" />
+        <span className="font-mono text-[9px] text-viibe-coral uppercase tracking-widest">Feed — Victoria Island</span>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {venues.map((v) => (
-          <div key={v.name} className="flex items-center justify-between font-mono text-xs">
+          <div key={v.name} className="flex items-center justify-between font-mono text-[10px]">
+            <span className="text-white">{v.name}</span>
             <div className="flex items-center gap-2">
-              <span className="text-neutral-500 w-12">{v.district}</span>
-              <span className="text-white">{v.name}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className={`font-bold tabular-nums ${stateColor[v.state]}`}>
-                {v.score}
-              </span>
-              <span className={`text-[10px] uppercase ${stateColor[v.state]}`}>
-                {v.state}
-              </span>
+              <span className={`font-bold tabular-nums ${stateColor[v.state]}`}>{v.score}</span>
+              <span className={`text-[8px] uppercase ${stateColor[v.state]}`}>{v.state}</span>
             </div>
           </div>
         ))}
-      </div>
-      <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between font-mono text-[10px] text-neutral-500">
-        <span>CITY AVG: 84.0</span>
-        <span>5 ACTIVE SCOUTS</span>
       </div>
     </div>
   );
@@ -72,7 +60,7 @@ export default function HeroSection() {
         <div className="absolute bottom-1/4 right-0 w-80 h-80 bg-viibe-coral/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-6 pt-32 pb-20 grid lg:grid-cols-2 gap-16 items-center w-full">
+      <div className="relative max-w-7xl mx-auto px-6 pt-32 pb-20 grid lg:grid-cols-2 gap-12 items-center w-full">
         {/* Left — Copy */}
         <div>
           <div className="flex items-center gap-2 mb-8">
@@ -124,8 +112,9 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Right — Live Terminal */}
-        <div className="flex justify-end">
+        {/* Right — Lagos Pulse + Live Feed */}
+        <div className="flex flex-col items-end gap-4">
+          <LagosPulse />
           <LiveTerminal />
         </div>
       </div>
