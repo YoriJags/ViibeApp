@@ -10,7 +10,7 @@ router = APIRouter(prefix="/waitlist", tags=["waitlist"])
 
 
 class WaitlistEntry(BaseModel):
-    email: EmailStr
+    email: str
     role: str = "scout"
     city: str = "lagos"
 
