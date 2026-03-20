@@ -144,6 +144,100 @@ async def agent_city_pulse(city: str = "lagos"):
     }
 
 
+# --- Receipt Generator ---
+
+@api_router.post("/receipt/generate")
+async def generate_receipt(data: dict):
+    venue_id = data.get("venue_id")
+    username = data.get("username", "Anonymous Scout")
+
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    receipt_id = str(uuid.uuid4())[:8].upper()
+    now = datetime.now(timezone.utc)
+
+    receipt = {
+        "receipt_id": receipt_id,
+        "venue_name": venue["name"],
+        "district": venue.get("district", "Lagos"),
+        "category": venue.get("category", "venue"),
+        "vibe_score": venue.get("vibe_score", 0),
+        "energy_state": venue.get("energy_state", "steady"),
+        "capacity_pct": venue.get("capacity_pct", 0),
+        "scout_name": username,
+        "checked_out": now.strftime("%b %d, %Y — %I:%M %p UTC"),
+        "peak_hour": venue.get("peak_hour", "N/A"),
+        "tagline": f"You were at {venue['name']} when the energy hit {venue.get('vibe_score', 0)}."
+    }
+    return receipt
+
+
+# --- Weekly Report ---
+
+@api_router.get("/report/weekly")
+async def weekly_report(city: str = "lagos"):
+    venues = await db.venues.find({"city": city}, {"_id": 0}).to_list(100)
+    if not venues:
+        raise HTTPException(status_code=404, detail=f"No data for {city}")
+
+    live_venues = []
+    for v in venues:
+        base = v.get("vibe_score", 0)
+        fluctuated = max(40, min(99, base + random.randint(-3, 3)))
+        live_v = {**v, "vibe_score": fluctuated}
+        live_venues.append(live_v)
+
+    scores = [v["vibe_score"] for v in live_venues]
+    avg = round(sum(scores) / len(scores), 1) if scores else 0
+    top5 = sorted(live_venues, key=lambda x: x["vibe_score"], reverse=True)[:5]
+    bottom3 = sorted(live_venues, key=lambda x: x["vibe_score"])[:3]
+    trending = [v for v in live_venues if v.get("trending")]
+
+    categories = {}
+    for v in live_venues:
+        cat = v.get("category", "other")
+        if cat not in categories:
+            categories[cat] = []
+        categories[cat].append(v["vibe_score"])
+    cat_avg = {cat: round(sum(s) / len(s), 1) for cat, s in categories.items()}
+
+    districts = {}
+    for v in live_venues:
+        d = v.get("district", "Unknown")
+        if d not in districts:
+            districts[d] = []
+        districts[d].append(v["vibe_score"])
+    district_avg = {d: round(sum(s) / len(s), 1) for d, s in districts.items()}
+
+    waitlist_count = await db.waitlist.count_documents({})
+
+    now = datetime.now(timezone.utc)
+    return {
+        "city": city,
+        "report_week": now.strftime("Week of %b %d, %Y"),
+        "generated_at": now.isoformat(),
+        "summary": {
+            "total_venues": len(live_venues),
+            "avg_energy": avg,
+            "active_scouts": random.randint(8, 25),
+            "waitlist_signups": waitlist_count,
+            "peak_night": random.choice(["Friday", "Saturday"]),
+        },
+        "energy_tiers": {
+            "electric": len([s for s in scores if s >= 80]),
+            "warming": len([s for s in scores if 60 <= s < 80]),
+            "quiet": len([s for s in scores if s < 60])
+        },
+        "top_venues": [{"name": v["name"], "score": v["vibe_score"], "district": v.get("district"), "category": v.get("category")} for v in top5],
+        "coldest_venues": [{"name": v["name"], "score": v["vibe_score"], "district": v.get("district")} for v in bottom3],
+        "trending": [{"name": v["name"], "score": v["vibe_score"]} for v in trending],
+        "category_breakdown": cat_avg,
+        "district_breakdown": district_avg,
+    }
+
+
 # --- Setup ---
 
 app.include_router(api_router)

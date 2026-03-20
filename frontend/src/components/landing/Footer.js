@@ -24,6 +24,9 @@ export default function Footer() {
               <a href="#product" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">Scout Floor</a>
               <a href="#product" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">Merchant Floor</a>
               <a href="/docs" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">Agent API</a>
+              <a href="/receipt" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">"I Was There" Receipt</a>
+              <a href="/report" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">Weekly Report</a>
+              <a href="/press" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">Press Kit</a>
               <a href="#waitlist" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">Early Access</a>
             </div>
           </div>

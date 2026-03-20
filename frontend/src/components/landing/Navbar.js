@@ -16,6 +16,7 @@ export default function Navbar() {
     { href: "#product", label: "Product" },
     { href: "#api", label: "Agent API" },
     { href: "#waitlist", label: "Early Access" },
+    { href: "/press", label: "Press" },
   ];
 
   return (
