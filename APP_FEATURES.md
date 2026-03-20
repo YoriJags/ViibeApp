@@ -1,427 +1,375 @@
-# Vibez - The Vibe-ID Protocol for African Nightlife
+# VIIBE — App Features Reference
 
-> Real-time venue intelligence. Social proof you can feel. The operating system for nights out.
+> Real-time scene intelligence terminal. A live sensor network made of people.
 
----
-
-## What Is Vibez?
-
-Vibez is a real-time venue intelligence and social reputation platform built for African nightlife. It answers the question every person going out asks: **"Where should I go tonight, and is it worth it?"**
-
-Instead of relying on outdated reviews or Instagram stories from last weekend, Vibez uses live scout reports from people actually at venues right now. Every rating is geofence-verified -- you can only rate a venue if you're physically there. This creates a trust layer that doesn't exist anywhere else.
-
-The app operates on three "floors":
-- **Public Floor** -- Scouts (regular users) rate venues, check in, build clout, and coordinate with their Vibez Cartel
-- **Merchant Floor** -- Venue owners see live analytics, run promotions, and protect their reputation
-- **Admin Floor** -- Platform governance with treasury oversight, integrity monitoring, and economy management
+*Last updated: March 2026 · v4.0*
 
 ---
 
-## Core Concept: The Vibe Score
+## What Is VIIBE?
 
-Every venue has a live Vibe Score (0-100) calculated from three axes:
+VIIBE is a real-time venue intelligence and crowd energy platform. It maps the live energy of city experiences — clubs, bars, lounges, events, festivals, day parties — updated continuously by scouts physically present at those venues.
 
-| Axis | Options | What It Measures |
-|------|---------|-----------------|
-| **Energy** | Chill / Popping / Electric | How alive is the crowd? |
-| **Capacity** | Sparse / Vibrant / Full | How packed is it? |
-| **Gate** | Clear / Slow / Blocked | Can you actually get in? |
+It is not a review app. It is live infrastructure for the entertainment economy.
 
-The score updates in real-time as scouts submit ratings. A venue's score at 9PM is different from its score at midnight -- and that's the point. Vibez shows you what's happening *right now*.
-
-**Color coding:**
-- Blue (0-40): Chill
-- Purple (40-60): Moderate
-- Orange (60-80): Popping
-- Pink/Red (80-100): Electric
+The platform operates on three floors:
+- **Scout Floor** — Users (scouts) rate venues, tap energy, earn rank, coordinate with their Cartel
+- **Merchant Floor** — Venue owners see live analytics and run energy campaigns
+- **Admin Floor** — Platform governance, economy management, integrity monitoring
 
 ---
 
-## Public Floor Features
+## The Vibe Score
 
-### 1. Tonight's Journey (Adaptive Home Screen)
+Every venue has a live Vibe Score (0–100) calculated from 15+ weighted algorithms:
 
-The home screen isn't a static dashboard -- it's a narrative that adapts to where you are in your night.
+| Signal Layer | Input | Status |
+|---|---|---|
+| Tap Frequency | BPM lock from VibeReactor taps | Live |
+| Crowd Coherence | Variance across scouts in geofence | Live |
+| Vibe Rating | Energy / Capacity / Gate axes | Live |
+| Dwell Time | How long scouts stay inside geofence | Live |
+| Ambient Decibel | Opt-in room noise floor (30s samples) | Live |
+| Surge Events | Ignite mechanic, rapid rating spikes | Live |
+| Kinetic Movement | Accelerometer-based crowd BPM detection | In Build |
+| BLE Density | Bluetooth device count = crowd density | Pipeline |
+| Biometric HR | Apple Watch / Galaxy Watch heart rate | Pipeline |
 
-**Phase 1: The Warm-Up** (evening, no check-in)
-- Shows the city's energy level ("Lagos is ELECTRIC tonight")
-- VibeMatch recommendation: your top venue match with compatibility percentage
-- Cartel activity teaser: how many of your people are already out
-- Call-to-action: "See Tonight's Picks"
+**Score color coding:**
+- Blue (0–40): Chill
+- Purple (40–60): Moderate
+- Orange (60–80): Popping
+- Pink/Red (80–100): Electric
 
-**Phase 2: Locked In** (active check-in at a venue)
-- Shows your current venue name and live vibe score
-- Real-time clout counter (points earned tonight)
-- Badge proximity: "2 more check-ins for Night Owl badge"
-- Call-to-action: "Rate the Vibe"
+---
 
-**Phase 3: The Recap** (morning after)
-- Summary: venues visited, total clout earned, badges unlocked
-- Best moment highlight
-- Call-to-action: "Share Your Night"
+## Scout Floor
 
-### 2. Live Venue Map
+### VibeReactor
 
-Interactive map showing all venues in your city with real-time data:
-- Venue pins color-coded by energy level
-- Category filtering: Clubs, Lounges, Restaurants, Bars, Churches, Concerts, Raves, Festivals, Events
-- City selector: Lagos, Abuja, Port Harcourt, Ibadan
-- Tap any venue for live stats, ratings history, and stories
-- "Rate Venue" floating button when you're near a spot
-- Swipe between map and list view
+The kinetic tap engine at the core of the platform. Every tap is a data point.
 
-### 3. Vibe Rating System
+- Tap to build venue energy. Ring responds in real time.
+- **BPM Lock** — when your last 4 readings are within ±8 BPM, the reactor locks and label upgrades to `⬡ LOCKED IN`
+- **G-force weighting** — physical, body-led taps register stronger than idle screen taps
+- **Crowd Sync Ring** — coherence ring appears when 40%+ of the crowd is in rhythm together
+- **Personal rhythm decay** — ring returns to baseline 5 seconds after last tap
+- Visual: Skia GPU canvas, Reanimated v4 derived values, sub-16ms frame budget
 
-The core mechanic. Tap a venue, rate it across three axes, optionally snap a photo.
+**Sync states:**
+| syncPct | Label |
+|---|---|
+| 0–18% | Hidden |
+| 18–40% | FINDING RHYTHM |
+| 40–65% | IN THE ZONE |
+| 65–100% | LOCKED IN / IN SYNC |
 
-**Rules:**
-- Must be within the venue's geofence (GPS-verified, typically 100m radius)
-- Maximum 3 ratings per venue per day
-- Second rating in 24 hours counts as a "correction" (supersedes the first)
-- Photo upload optional (500KB max)
-- Works offline -- ratings queue and sync when connection returns
+---
 
-**Rewards:**
-- 5-10 clout points per rating (varies by accuracy)
-- Streak multiplier: up to 2x for consecutive daily activity
-- Campaign multiplier: 2-3x during merchant promotions
+### Scout Signal Pack (Sensor Settings)
 
-### 4. Ghost Check-Ins
+Scouts control which background sensors are active. Presented as a per-session or persistent settings toggle — battery management is explicit.
 
-Stealth presence system. Check in to a venue to show you're there without broadcasting it to everyone.
+| Sensor | Battery Cost | Permission Required | Default |
+|---|---|---|---|
+| Tap Rhythm | None (event-driven) | None | Always on |
+| Vibe Rating | None | None | Always on |
+| Ambient Sound | Low (30s burst) | Microphone (opt-in ask) | Off |
+| Kinetic Movement | Medium (60Hz while in geofence) | None | Off |
+| BLE Crowd Density | Medium (30s scan) | Bluetooth | Off |
+| Biometric HR | Low (passive HealthKit read) | Health (Apple/Google) | Off (pipeline) |
 
-- Geofence-enforced (must be physically present)
+**UX pattern:**
+- First entry into a venue geofence → one-time nudge: *"Power up your signal? More sensors = better crowd data."*
+- Settings screen → **Scout Sensors** section with per-sensor toggles, each showing battery impact badge (None / Low / Medium)
+- Sensors auto-pause when scout exits geofence. Resume on re-entry if toggle is on.
+- No sensor runs in the background outside a venue.
+
+---
+
+### Vibe Rating
+
+30-second geofence-verified rating across three axes:
+
+| Axis | Options |
+|---|---|
+| Energy | Chill / Popping / Electric |
+| Capacity | Sparse / Vibrant / Full |
+| Gate | Clear / Slow / Blocked |
+
+Rules:
+- Must be within venue geofence (100m radius, server-validated)
+- Max 3 ratings per venue per day
+- Second rating in 24h counts as a correction (supersedes first)
+- Earns 5–10 clout points (accuracy-adjusted)
+
+---
+
+### Scene Frequency (VibeOscillator)
+
+Live waveform visualizer driven by real BPM and crowd energy data. VIBE+ exclusive.
+
+- Oscillator shape driven by current venue BPM and energy level
+- Updates in real time via socket
+- Visible on the Scout Floor for VIBE+ subscribers
+
+---
+
+### Torch Ignite
+
+Synchronized crowd flash mechanic.
+
+- Manual: one-tap torch from inside geofence
+- Collective: hold IGNITE SCENE when vibeScore ≥ 85
+- Wave-pattern stagger — torches cascade outward from the triggering scout's position
+- Earns clout + contributes surge event to vibe score
+
+---
+
+### Scout Identity
+
+Personal profile layer — not just a username.
+
+- **Call Name** — scout identity handle
+- **Music preferences** — genres and scene types
+- **Zodiac sign** — optional identity signal
+- **Scout Rank** — Newcomer → Scout → City Elite (clout-based, with multipliers and streaks)
+- **Clout Points** — reputation currency earned through all scout activity
+
+**Rank tiers and clout:**
+- Rating: +5–10 pts
+- Check-in: +2 pts
+- Torch Ignite (collective): +15 pts
+- Streak milestones: +50 to +1,000 pts
+- Streak multiplier: 1.0× base, +0.2× per consecutive day, caps at 2.0×
+
+---
+
+### Cartel / Crew
+
+Squad coordination layer.
+
+- Create or join a Cartel (up to 8 members)
+- Live radar: see which members are checked in and where
+- **Cartel Vote** — captain proposes 2–4 venues, members vote, winner surfaces on map
+- **Cross-Venue Cartel Battle** — competing Cartels at different venues battle by vibe contribution. Winning Cartel earns rank bonus.
+- CartelPulse card on home screen: who's out tonight
+
+---
+
+### Ghost Check-In
+
+Stealth presence. Scouts check in without broadcasting publicly.
+
+- Geofence-enforced
 - 4-hour auto-expiry
-- Shows on your Cartel's radar so your people know where you are
-- Contributes to venue headcount ("X scouts here now")
-- Earns 2 clout points per check-in
-- Check-in celebration animation on success
+- Visible to Cartel members on their radar
+- Contributes to venue headcount signal
+- Earns 2 clout points
 
-### 5. Clout Economy
+---
 
-Clout is the universal reputation currency. Everything you do earns clout, and clout determines your scout tier.
+### Ambient Sound Metering
 
-**Scout Tiers:**
-| Tier | Requirement | Badge Color |
-|------|------------|-------------|
-| Newbie | 0-9 ratings | Grey |
-| Regular | 10-24 ratings | Cyan |
-| Scout | 25-49 ratings | Gold |
-| Elite | 50+ ratings | Pink |
+Opt-in room noise level sampling. No audio is recorded or stored — only a numeric dB level is transmitted.
 
-**Clout Sources:**
-- Rating: +5-10 points
-- Check-in: +2 points
-- Story post: +5 points
-- Story goes viral (20+ views): +10 bonus
-- Cartel vote participation: +3 points
-- Streak milestones: +50 to +1000 points
+- 30-second sample interval while inside geofence
+- User must explicitly grant microphone permission and enable toggle
+- dB reading feeds ambient signal layer in vibe score
+- Auto-stops on geofence exit
 
-**Rating Accuracy Score:** Your ratings are compared against other scouts at the same venue/time. Higher agreement = higher accuracy percentage = higher clout rewards.
+---
 
-### 6. Vibe Streaks
+### Oracle AI
 
-Consecutive daily activity tracking with escalating rewards.
+Predictive venue intelligence. Forecasts when a venue will peak based on historical pattern + current signal trajectory.
 
-- Any daily action counts (rating, check-in, story)
-- Multiplier: 1.0x + 0.2x per consecutive day (caps at 2.0x)
-- 24 hours of inactivity breaks the streak
+- "Quilox will be electric by 12:30am — 87% confidence"
+- VIBE+ exclusive feature
 
-**Milestone Rewards:**
-| Day | Clout Bonus |
-|-----|------------|
-| 7 | +50 |
-| 14 | +100 |
-| 30 | +300 |
-| 60 | +500 |
-| 90 | +1,000 |
+---
 
-### 7. Vibez Cartel (Squad Coordination)
+### Lobby
 
-Your crew. Your people. The Vibez Cartel is how you coordinate nights out.
-
-- **Create a Cartel**: Name it (2-20 characters), get an invite code
-- **Join a Cartel**: Enter a 6-character code, max 8 members
-- **Live Radar**: See which Cartel members are checked in and where
-- **Cartel Vote**: Captain starts a venue vote (2-4 options), members vote, winner gets highlighted on the map
-- **CartelPulse Card**: Compact card on home screen showing who's out tonight
-
-### 8. Lobby (Smart Shortlist)
-
-Save up to 10 venues for side-by-side comparison before deciding where to go.
+Smart shortlist. Save up to 10 venues for comparison before deciding.
 
 - Live vibe data auto-refreshes
-- Smart Nudge algorithm picks the hottest venue based on score + recent activity
-- Pre-select venues from your Lobby when starting a Cartel Vote
-- One-tap remove
-
-### 9. VibeMatch
-
-Personalized venue recommendation engine. Shows your top match with a compatibility percentage based on your rating history, preferences, and what your Cartel is doing.
-
-- "94% match -- Escape Nightclub"
-- Shows area, current vibe score, and why it matched
-- Integrated into the TonightHero card on the home screen
-
-### 10. Connective Prompts (VibePrompts)
-
-Small contextual cards that chain features together so every action leads to the next:
-
-- "Day 7 streak! 1.5x clout multiplier active" (streak)
-- "2 more midnight check-ins for Night Owl badge" (badge proximity)
-- "AdaObi just checked in at Escape Nightclub" (cartel activity)
-- "Quilox moved to #2 in Clubs tonight" (leaderboard impact)
-- "750 more clout to Diamond tier" (clout milestone)
-
-Each prompt type has its own accent color. Dismissable with slide-out animation.
-
-### 11. Stories (Photo Proof)
-
-Geofence-verified photos from inside venues. No faking it.
-
-- Photo-only, geofence-enforced
-- Caption up to 100 characters
-- 3-hour auto-expiry (ephemeral)
-- Max 2 stories per day
-- View counter with viral bonus at 20+ views
-- Story bubbles visible on the venue map
-
-### 12. Trending & Leaderboards
-
-**Venue Rankings:**
-- Top venues by live vibe score per city
-- Premium podium display (gold/silver/bronze for top 3)
-- Energy meters and vibe velocity indicators (heating up / cooling down / stable)
-- Filter by area (Victoria Island, Ikoyi, Surulere, etc.)
-
-**Scout Rankings:**
-- Top scouts by clout points
-- Mini-profile modal with activity heatmap
-- Tier display and total ratings
-
-### 13. Pulse Drops (Nearby Promotions)
-
-Location-based promotional alerts from venues:
-- Three tiers: Spark / Flare / Supernova
-- Countdown timers showing time remaining
-- Distance-based filtering (within 10km radius)
-- Venue details embedded in each drop
-
-### 14. Venue Certification
-
-Venues that maintain a vibe score of 70+ for 90 consecutive days earn the "Vibe Certified" badge:
-- Visible on all venue pages
-- Boosted visibility in trending and search
-- Automatically evaluated and revoked if score drops
-
-### 15. Achievement Badges
-
-Unlockable badges for milestones:
-- First Rating, Scout tier, Elite tier
-- Night Owl (late-night check-ins)
-- Community Champion (100+ ratings)
-- Crew Leader (create a Cartel)
-- Trending Setter (rate a venue that hits #1)
+- Smart Nudge: surface the hottest venue based on score + recent activity trend
+- Pre-select venues when starting a Cartel Vote
 
 ---
 
-## Merchant Floor Features
+### Pulse Drops
 
-Venue owners get their own dashboard with tools to understand, promote, and protect their venue's reputation.
+Location-based promotional alerts from venues. Three tiers: Spark / Flare / Supernova.
 
-### 1. Live Dashboard
+- Distance-based filtering (within 10km)
+- Countdown timers
+- Glow boost applied to venue on map
+
+---
+
+### Venue Certification
+
+Venues maintaining vibeScore ≥ 70 for 90 consecutive days earn the **Vibe Certified** badge.
+
+- Boosted visibility in trending and search
+- Automatically revoked on score drop
+- No manual application — evaluated nightly by algorithm
+
+---
+
+### Achievement Badges
+
+Unlockable milestones: First Rating, Scout tier, Elite tier, Night Owl (late check-ins), Crew Leader, Trending Setter (rate a venue that hits #1).
+
+---
+
+## VIBE+ Premium Tier
+
+Consumer subscription. Monthly and annual options. Paystack-powered.
+
+**Unlocks:**
+- Scene Frequency (VibeOscillator) waveform visualizer
+- Oracle AI venue predictions
+- Priority intel feeds
+- Premium rank badges
+- Early event intelligence
+
+The free tier is genuinely useful — city map, VibeReactor, Vibe Rating, Scout identity, Cartel/Crew. VIBE+ is the layer on top, not a paywall on core functionality.
+
+---
+
+## Merchant Floor
+
+### Live Dashboard
 
 Real-time metrics updated every 30 seconds:
 - Current energy score
-- Active scout count (people checked in right now)
-- Vibe sentiment breakdown: gate / capacity / energy percentages
-- Rating velocity (24h and 7d counts)
-- Profile views and direction clicks
+- Active scout count
+- Vibe sentiment breakdown (gate / capacity / energy %)
+- Rating velocity (24h and 7d)
+- Profile views
 
-### 2. Content Management
+### Content Management
 
-Control what scouts see about your venue:
-- Entry fee editor (e.g., "5,000 NGN")
-- Music genre editor (e.g., "Afrobeats / Amapiano")
+- Entry fee editor
+- Music genre editor
 - Table availability toggle
-- Geofence radius adjustment (50-500m)
+- Geofence radius adjustment (50–500m)
 
-### 3. Vibe Intelligence (Deep Analytics)
+### Vibe Intelligence (Analytics)
 
-Detailed analytics to understand your venue's performance:
-- **Hourly Energy Curve**: 24-hour breakdown of vibe scores with peak hour identification
-- **Week-over-Week Comparison**: Total ratings, energy distribution, unique scouts
-- **Vibe Killers**: Actionable alerts -- high gate blockage, over-capacity incidents, energy drops
-- **Scout Quality**: Who's visiting and their tier/rating history
+- Hourly Energy Curve: 24h breakdown with peak hour identification
+- Week-over-week comparison
+- Vibe Killers: actionable alerts (gate blockage, energy drops, capacity issues)
+- Scout Quality: visitor tier and rating history
 
-### 4. Pulse Drops (Promotions)
+### Pulse Drops (Merchant Promotions)
 
-Push promotional blasts to nearby users:
+| Tier | Duration | Radius | Glow Boost |
+|---|---|---|---|
+| Spark | 2 hours | 2km | 20% |
+| Flare | 4 hours | 5km | 40% |
+| Supernova | 8 hours | 10km | 80% |
 
-| Tier | Price (NGN) | Duration | Radius | Glow Boost |
-|------|------------|----------|--------|------------|
-| Spark | 2,500 | 2 hours | 2 km | 20% |
-| Flare | 5,000 | 4 hours | 5 km | 40% |
-| Supernova | 10,000 | 8 hours | 10 km | 80% |
+Supernova gets chart placement bonus.
 
-- Custom promotional message
-- Live countdown timer
-- Glow boost applied to vibe score
-- Supernova tier gets chart placement bonus
+### Energy Campaigns (Clout Multipliers)
 
-### 5. Energy Campaigns (Clout Multipliers)
+Incentivize scouts to rate by multiplying their clout rewards. 2× and 3× options at 2h, 4h, 8h durations.
 
-Incentivize scouts to rate your venue by multiplying their clout rewards:
+### Wallet
 
-| Multiplier | 2 Hours | 4 Hours | 8 Hours |
-|-----------|---------|---------|---------|
-| 2x | NGN 3,000 | NGN 5,000 | NGN 8,000 |
-| 3x | NGN 7,000 | NGN 12,000 | NGN 20,000 |
+Paystack-powered. Top-up via bank transfer or card. Full transaction history. Atomic operations prevent double-charging.
 
-- Drives foot traffic and rating activity
-- Notifications sent to scouts with your venue in their Lobby
-- Campaign badge visible on venue card
+### Aura Shield
 
-### 6. Wallet (Fintech Integration)
-
-Paystack-powered wallet for all merchant transactions:
-- Top-up via bank transfer or card (Paystack checkout)
-- Transaction history with full audit trail
-- Balance tracking: deposits, pulse spend, campaign spend
-- Atomic operations prevent double-charging
-
-### 7. Aura Shield (Loss Prevention)
-
-Automated monitoring system that alerts you when your venue's vibe drops:
-- Configurable threshold (30-70 points)
-- Alert types: score drop, gate blocked, capacity full
-- Push notification when threshold is breached
-- Toggle on/off from settings
+Automated monitoring. Alerts merchant when venue vibeScore drops below configurable threshold (30–70 points).
 
 ---
 
-## Admin Floor Features
+## Admin Floor
 
-Platform governance tools for super administrators.
+### Treasury & Revenue
 
-### 1. Treasury & Revenue
+Global financial overview — revenue by city, pulse tier, per-transaction ledger, settlement tracking.
 
-Global financial overview:
-- Total revenue (all-time and today)
-- Revenue breakdown by city and pulse tier
-- Per-transaction ledger with scout activity metrics
-- Payment settlement tracking
+### Network Health
 
-### 2. Network Health
+Live platform metrics: WebSocket connections, total/active venues and users, data freshness.
 
-Real-time platform metrics:
-- Active WebSocket connections
-- Total venues / verified venues
-- Total users / active users (24h)
-- Data freshness percentage
+### Integrity Monitoring
 
-### 3. Integrity Monitoring
+Anomaly detection: sponsored vs organic venue comparison, unusual rating spikes, coordinated voting patterns.
 
-Anomaly detection and platform health:
-- Sponsored vs organic venue comparison (are pulse-boosted venues skewing results?)
-- Anomalous rating patterns (sudden spikes, coordinated voting)
-- Health status: green / yellow / red
+### User Management
 
-### 4. User Analytics & Management
+Search, profiles, tier distribution, ban/unban, clout airdrops with reason tracking.
 
-- User search and detailed profiles
-- Scout tier distribution
-- Ban/unban controls
-- Clout airdrops (bulk distribution with reason tracking)
+### Venue Governance
 
-### 5. Venue Governance
+Verification toggle, score override (manual with reason), suppress/unsuppress. Full audit trail on every action.
 
-- Verification toggle (grant/revoke "Verified" badge)
-- Score override (manually set vibe score with reason)
-- Suppress/unsuppress (remove from rankings)
-- Full audit trail: every override logged with admin ID, reason, and timestamp
+### Clout Economy Overview
 
-### 6. Clout Economy Overview
-
-- Total clout in circulation
-- Average clout per user
-- Top 10 scouts leaderboard
-- Economy health monitoring
+Total clout in circulation, average per user, top 10 scout leaderboard, economy health monitoring.
 
 ---
 
-## Technical Architecture
+## Agent API
 
-### Frontend
-- **Framework**: React Native + Expo (Expo Router for navigation)
-- **State Management**: Zustand with AsyncStorage persistence
-- **Real-time**: Socket.IO client
-- **Animations**: React Native Animated API (all useNativeDriver for 60fps)
+Public REST endpoints for AI assistants, hotel concierge apps, and travel platforms.
 
-### Backend
-- **Framework**: FastAPI (Python)
-- **Database**: MongoDB
-- **Real-time**: python-socketio with room-based broadcasting
-- **Payments**: Paystack API
-- **Auth**: JWT sessions + Google OAuth
+- `GET /api/v1/agent/venues/live` — all live venues with energy labels
+- `GET /api/v1/agent/venues/{id}` — single venue snapshot
+- `GET /api/v1/agent/city/pulse` — city-level crowd pulse summary
+- Auth: `X-Agent-Key` header or `?api_key=` query param
+- API key management: issue, list, revoke (admin)
 
-### Real-time Systems
-Socket.IO rooms for targeted broadcasts:
-- `city_{code}` -- all users in a city
-- `venue_{id}` -- users viewing a specific venue
-- `merchant_{id}` -- merchant dashboard viewers
-- `admin_global` -- admin dashboard
-
-Events: venue score updates, check-in counts, crew votes, campaign status, pulse drops, new stories.
-
-### Offline Support
-- Ratings queue locally and sync when online
-- Venue data cached for 5 minutes
-- User session persisted in AsyncStorage
-- Map remains functional without live data
-
-### Security
-- Geofence validation server-side (Haversine formula, can't be spoofed from client)
-- All API inputs validated with Pydantic models
-- Rate limiting (100 req/min per IP, tighter on auth endpoints)
-- Wallet operations use atomic MongoDB updates (prevents race conditions)
-- Admin audit trail on all governance actions
-- JWT expiry (7 days)
+Energy labels: `PEAK` (≥85) / `HIGH` (≥70) / `BUILDING` (≥50) / `MODERATE` (≥30) / `LOW`
 
 ---
 
-## Demo Mode
+## Onboarding
 
-A full-fidelity demo mode for investor walkthroughs and team testing:
-- Toggle from profile screen
-- Pre-populated data: elite user with 4,250 clout, 12 venues, 4-member Cartel, active campaigns, streaks, badges
-- All three floors functional with demo data
-- Admin floor includes guided walkthrough with spotlight tooltips
-- No API calls in demo mode -- everything runs from local demo data
+Story-mode first experience. Scouts are walked through the platform via guided interactive screens before hitting the live map.
 
----
-
-## City Support
-
-Currently supported cities:
-- Lagos (Victoria Island, Ikoyi, Lekki, Surulere, Lagos Mainland)
-- Abuja
-- Port Harcourt
-- Ibadan
-
-Architecture supports adding new cities with area-level granularity.
+- `OnboardingFlow` — multi-step story sequence
+- `AppTutorial` — in-app guided walkthrough with spotlight tooltips
+- Triggered on first login, skippable after second screen
 
 ---
 
-## The Vibez Difference
+## Tech Stack
 
-1. **Geofence truth**: You can only rate or check in if you're physically there. No fake reviews.
-2. **Real-time, not historical**: The vibe at 9PM is different from midnight. Vibez shows what's happening now.
-3. **Reputation economy**: Clout, streaks, and scout tiers create a social layer that rewards consistent participation.
-4. **Squad coordination**: Vibez Cartel turns "where should we go?" from a 50-message group chat into a 30-second vote.
-5. **Merchant intelligence**: Venue owners see exactly what scouts think in real-time -- and can act on it with promotions and campaigns.
-6. **Three-floor architecture**: Public, Merchant, and Admin floors each serve their audience without cluttering the others.
+| Layer | Stack |
+|---|---|
+| Frontend | React Native + Expo SDK 54, TypeScript |
+| Animations | react-native-reanimated v4 (worklets: react-native-worklets) |
+| Canvas | @shopify/react-native-skia (GPU-accelerated) |
+| State | Zustand + AsyncStorage |
+| Real-time | Socket.IO client |
+| Backend | FastAPI (Python) + MongoDB Atlas |
+| Auth | Firebase Auth + JWT |
+| Payments | Paystack (merchant/web), RevenueCat (iOS/Android IAP) |
+| Sensors | expo-sensors (Accelerometer, tap) |
+| Infra | Railway (backend), EAS (mobile builds) |
 
 ---
 
-*Vibez -- Know Before You Go.*
+## Sensor Build Roadmap
+
+| Phase | Sensor | Status |
+|---|---|---|
+| 1–2 | Tap rhythm + Vibe Rating | Live |
+| 3 | Ambient decibel (opt-in) | Live |
+| 4 | Kinetic / Accelerometer | In build |
+| 5 | BLE proximity / crowd density | Pipeline |
+| 6 | Biometric wearable (Apple Watch + Galaxy Watch HR) | Pipeline |
+
+Each layer adds a proprietary signal no competitor can replicate without first building the user base. The sensor advantage is self-reinforcing.
+
+---
+
+*VIIBE — a live sensor network made of people.*

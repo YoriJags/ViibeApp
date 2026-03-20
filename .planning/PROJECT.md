@@ -41,14 +41,10 @@ Word of mouth is delayed. Social media is curated, not live. Google Maps is mont
 
 ### Scout Experience
 - [x] VibeReactor — collective charge ring, kinetic tap, BPM lock, combo multiplier
-- [x] 8 Reactor Skins — REACTOR, WAVE, BARS, PULSE, AURA, TERRAIN, RADAR, MATRIX
-- [x] SkinContainer — reads selected skin, renders correct engine, "CHANGE SKIN" pill
-- [x] SkinSelector — 2-col grid + spotlight mode with blurred preview + Paystack CTA
-- [x] FeatureStoryStrip — 6-card horizontal story with social proof + conversion loop
 - [x] VibeOscillator (Scene Frequency) — live BPM + energy waveform, VIBE+ exclusive
 - [x] TorchButton — manual torch toggle + IGNITE SCENE hold mechanic (vibeScore ≥ 85)
 - [x] Torch Ignite — synchronized crowd flash with wave-pattern stagger via socket
-- [x] Scout Identity — call name, music preferences, zodiac, reactor skin, avatar
+- [x] Scout Identity — call name, music preferences, zodiac, avatar
 - [x] Vibe Persona — 4 archetypes (Turn Up / Luxe / Culture / Chill)
 - [x] Vibe DNA card — affinity scores across 6 scene types
 - [x] Scout Ranks — Newcomer → Scout → City Elite, clout points, streaks, multipliers
@@ -61,17 +57,12 @@ Word of mouth is delayed. Social media is curated, not live. Google Maps is mont
 - [x] **Vibe Rating** — 3-axis structured rating (energy / crowd / door wait)
 - [x] **Ambient decibel** (opt-in) — dB sampling every 30s inside geofence, no recording
 - [x] **Dwell time** — heartbeat tracker, time-weighted vibe contribution
-- [x] **Surge events** — socket-driven energy spikes, reactor skin surge distortions
-
-### Surge Distortions (Skin-Level)
-- [x] TERRAIN — chromatic aberration (3 overlapping ridge paths, R/G/B offsets)
-- [x] AURA — supernova surge (outer glow +40px, blur 24→56px)
-- [x] MATRIX — gold mode (green stream fades out, gold stream fades in at surge peak)
+- [x] **Surge events** — socket-driven energy spikes, reactor surge distortions
 
 ### Merchant & Admin
 - [x] Merchant dashboard — live analytics, hourly energy curves, scout intel feed
 - [x] Pulse Drops — targeted energy boost campaigns
-- [x] VIBE+ subscription — Paystack paywall, skin gating, VibeOscillator gating
+- [x] VIBE+ subscription — Paystack paywall, VibeOscillator gating
 - [x] Admin command centre — treasury, venue certification, platform oversight
 - [x] Merchant SaaS tier architecture — complete
 
@@ -81,8 +72,7 @@ Word of mouth is delayed. Social media is curated, not live. Google Maps is mont
 - [x] VenueCategoryFilter — emoji prefix, solid accent fill, taller pills
 - [x] CityPulseBar — stats pulse animation on socket venue_update events
 - [x] OnboardingFlow — 2-slide intro + mode pick + call name (< 90 seconds to first tap)
-- [x] AppTutorial — 6-slide Instagram-story how-to (Reactor, Rate, Skins, Torch, Frequency, Ranks)
-- [x] SkinSlice in Zustand — selectedSkin persisted to AsyncStorage
+- [x] AppTutorial — 6-slide Instagram-story how-to (Reactor, Rate, Torch, Frequency, Ranks)
 - [x] Socket infrastructure — real-time venue updates, surge events, crowd sync, flash ignite
 
 ### Agent API (B2B / AI Agents)
@@ -124,7 +114,7 @@ Word of mouth is delayed. Social media is curated, not live. Google Maps is mont
 - [ ] **Switch Face (Venue Mode)** — app switches theme/language/features by venue_type (church, concert, sports)
 - [ ] **Data Fast Mode** — low-bandwidth toggle: no images, no animations, minimal socket reconnects
 - [ ] **Admin Control Tower** — full overhaul (specifics TBD)
-- [ ] **AfterHours share card** — recap card showing scout's skin name + night stats
+- [ ] **AfterHours share card** — recap card showing scout's night stats
 
 ### B2B / Agentic AI
 - [ ] **ChatGPT Actions registration** — register VIIBE as a GPT Action for travel/nightlife GPTs
@@ -145,7 +135,7 @@ Word of mouth is delayed. Social media is curated, not live. Google Maps is mont
 
 | Stream | Description | Scale |
 |--------|-------------|-------|
-| **VIBE+ Subscription** | Consumer premium tier — all 8 skins, VibeOscillator, priority intel | Scales with user base |
+| **VIBE+ Subscription** | Consumer premium tier — VibeOscillator, priority intel, premium badges | Scales with user base |
 | **Merchant SaaS** | Venue dashboard, Pulse Drops, analytics, energy campaigns | Scales with venue count |
 | **White-Label Licensing** | Enterprise/government license — branded deployment per city/district | High ACV, long contract |
 | **Agent API Licensing** | Hotels, travel apps, AI assistants pay for real-time crowd intelligence feed | Scales with Gulf expansion |

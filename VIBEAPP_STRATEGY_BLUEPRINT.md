@@ -104,19 +104,14 @@ A full-stack mobile platform with three user layers:
 - **Dual Home Mode** — Scout (gamified) vs. Insider (clean AI intel); toggle pill; persisted in store; `sceneIntel.ts` converts venue data to Intel sentences
 - **Venue Live system** — follow/unfollow venues; "I Dey Road" intent (enroute/maybe/pass, 3h TTL); merchant live push blasts (30min rate-limit); `venue_follows`, `venue_headings`, `venue_live_pushes` collections
 
-**Phase 3 — Sensor Stack + Skins + Conversion (Built March 2026):**
-- **8 Reactor Skins** — REACTOR, WAVE, BARS, PULSE, AURA, TERRAIN, RADAR, MATRIX. Each is a separate Skia animation engine driven by live BPM + vibeScore + surgeValue SharedValues. 3 free, 5 VIBE+ exclusive.
-- **SkinContainer** — reads `selectedSkin` from Zustand (AsyncStorage persisted), renders correct skin engine, "CHANGE SKIN" pill affordance
-- **SkinSelector** — 2-col grid default mode + spotlight mode: when a free user taps a premium skin, shows blurred preview + "UNLOCK [SKIN] + 4 MORE PREMIUM SKINS" Paystack CTA with skin accent color
-- **FeatureStoryStrip** — 6-card horizontal story strip on home screen with social proof nudges ("61% of scouts use REACTOR"). Premium skin taps open SkinSelector in spotlight mode — contextual conversion, not generic paywall
+**Phase 3 — Sensor Stack + Conversion (Built March 2026):**
 - **VibeOscillator (Scene Frequency)** — live BPM + energy waveform visualizer, VIBE+ exclusive. Modes: BARS (24-bar equalizer, single batched Skia path), WAVE (sine oscillation), PULSE (concentric heartbeat rings). Driven by Reanimated SharedValues — zero JS thread overhead
 - **TorchButton** — manual one-tap torch toggle (always accessible) + IGNITE SCENE hold mechanic (visible at vibeScore ≥ 85). Emits `ignite_hold_start`/`ignite_hold_end` to socket
 - **Torch Ignite (Collective Flash)** — synchronized crowd flashlight mechanic. Socket handler supports `single | pulse | wave` patterns + `delay_ms` stagger. Hardware torch via hidden `<CameraView enableTorch style={{width:0,height:0}}>`
-- **Surge Distortions** — TERRAIN: chromatic aberration (3 ridge paths with R/G/B X-offsets, opacity driven by surgeIntensity); AURA: supernova (outer glow +40px, blur 24→56px at peak); MATRIX: gold mode (green stream fades out, gold `#FFD700` fades in during surge)
 - **Ambient Sound Meter** — `useAmbientMeter` hook + `AmbientOptInModal`. Samples dB every 30s inside geofence, never records audio, sends numeric level to backend. Opt-in with clear UX framing
 - **UI Rebrand** — VibeReactor canvas 220→300px, ring radius 95→130, orb 72→98. Atmospheric LinearGradient backdrop. GlitchText 10→20px/900 weight. VenueCard atmospheric gradient overlay. VenueCategoryFilter emoji prefix + solid accent fill. CityPulseBar stats pulse animation on socket events
 - **OnboardingFlow** — 2-slide intro + mode pick + call name. Target: new user hits first tap within 90 seconds
-- **AppTutorial** — 6-slide Instagram-story how-to: Reactor → Rate → Skins → Torch → Scene Frequency → Ranks. Tap right/left to navigate, progress bars, haptic feedback
+- **AppTutorial** — 6-slide Instagram-story how-to: Reactor → Rate → Torch → Scene Frequency → Ranks. Tap right/left to navigate, progress bars, haptic feedback
 - **Agent API** — Public REST API for AI agents and third-party integrations:
   - `GET /api/v1/agent/venues/live?city=dubai&limit=5` — top venues by live energy
   - `GET /api/v1/agent/venues/{id}` — single venue real-time snapshot
@@ -642,7 +637,7 @@ That second pitch is what gets you the $250M exit.
 
 ### The Insight
 
-By 2026, people won't open apps to decide where to go. They'll ask their AI assistant:
+The shift is already happening. People are asking their AI assistant where to go:
 
 > *"Siri, where's the best energy in Dubai right now?"*
 > *"ChatGPT, where should my crew go tonight in Riyadh?"*

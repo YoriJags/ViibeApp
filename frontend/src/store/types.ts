@@ -259,6 +259,12 @@ export interface VibeDNA {
 
 export type NightPhase = 'planning' | 'locked_in' | 'recap';
 
+export interface SensorPrefs {
+  ambientSound:    boolean;
+  kineticMovement: boolean;
+  bleDensity:      boolean;
+}
+
 export function getNightPhase(activeCheckin: ActiveCheckin | null, isDemoMode: boolean): NightPhase {
   if (activeCheckin) return 'locked_in';
   const hour = new Date().getHours();

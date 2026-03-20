@@ -28,6 +28,11 @@ export const useVibeStore = create<VibeStore>()(
       ...createVenueSlice(set, get, api),
       ...createScoutSlice(set, get, api),
       ...createSocketSlice(set, get, api),
+
+      // Sensor preferences
+      sensorPrefs: { ambientSound: false, kineticMovement: false, bleDensity: false } as import('./types').SensorPrefs,
+      setSensorPrefs: (prefs: Partial<import('./types').SensorPrefs>) =>
+        set(state => ({ sensorPrefs: { ...(state as any).sensorPrefs, ...prefs } })),
     }),
     {
       name: 'vibe-store',
@@ -53,6 +58,7 @@ export const useVibeStore = create<VibeStore>()(
         pendingRatings: state.pendingRatings,
         // Tutorial
         hasSeenAppTutorial: state.hasSeenAppTutorial,
+        sensorPrefs: state.sensorPrefs,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

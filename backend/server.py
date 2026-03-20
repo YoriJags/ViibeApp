@@ -46,6 +46,7 @@ from app.routes.platform_settings import router as platform_settings_router
 from app.routes.subscriptions import router as subscriptions_router
 from app.routes.dwell import router as dwell_router
 from app.routes.ambient import router as ambient_router
+from app.routes.kinetic import router as kinetic_router
 from app.routes.reactions import router as reactions_router
 from app.routes.city_pulse import router as city_pulse_router
 from app.routes.venue_live import router as venue_live_router
@@ -137,6 +138,7 @@ api_router.include_router(quest_timeline_router)
 api_router.include_router(insider_router)
 api_router.include_router(dwell_router)
 api_router.include_router(ambient_router)
+api_router.include_router(kinetic_router)
 api_router.include_router(agent_api_router)
 
 # Include the API router in the main app
