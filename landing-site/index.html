@@ -51,7 +51,14 @@ body::before {
 .nav-links a:hover { color: var(--white); }
 .nav-cta { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; padding: 9px 20px; border: 1px solid var(--cyan); color: var(--cyan); text-decoration: none; transition: background 0.2s, color 0.2s; }
 .nav-cta:hover { background: var(--cyan); color: var(--base); }
-@media (max-width: 768px) { .nav-links { display: none; } }
+.nav-hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 4px; }
+.nav-hamburger span { display: block; width: 22px; height: 1.5px; background: var(--white); transition: all 0.2s; }
+#mobile-menu { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99; background: rgba(8,7,15,0.97); backdrop-filter: blur(20px); flex-direction: column; align-items: center; justify-content: center; gap: 32px; }
+#mobile-menu.open { display: flex; }
+#mobile-menu a { font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--w60); text-decoration: none; transition: color 0.2s; }
+#mobile-menu a:hover { color: var(--white); }
+#mobile-menu .mobile-close { position: absolute; top: 24px; right: 24px; background: none; border: none; color: var(--white); font-size: 24px; cursor: pointer; line-height: 1; }
+@media (max-width: 768px) { .nav-links { display: none; } .nav-hamburger { display: flex; } .nav-cta { display: none; } }
 
 /* HERO */
 #hero { min-height: 100vh; display: flex; align-items: center; padding: 120px 40px 80px; position: relative; overflow: hidden; }
@@ -216,7 +223,20 @@ footer { border-top: 1px solid var(--w05); padding: 56px 40px 40px; }
     <a href="#waitlist">Early Access</a>
   </div>
   <a href="#waitlist" class="nav-cta">Join waitlist</a>
+  <button class="nav-hamburger" onclick="openMobileMenu()" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
+
+<!-- MOBILE MENU -->
+<div id="mobile-menu">
+  <button class="mobile-close" onclick="closeMobileMenu()">&#x2715;</button>
+  <a href="#problem" onclick="closeMobileMenu()">Problem</a>
+  <a href="#product" onclick="closeMobileMenu()">Product</a>
+  <a href="#api" onclick="closeMobileMenu()">Agent API</a>
+  <a href="#waitlist" onclick="closeMobileMenu()">Early Access</a>
+  <a href="#waitlist" onclick="closeMobileMenu()" style="color:var(--cyan);border:1px solid var(--cyan);padding:12px 32px;">Join Waitlist</a>
+</div>
 
 <!-- HERO -->
 <section id="hero">
@@ -488,6 +508,8 @@ footer { border-top: 1px solid var(--w05); padding: 56px 40px 40px; }
 window.addEventListener('scroll', () => {
   document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
 });
+function openMobileMenu() { document.getElementById('mobile-menu').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeMobileMenu() { document.getElementById('mobile-menu').classList.remove('open'); document.body.style.overflow=''; }
 
 /* LIVE TERMINAL */
 const VENUES = [
