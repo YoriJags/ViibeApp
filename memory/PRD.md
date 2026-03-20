@@ -12,9 +12,19 @@ User (Oluwaseun Oluyori Ajagun, CEO/CTO of VIIBE) has built a full scene intelli
 
 ### Landing Page & Web Presence
 - Premium landing page with Bloomberg Terminal × Lagos nightlife aesthetic
-- Sections: Hero (live terminal widget), Problem, Product Showcase (Bento grid), Agent API terminal, Waitlist, Footer
+- Sections: Hero (Lagos Pulse + live terminal widget), Problem, Product Showcase (Bento grid), Agent API terminal, Waitlist, Footer
 - Typography: Unbounded (headlines) + JetBrains Mono (body/data)
 - Color: Deep black (#050505), Electric Cyan (#00F0FF), Hot Coral (#FF3366), Gold (#FFD700)
+
+### Lagos Pulse Feature (March 20, 2026)
+- Live city-wide energy score widget with animated SVG ring (0-100)
+- Auto-refreshes every 30 seconds from Agent API
+- Score fluctuation on backend (simulates real-time scout ratings)
+- Energy tier breakdown bars (electric/warming/quiet)
+- Top 3 trending venues with live scores
+- Active scouts counter
+- Share to Twitter button ("Lagos is at X energy right now")
+- Animated count-up transitions on score changes
 
 ### Backend (Waitlist + Agent API)
 - POST /api/waitlist — email signup with role (scout/venue_owner/developer), duplicate prevention
