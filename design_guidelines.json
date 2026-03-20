@@ -1,0 +1,137 @@
+{
+  "project_name": "VIIBE",
+  "theme": "dark",
+  "typography": {
+    "headings": {
+      "font_family": "Unbounded, sans-serif",
+      "weights": ["400", "700", "900"],
+      "usage": "Use for all primary section headers, hero text, and major numbers. Apply tracking-tighter for a tight, premium look."
+    },
+    "body": {
+      "font_family": "JetBrains Mono, monospace",
+      "weights": ["400", "500"],
+      "usage": "Use for all paragraphs, labels, form inputs, and data tables. This anchors the 'Bloomberg Terminal' aesthetic."
+    },
+    "data_metrics": {
+      "font_family": "JetBrains Mono, monospace",
+      "weights": ["700"],
+      "usage": "Use for Vibe Scores, API endpoint names, and live statistics. Add tracking-widest for overlines."
+    }
+  },
+  "colors": {
+    "background": {
+      "base": "#050505",
+      "surface": "#0A0A0A",
+      "elevated": "#111111"
+    },
+    "accents": {
+      "cyan": "#00F0FF",
+      "coral": "#FF3366",
+      "gold": "#FFD700"
+    },
+    "text": {
+      "primary": "#FFFFFF",
+      "secondary": "#A3A3A3",
+      "tertiary": "#525252"
+    },
+    "borders": {
+      "subtle": "rgba(255, 255, 255, 0.1)",
+      "active": "rgba(0, 240, 255, 0.5)"
+    },
+    "forbidden_colors": ["#7351B7", "purple", "violet"]
+  },
+  "visual_enhancers": {
+    "surface_strategy": "Glassmorphism mixed with Terminal Grid. Use bg-black/40 with backdrop-blur-xl and a delicate 1px border-white/10 for cards floating over images. For data panels, use stark, solid #0A0A0A backgrounds with border-white/10.",
+    "textures": "Overlay a subtle film grain (SVG noise filter) across the entire page to give it a gritty, nightlife film feel.",
+    "lighting": "Use glowing radial gradients placed behind major components to simulate neon club lighting bleeding into the terminal.",
+    "glow_effects": "drop-shadow-[0_0_15px_rgba(0,240,255,0.5)] on key 'Vibe Score' metrics and active API endpoints."
+  },
+  "grids_and_layouts": {
+    "global": "Use a generous spacing scale. p-8 to p-12 for standard sections, py-32 for main landing page sections.",
+    "bento_grid": "For the 'Product Showcase' (Scout Floor, Merchant Floor, Agent API), use the MODE A 'Tetris Grid'. grid-cols-1 md:grid-cols-12 gap-8. Mix tall, wide, and square cards to create visual tension.",
+    "alignment": "Strict left-alignment for all text and terminal-like data to reinforce the 'financial terminal' vibe. Do not center-align paragraphs."
+  },
+  "motion": {
+    "scroll": "Implement 'lenis' for smooth scrolling to give the site a premium, weighty feel.",
+    "micro_interactions": "Terminal typing effects for headers. Hovering on a venue card should slightly translate-y and increase border opacity. Data numbers (Vibe Scores) should count up dynamically.",
+    "marquee": "Use a Kinetic Texture marquee in the background of the 'Waitlist' section. Large outline text of 'VIIBE LVE DATA' slowly scrolling."
+  },
+  "accessibility": {
+    "contrast": "Ensure all JetBrains Mono body text against #050505 meets 4.5:1 APCA contrast ratio. Avoid dark gray on black.",
+    "focus_states": "All form inputs and buttons MUST have focus:ring-2 focus:ring-[#00F0FF] focus:outline-none.",
+    "motion_preference": "Respect prefers-reduced-motion for all scroll and marquee animations."
+  },
+  "components": [
+    {
+      "name": "HeroSection",
+      "path": "/app/src/components/landing/HeroSection.js",
+      "instructions": "Full height (min-h-screen). Background video/image of Lagos skyline/nightlife overlaid with terminal UI. Headline: 'Wherever people gather and feel something. VIIBE measures it. Live.' Unbounded font, massive size, tracking-tighter."
+    },
+    {
+      "name": "FeatureBento",
+      "path": "/app/src/components/landing/FeatureBento.js",
+      "instructions": "Bento grid showcasing Scout Floor, Merchant Floor, and Agent API. Use sharp edges, terminal aesthetic, glassmorphism cards. Incorporate code snippets for the Agent API card."
+    },
+    {
+      "name": "LiveApiDocs",
+      "path": "/app/src/components/landing/LiveApiDocs.js",
+      "instructions": "A section that looks like a live developer terminal. Left side: curl commands. Right side: dynamic JSON response showing fake live vibe scores from 'Lagos Victoria Island'. Use JetBrains Mono exclusively here."
+    },
+    {
+      "name": "WaitlistForm",
+      "path": "/app/src/components/landing/WaitlistForm.js",
+      "instructions": "Role-selector (Scout, Venue Owner, Developer). Custom Shadcn inputs with terminal styling (square edges, border-b only, or sharp 1px full border). Neon coral or cyan submit button."
+    }
+  ],
+  "media": {
+    "images": [
+      {
+        "url": "https://images.pexels.com/photos/36602313/pexels-photo-36602313.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Lagos Skyline night",
+        "category": "Hero Background"
+      },
+      {
+        "url": "https://images.pexels.com/photos/7715626/pexels-photo-7715626.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "DJ Crowd Energy",
+        "category": "Merchant Floor Feature"
+      },
+      {
+        "url": "https://images.pexels.com/photos/7269232/pexels-photo-7269232.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Neon Club Crowd",
+        "category": "Scout Floor Feature"
+      },
+      {
+        "url": "https://images.pexels.com/photos/342520/pexels-photo-342520.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Energetic Nightclub Scene",
+        "category": "General Accent/Bento filler"
+      }
+    ],
+    "icons": "lucide-react. Use stroke-width 1.5. Colors should be white or neon accents."
+  },
+  "3d_libraries": {
+    "recommended": "tsparticles",
+    "usage": "Use tsparticles to create a subtle, floating 'data node' network in the background of the API section to represent scene intelligence and real-time crowd data. Keep the particle count low and colors restricted to Cyan/Coral to maintain performance and avoid overwhelming the terminal UI."
+  },
+  "instructions_to_main_agent": [
+    "1. Setup Tailwind configuration: add custom colors (base, surface, cyan, coral, gold) and fonts (Unbounded, JetBrains Mono).",
+    "2. Implement a global noise overlay using a fixed, pointer-events-none SVG filter.",
+    "3. Build the HeroSection with an immersive background image and overlaying terminal-like floating widgets showing 'Live Vibe Scores'.",
+    "4. Construct the Waitlist section using standard HTML elements styled aggressively with Tailwind (Shadcn components heavily modified for sharp edges and terminal aesthetics).",
+    "5. Use Lucide React for all iconography.",
+    "6. Do not use generic Shadcn rounded cards; override styles to be sharp or extremely subtle rounded-sm, with strict border-white/10.",
+    "7. Include a 'data-testid' on all buttons and form inputs."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Do not converge toward generic outputs. Avoid the 'AI slop' aesthetic.",
+    "Do not use dark colors as gradients. Dark colors look best when solid or glassmorphic.",
+    "Never center align the app container (.App { text-align: center; } is strictly forbidden). Use strict left-alignment for data/terminal vibes.",
+    "Avoid generic centered layouts. Use asymmetrical bento grids.",
+    "Create depth using layered z-index hierarchy and backdrop-blur-xl (12-24px blur).",
+    "Do not apply 'transition: all'. Use specific transitions (e.g., transition-transform, transition-colors).",
+    "Add micro-animations to all interactive elements (hover states, focus states).",
+    "Use 2-3x more spacing than typical (p-8, p-12, py-24).",
+    "Never use emoji characters for icons or UI elements. Use lucide-react.",
+    "Always use named exports for components and default exports for pages.",
+    "Ensure the JSON file created serves as the single source of truth for the aesthetic."
+  ]
+}
