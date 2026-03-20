@@ -16,7 +16,6 @@ export default function Navbar() {
     { href: "#product", label: "Product" },
     { href: "#api", label: "Agent API" },
     { href: "#waitlist", label: "Early Access" },
-    { href: "/press", label: "Press" },
   ];
 
   return (
@@ -43,11 +42,11 @@ export default function Navbar() {
             </a>
           ))}
           <a
-            href="/docs"
-            className="font-mono text-xs bg-viibe-cyan/10 text-viibe-cyan border border-viibe-cyan/20 px-4 py-2 hover:bg-viibe-cyan/20 transition-colors"
-            data-testid="nav-docs"
+            href="#waitlist"
+            className="font-mono text-xs text-viibe-cyan border border-viibe-cyan/30 px-5 py-2 hover:bg-viibe-cyan/10 transition-colors uppercase tracking-wider"
+            data-testid="nav-join-waitlist"
           >
-            API Docs
+            Join Waitlist
           </a>
         </div>
 
@@ -63,7 +62,7 @@ export default function Navbar() {
               {link.label}
             </a>
           ))}
-          <a href="/docs" className="block font-mono text-sm text-viibe-cyan">API Docs</a>
+          <a href="#waitlist" onClick={() => setMenuOpen(false)} className="block font-mono text-sm text-viibe-cyan">Join Waitlist</a>
         </div>
       )}
     </nav>

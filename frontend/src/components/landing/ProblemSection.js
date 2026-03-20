@@ -5,14 +5,14 @@ const problems = [
     icon: MapPin,
     label: "Google Maps",
     headline: "Historical averages. Months old.",
-    body: "Built for navigation, not nightlife energy. 'Popular Times' shows you where the crowd WAS last Tuesday — not where the energy IS tonight.",
+    body: "Built for navigation, not scene energy. 'Popular Times' shows you where the crowd WAS last Tuesday — not where the energy IS tonight.",
     color: "text-viibe-coral",
   },
   {
     icon: Camera,
     label: "Social Media",
     headline: "Curated. Not live. Always late.",
-    body: "A highlight reel of a moment that has already passed. By the time it's on Instagram, the DJ already left and the vibe shifted.",
+    body: "A highlight reel of a moment that has already passed. By the time it's on Instagram, the DJ left and the vibe shifted.",
     color: "text-viibe-gold",
   },
   {

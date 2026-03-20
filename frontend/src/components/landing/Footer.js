@@ -1,4 +1,4 @@
-import { Github, Mail } from "lucide-react";
+import { Mail, Globe } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -23,10 +23,7 @@ export default function Footer() {
             <div className="space-y-2">
               <a href="#product" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">Scout Floor</a>
               <a href="#product" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">Merchant Floor</a>
-              <a href="/docs" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">Agent API</a>
-              <a href="/receipt" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">"I Was There" Receipt</a>
-              <a href="/report" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">Weekly Report</a>
-              <a href="/press" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">Press Kit</a>
+              <a href="#api" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">Agent API</a>
               <a href="#waitlist" className="block font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">Early Access</a>
             </div>
           </div>
@@ -38,8 +35,8 @@ export default function Footer() {
               <a href="mailto:yoriajagun08@gmail.com" className="flex items-center gap-2 font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">
                 <Mail size={12} /> yoriajagun08@gmail.com
               </a>
-              <a href="https://github.com/YoriJags" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">
-                <Github size={12} /> github.com/YoriJags
+              <a href="https://vibe-app-theta.vercel.app" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">
+                <Globe size={12} /> vibe-app-theta.vercel.app
               </a>
             </div>
           </div>

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Terminal, ArrowRight } from "lucide-react";
 import axios from "axios";
-import { Link } from "react-router-dom";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -93,14 +92,14 @@ export default function ApiSection() {
         </div>
 
         <div className="mt-8">
-          <Link
-            to="/docs"
+          <a
+            href="#waitlist"
             className="inline-flex items-center gap-2 font-mono text-sm text-viibe-cyan hover:text-white transition-colors group"
             data-testid="view-full-docs"
           >
-            View full API documentation
+            Get API access
             <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-          </Link>
+          </a>
         </div>
       </div>
     </section>

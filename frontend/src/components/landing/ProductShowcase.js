@@ -8,7 +8,7 @@ const features = [
     icon: Flame,
     color: "viibe-coral",
     span: "md:col-span-7 md:row-span-2",
-    items: ["8 Reactor Skins", "Vibe Oracle AI", "Scene Frequency", "Torch Ignite"],
+    items: ["VibeReactor", "Oracle AI", "Scene Frequency", "Torch Ignite"],
     hasReactor: true,
   },
   {
@@ -33,9 +33,9 @@ const features = [
 
 const stats = [
   { label: "Algorithms", value: "16+", icon: Gauge },
-  { label: "Reactor Skins", value: "8", icon: Eye },
+  { label: "Reactor Skins", value: "4", icon: Eye },
   { label: "AI Pipelines", value: "3", icon: Zap },
-  { label: "Lagos Venues", value: "10", icon: Radio },
+  { label: "Lagos Venues", value: "10+", icon: Radio },
 ];
 
 function FeatureCard({ feature, onOpenReactor }) {
