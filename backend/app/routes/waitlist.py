@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 from datetime import datetime, timezone
-from app.database import db
+from app.config import db
 
 router = APIRouter(prefix="/waitlist", tags=["waitlist"])
 
