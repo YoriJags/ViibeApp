@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from datetime import datetime, timezone
+import smtplib
+import os
+from email.mime.text import MIMEText
 from app.config import db
 
 router = APIRouter(prefix="/waitlist", tags=["waitlist"])
@@ -28,5 +31,23 @@ async def join_waitlist(entry: WaitlistEntry):
         "position": position,
         "joined_at": datetime.now(timezone.utc),
     })
+
+    # Send notification email
+    try:
+        smtp_user = os.environ.get("SMTP_USER", "")
+        smtp_pass = os.environ.get("SMTP_PASS", "")
+        notify_email = os.environ.get("NOTIFY_EMAIL", "Yoriajagun08@gmail.com")
+        if smtp_user and smtp_pass:
+            msg = MIMEText(
+                f"New waitlist signup!\n\nEmail: {entry.email}\nRole: {entry.role}\nCity: {entry.city}\nPosition: #{position}"
+            )
+            msg["Subject"] = f"VIIBE Waitlist #{position} — {entry.role}"
+            msg["From"] = smtp_user
+            msg["To"] = notify_email
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_user, notify_email, msg.as_string())
+    except Exception:
+        pass  # Never block signup due to email failure
 
     return {"ok": True, "position": position}
