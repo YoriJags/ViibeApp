@@ -1,8 +1,8 @@
 # VIIBE — $250M EXIT STRATEGY BLUEPRINT
 ## Real-Time Experience Intelligence Platform for Africa
 
-**Document Version:** 3.0
-**Date:** March 2026 (Updated)
+**Document Version:** 4.0
+**Date:** March 20, 2026 — Full update: Phase 3 builds, Agentic AI play, Agent API, sensor stack roadmap
 **Confidential — For Internal Use Only**
 
 ---
@@ -103,6 +103,26 @@ A full-stack mobile platform with three user layers:
 - **GlobalVibePill HUD** — persistent floating HUD; global geofence state; surge counter; city-wide collective charge
 - **Dual Home Mode** — Scout (gamified) vs. Insider (clean AI intel); toggle pill; persisted in store; `sceneIntel.ts` converts venue data to Intel sentences
 - **Venue Live system** — follow/unfollow venues; "I Dey Road" intent (enroute/maybe/pass, 3h TTL); merchant live push blasts (30min rate-limit); `venue_follows`, `venue_headings`, `venue_live_pushes` collections
+
+**Phase 3 — Sensor Stack + Skins + Conversion (Built March 2026):**
+- **8 Reactor Skins** — REACTOR, WAVE, BARS, PULSE, AURA, TERRAIN, RADAR, MATRIX. Each is a separate Skia animation engine driven by live BPM + vibeScore + surgeValue SharedValues. 3 free, 5 VIBE+ exclusive.
+- **SkinContainer** — reads `selectedSkin` from Zustand (AsyncStorage persisted), renders correct skin engine, "CHANGE SKIN" pill affordance
+- **SkinSelector** — 2-col grid default mode + spotlight mode: when a free user taps a premium skin, shows blurred preview + "UNLOCK [SKIN] + 4 MORE PREMIUM SKINS" Paystack CTA with skin accent color
+- **FeatureStoryStrip** — 6-card horizontal story strip on home screen with social proof nudges ("61% of scouts use REACTOR"). Premium skin taps open SkinSelector in spotlight mode — contextual conversion, not generic paywall
+- **VibeOscillator (Scene Frequency)** — live BPM + energy waveform visualizer, VIBE+ exclusive. Modes: BARS (24-bar equalizer, single batched Skia path), WAVE (sine oscillation), PULSE (concentric heartbeat rings). Driven by Reanimated SharedValues — zero JS thread overhead
+- **TorchButton** — manual one-tap torch toggle (always accessible) + IGNITE SCENE hold mechanic (visible at vibeScore ≥ 85). Emits `ignite_hold_start`/`ignite_hold_end` to socket
+- **Torch Ignite (Collective Flash)** — synchronized crowd flashlight mechanic. Socket handler supports `single | pulse | wave` patterns + `delay_ms` stagger. Hardware torch via hidden `<CameraView enableTorch style={{width:0,height:0}}>`
+- **Surge Distortions** — TERRAIN: chromatic aberration (3 ridge paths with R/G/B X-offsets, opacity driven by surgeIntensity); AURA: supernova (outer glow +40px, blur 24→56px at peak); MATRIX: gold mode (green stream fades out, gold `#FFD700` fades in during surge)
+- **Ambient Sound Meter** — `useAmbientMeter` hook + `AmbientOptInModal`. Samples dB every 30s inside geofence, never records audio, sends numeric level to backend. Opt-in with clear UX framing
+- **UI Rebrand** — VibeReactor canvas 220→300px, ring radius 95→130, orb 72→98. Atmospheric LinearGradient backdrop. GlitchText 10→20px/900 weight. VenueCard atmospheric gradient overlay. VenueCategoryFilter emoji prefix + solid accent fill. CityPulseBar stats pulse animation on socket events
+- **OnboardingFlow** — 2-slide intro + mode pick + call name. Target: new user hits first tap within 90 seconds
+- **AppTutorial** — 6-slide Instagram-story how-to: Reactor → Rate → Skins → Torch → Scene Frequency → Ranks. Tap right/left to navigate, progress bars, haptic feedback
+- **Agent API** — Public REST API for AI agents and third-party integrations:
+  - `GET /api/v1/agent/venues/live?city=dubai&limit=5` — top venues by live energy
+  - `GET /api/v1/agent/venues/{id}` — single venue real-time snapshot
+  - `GET /api/v1/agent/city/pulse?city=riyadh` — city-level energy summary
+  - Admin endpoints: issue / list / revoke API keys (super admin only)
+  - API key auth via X-Agent-Key header or ?api_key= param
 
 **Deployment (Live):**
 - Frontend: https://vibe-app-hc83.vercel.app (Expo web, Vercel)
@@ -618,6 +638,58 @@ That second pitch is what gets you the $250M exit.
 
 ---
 
+## 11b. THE AGENTIC AI PLAY — NEW CATEGORY POSITION (March 2026)
+
+### The Insight
+
+By 2026, people won't open apps to decide where to go. They'll ask their AI assistant:
+
+> *"Siri, where's the best energy in Dubai right now?"*
+> *"ChatGPT, where should my crew go tonight in Riyadh?"*
+> *"Perplexity, what's the hottest venue near me right now?"*
+
+Every one of those queries hits a data source. Right now **no real-time venue energy data source exists** that an AI agent can query with confidence. Google Maps has historical "Popular Times." Yelp has star ratings. Neither has a live crowd energy score updated in the last five minutes.
+
+**VIIBE does. And the Agent API is live.**
+
+### What This Means for Positioning
+
+This reframes the pitch from:
+> *"An entertainment app with a white-label option"*
+
+To:
+> *"The real-time crowd intelligence layer that AI agents query when humans ask where to go — the only verified, live, sensor-driven data source in the entertainment sector."*
+
+### The Fourth Revenue Stream — API Licensing
+
+| Customer | Use Case | Model |
+|----------|----------|-------|
+| Hotel groups (Marriott, Rotana, Jumeirah) | Concierge app live venue recommendations | Monthly SaaS per property |
+| Travel apps (TripAdvisor, Booking.com) | "What's alive tonight?" destination feature | Revenue share per query |
+| AI assistants (ChatGPT Actions, Claude MCP, Perplexity) | Real-time venue intelligence tool | API key licensing |
+| Music labels & brands | Live crowd response data per event | Per-activation fee |
+| City tourism boards | Destination intelligence dashboard | Annual licensing |
+
+### Integration Roadmap
+
+| Integration | What | Timeline |
+|-------------|------|----------|
+| ChatGPT Actions | Register VIIBE as a GPT Action for travel/nightlife GPTs | Month 3-6 |
+| Claude MCP server | Register Agent API as a Claude tool | Month 3-6 |
+| Perplexity partner | Real-time data source for venue/nightlife queries | Month 6-9 |
+| First hotel B2B deal | Concierge app integration (pilot) | Month 6-12 |
+| Google Maps integration | Structured venue data markup → AI Overview surfacing | Year 2+ |
+| Siri / Google Assistant native | Requires scale (100K+ users) + press coverage | Year 2-3 |
+
+### Why First-Mover Matters Here
+
+The data moat + the agentic AI position compound together:
+- More scouts → richer real-time data → AI agents prefer VIIBE over competitors → more platform visibility → more scouts
+- A competitor cannot replicate this without first building the user base
+- The Agent API being live now means VIIBE can be registered as a data source **before** demand peaks — critical for search ranking and agent training data inclusion
+
+---
+
 ## 12. WHY AI COMPANIES WOULD APPROACH US
 
 ### The Data Moat
@@ -695,24 +767,44 @@ The brand has evolved to **VIIBE** — a deliberate double-I stylization that is
 
 ## 14. IMMEDIATE ACTION ITEMS
 
-### Now (March 2026)
+### Build Queue (Current Priority Order)
+
+| # | Action | Status |
+|---|--------|--------|
+| 1 | **Kinetic accelerometer sensor** — expo-sensors crowd BPM detection, zero permissions | 🔨 Next build |
+| 2 | **PostHog analytics** — track all key scout actions for investor demo kit | 🔨 Next |
+| 3 | **ChatGPT Actions registration** — register VIIBE Agent API as a GPT Action | 🗓️ Soon |
+| 4 | **EAS Build setup** — `eas init`, `eas.json`, dev client for biometric/wearable builds | 🗓️ Soon |
+| 5 | **App Store submission** — TestFlight beta for founding scouts | 🗓️ Month 1-2 |
+
+### Lagos Launch (Scout Acquisition)
 
 | # | Action | Priority |
 |---|--------|----------|
-| 1 | Execute seed milestone roadmap (6 phases — Billing, EAS Build, Push, Growth, Analytics, Investor Deliverables) | Critical |
-| 2 | CRITICAL: Use RevenueCat + Apple IAP for Vibe+ on iOS — NOT Paystack (App Store Guideline 3.1.1) | Critical |
-| 3 | EAS Build setup — run `eas init`, create `eas.json`, switch to development builds | Critical |
-| 4 | Submit App Store listing by mid-October 2026 for Detty December readiness | High |
-| 5 | Recruit 20–30 founding scouts in VI/Lekki corridor for cold-start | High |
-
-### This Month
-
-| # | Action | Priority |
-|---|--------|----------|
-| 6 | Partner with 5 anchor Lagos venues (free dashboard access, 3 months) | High |
-| 7 | Approach seed investors: Launch Africa, Microtraction, Future Africa, Voltron Capital | High |
+| 6 | Recruit 20–30 founding scouts in VI/Lekki corridor | Critical |
+| 7 | Partner with 5 anchor Lagos venues (free dashboard, 3 months) | Critical |
 | 8 | Record 2-minute demo video using demo mode | High |
-| 9 | Create LinkedIn/Twitter presence for VIIBE brand | Medium |
+| 9 | Create LinkedIn/Twitter presence for VIIBE brand | High |
+
+### Investor Outreach (Active)
+
+| # | Action | Priority |
+|---|--------|----------|
+| 10 | **Gulf targets** (enterprise operator deal): SEVEN, Meraas, FIVE Hotels — white-label pitch | High |
+| 11 | **Gulf VCs**: STV (Saudi), Shorooq Partners, BECO Capital — Series A conversation | High |
+| 12 | **African VCs** (pre-seed): Launch Africa, Microtraction, Future Africa, Voltron Capital | High |
+| 13 | Send updated HTML pitch deck (`PITCH_DECK_INVESTOR.html`) to all active VC contacts | Now |
+
+### Pipeline Features
+
+| # | Feature | When |
+|---|---------|------|
+| 14 | BLE proximity / thermal crowding | After 5K users |
+| 15 | Biometric wearable (Apple Watch + Galaxy Watch HR) | After EAS dev client confirmed |
+| 16 | Cartel Battle (cross-venue) | Month 2-3 |
+| 17 | Quest Timeline | Month 2-3 |
+| 18 | Switch Face (venue mode switching) | Month 3-4 |
+| 19 | Gulf payment provider swap (STCPay / Telr / Tap Payments) | Before Gulf deployment |
 
 ### Pitch Deck Structure (12 Slides)
 
