@@ -220,6 +220,47 @@ class ViibeAPITester:
             "/v1/agent/venues/non-existent-venue",
             404
         )
+    
+    def test_venues_live_all_with_coordinates(self):
+        """Test venues/live endpoint returns all 10 venues with coordinates"""
+        success, response = self.run_test(
+            "Live Venues - All 10 with Coordinates",
+            "GET",
+            "/v1/agent/venues/live",
+            200,
+            params={"city": "lagos", "limit": 20}
+        )
+        
+        if success and response:
+            venues = response.get('venues', [])
+            print(f"   Found {len(venues)} venues")
+            
+            # Check we have all 10 venues
+            if len(venues) != 10:
+                print(f"❌ Expected 10 venues, got {len(venues)}")
+                return False
+            
+            # Check all venues have coordinates
+            venues_with_coords = 0
+            for venue in venues:
+                if 'coordinates' in venue and venue['coordinates']:
+                    coords = venue['coordinates']
+                    if 'lat' in coords and 'lng' in coords:
+                        venues_with_coords += 1
+                        print(f"   ✅ {venue['name']}: lat={coords['lat']}, lng={coords['lng']}")
+                    else:
+                        print(f"   ❌ {venue['name']}: missing lat/lng in coordinates")
+                else:
+                    print(f"   ❌ {venue['name']}: missing coordinates field")
+            
+            if venues_with_coords == 10:
+                print(f"   ✅ All 10 venues have valid coordinates")
+                return True
+            else:
+                print(f"   ❌ Only {venues_with_coords}/10 venues have valid coordinates")
+                return False
+        
+        return False
 
 def main():
     # Setup
@@ -242,6 +283,7 @@ def main():
     
     # Test Agent API endpoints
     tester.test_venues_live()
+    tester.test_venues_live_all_with_coordinates()
     tester.test_single_venue()
     tester.test_city_pulse()
     tester.test_city_pulse_fluctuation()

@@ -1,14 +1,15 @@
-import { Gauge, BarChart3, Code2, Flame, Users, Shield, Radio, Eye, Zap } from "lucide-react";
+import { Gauge, BarChart3, Code2, Flame, Radio, Eye, Zap, Play } from "lucide-react";
 
 const features = [
   {
     title: "Scout Floor",
     subtitle: "Find the scene. Rate the vibe. Earn clout.",
-    description: "Live venue map with Vibe Scores. 8 Reactor Skins. Geofenced ratings. Torch Ignite crowd flash. Oracle AI predictions. Scene Frequency waveform.",
+    description: "Live venue map with Vibe Scores. 8 Reactor Skins with Skia animations. Geofenced ratings. Torch Ignite crowd flash. Oracle AI predictions. Scene Frequency waveform.",
     icon: Flame,
     color: "viibe-coral",
     span: "md:col-span-7 md:row-span-2",
     items: ["8 Reactor Skins", "Vibe Oracle AI", "Scene Frequency", "Torch Ignite"],
+    hasReactor: true,
   },
   {
     title: "Merchant Floor",
@@ -37,7 +38,7 @@ const stats = [
   { label: "Lagos Venues", value: "10", icon: Radio },
 ];
 
-function FeatureCard({ feature }) {
+function FeatureCard({ feature, onOpenReactor }) {
   const borderHover = {
     "viibe-coral": "hover:border-viibe-coral/30",
     "viibe-gold": "hover:border-viibe-gold/30",
@@ -58,18 +59,28 @@ function FeatureCard({ feature }) {
       <p className={`font-mono text-[10px] uppercase tracking-widest ${textColor[feature.color]} mb-2`}>{feature.subtitle}</p>
       <h3 className="font-display text-xl font-bold mb-3">{feature.title}</h3>
       <p className="font-mono text-xs text-neutral-400 leading-relaxed mb-6">{feature.description}</p>
-      <div className="flex flex-wrap gap-2">
+
+      <div className="flex flex-wrap items-center gap-2">
         {feature.items.map((item) => (
           <span key={item} className="font-mono text-[10px] px-2 py-1 border border-white/10 text-neutral-400">
             {item}
           </span>
         ))}
+        {feature.hasReactor && onOpenReactor && (
+          <button
+            onClick={onOpenReactor}
+            className="font-mono text-[10px] px-3 py-1 border border-viibe-coral/40 text-viibe-coral hover:bg-viibe-coral/10 transition-colors flex items-center gap-1.5 ml-1"
+            data-testid="demo-reactor-btn"
+          >
+            <Play size={10} /> Demo Reactor
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-export default function ProductShowcase() {
+export default function ProductShowcase({ onOpenReactor }) {
   return (
     <section id="product" className="py-24 md:py-32" data-testid="product-section">
       <div className="max-w-7xl mx-auto px-6">
@@ -83,7 +94,7 @@ export default function ProductShowcase() {
 
         <div className="grid md:grid-cols-12 gap-6 mb-16">
           {features.map((f) => (
-            <FeatureCard key={f.title} feature={f} />
+            <FeatureCard key={f.title} feature={f} onOpenReactor={onOpenReactor} />
           ))}
         </div>
 
