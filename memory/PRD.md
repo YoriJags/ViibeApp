@@ -16,7 +16,27 @@ User (Oluwaseun Oluyori Ajagun, CEO/CTO of VIIBE) has built a full scene intelli
 - Typography: Unbounded (headlines) + JetBrains Mono (body/data)
 - Color: Deep black (#050505), Electric Cyan (#00F0FF), Hot Coral (#FF3366), Gold (#FFD700)
 
-### Lagos Pulse Feature (March 20, 2026)
+### Lagos Heat Map (March 20, 2026)
+- SVG-based tactical map of Victoria Island, Ikoyi, and Lekki Phase 1
+- 10 venue dots positioned by real lat/lng coordinates
+- Color-coded by energy state: Electric (cyan 80+), Warming (gold 60-79), Quiet (coral <60)
+- Animated pulsing glow halos proportional to vibe score
+- Hover tooltips showing venue name, score, energy state, and capacity
+- District labels (VICTORIA ISLAND, IKOYI, LEKKI) as background text
+- Grid overlay for terminal aesthetic
+- Legend and live venue count
+
+### VibeReactor Full-Screen Modal (March 20, 2026)
+- Full-screen Canvas-based animation system with 4 skins:
+  - Neon Bloom: Concentric rings with orbiting particles
+  - Solar Flare: Radial beams with pulsing center
+  - Deep Bass: Layered sine waves like audio visualizer
+  - Lagos Nights: Starfield with central energy orb and connection lines
+- Energy slider (20-99) that adjusts animation intensity in real-time
+- Venue selector (Escape Nightclub, Quilox, Club Joker)
+- Skin navigation with dots + arrow buttons + keyboard arrows
+- Giant score display with color-coded glow
+- "Demo Reactor" button in Product Showcase triggers modal
 - Live city-wide energy score widget with animated SVG ring (0-100)
 - Auto-refreshes every 30 seconds from Agent API
 - Score fluctuation on backend (simulates real-time scout ratings)
