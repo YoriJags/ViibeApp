@@ -2,6 +2,7 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "@/pages/Landing";
 import ApiDocs from "@/pages/ApiDocs";
+import PitchDeck from "@/pages/PitchDeck";
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/docs" element={<ApiDocs />} />
+          <Route path="/pitch" element={<PitchDeck />} />
         </Routes>
       </BrowserRouter>
     </div>
