@@ -209,6 +209,29 @@ footer { border-top: 1px solid var(--w05); padding: 56px 40px 40px; }
 .venue-pill { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 14px; border: 1px solid var(--w10); color: rgba(255,255,255,0.4); background: none; cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; font-family: 'Inter', sans-serif; }
 .venue-pill.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,240,255,0.05); }
 .reactor-hint { text-align: center; font-size: 9px; color: rgba(255,255,255,0.15); letter-spacing: 0.1em; }
+
+/* Scroll reveal */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.65s ease, transform 0.65s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* Terminal flash */
+@keyframes scoreFlash { 0%,100%{background:transparent} 50%{background:rgba(0,240,255,0.08)} }
+.score-flash { animation: scoreFlash 0.35s ease; }
+
+/* Merchant modal */
+#merchant-modal { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(8,7,15,0.97); backdrop-filter: blur(20px); align-items: center; justify-content: center; padding: 32px; }
+#merchant-modal.open { display: flex; }
+.merchant-inner { max-width: 700px; width: 100%; position: relative; }
+.merchant-close { position: absolute; top: 0; right: 0; background: none; border: 1px solid var(--w10); color: var(--white); width: 36px; height: 36px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s; }
+.merchant-close:hover { border-color: rgba(255,215,0,0.4); }
+.merchant-head { margin-bottom: 32px; }
+.merchant-chart-box { background: var(--surface); border: 1px solid var(--w10); padding: 20px; margin-bottom: 20px; }
+.merchant-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.merchant-stat { background: var(--surface); border: 1px solid var(--w05); padding: 16px; text-align: center; }
+.merchant-stat-val { font-family: 'Playfair Display',serif; font-size: 22px; font-weight: 700; color: var(--gold); text-shadow: 0 0 20px rgba(255,215,0,0.3); }
+.merchant-stat-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--w35); margin-top: 4px; }
+.peak-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,51,102,0.08); border: 1px solid rgba(255,51,102,0.2); padding: 6px 14px; margin-top: 12px; }
+.peak-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--coral); animation: pulse 1.5s ease-in-out infinite; }
 </style>
 </head>
 <body>
@@ -336,6 +359,10 @@ footer { border-top: 1px solid var(--w05); padding: 56px 40px 40px; }
           <span class="product-tag">Energy Curves</span>
           <span class="product-tag">Pulse Drops</span>
           <span class="product-tag">ROI Metrics</span>
+          <button class="demo-btn" style="border-color:rgba(255,215,0,0.4);color:var(--gold);" onclick="openMerchant()">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 1.5l6 3.5-6 3.5z"/></svg>
+            View Analytics
+          </button>
         </div>
       </div>
       <div class="product-card product-card-api">
@@ -503,6 +530,39 @@ footer { border-top: 1px solid var(--w05); padding: 56px 40px 40px; }
   </div>
 </div>
 
+<!-- MERCHANT ANALYTICS MODAL -->
+<div id="merchant-modal">
+  <div class="merchant-inner">
+    <button class="merchant-close" onclick="closeMerchant()">&#x2715;</button>
+    <div class="merchant-head">
+      <p class="label gold" style="margin-bottom:8px;">Merchant Floor — Live Demo</p>
+      <h2 style="font-family:'Playfair Display',serif;font-size:clamp(22px,3vw,32px);font-weight:700;margin-bottom:8px;">Escape Nightclub</h2>
+      <p style="font-size:12px;color:var(--w35);">Victoria Island · Lagos · Tonight's energy curve</p>
+      <div class="peak-badge">
+        <div class="peak-badge-dot"></div>
+        <span style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--coral);">Peak Detected — 01:15 AM</span>
+      </div>
+    </div>
+    <div class="merchant-chart-box">
+      <canvas id="merchant-chart" height="140" style="width:100%;display:block;"></canvas>
+    </div>
+    <div class="merchant-stats">
+      <div class="merchant-stat">
+        <div class="merchant-stat-val" id="m-score">91</div>
+        <div class="merchant-stat-label">Current Vibe</div>
+      </div>
+      <div class="merchant-stat">
+        <div class="merchant-stat-val" style="color:var(--coral);">+34%</div>
+        <div class="merchant-stat-label">vs Last Friday</div>
+      </div>
+      <div class="merchant-stat">
+        <div class="merchant-stat-val" style="color:var(--cyan);">212</div>
+        <div class="merchant-stat-label">Active Scouts</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 /* NAVBAR */
 window.addEventListener('scroll', () => {
@@ -530,7 +590,7 @@ function renderVenues() {
 renderVenues();
 setInterval(() => {
   VENUES.forEach(v => { v.score = Math.max(50, Math.min(99, v.score + Math.floor(Math.random()*7)-3)); });
-  renderVenues();
+  renderVenuesWithFlash();
 }, 2500);
 
 /* API TYPEWRITER */
@@ -752,6 +812,121 @@ function drawLagosNights(ctx,w,h,score,t,pts){
   og.addColorStop(0.6,`rgba(255,51,102,${0.12*s})`);og.addColorStop(1,'transparent');
   ctx.fillStyle=og;ctx.beginPath();ctx.arc(cx,cy,65*pulse,0,Math.PI*2);ctx.fill();
 }
+
+/* SCROLL REVEAL */
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('visible'); revealObserver.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.problem-card,.product-card,.stat-card,.border-left,.code-box,.section-h2,.section-sub,.section-tag').forEach(el => {
+  el.classList.add('reveal');
+  revealObserver.observe(el);
+});
+
+/* TERMINAL SCORE FLASH */
+function renderVenuesWithFlash() {
+  const el = document.getElementById('live-venues');
+  el.classList.remove('score-flash');
+  void el.offsetWidth; // reflow to restart animation
+  el.classList.add('score-flash');
+  el.innerHTML = VENUES.map(v => `
+    <div class="venue-row">
+      <span style="color:var(--white);font-weight:500;">${v.name}</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="venue-score state-${v.state}" style="font-weight:700;">${v.score}</span>
+        <span class="venue-state state-${v.state}" style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;">${v.state}</span>
+      </div>
+    </div>`).join('');
+}
+
+/* MERCHANT ANALYTICS DEMO */
+let merchantRaf = null;
+function openMerchant() {
+  document.getElementById('merchant-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  drawMerchantChart();
+}
+function closeMerchant() {
+  document.getElementById('merchant-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  if(merchantRaf) { cancelAnimationFrame(merchantRaf); merchantRaf = null; }
+}
+function drawMerchantChart() {
+  const canvas = document.getElementById('merchant-chart');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = 140 * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const w = rect.width, h = 140;
+  // Energy data: hours 10pm–4am with a peak around 1am
+  const points = [18,24,32,45,58,71,82,91,88,79,65,48,32,20];
+  const hours = ['10p','11p','12a','1a','2a','3a','4a','5a'];
+  const px = (i) => (i / (points.length-1)) * (w - 40) + 20;
+  const py = (v) => h - 24 - (v / 100) * (h - 40);
+
+  let progress = 0;
+  let t0 = null;
+  function frame(ts) {
+    if(!t0) t0 = ts;
+    progress = Math.min((ts - t0) / 1800, 1);
+    ctx.clearRect(0,0,w,h);
+
+    // Grid lines
+    [25,50,75].forEach(v => {
+      ctx.beginPath(); ctx.moveTo(20, py(v)); ctx.lineTo(w-20, py(v));
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth=1; ctx.stroke();
+    });
+
+    // Fill gradient under curve
+    const visiblePts = Math.max(2, Math.floor(progress * (points.length)));
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, 'rgba(255,215,0,0.15)');
+    grad.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.moveTo(px(0), py(0));
+    for(let i=1;i<visiblePts;i++) {
+      const x0=px(i-1),y0=py(points[i-1]),x1=px(i),y1=py(points[i]);
+      ctx.bezierCurveTo((x0+x1)/2,y0,(x0+x1)/2,y1,x1,y1);
+    }
+    ctx.lineTo(px(visiblePts-1), h-24);
+    ctx.lineTo(px(0), h-24);
+    ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+
+    // Curve line
+    ctx.beginPath();
+    ctx.moveTo(px(0), py(points[0]));
+    for(let i=1;i<visiblePts;i++) {
+      const x0=px(i-1),y0=py(points[i-1]),x1=px(i),y1=py(points[i]);
+      ctx.bezierCurveTo((x0+x1)/2,y0,(x0+x1)/2,y1,x1,y1);
+    }
+    ctx.strokeStyle = 'rgba(255,215,0,0.7)'; ctx.lineWidth=2;
+    ctx.shadowColor='rgba(255,215,0,0.4)'; ctx.shadowBlur=8; ctx.stroke(); ctx.shadowBlur=0;
+
+    // Peak dot at index 7 (score 91)
+    if(progress > 7/(points.length-1)) {
+      const peakX=px(7), peakY=py(91);
+      ctx.beginPath(); ctx.arc(peakX, peakY, 5, 0, Math.PI*2);
+      ctx.fillStyle='var(--coral)'; ctx.shadowColor='rgba(255,51,102,0.6)'; ctx.shadowBlur=12; ctx.fill(); ctx.shadowBlur=0;
+      ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font='9px Inter';ctx.textAlign='center';
+      ctx.fillText('PEAK',peakX,peakY-12);
+    }
+
+    // Hour labels
+    ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font='9px Inter'; ctx.textAlign='center';
+    hours.forEach((h_,i) => ctx.fillText(h_, px(i*2), h-6));
+
+    // Live score ticker
+    const idx = Math.min(Math.floor(progress*(points.length-1)), points.length-1);
+    document.getElementById('m-score').textContent = points[idx];
+
+    if(progress < 1) merchantRaf = requestAnimationFrame(frame);
+    else merchantRaf = null;
+  }
+  merchantRaf = requestAnimationFrame(frame);
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape' && document.getElementById('merchant-modal').classList.contains('open')) closeMerchant(); });
 </script>
 </body>
 </html>
