@@ -16,6 +16,14 @@ User (Oluwaseun Oluyori Ajagun, CEO/CTO of VIIBE) has built a full scene intelli
 - Typography: Unbounded (headlines) + JetBrains Mono (body/data)
 - Color: Deep black (#050505), Electric Cyan (#00F0FF), Hot Coral (#FF3366), Gold (#FFD700)
 
+### Investor Pitch Deck (March 20, 2026)
+- 9-slide presentation at /pitch route with terminal aesthetic
+- Slides: Title, Problem, Breakthrough (tap mechanic), Product, Live Data, Business, Market, Moat, Ask
+- Keyboard navigation (arrow keys + spacebar), click zones, progress dots
+- Live Data slide fetches real API data during presentation
+- Breakthrough slide features the tap mechanic + future mechanics (Drift, Pulse Sync, Pendulum, Echo)
+- Ask slide: $50K-$200K pre-seed with clear use of funds
+
 ### Lagos Heat Map (March 20, 2026)
 - SVG-based tactical map of Victoria Island, Ikoyi, and Lekki Phase 1
 - 10 venue dots positioned by real lat/lng coordinates
