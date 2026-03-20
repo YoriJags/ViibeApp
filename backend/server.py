@@ -73,6 +73,8 @@ from app.routes.vibe_quest import router as vibe_quest_router
 from app.routes.quest_timeline import router as quest_timeline_router
 from app.routes.insider import router as insider_router
 from app.routes.agent_api import router as agent_api_router
+from app.routes.shares import router as shares_router
+from app.routes.scene_report import router as scene_report_router
 
 # ===== Create FastAPI App =====
 app = FastAPI(title="Viibe App API", version="3.0.0")
@@ -142,6 +144,8 @@ api_router.include_router(ambient_router)
 api_router.include_router(kinetic_router)
 api_router.include_router(waitlist_router)
 api_router.include_router(agent_api_router)
+api_router.include_router(shares_router)
+api_router.include_router(scene_report_router)
 
 # Include the API router in the main app
 app.include_router(api_router)
