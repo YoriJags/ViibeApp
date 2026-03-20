@@ -92,7 +92,7 @@ User (Oluwaseun Oluyori Ajagun, CEO/CTO of VIIBE) has built a full scene intelli
 4. **Investors** — evaluating pre-seed opportunity
 
 ## Core Requirements (Static)
-- Real-time crowd energy measurement at venues
+VIIBE is **scene-centric** (not nightlife-only). It measures energy wherever people gather: clubs, restaurants, events, markets, beaches, festivals — any scene. All copy reflects this broader framing.
 - Scout rating system (geofenced, time-decayed)
 - Merchant analytics dashboard
 - Agent API for AI assistant integration

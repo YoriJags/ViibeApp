@@ -231,7 +231,7 @@ export default function Receipt() {
             "I Was There"
           </h1>
           <p className="font-mono text-sm text-neutral-500 max-w-md leading-relaxed">
-            Generate your shareable checkout receipt from any Lagos venue. Prove you were part of the energy.
+            Generate your shareable checkout receipt from any Lagos scene. Prove you were part of the energy.
           </p>
         </div>
 

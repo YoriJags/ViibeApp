@@ -92,6 +92,7 @@ export default function Report() {
           <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight mb-2">
             Lagos Scene Report
           </h1>
+          <p className="font-mono text-xs text-neutral-600 mt-1">Venues, events, and cultural spaces — wherever people gather.</p>
           <p className="font-mono text-sm text-neutral-500">{report.report_week}</p>
         </div>
 

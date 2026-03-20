@@ -21,7 +21,7 @@ const BRAND_COLORS = [
 const PRESS_LINKS = [
   { label: "Pitch Deck", href: "/pitch", desc: "Interactive 9-slide investor presentation" },
   { label: "API Documentation", href: "/docs", desc: "Agent API v1 — real-time venue intelligence" },
-  { label: "Weekly Scene Report", href: "/report", desc: "Live Lagos nightlife energy data" },
+  { label: "Weekly Scene Report", href: "/report", desc: "Live Lagos scene energy data" },
 ];
 
 export default function Press() {
@@ -57,7 +57,7 @@ export default function Press() {
           <p className="font-mono text-[10px] text-neutral-500 uppercase tracking-wider mb-3">One-Liner</p>
           <p className="font-display text-xl md:text-2xl font-bold leading-relaxed">
             VIIBE is the first <span className="text-viibe-cyan">scene intelligence</span> platform — 
-            measuring real-time crowd energy at nightlife venues, starting in <span className="text-viibe-gold">Lagos</span>.
+            measuring real-time crowd energy wherever people gather, starting in <span className="text-viibe-gold">Lagos</span>.
           </p>
         </div>
 
@@ -88,8 +88,8 @@ export default function Press() {
                 <p className="font-mono text-sm text-neutral-400 leading-relaxed mb-4">
                   Solo-built the entire VIIBE stack: 474+ commits, 16 algorithms, 8 Reactor Skins, 
                   Agent API, real-time Socket.IO infrastructure. React Native (Expo 54) + FastAPI + MongoDB. 
-                  Previous experience in Lagos nightlife scene; saw firsthand the information gap venues and 
-                  night-goers face. Building the infrastructure layer for the scene economy.
+                  Saw firsthand the information gap venues, events, and scene-goers face across Lagos. 
+                  Building the infrastructure layer for the scene economy.
                 </p>
                 <div className="flex gap-4">
                   <a href="mailto:yoriajagun08@gmail.com" className="flex items-center gap-2 font-mono text-xs text-neutral-400 hover:text-viibe-cyan transition-colors">
@@ -109,20 +109,20 @@ export default function Press() {
           <h2 className="font-mono text-xs text-neutral-500 uppercase tracking-wider mb-6">The Story</h2>
           <div className="border border-white/5 bg-viibe-surface p-6 md:p-8 space-y-4" data-testid="press-story">
             <p className="font-mono text-sm text-neutral-300 leading-relaxed">
-              <span className="text-viibe-coral font-bold">The Problem:</span> Every Friday night, 2M+ Lagos night-goers make decisions blind. 
-              "Is Quilox packed?" "Is Shiro dead tonight?" They rely on stale Instagram stories and WhatsApp hearsay. 
-              Venues have zero real-time demand intelligence. A $1.2B nightlife economy operates on vibes — not data.
+              <span className="text-viibe-coral font-bold">The Problem:</span> Every weekend, 2M+ Lagos scene-goers make decisions blind. 
+              "Is Quilox packed?" "Is Shiro dead tonight?" "Is the beach festival worth it?" They rely on stale Instagram stories and WhatsApp hearsay. 
+              Venues, events, and cultural spaces have zero real-time demand intelligence. A $1.2B scene economy operates on vibes — not data.
             </p>
             <p className="font-mono text-sm text-neutral-300 leading-relaxed">
-              <span className="text-viibe-cyan font-bold">The Solution:</span> VIIBE turns anonymous scouts at venues into a real-time 
+              <span className="text-viibe-cyan font-bold">The Solution:</span> VIIBE turns anonymous scouts at any scene into a real-time 
               crowd intelligence network. One tap generates a live energy score (0-99). 16 algorithms weight 
-              recency, scout reliability, venue capacity, and time-of-night. The result: a live, city-wide pulse 
-              map of where the energy is right now.
+              recency, scout reliability, capacity, and time-of-day. The result: a live, city-wide pulse 
+              map of where the energy is right now — clubs, restaurants, events, markets, beaches, anywhere people gather.
             </p>
             <p className="font-mono text-sm text-neutral-300 leading-relaxed">
-              <span className="text-viibe-gold font-bold">The Business:</span> Free for scouts. Venues pay $49-199/mo for the Merchant Floor — 
+              <span className="text-viibe-gold font-bold">The Business:</span> Free for scouts. Venues and event spaces pay $49-199/mo for the Merchant Floor — 
               real-time analytics, surge pricing triggers, competitor benchmarking. The Agent API lets AI assistants 
-              answer "where should I go tonight?" with live data. Revenue from venue SaaS + API licensing.
+              answer "where's the energy right now?" with live data. Revenue from scene SaaS + API licensing.
             </p>
           </div>
         </div>
