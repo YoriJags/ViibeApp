@@ -8,68 +8,82 @@ User (Oluwaseun Oluyori Ajagun, CEO/CTO of VIIBE) has built a full scene intelli
 - **Web Landing Page** (this build): React (CRA + Tailwind), FastAPI, MongoDB
 - **Deployment**: Mobile on Railway + Vercel | Landing page on Emergent
 
-## What's Been Implemented (March 20, 2026)
+## What's Been Implemented
 
-### Landing Page & Web Presence
-- Premium landing page with Bloomberg Terminal × Lagos nightlife aesthetic
+### Landing Page & Web Presence (March 20, 2026)
+- Premium landing page with Bloomberg Terminal x Lagos nightlife aesthetic
 - Sections: Hero (Lagos Pulse + live terminal widget), Problem, Product Showcase (Bento grid), Agent API terminal, Waitlist, Footer
 - Typography: Unbounded (headlines) + JetBrains Mono (body/data)
 - Color: Deep black (#050505), Electric Cyan (#00F0FF), Hot Coral (#FF3366), Gold (#FFD700)
 
 ### Investor Pitch Deck (March 20, 2026)
 - 9-slide presentation at /pitch route with terminal aesthetic
-- Slides: Title, Problem, Breakthrough (tap mechanic), Product, Live Data, Business, Market, Moat, Ask
-- Keyboard navigation (arrow keys + spacebar), click zones, progress dots
+- Slides: Title, Problem, Breakthrough, Product, Live Data, Business, Market, Moat, Ask
+- Keyboard navigation, click zones, progress dots
 - Live Data slide fetches real API data during presentation
-- Breakthrough slide features the tap mechanic + future mechanics (Drift, Pulse Sync, Pendulum, Echo)
-- Ask slide: $50K-$200K pre-seed with clear use of funds
 
 ### Lagos Heat Map (March 20, 2026)
 - SVG-based tactical map of Victoria Island, Ikoyi, and Lekki Phase 1
 - 10 venue dots positioned by real lat/lng coordinates
-- Color-coded by energy state: Electric (cyan 80+), Warming (gold 60-79), Quiet (coral <60)
-- Animated pulsing glow halos proportional to vibe score
-- Hover tooltips showing venue name, score, energy state, and capacity
-- District labels (VICTORIA ISLAND, IKOYI, LEKKI) as background text
-- Grid overlay for terminal aesthetic
-- Legend and live venue count
+- Color-coded by energy state with animated pulsing glow halos
 
 ### VibeReactor Full-Screen Modal (March 20, 2026)
-- Full-screen Canvas-based animation system with 4 skins:
-  - Neon Bloom: Concentric rings with orbiting particles
-  - Solar Flare: Radial beams with pulsing center
-  - Deep Bass: Layered sine waves like audio visualizer
-  - Lagos Nights: Starfield with central energy orb and connection lines
-- Energy slider (20-99) that adjusts animation intensity in real-time
-- Venue selector (Escape Nightclub, Quilox, Club Joker)
-- Skin navigation with dots + arrow buttons + keyboard arrows
-- Giant score display with color-coded glow
-- "Demo Reactor" button in Product Showcase triggers modal
-- Live city-wide energy score widget with animated SVG ring (0-100)
-- Auto-refreshes every 30 seconds from Agent API
-- Score fluctuation on backend (simulates real-time scout ratings)
-- Energy tier breakdown bars (electric/warming/quiet)
-- Top 3 trending venues with live scores
-- Active scouts counter
-- Share to Twitter button ("Lagos is at X energy right now")
-- Animated count-up transitions on score changes
+- Full-screen Canvas-based animation system with 4 skins
+- Energy slider, venue selector, skin navigation
+- Live city-wide energy score widget
 
-### Backend (Waitlist + Agent API)
-- POST /api/waitlist — email signup with role (scout/venue_owner/developer), duplicate prevention
+### Social Sharing Cards / OG Meta Tags (March 20, 2026)
+- Open Graph meta tags (og:title, og:description, og:image, og:site_name)
+- Twitter Card meta tags (summary_large_image)
+- Custom branded OG share image (1536x1024) — deep black + cyan glow + VIIBE branding
+- Links shared on social now display premium preview cards
+
+### "I Was There" Receipt Generator (March 20, 2026)
+- `/receipt` route with venue selection form
+- Backend POST /api/receipt/generate returns styled receipt data
+- Receipt card shows: venue name, energy score, energy state, capacity, scout name, checkout time
+- Download as PNG (via html2canvas) and Share to Twitter functionality
+- Terminal-aesthetic receipt with dashed borders, VIIBE branding, star rating
+
+### Weekly Scene Report (March 20, 2026)
+- `/report` route pulling live data from GET /api/report/weekly
+- Stats grid: venues tracked, avg energy, active scouts, peak night
+- Energy distribution tier bars (electric/warming/quiet)
+- Top 5 and coldest 3 venues ranked by score
+- District energy breakdown (Victoria Island, Ikoyi, Lekki Phase 1)
+- Category breakdown (nightclub, lounge, restaurant, bar, event_space)
+- Trending venues list
+- Share to X button
+
+### Press Kit Page (March 20, 2026)
+- `/press` route with comprehensive brand & media information
+- One-liner, key stats (474+ commits, 16+ algorithms, 8 skins)
+- Founder bio (Oluwaseun Oluyori Ajagun, CEO/CTO)
+- The Story: Problem, Solution, Business sections
+- Brand colors palette (6 colors)
+- Typography guide (Unbounded + JetBrains Mono)
+- Logo on dark/light backgrounds
+- Quick links to Pitch Deck, API Docs, Weekly Report
+- Media contact information
+
+### Backend (Waitlist + Agent API + New Endpoints)
+- POST /api/waitlist — email signup with role, duplicate prevention
 - GET /api/waitlist/stats — waitlist analytics
 - GET /api/v1/agent/venues/live — top venues by energy score
 - GET /api/v1/agent/venues/{id} — single venue snapshot
 - GET /api/v1/agent/city/pulse — city-level energy summary
-- Auto-seeded 10 real Lagos venues (Quilox, Escape, Shiro, etc.)
+- POST /api/receipt/generate — receipt generator
+- GET /api/report/weekly — weekly scene report data
+- Auto-seeded 10 real Lagos venues
 
-### API Documentation Portal
+### API Documentation Portal (March 20, 2026)
 - Full /docs page with 3 endpoints documented
 - Live "Try it" buttons hitting real backend
 - Curl command copy, code snippets
 
 ### Testing
-- All backend tests: 100% (9/9 endpoints)
-- All frontend tests: 100% (14/14 features)
+- Iteration 5: Backend 100% (16/16), Frontend 100%
+- All backend tests: /app/backend/tests/test_viibe_api.py
 
 ## User Personas
 1. **Scouts** (18-35 Lagos nightlife-goers) — want real-time venue energy data
@@ -92,7 +106,7 @@ User (Oluwaseun Oluyori Ajagun, CEO/CTO of VIIBE) has built a full scene intelli
 - [ ] Waitlist to 100+ signups
 
 ### P1 — Near-term
-- [ ] Landing page SEO + social meta tags
+- [x] Landing page SEO + social meta tags
 - [ ] 90-second demo video
 - [ ] ChatGPT Actions registration for Agent API
 - [ ] Mobile app optimizations (lazy skin loading, Android profiling)
