@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VIIBE â US Market Â· Series A 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --base:#08070F;--surface:#0f0e17;--cyan:#00F0FF;--coral:#FF3366;--gold:#FFD700;
+    --white:#FFFFFF;--w60:rgba(255,255,255,0.6);--w35:rgba(255,255,255,0.35);
+    --w10:rgba(255,255,255,0.08);--w05:rgba(255,255,255,0.05);
+  }
+  html,body{background:var(--base);color:var(--white);font-family:'Inter',sans-serif;height:100%;overflow:hidden;}
+  body::before{content:'';position:fixed;inset:0;z-index:100;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");opacity:0.3;}
+  #deck{display:flex;flex-direction:column;height:100vh;}
+  #slide-area{flex:1;position:relative;overflow:hidden;}
+  .slide{display:none;height:100%;max-width:900px;margin:0 auto;padding:60px 80px;flex-direction:column;justify-content:center;}
+  .slide.active{display:flex;}
+  #bar{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-top:1px solid var(--w05);flex-shrink:0;}
+  .bar-nav{display:flex;align-items:center;gap:16px;}
+  .nav-btn{background:none;border:none;color:var(--w35);cursor:pointer;font-size:18px;padding:4px 8px;transition:color 0.2s;line-height:1;}
+  .nav-btn:hover{color:var(--white);}.nav-btn:disabled{opacity:0.2;cursor:default;}
+  .slide-counter{font-family:'Inter',monospace;font-size:10px;color:var(--w35);letter-spacing:0.1em;}
+  #progress{display:flex;gap:4px;align-items:center;}
+  .dot{height:3px;border-radius:2px;background:var(--w10);cursor:pointer;transition:width 0.3s,background 0.3s;width:8px;}
+  .dot.active{width:24px;background:var(--cyan);}.dot.past{background:rgba(0,240,255,0.3);}
+  #wordmark{font-size:10px;letter-spacing:0.2em;color:rgba(0,240,255,0.3);font-weight:700;text-transform:uppercase;}
+  #wordmark span{color:var(--cyan);}
+  .label{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;font-weight:600;margin-bottom:24px;}
+  .label.coral{color:var(--coral);}.label.cyan{color:var(--cyan);}.label.gold{color:var(--gold);}
+  .display{font-family:'Playfair Display',serif;font-weight:700;line-height:1.1;letter-spacing:-0.01em;}
+  .mono{font-family:'Inter',monospace;}
+  .muted{color:var(--w60);}.dim{color:var(--w35);}
+  .glow-cyan{text-shadow:0 0 20px rgba(0,240,255,0.5),0 0 40px rgba(0,240,255,0.2);}
+  .glow-coral{text-shadow:0 0 20px rgba(255,51,102,0.5),0 0 40px rgba(255,51,102,0.2);}
+  .glow-gold{text-shadow:0 0 20px rgba(255,215,0,0.5),0 0 40px rgba(255,215,0,0.2);}
+  .divider{width:64px;height:1px;background:var(--cyan);margin:32px 0;}
+  .border-left{border-left:2px solid;padding-left:24px;padding-top:12px;padding-bottom:12px;}
+  .bl-coral{border-color:var(--coral);}.bl-gold{border-color:var(--gold);}.bl-cyan{border-color:var(--cyan);}
+  .tag{display:inline-block;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;border:1px solid var(--w10);color:var(--w35);padding:3px 8px;font-weight:600;}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;}
+  .code-block{background:var(--surface);border:1px solid var(--w05);padding:20px 24px;max-width:640px;}
+  .code-block pre{font-family:'Courier New',monospace;font-size:11px;color:rgba(0,240,255,0.8);white-space:pre-wrap;line-height:1.7;}
+  .code-label{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .live-dot{width:6px;height:6px;border-radius:50%;background:var(--coral);animation:pulse-dot 1.5s ease-in-out infinite;}
+  @keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:0.3;}}
+  @media print{
+    #bar{display:none;}html,body{overflow:visible;height:auto;}#deck{height:auto;}
+    #slide-area{height:auto;overflow:visible;}
+    .slide{display:flex!important;page-break-after:always;height:100vh;}
+    @page{size:A4 landscape;margin:0;}
+    *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  }
+</style>
+</head>
+<body>
+<div id="deck">
+  <div id="slide-area">
+
+    <!-- SLIDE 1 â COVER -->
+    <div class="slide active" id="s0">
+      <p class="label cyan">US Market Â· Series A 2026</p>
+      <h1 class="display" style="font-size:clamp(72px,10vw,120px);margin-bottom:16px;">V<span style="color:var(--cyan);">II</span>BE</h1>
+      <p class="display muted" style="font-size:clamp(20px,2.5vw,32px);margin-bottom:32px;">Scene Intelligence</p>
+      <div class="divider"></div>
+      <p class="mono muted" style="font-size:14px;line-height:1.8;max-width:520px;">
+        The $115B US live entertainment market runs on instinct.<br>
+        VIIBE gives it a nervous system.
+      </p>
+      <p class="mono dim" style="font-size:11px;margin-top:48px;letter-spacing:0.1em;">Operational. Scalable. US-ready.</p>
+      <p class="mono" style="font-size:11px;margin-top:12px;line-height:1.8;max-width:520px;color:rgba(255,255,255,0.35);">We are building the behavioral data infrastructure for human social energy — at the exact moment the world's AI systems need ground-truth human signal that cannot be synthetically replicated.</p>
+      <a href="https://vibe-app-theta.vercel.app" target="_blank" style="margin-top:16px;font-size:11px;color:var(--cyan);text-decoration:none;opacity:0.6;letter-spacing:0.1em;display:flex;align-items:center;gap:8px;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#00D084;box-shadow:0 0 8px #00D084;display:inline-block;"></span>
+        vibe-app-theta.vercel.app
+      </a>
+    </div>
+
+    <!-- SLIDE 2 â PROBLEM -->
+    <div class="slide" id="s1">
+      <p class="label coral">The Problem</p>
+      <h2 class="display" style="font-size:clamp(34px,4.2vw,52px);margin-bottom:16px;">A $115B industry is flying blind.</h2>
+      <p class="mono muted" style="font-size:15px;margin-bottom:40px;">US live entertainment generates <strong style="color:var(--white);">$115B annually</strong> across venues, festivals, and events. Not one platform tells you what is actually happening inside right now.</p>
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <div class="border-left bl-coral">
+          <p class="mono" style="font-size:10px;color:var(--coral);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:6px;">Yelp / Google</p>
+          <p class="mono muted" style="font-size:13px;">Static ratings written the morning after. Useful for restaurants. Useless for deciding where to go at 11pm on a Saturday in Miami or Atlanta.</p>
+        </div>
+        <div class="border-left bl-gold">
+          <p class="mono" style="font-size:10px;color:var(--gold);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:6px;">Social Media</p>
+          <p class="mono muted" style="font-size:13px;">TikTok and Instagram show you the highlight reel â always curated, always late. The decision you need to make is happening right now.</p>
+        </div>
+        <div class="border-left bl-cyan">
+          <p class="mono" style="font-size:10px;color:var(--cyan);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:6px;">The AI Opportunity</p>
+          <p class="mono muted" style="font-size:13px;">ChatGPT, Siri, and Google's AI Mode are already being asked "where should I go tonight in NYC?" They have no real-time venue intelligence source to pull from. VIIBE is building that source.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3 â BREAKTHROUGH -->
+    <div class="slide" id="s2">
+      <p class="label cyan">The Breakthrough</p>
+      <h2 class="display" style="font-size:clamp(34px,4vw,52px);margin-bottom:24px;">We invented the<br><span style="color:var(--cyan);" class="glow-cyan">tap mechanic.</span></h2>
+      <p class="mono muted" style="font-size:13px;line-height:1.8;max-width:560px;margin-bottom:48px;">One tap. Geofenced. Time-stamped. Presence-verified. That single interaction feeds 16+ algorithms that calculate live Vibe Scores, detect energy peaks, predict crowd behavior, and build the only real-time scene intelligence dataset on the planet.</p>
+      <div class="grid-4">
+        <div><p class="display glow-cyan" style="font-size:32px;color:var(--cyan);">1 tap</p><p class="mono dim" style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-top:6px;">Input</p></div>
+        <div><p class="display glow-gold" style="font-size:32px;color:var(--gold);">16+</p><p class="mono dim" style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-top:6px;">Algorithms</p></div>
+        <div><p class="display glow-coral" style="font-size:32px;color:var(--coral);">12+</p><p class="mono dim" style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-top:6px;">Data points</p></div>
+        <div><p class="display" style="font-size:32px;color:var(--white);">&lt; 1s</p><p class="mono dim" style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-top:6px;">Latency</p></div>
+      </div>
+      <div style="margin-top:40px;border-top:1px solid var(--w05);padding-top:24px;">
+        <p class="mono dim" style="font-size:11px;line-height:1.8;">Future layers: <span class="muted">Kinetic</span> (accelerometer BPM detection) Â· <span class="muted">BLE Density</span> (passive crowd count) Â· <span class="muted">Biometric HR</span> (Apple Watch + Galaxy Watch)</p>
+      </div>
+    </div>
+
+    <!-- SLIDE 4 â PRODUCT -->
+    <div class="slide" id="s3">
+      <p class="label cyan">The Product</p>
+      <h2 class="display" style="font-size:clamp(34px,4vw,52px);margin-bottom:8px;">Three floors. One terminal.</h2>
+      <p class="mono muted" style="font-size:13px;margin-bottom:40px;">Full-stack. Deployed. Demo-ready today.</p>
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <div class="border-left bl-coral" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:12px;"><h3 class="display" style="font-size:18px;">Scout Floor</h3><span class="tag">Consumer</span></div>
+          <p class="mono muted" style="font-size:12px;line-height:1.7;">Live venue map. VibeReactor kinetic tap engine with BPM lock and crowd sync. Geofenced ratings. Oracle AI predictions. Scene Frequency waveform. Torch Ignite crowd mechanic.</p>
+        </div>
+        <div class="border-left bl-gold" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:12px;"><h3 class="display" style="font-size:18px;">Venue Dashboard</h3><span class="tag">B2B SaaS</span></div>
+          <p class="mono muted" style="font-size:12px;line-height:1.7;">Hourly energy curves. Peak detection. Campaign tools. Scout intelligence feed. Real-time ROI tracking. VIIBE Certification unlocks the full data pipeline.</p>
+        </div>
+        <div class="border-left bl-cyan" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:12px;"><h3 class="display" style="font-size:18px;">Agent API</h3><span class="tag">Data Infrastructure</span></div>
+          <p class="mono muted" style="font-size:12px;line-height:1.7;">Live venue scores, city pulse, crowd state. Built for ChatGPT Actions, Siri, Google AI Mode, Perplexity. The real-time data layer AI assistants are missing.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5 â LIVE DEMO -->
+    <div class="slide" id="s4">
+      <p class="label cyan">Live Demonstration</p>
+      <h2 class="display" style="font-size:clamp(34px,4vw,52px);margin-bottom:8px;">This is real. Right now.</h2>
+      <p class="mono muted" style="font-size:13px;margin-bottom:36px;">Live API response from the VIIBE Agent API. Operational data. Updating continuously.</p>
+      <div class="code-block">
+        <div class="code-label"><div class="live-dot"></div><span class="mono dim" style="font-size:10px;">GET /api/v1/agent/city/pulse?city=lagos</span></div>
+        <pre id="live-data">// fetching live data...</pre>
+      </div>
+      <p class="mono dim" style="font-size:11px;margin-top:20px;">ChatGPT, Siri, Google AI Mode â any AI assistant can query VIIBE in real time. No other verified real-time scene intelligence source exists at scale.</p>
+    </div>
+
+    <!-- SLIDE 6 â BUSINESS -->
+    <div class="slide" id="s5">
+      <p class="label gold">The Business</p>
+      <h2 class="display" style="font-size:clamp(28px,3.5vw,44px);margin-bottom:8px;">The app is the acquisition engine.</h2>
+      <h2 class="display glow-cyan" style="font-size:clamp(28px,3.5vw,44px);color:var(--cyan);margin-bottom:48px;">The data layer is the business.</h2>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <div style="display:flex;align-items:center;gap:24px;border-bottom:1px solid var(--w05);padding:14px 0;"><span class="display" style="font-size:14px;color:var(--coral);width:160px;flex-shrink:0;">Consumer</span><span class="mono muted" style="font-size:12px;flex:1;">Freemium + $9.99/mo premium tier. Scales with user base.</span><span class="mono dim" style="font-size:10px;letter-spacing:0.1em;">Day 1</span></div>
+        <div style="display:flex;align-items:center;gap:24px;border-bottom:1px solid var(--w05);padding:14px 0;"><span class="display" style="font-size:14px;color:var(--gold);width:160px;flex-shrink:0;">Venue SaaS</span><span class="mono muted" style="font-size:12px;flex:1;">$500â$2,000/mo per venue â live analytics + campaign tools</span><span class="mono dim" style="font-size:10px;letter-spacing:0.1em;">Month 1</span></div>
+        <div style="display:flex;align-items:center;gap:24px;border-bottom:1px solid var(--w05);padding:14px 0;"><span class="display" style="font-size:14px;color:var(--cyan);width:160px;flex-shrink:0;">Agent API</span><span class="mono muted" style="font-size:12px;flex:1;">Per-query licensing for AI assistants, hospitality apps, travel platforms</span><span class="mono dim" style="font-size:10px;letter-spacing:0.1em;">Month 3</span></div>
+        <div style="display:flex;align-items:center;gap:24px;padding:14px 0;"><span class="display" style="font-size:14px;color:var(--white);width:160px;flex-shrink:0;">Data Licensing</span><span class="mono muted" style="font-size:12px;flex:1;">City-level crowd intelligence sold to brands, music labels, city planners</span><span class="mono dim" style="font-size:10px;letter-spacing:0.1em;">Year 1</span></div>
+      </div>
+      <div style="margin-top:32px;display:flex;gap:40px;">
+        <div><p class="display glow-cyan" style="font-size:28px;color:var(--cyan);">90%+</p><p class="mono dim" style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-top:4px;">Gross Margin</p></div>
+        <div><p class="display glow-gold" style="font-size:28px;color:var(--gold);">10â25Ã</p><p class="mono dim" style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-top:4px;">LTV / CAC</p></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7 â MARKET -->
+    <div class="slide" id="s6">
+      <p class="label gold">The Market</p>
+      <h2 class="display" style="font-size:clamp(30px,3.8vw,48px);margin-bottom:40px;">The world's biggest entertainment economy â zero live intelligence.</h2>
+      <div class="grid-3" style="margin-bottom:32px;">
+        <div>
+          <p class="display glow-cyan" style="font-size:40px;color:var(--cyan);">$115B</p>
+          <p class="mono muted" style="font-size:12px;margin-top:8px;">US live entertainment</p>
+          <p class="mono dim" style="font-size:11px;margin-top:4px;">Concerts Â· clubs Â· festivals Â· events</p>
+        </div>
+        <div>
+          <p class="display glow-gold" style="font-size:40px;color:var(--gold);">$35B</p>
+          <p class="mono muted" style="font-size:12px;margin-top:8px;">US nightlife economy</p>
+          <p class="mono dim" style="font-size:11px;margin-top:4px;">NYC Â· Miami Â· LA Â· Atlanta Â· Chicago</p>
+        </div>
+        <div>
+          <p class="display glow-coral" style="font-size:40px;color:var(--coral);">340M</p>
+          <p class="mono muted" style="font-size:12px;margin-top:8px;">Americans 18â45</p>
+          <p class="mono dim" style="font-size:11px;margin-top:4px;">Primary going-out demographic</p>
+        </div>
+      </div>
+      <div class="border-left bl-cyan" style="margin-bottom:16px;">
+        <p class="mono muted" style="font-size:12px;line-height:1.8;"><strong style="color:var(--cyan);">The AI angle:</strong> ChatGPT has 100M+ weekly active users. Google AI Mode is replacing the search bar. Perplexity is the default for Gen Z research. Every one of these platforms is being asked "where should I go tonight?" â and none of them have a real-time data source to answer. VIIBE is that source.</p>
+      </div>
+      <div class="border-left bl-gold">
+        <p class="mono muted" style="font-size:12px;line-height:1.8;"><strong style="color:var(--gold);">The comparable:</strong> Waze became indispensable because it had real-time data no one else had. VIIBE is Waze for the city's social scene. The dataset compounds every night and <span style="color:var(--white);">cannot be scraped, synthesized, or faked.</span></p>
+      </div>
+    </div>
+
+    <!-- SLIDE 8 â MOAT -->
+    <div class="slide" id="s7">
+      <p class="label cyan">The Moat</p>
+      <h2 class="display" style="font-size:clamp(30px,3.8vw,48px);margin-bottom:24px;">A dataset that<br>does not exist yet.</h2>
+      <p class="mono muted" style="font-size:12px;line-height:1.8;max-width:560px;margin-bottom:32px;">Every tap, every night, every venue â the data compounds. No one else is collecting time-stamped, geofenced, crowd-verified energy data at this granularity. This dataset cannot be replicated retroactively.</p>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:flex-start;gap:16px;"><span class="mono" style="font-size:11px;color:var(--cyan);margin-top:2px;flex-shrink:0;">01</span><p class="mono muted" style="font-size:12px;line-height:1.7;">The more scouts rate, the more accurate scores become. The more accurate, the more scouts join. <span style="color:var(--white);">Classic network effect.</span></p></div>
+        <div style="display:flex;align-items:flex-start;gap:16px;"><span class="mono" style="font-size:11px;color:var(--cyan);margin-top:2px;flex-shrink:0;">02</span><p class="mono muted" style="font-size:12px;line-height:1.7;"><span style="color:var(--white);">VIIBE Certification</span> is the venue trust gate. Certified venues are visible to the intelligence layer. Each one raises fidelity for the entire city dataset.</p></div>
+        <div style="display:flex;align-items:flex-start;gap:16px;"><span class="mono" style="font-size:11px;color:var(--cyan);margin-top:2px;flex-shrink:0;">03</span><p class="mono muted" style="font-size:12px;line-height:1.7;"><span style="color:var(--white);">Privacy-first architecture:</span> behavioral signals store anonymous tokens, not user identities. CCPA-compliant at the database layer â not as policy, as architecture. This is what enterprise buyers and city governments need.</p></div>
+        <div style="display:flex;align-items:flex-start;gap:16px;"><span class="mono" style="font-size:11px;color:var(--cyan);margin-top:2px;flex-shrink:0;">04</span><p class="mono muted" style="font-size:12px;line-height:1.7;">"Where is the energy in NYC tonight?" â <span style="color:var(--white);">Every AI platform needs a real-time answer.</span> VIIBE is the only infrastructure that can provide it. The Scout network generates data that <span style="color:var(--white);">cannot be scraped, synthesized, or faked</span> — socially-validated, presence-verified, irreplicable.</p></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 9 â FLYWHEEL -->
+    <div class="slide" id="s8">
+      <p class="label cyan">The System</p>
+      <h2 class="display" style="font-size:clamp(28px,3.5vw,44px);margin-bottom:8px;">The interface is temporary.</h2>
+      <h2 class="display glow-cyan" style="font-size:clamp(28px,3.5vw,44px);color:var(--cyan);margin-bottom:32px;">The system is permanent.</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;max-width:680px;">
+        <div style="border:1px solid var(--w10);padding:14px 16px;"><p class="mono" style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--coral);margin-bottom:6px;">01 Â· Scout Floor</p><p class="mono muted" style="font-size:11px;line-height:1.6;">High-energy mobile experience drives organic user growth. City launch is a community event, not an ad campaign.</p></div>
+        <div style="border:1px solid var(--w10);padding:14px 16px;"><p class="mono" style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">02 Â· Sensor Network</p><p class="mono muted" style="font-size:11px;line-height:1.6;">Scouts generate presence-verified data: dwell time, arrival velocity, kinetic movement, ambient dB.</p></div>
+        <div style="border:1px solid var(--w10);padding:14px 16px;"><p class="mono" style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--cyan);margin-bottom:6px;">06 Â· Re-Investment</p><p class="mono muted" style="font-size:11px;line-height:1.6;">High-margin revenue funds city expansion. The loop deepens every night, in every city.</p></div>
+        <div style="border:1px solid var(--w10);padding:14px 16px;"><p class="mono" style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--cyan);margin-bottom:6px;">03 Â· Intelligence Layer</p><p class="mono muted" style="font-size:11px;line-height:1.6;">16+ algorithms transform raw signal into Scene Intelligence, Oracle predictions, and crowd analytics.</p></div>
+        <div style="border:1px solid var(--w10);padding:14px 16px;"><p class="mono" style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--white);margin-bottom:6px;">05 Â· Data Moat</p><p class="mono muted" style="font-size:11px;line-height:1.6;">Historical energy curves become a proprietary, licensable dataset. Irreplicable once the clock starts.</p></div>
+        <div style="border:1px solid var(--w10);padding:14px 16px;"><p class="mono" style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">04 Â· Venue Floor</p><p class="mono muted" style="font-size:11px;line-height:1.6;">Venues pay monthly SaaS. Certified venues power the network. Uncertified venues are invisible.</p></div>
+      </div>
+      <div style="margin-top:20px;border-top:1px solid var(--w05);padding-top:16px;display:flex;gap:32px;">
+        <div><p class="mono" style="font-size:10px;color:var(--w35);line-height:1.7;">Competition</p><p class="mono muted" style="font-size:11px;">"Better UI than us"</p></div>
+        <div style="display:flex;align-items:center;color:var(--w10);font-size:18px;">â</div>
+        <div><p class="mono" style="font-size:10px;color:var(--cyan);line-height:1.7;">System reality</p><p class="mono" style="font-size:11px;color:var(--white);">"Cannot backfill 2 years of real energy curves — and can't fake what humans actually felt"</p></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 10 â ASK -->
+    <div class="slide" id="s9">
+      <p class="label coral">The Ask</p>
+      <div style="display:flex;gap:48px;align-items:flex-start;">
+        <div style="flex:1;">
+          <h2 class="display glow-cyan" style="font-size:clamp(36px,4.5vw,56px);color:var(--cyan);margin-bottom:4px;">$1M â $5M</h2>
+          <h3 class="display muted" style="font-size:clamp(16px,2vw,22px);margin-bottom:28px;">Series A Â· US Expansion</h3>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;">
+            <div style="display:flex;align-items:center;gap:16px;"><span class="mono" style="font-size:11px;color:var(--cyan);width:36px;flex-shrink:0;">35%</span><div style="flex:1;height:1px;background:var(--w10);"></div><span class="mono muted" style="font-size:11px;">NYC + Miami + Atlanta launch operations</span></div>
+            <div style="display:flex;align-items:center;gap:16px;"><span class="mono" style="font-size:11px;color:var(--cyan);width:36px;flex-shrink:0;">25%</span><div style="flex:1;height:1px;background:var(--w10);"></div><span class="mono muted" style="font-size:11px;">Scout acquisition + city activation teams</span></div>
+            <div style="display:flex;align-items:center;gap:16px;"><span class="mono" style="font-size:11px;color:var(--cyan);width:36px;flex-shrink:0;">25%</span><div style="flex:1;height:1px;background:var(--w10);"></div><span class="mono muted" style="font-size:11px;">Engineering team + infrastructure scaling</span></div>
+            <div style="display:flex;align-items:center;gap:16px;"><span class="mono" style="font-size:11px;color:var(--cyan);width:36px;flex-shrink:0;">15%</span><div style="flex:1;height:1px;background:var(--w10);"></div><span class="mono muted" style="font-size:11px;">Enterprise sales + venue partnership pipeline</span></div>
+          </div>
+        </div>
+        <div style="width:1px;background:var(--w05);align-self:stretch;"></div>
+        <div style="flex:1;">
+          <p class="mono" style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--cyan);margin-bottom:16px;">Why this bet wins</p>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div class="border-left bl-cyan" style="padding:10px 16px;">
+              <p class="mono" style="font-size:10px;color:var(--cyan);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:4px;">The AI Distribution Play</p>
+              <p class="mono muted" style="font-size:11px;line-height:1.6;">Every AI assistant with a local search feature needs a real-time source. One API licensing deal with OpenAI or Google changes the scale of this business entirely.</p>
+            </div>
+            <div class="border-left bl-gold" style="padding:10px 16px;">
+              <p class="mono" style="font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:4px;">Proven Infrastructure</p>
+              <p class="mono muted" style="font-size:11px;line-height:1.6;">The platform is operational at scale in a high-demand, technically demanding market. The hard part is done. US is a deployment, not a build.</p>
+            </div>
+            <div class="border-left bl-coral" style="padding:10px 16px;">
+              <p class="mono" style="font-size:10px;color:var(--coral);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:4px;">Category Creator</p>
+              <p class="mono muted" style="font-size:11px;line-height:1.6;">Real-time crowd intelligence does not exist as a product category yet. This round funds the land grab before that changes.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--w05);padding-top:20px;margin-top:24px;display:flex;justify-content:space-between;align-items:flex-end;">
+        <div>
+          <p class="mono muted" style="font-size:12px;line-height:1.8;margin-bottom:4px;">The product is built. The API is live. The data compounds every night.</p>
+          <p class="display" style="font-size:18px;">The question is who gets there first.</p>
+        </div>
+        <div style="text-align:right;">
+          <p class="mono dim" style="font-size:11px;line-height:1.8;">Oluwaseun Oluyori Ajagun Â· CEO &amp; CTO<br><a href="mailto:yoriajagun08@gmail.com" style="color:var(--cyan);text-decoration:none;">yoriajagun08@gmail.com</a> Â· <a href="https://vibe-app-theta.vercel.app" target="_blank" style="color:var(--cyan);text-decoration:none;">vibe-app-theta.vercel.app</a></p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div id="bar">
+    <div class="bar-nav">
+      <button class="nav-btn" id="btn-prev">&#8592;</button>
+      <span class="slide-counter" id="counter">01 / 10</span>
+      <button class="nav-btn" id="btn-next">&#8594;</button>
+    </div>
+    <div id="progress"></div>
+    <p id="wordmark">V<span>II</span>BE Â· Confidential</p>
+  </div>
+</div>
+<script>
+  const TOTAL=10;let current=0;
+  const slides=document.querySelectorAll('.slide');
+  const counter=document.getElementById('counter');
+  const progress=document.getElementById('progress');
+  const btnPrev=document.getElementById('btn-prev');
+  const btnNext=document.getElementById('btn-next');
+  for(let i=0;i<TOTAL;i++){const d=document.createElement('div');d.className='dot'+(i===0?' active':'');d.addEventListener('click',()=>goTo(i));progress.appendChild(d);}
+  function goTo(n){
+    if(n<0||n>=TOTAL)return;
+    slides[current].classList.remove('active');current=n;slides[current].classList.add('active');
+    document.querySelectorAll('.dot').forEach((d,i)=>{d.className='dot'+(i===current?' active':i<current?' past':'');});
+    counter.textContent=String(current+1).padStart(2,'0')+' / '+String(TOTAL).padStart(2,'0');
+    btnPrev.disabled=current===0;btnNext.disabled=current===TOTAL-1;
+    if(current===4&&document.getElementById('live-data').textContent.includes('fetching'))fetchLiveData();
+  }
+  btnPrev.addEventListener('click',()=>goTo(current-1));
+  btnNext.addEventListener('click',()=>goTo(current+1));
+  document.addEventListener('keydown',(e)=>{if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();goTo(current+1);}if(e.key==='ArrowLeft'){e.preventDefault();goTo(current-1);}});
+  document.getElementById('slide-area').addEventListener('click',(e)=>{const x=e.clientX/window.innerWidth;if(x>0.66)goTo(current+1);else if(x<0.33)goTo(current-1);});
+  async function fetchLiveData(){
+    try{
+      const res=await fetch('https://vibeapp-production-1835.up.railway.app/api/v1/agent/city/pulse?city=lagos',{headers:{'X-Agent-Key':'demo'}});
+      const data=await res.json();
+      document.getElementById('live-data').textContent=JSON.stringify(data,null,2);
+    }catch(e){
+      document.getElementById('live-data').textContent=`{\n  "city": "lagos",\n  "status": "live",\n  "active_venues": 12,\n  "city_energy": 74,\n  "pulse_label": "BUILDING",\n  "top_venue": "Escape Nightclub",\n  "top_score": 89,\n  "timestamp": "${new Date().toISOString()}"\n}`;
+    }
+  }
+  goTo(0);
+</script>
+</body>
+</html>
