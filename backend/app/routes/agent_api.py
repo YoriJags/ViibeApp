@@ -96,6 +96,11 @@ def _serialize_venue(v: dict) -> dict:
         "peak_time":      v.get("peak_time"),
         "music_genre":    v.get("music_genre"),
         "capacity_signal": v.get("capacity_signal"),   # "spacious" | "moderate" | "packed"
+        "momentum":        v.get("vibe_velocity"),      # "rising" | "falling" | "stable" | "peaking"
+        "consensus_label": v.get("consensus_label"),    # "electric" | "chill" | "mixed" | "insufficient"
+        "consensus_rate":  v.get("consensus_rate"),     # 0.0–1.0 agreement score
+        "avg_dwell_mins":  v.get("avg_dwell_minutes"),  # how long scouts are staying
+        "score_confidence": v.get("score_confidence"),  # "high" | "medium" | "low"
         "last_updated":   v.get("last_activity_at") or v.get("updated_at"),
     }
 
