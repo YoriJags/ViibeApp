@@ -20,7 +20,20 @@ async def paystack_webhook(request: Request):
     body = await request.body()
 
     if not verify_paystack_signature(body.decode(), signature):
-        logger.warning("Invalid Paystack webhook signature")
+        import json as _json
+        try:
+            _event_type = _json.loads(body).get("event", "unknown")
+        except Exception:
+            _event_type = "unparseable"
+        client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+        logger.warning(
+            "Webhook signature verification failed — possible replay attack or misconfigured secret",
+            extra={
+                "received_sig_prefix": signature[:8] if signature else "missing",
+                "event_type": _event_type,
+                "client_ip": client_ip,
+            }
+        )
         return JSONResponse(status_code=401, content={"status": "unauthorized"})
 
     payload = await request.json()

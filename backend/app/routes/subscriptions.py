@@ -319,6 +319,13 @@ async def verify_subscription(reference: str, request: Request):
         )
         return {"success": True, "is_vibe_plus": True, **fields}
 
+    except (httpx.RequestError, httpx.TimeoutException) as e:
+        logger.error(f"Payment provider unreachable during verify for {reference}: {e}")
+        await db.pending_subscriptions.update_one(
+            {"reference": reference},
+            {"$set": {"status": "pending"}}
+        )
+        raise HTTPException(status_code=503, detail="Payment provider temporarily unavailable. Please try again.")
     except Exception as e:
         logger.error(f"Subscription verify failed for {reference}: {e}")
         # Reset to pending so user can retry
@@ -326,7 +333,7 @@ async def verify_subscription(reference: str, request: Request):
             {"reference": reference},
             {"$set": {"status": "pending"}}
         )
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="Payment verification failed. Please try again.")
 
 
 @router.get("/subscription/status")
