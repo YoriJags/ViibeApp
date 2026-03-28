@@ -282,31 +282,44 @@ footer { border-top: 1px solid var(--w05); padding: 56px 40px 40px; }
   <div class="hero-content">
     <div>
       <div class="hero-label">Scene Intelligence &middot; Lagos</div>
-      <h1 class="hero-h1">The city<br>has a<br><span class="glow-cyan" style="color:var(--cyan);">pulse.</span></h1>
-      <p class="hero-tagline">Real-time venue energy, live from the streets. VIIBE crowdsources the live vibe of every club, bar and event — updated every second, by scouts physically inside.</p>
+      <h1 class="hero-h1">AI assistants<br>can tell you<br><span class="glow-cyan" style="color:var(--cyan);">anything —</span></h1>
+      <div style="border-left:2px solid var(--coral);padding-left:20px;margin-bottom:28px;">
+        <p style="font-size:15px;font-weight:700;font-family:'Playfair Display',serif;margin-bottom:8px;">except what's happening right now, in a physical space, at the human level.</p>
+        <p style="font-size:13px;line-height:1.8;color:var(--w60);">VIIBE is the data layer that feeds the AI layer. A live sensor network made of people. Real-time crowd energy, venue by venue, moment by moment. Starting in Lagos.</p>
+      </div>
       <div class="hero-actions">
         <a href="#waitlist" class="btn-primary">
           <span style="width:6px;height:6px;border-radius:50%;background:var(--base);display:inline-block;"></span>
-          Join the waitlist
+          Get Early Access
         </a>
-        <a href="#product" class="btn-ghost">
-          See the product
+        <a href="#api" class="btn-ghost">
+          Agent API Docs
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </a>
       </div>
     </div>
     <div>
+      <div style="font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:0.2em;text-transform:uppercase;text-align:right;margin-bottom:8px;">live venue intelligence feed</div>
       <div class="live-terminal">
         <div class="terminal-header">
           <div class="live-dot"></div>
-          <span class="terminal-label">Feed — Victoria Island</span>
+          <span class="terminal-label">Feed — Lagos · Updating live</span>
         </div>
         <div id="live-venues"></div>
       </div>
+      <div style="margin-top:12px;border:1px solid rgba(139,92,246,0.25);background:rgba(139,92,246,0.05);padding:14px 16px;display:flex;align-items:center;gap:12px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.4);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="rgba(167,139,250,0.9)"><path d="M7 1L8.5 5.5H13L9.5 8L10.5 12.5L7 10L3.5 12.5L4.5 8L1 5.5H5.5z"/></svg>
+        </div>
+        <div>
+          <p style="font-size:10px;color:rgba(167,139,250,0.9);letter-spacing:0.15em;text-transform:uppercase;font-weight:700;">&#x26A1; Moment Locked</p>
+          <p style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;">7 scouts felt it simultaneously at Escape &middot; 00:23</p>
+        </div>
+      </div>
       <div class="hero-stats">
         <div class="stat-mini"><div class="stat-mini-val">16+</div><div class="stat-mini-label">Algorithms</div></div>
-        <div class="stat-mini"><div class="stat-mini-val">&lt;1s</div><div class="stat-mini-label">Latency</div></div>
-        <div class="stat-mini"><div class="stat-mini-val">Live</div><div class="stat-mini-label">Right now</div></div>
+        <div class="stat-mini"><div class="stat-mini-val">5</div><div class="stat-mini-label">AI Layers</div></div>
+        <div class="stat-mini"><div class="stat-mini-val">3</div><div class="stat-mini-label">Gesture Inputs</div></div>
       </div>
     </div>
   </div>
@@ -350,14 +363,15 @@ footer { border-top: 1px solid var(--w05); padding: 56px 40px 40px; }
     <div class="product-grid">
       <div class="product-card product-card-scout">
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2L13.5 8H20l-5.5 4 2 6.5L11 15l-5.5 5.5 2-6.5L2 8h6.5z" stroke="var(--coral)" stroke-width="1.5" stroke-linejoin="round"/></svg>
-        <p class="product-card-sub" style="color:var(--coral);">Find the scene. Rate the vibe. Earn clout.</p>
+        <p class="product-card-sub" style="color:var(--coral);">Feel it. Fire it. Lock it.</p>
         <h3 class="product-card-h3">Scout Floor</h3>
-        <p class="product-card-desc">Live venue map with Vibe Scores. VibeReactor kinetic tap engine with BPM lock and crowd sync. Geofenced ratings. Torch Ignite crowd flash. Oracle AI predictions. Scene Frequency waveform.</p>
+        <p class="product-card-desc">Live venue map with Vibe Scores. Three-gesture Moment mechanic — shake, raise to face, back tap. When 5+ scouts fire within 8 seconds: Moment Lock. Memory Artifact generates a shareable energy arc for IG Stories + Snapchat. Scout Integrity Score weights every signal. Energy decay keeps data honest.</p>
         <div class="product-tags">
-          <span class="product-tag">VibeReactor</span>
-          <span class="product-tag">Oracle AI</span>
-          <span class="product-tag">Scene Frequency</span>
-          <span class="product-tag">Torch Ignite</span>
+          <span class="product-tag">Moment Lock</span>
+          <span class="product-tag">3-Gesture Stack</span>
+          <span class="product-tag">Memory Artifact</span>
+          <span class="product-tag">Scout Integrity AI</span>
+          <span class="product-tag">IG + Snap Share</span>
           <button class="demo-btn" onclick="openReactor()">
             <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 1.5l6 3.5-6 3.5z"/></svg>
             Demo Reactor
@@ -368,11 +382,12 @@ footer { border-top: 1px solid var(--w05); padding: 56px 40px 40px; }
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="12" width="4" height="8" stroke="var(--gold)" stroke-width="1.5"/><rect x="9" y="7" width="4" height="13" stroke="var(--gold)" stroke-width="1.5"/><rect x="16" y="2" width="4" height="18" stroke="var(--gold)" stroke-width="1.5"/></svg>
         <p class="product-card-sub" style="color:var(--gold);">Live analytics for venue operators.</p>
         <h3 class="product-card-h3">Merchant Floor</h3>
-        <p class="product-card-desc">Hourly energy curves. Peak detection. Pulse Drop campaigns. Scout intelligence feed. ROI tracking.</p>
+        <p class="product-card-desc">Hourly energy curves. Peak detection. Comparative framing — "Hotter than last Saturday at this time". Pulse Drop campaigns. Aura Shield alerts. Scout intelligence feed.</p>
         <div class="product-tags">
           <span class="product-tag">Energy Curves</span>
+          <span class="product-tag">Comparative AI</span>
           <span class="product-tag">Pulse Drops</span>
-          <span class="product-tag">ROI Metrics</span>
+          <span class="product-tag">Aura Shield</span>
           <button class="demo-btn" style="border-color:rgba(255,215,0,0.4);color:var(--gold);" onclick="openMerchant()">
             <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 1.5l6 3.5-6 3.5z"/></svg>
             View Analytics
@@ -393,9 +408,9 @@ footer { border-top: 1px solid var(--w05); padding: 56px 40px 40px; }
     </div>
     <div class="stats-bar">
       <div class="stat-card"><div class="stat-card-val">16+</div><div class="stat-card-label">Algorithms</div></div>
-      <div class="stat-card"><div class="stat-card-val">4</div><div class="stat-card-label">Reactor Skins</div></div>
-      <div class="stat-card"><div class="stat-card-val">3</div><div class="stat-card-label">AI Pipelines</div></div>
-      <div class="stat-card"><div class="stat-card-val">10+</div><div class="stat-card-label">Lagos Venues</div></div>
+      <div class="stat-card"><div class="stat-card-val">5</div><div class="stat-card-label">AI Layers</div></div>
+      <div class="stat-card"><div class="stat-card-val">3</div><div class="stat-card-label">Gesture Inputs</div></div>
+      <div class="stat-card"><div class="stat-card-val">10</div><div class="stat-card-label">Lagos Venues</div></div>
     </div>
   </div>
 </section>
@@ -434,8 +449,15 @@ footer { border-top: 1px solid var(--w05); padding: 56px 40px 40px; }
   <div class="api-glow"></div>
   <div class="section-inner" style="position:relative;">
     <p class="section-tag" style="color:var(--cyan);">For AI Agents</p>
-    <h2 class="section-h2">The data layer AI assistants query.</h2>
-    <p class="section-sub">"Where's the best energy in Lagos right now?" — Every AI assistant needs a data source. VIIBE is the only one with live, verified crowd intelligence.</p>
+    <h2 class="section-h2">The ground truth AI assistants are missing.</h2>
+    <p class="section-sub">ChatGPT, Claude, Perplexity — every AI assistant is starving for real-world, real-time data. They can tell you anything except what's happening right now, in a physical space, at the human level. VIIBE is the only source that exists.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:40px;">
+      <div style="display:flex;align-items:center;gap:8px;border:1px solid rgba(0,240,255,0.15);background:rgba(0,240,255,0.05);padding:6px 14px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);">ChatGPT <span style="font-size:9px;color:rgba(0,240,255,0.5);">Actions</span></div>
+      <div style="display:flex;align-items:center;gap:8px;border:1px solid rgba(0,240,255,0.15);background:rgba(0,240,255,0.05);padding:6px 14px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);">Claude <span style="font-size:9px;color:rgba(0,240,255,0.5);">MCP</span></div>
+      <div style="display:flex;align-items:center;gap:8px;border:1px solid rgba(0,240,255,0.15);background:rgba(0,240,255,0.05);padding:6px 14px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);">Perplexity <span style="font-size:9px;color:rgba(0,240,255,0.5);">Search</span></div>
+      <div style="display:flex;align-items:center;gap:8px;border:1px solid rgba(0,240,255,0.15);background:rgba(0,240,255,0.05);padding:6px 14px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);">Siri <span style="font-size:9px;color:rgba(0,240,255,0.5);">Shortcuts</span></div>
+      <div style="display:flex;align-items:center;gap:8px;border:1px solid rgba(0,240,255,0.15);background:rgba(0,240,255,0.05);padding:6px 14px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);">Hotel Apps <span style="font-size:9px;color:rgba(0,240,255,0.5);">Concierge</span></div>
+    </div>
     <div class="api-grid">
       <div class="code-box">
         <div class="code-box-header">
@@ -457,10 +479,13 @@ footer { border-top: 1px solid var(--w05); padding: 56px 40px 40px; }
         </div>
       </div>
     </div>
-    <a href="#waitlist" class="api-link">
-      Get API access
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-    </a>
+    <div style="margin-top:24px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+      <a href="#waitlist" class="api-link">
+        View full API documentation
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </a>
+      <span style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.2);">Moment Lock webhooks &middot; City pulse &middot; Venue detail &middot; Historical curves</span>
+    </div>
   </div>
 </section>
 
@@ -619,19 +644,27 @@ function closeMobileMenu() { document.getElementById('mobile-menu').classList.re
 
 /* LIVE TERMINAL */
 const VENUES = [
-  { name: 'Escape',     score: 91, state: 'peak'     },
-  { name: 'Quilox',     score: 87, state: 'electric' },
-  { name: 'Club Joker', score: 83, state: 'electric' },
+  { name: 'Escape',      score: 91, state: 'peak',     district: 'VI'    },
+  { name: 'Quilox',      score: 87, state: 'electric', district: 'VI'    },
+  { name: 'Club Joker',  score: 83, state: 'electric', district: 'VI'    },
+  { name: 'Oniru Beach', score: 68, state: 'warming',  district: 'Oniru' },
+  { name: 'Hard Rock',   score: 54, state: 'warming',  district: 'VI'    },
 ];
 function renderVenues() {
   document.getElementById('live-venues').innerHTML = VENUES.map(v => `
     <div class="venue-row">
-      <span style="color:var(--white);font-weight:500;">${v.name}</span>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span class="venue-score state-${v.state}" style="font-weight:700;">${v.score}</span>
-        <span class="venue-state state-${v.state}" style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;">${v.state}</span>
+      <div>
+        <span style="color:var(--white);font-weight:500;">${v.name}</span>
+        <span style="font-size:9px;color:rgba(255,255,255,0.3);margin-left:8px;">${v.district}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="venue-score state-${v.state}" style="font-weight:700;font-variant-numeric:tabular-nums;">${v.score}</span>
+        <span class="venue-state state-${v.state}" style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;background:${stateBg(v.state)};">${v.state}</span>
       </div>
     </div>`).join('');
+}
+function stateBg(state) {
+  return {peak:'rgba(255,51,102,0.1)',electric:'rgba(0,240,255,0.1)',warming:'rgba(201,168,76,0.1)',lit:'rgba(251,146,60,0.1)',chill:'rgba(100,100,100,0.1)'}[state]||'transparent';
 }
 renderVenues();
 setInterval(() => {
@@ -645,9 +678,9 @@ const CURL = `curl ${API_BASE}/api/v1/agent/venues/live?city=lagos&limit=3`;
 const FALLBACK_DATA = {
   city:"lagos",count:3,
   venues:[
-    {id:"escape-vi",name:"Escape Nightclub",vibe_score:91,energy_state:"peak",district:"Victoria Island"},
-    {id:"quilox-vi",name:"Quilox",vibe_score:87,energy_state:"electric",district:"Victoria Island"},
-    {id:"club-joker",name:"Club Joker",vibe_score:83,energy_state:"electric",district:"Victoria Island"}
+    {id:"escape-vi",name:"Escape Nightclub",vibe_score:91,energy_state:"peak",district:"Victoria Island",last_rated_mins_ago:3,moment_locks_tonight:2},
+    {id:"quilox-vi",name:"Quilox",vibe_score:87,energy_state:"electric",district:"Victoria Island",last_rated_mins_ago:7,moment_locks_tonight:1},
+    {id:"club-joker",name:"Club Joker",vibe_score:83,energy_state:"electric",district:"Victoria Island",last_rated_mins_ago:12,moment_locks_tonight:0}
   ]
 };
 let typedIdx = 0;
@@ -876,10 +909,13 @@ function renderVenuesWithFlash() {
   el.classList.add('score-flash');
   el.innerHTML = VENUES.map(v => `
     <div class="venue-row">
-      <span style="color:var(--white);font-weight:500;">${v.name}</span>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span class="venue-score state-${v.state}" style="font-weight:700;">${v.score}</span>
-        <span class="venue-state state-${v.state}" style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;">${v.state}</span>
+      <div>
+        <span style="color:var(--white);font-weight:500;">${v.name}</span>
+        <span style="font-size:9px;color:rgba(255,255,255,0.3);margin-left:8px;">${v.district}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="venue-score state-${v.state}" style="font-weight:700;font-variant-numeric:tabular-nums;">${v.score}</span>
+        <span class="venue-state state-${v.state}" style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;background:${stateBg(v.state)};">${v.state}</span>
       </div>
     </div>`).join('');
 }
