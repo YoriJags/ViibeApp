@@ -29,6 +29,7 @@ interface Venue {
   vibe_tier?: string;
   venue_narrative?: string;
   icon_spotted?: { username: string; icon_tier: string; icon_label?: string } | null;
+  last_rated_mins_ago?: number | null;
 }
 
 interface VenueCardProps {
@@ -110,6 +111,23 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
   const gradientColors = VIBE_GRADIENTS[gradientKey] ?? VIBE_GRADIENTS.quiet;
   const vibeStateLabel = getVibeState(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
   const isLowEnergy = venue.current_vibe_score < 20;
+
+  // ── Energy decay state ───────────────────────────────────────────────────────
+  // fresh < 45 min | stale 45–90 min | expired > 90 min or no data
+  const minsAgo = venue.last_rated_mins_ago;
+  const decayState: 'fresh' | 'stale' | 'expired' =
+    minsAgo == null                ? 'fresh'   :  // no data yet — don't punish
+    minsAgo < 45                   ? 'fresh'   :
+    minsAgo < 90                   ? 'stale'   :
+                                     'expired';
+
+  const decayOpacity  = decayState === 'expired' ? 0.35 : decayState === 'stale' ? 0.6 : 1;
+  const staleLabelText =
+    decayState === 'expired'
+      ? 'No recent signal'
+      : minsAgo != null
+        ? `${minsAgo < 60 ? `${minsAgo}m` : `${Math.round(minsAgo / 60)}h`} ago`
+        : null;
 
   const momentum: 'rising' | 'peaking' | 'fading' | 'stable' =
     venue.vibe_velocity === 'heating_up' ? 'rising' :
@@ -203,14 +221,16 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
               )}
             </View>
 
-            <Animated.View style={[styles.scoreContainer, { transform: [{ scale: scoreScale }] }]}>
+            <Animated.View style={[styles.scoreContainer, { transform: [{ scale: scoreScale }], opacity: decayOpacity }]}>
               <View style={styles.scoreBox}>
-                <Text style={[styles.energyLabel, { color: vibeColor }]}>{vibeStateLabel}</Text>
-                <Text style={[styles.score, { color: vibeColor }]}>
+                <Text style={[styles.energyLabel, { color: decayState === 'expired' ? 'rgba(255,255,255,0.25)' : vibeColor }]}>
+                  {decayState === 'expired' ? 'STALE' : vibeStateLabel}
+                </Text>
+                <Text style={[styles.score, { color: decayState === 'expired' ? 'rgba(255,255,255,0.25)' : vibeColor }]}>
                   {Math.round(venue.current_vibe_score)}%
                 </Text>
               </View>
-              <MomentumArrow momentum={momentum} size="sm" />
+              {decayState === 'fresh' && <MomentumArrow momentum={momentum} size="sm" />}
             </Animated.View>
           </View>
 
@@ -272,8 +292,15 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
                 </Text>
               </View>
             )}
+            {/* Decay staleness chip */}
+            {decayState !== 'fresh' && staleLabelText && (
+              <View style={[styles.chip, styles.chipStale]}>
+                <Ionicons name="time-outline" size={11} color="rgba(255,255,255,0.3)" />
+                <Text style={[styles.chipText, { color: 'rgba(255,255,255,0.3)' }]}>{staleLabelText}</Text>
+              </View>
+            )}
             {/* Momentum urgency — only shows when the signal is worth acting on */}
-            {momentum === 'rising' && (
+            {momentum === 'rising' && decayState === 'fresh' && (
               <View style={[styles.chip, styles.chipRising]}>
                 <Text style={styles.chipRisingText}>⚡ RISING</Text>
               </View>
@@ -486,6 +513,7 @@ const styles = StyleSheet.create({
   },
   chipRising: { backgroundColor: '#00E67610', borderColor: '#00E67630' },
   chipRisingText: { fontSize: 11, fontWeight: '800', color: '#00E676' },
+  chipStale: { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)' },
   chipFading: { backgroundColor: '#FF8C0010', borderColor: '#FF8C0030' },
   chipFadingText: { fontSize: 11, fontWeight: '800', color: '#FF8C00' },
   chipPeaking: { backgroundColor: '#FF336612', borderColor: '#FF336635' },

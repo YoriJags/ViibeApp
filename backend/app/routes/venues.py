@@ -199,3 +199,86 @@ async def record_direction_click(venue_id: str):
     """Record when user clicks direction/location icon."""
     await db.venues.update_one({"id": venue_id}, {"$inc": {"direction_clicks": 1}})
     return {"message": "Direction click recorded"}
+
+
+@router.get("/venues/{venue_id}/comparative")
+async def get_venue_comparative(venue_id: str):
+    """
+    AI-04: Comparative framing — "Hotter than last Saturday at this time."
+
+    Compares the current vibe score against the same venue's average score
+    during the equivalent time window last week (same day-of-week ± 1 hour).
+
+    Returns:
+      - label: "hotter" | "cooler" | "similar" | "no_history"
+      - current_score: live score right now
+      - historical_avg: average score at this time last week
+      - framing: human-readable comparison string
+      - day_label: e.g. "last Saturday"
+    """
+    from fastapi import HTTPException
+
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0, "current_vibe_score": 1, "name": 1})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    now = datetime.now(timezone.utc)
+    current_score = venue.get("current_vibe_score", 0)
+
+    # Same time window last week (± 60 minutes)
+    last_week_start = now - timedelta(days=7, hours=1)
+    last_week_end   = now - timedelta(days=7) + timedelta(hours=1)
+
+    historical_ratings = await db.ratings.find(
+        {
+            "venue_id":  venue_id,
+            "timestamp": {"$gte": last_week_start, "$lte": last_week_end},
+            "provisional": {"$ne": True},
+            "low_confidence": {"$ne": True},
+        },
+        {"vibe_score": 1},
+    ).to_list(200)
+
+    if not historical_ratings:
+        return {
+            "label": "no_history",
+            "current_score": current_score,
+            "historical_avg": None,
+            "framing": None,
+            "day_label": None,
+        }
+
+    scores = [r["vibe_score"] for r in historical_ratings if r.get("vibe_score") is not None]
+    if not scores:
+        return {
+            "label": "no_history",
+            "current_score": current_score,
+            "historical_avg": None,
+            "framing": None,
+            "day_label": None,
+        }
+
+    historical_avg = round(sum(scores) / len(scores), 1)
+    diff = current_score - historical_avg
+
+    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    day_label = f"last {day_names[now.weekday()]}"
+
+    if diff >= 10:
+        label = "hotter"
+        framing = f"Hotter than {day_label} at this time"
+    elif diff <= -10:
+        label = "cooler"
+        framing = f"Cooler than {day_label} at this time"
+    else:
+        label = "similar"
+        framing = f"Similar to {day_label} at this time"
+
+    return {
+        "label": label,
+        "current_score": current_score,
+        "historical_avg": historical_avg,
+        "diff": round(diff, 1),
+        "framing": framing,
+        "day_label": day_label,
+    }

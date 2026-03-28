@@ -1,14 +1,17 @@
 {
   "cli": {
-    "version": ">= 16.0.0"
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "preview-android": {
-      "projectRootDir": "frontend",
       "distribution": "internal",
       "android": {
         "buildType": "apk"
       }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }

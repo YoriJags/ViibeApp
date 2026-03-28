@@ -45,10 +45,18 @@ export async function registerForPushNotifications(sessionToken: string): Promis
   // Android needs a notification channel
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
-      name:      'VIIBE Alerts',
-      importance: Notifications.AndroidImportance.HIGH,
+      name:             'VIIBE Alerts',
+      importance:       Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF3366',
+      lightColor:       '#FF3366',
+    });
+    await Notifications.setNotificationChannelAsync('moments', {
+      name:             'Moments',
+      description:      'When a Moment Locks at a venue near you',
+      importance:       Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 80, 80, 180, 80, 400],
+      lightColor:       '#6655FF',
+      sound:            'default',
     });
   }
 
@@ -72,7 +80,11 @@ export async function registerForPushNotifications(sessionToken: string): Promis
 export function attachNotificationTapHandler(): () => void {
   const sub = Notifications.addNotificationResponseReceivedListener(response => {
     const data = response.notification.request.content.data as Record<string, string> | undefined;
-    if (data?.type === 'electric_alert' && data?.venue_id) {
+    if (!data?.venue_id) return;
+
+    // All venue-linked notification types route to the venue screen
+    const venueTypes = ['electric_alert', 'moment_locked', 'lobby_hot', 'vibe_spike'];
+    if (venueTypes.includes(data.type)) {
       router.push(`/venue/${data.venue_id}`);
     }
   });

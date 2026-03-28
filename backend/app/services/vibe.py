@@ -792,9 +792,12 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
     timestamps = [r.get("timestamp") for r in ratings if r.get("timestamp")]
     if timestamps:
         most_recent = max(timestamps, key=lambda t: t if isinstance(t, datetime) else datetime.fromisoformat(str(t).replace("Z", "+00:00")))
+        oldest = min(timestamps, key=lambda t: t if isinstance(t, datetime) else datetime.fromisoformat(str(t).replace("Z", "+00:00")))
         last_rated_mins_ago = round(_minutes_since(most_recent, now))
+        submission_window_start = oldest if isinstance(oldest, datetime) else datetime.fromisoformat(str(oldest).replace("Z", "+00:00"))
     else:
         last_rated_mins_ago = None
+        submission_window_start = None
     score_confidence = "high" if active_scouts >= 5 else "medium" if active_scouts >= 2 else "low"
 
     result = {
@@ -818,6 +821,11 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         "active_scouts":      active_scouts,
         "last_rated_mins_ago": last_rated_mins_ago,
         "score_confidence":   score_confidence,
+        # ── Audit trail — every score carries provenance ──────────────
+        "sample_size":              len(ratings),
+        "total_weight":             round(live["total_weight"], 3),
+        "submission_window_start":  submission_window_start,
+        "submission_window_end":    now,
         # Dwell
         "long_dwell_count":   long_dwell_count,
         "avg_dwell_minutes":  avg_dwell_minutes,
@@ -835,6 +843,11 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
             "consensus": round(consensus_weight, 3),
             "dwell":     round(dwell_weight, 3),
         },
+        # ── AI-03: Energy Decay — timestamp of last scout rating ──────────────
+        # Used by frontend to visually degrade score if no new ratings arrive.
+        # Score considered "stale" after 45 min, "expired" after 90 min.
+        "last_rated_at": now if ratings else None,
+        "score_age_minutes": last_rated_mins_ago,
     }
 
     from app.routes.alerts import check_venue_alerts
@@ -1015,7 +1028,19 @@ async def check_and_emit_surge_alert(venue_id: str, venue_name: str, city: str, 
 
 
 async def save_vibe_snapshot(venue_id: str, aggregate: dict):
-    """Save a vibe snapshot for timeline history. Called after each rating recalculation."""
+    """Save a vibe snapshot for timeline history. Called after each rating recalculation.
+
+    Each snapshot carries a full audit trail so the score is provable and licensable:
+      sample_size            — ratings used in this calculation (1h window, fraud-excluded)
+      active_scouts          — unique scouts who contributed
+      score_confidence       — low / medium / high based on scout count
+      total_weight           — sum of credibility × time weights (signal strength)
+      submission_window_*    — time range of ratings that fed this score
+      fraud_excluded         — count of physically implausible ratings dropped
+      decay_protected        — whether decay buffer capped a score drop this cycle
+      kinetic_momentum       — crowd movement floor applied
+      signal_weights         — per-signal blend breakdown (scouts/ambient/consensus/dwell)
+    """
     snapshot = {
         "venue_id":        venue_id,
         "vibe_score":      aggregate.get("current_vibe_score", 0),
@@ -1024,6 +1049,17 @@ async def save_vibe_snapshot(venue_id: str, aggregate: dict):
         "gate_level":      aggregate.get("gate_level", "clear"),
         "total_ratings_24h": aggregate.get("total_ratings_24h", 0),
         "timestamp":       datetime.now(timezone.utc),
+        # ── Audit trail ───────────────────────────────────────────────
+        "sample_size":             aggregate.get("sample_size", 0),
+        "active_scouts":           aggregate.get("active_scouts", 0),
+        "score_confidence":        aggregate.get("score_confidence", "low"),
+        "total_weight":            aggregate.get("total_weight", 0),
+        "submission_window_start": aggregate.get("submission_window_start"),
+        "submission_window_end":   aggregate.get("submission_window_end"),
+        "fraud_excluded":          aggregate.get("fraud_excluded", 0),
+        "decay_protected":         aggregate.get("decay_protected", False),
+        "kinetic_momentum":        aggregate.get("kinetic_momentum", 0),
+        "signal_weights":          aggregate.get("signal_weights", {}),
     }
     await db.vibe_snapshots.insert_one(snapshot)
 

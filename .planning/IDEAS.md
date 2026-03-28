@@ -34,6 +34,36 @@ These must ship before investor conversations.
 
 ---
 
+## 🔴 AI Intelligence Layer (Build Now — World-Class Product)
+
+Research completed 2026-03-27. See `.planning/research/AI_INTELLIGENCE_LAYER.md` for full spec.
+
+### Tier 1 — This Sprint
+
+| ID | Feature | What it is | Priority |
+|----|---------|-----------|----------|
+| AI-01 | **Scout Integrity Score (SIS)** | Hidden reliability weight per scout (0–100). New scouts = 0.3× Pulse Score multiplier. Proven scouts (high consensus accuracy) = 1.5×. Score computed from: GPS verification, consensus accuracy, submission velocity, text/numeric contradiction rate. Never shown to scouts. Admin-only view. | CRITICAL |
+| AI-02 | **Signal Extraction Layer** | Every scout text submission → async GPT-4o-mini call → structured JSON: dominant vibe dimension, intensity modifier, contradiction flag, named entities (DJs, event names). Enriches every Pulse Score. Run async post-submission — zero latency impact. Cost < $0.001/report. | CRITICAL |
+| AI-03 | **Energy Decay Mechanic** | Pulse Score visually degrades after 45 mins without new scout reports. Score visually "cools" on venue card. Label: "last rated Xh ago." Score expires as live data after 90 mins. | CRITICAL |
+| AI-04 | **Comparative Framing** | Show "Hotter than last Saturday at this time" / "Cooler than usual for a Friday" on venue cards and detail screen. MongoDB aggregation query, time-of-week bucketed per venue. | HIGH |
+
+### Tier 2 — Next 90 Days
+
+| ID | Feature | What it is | Priority |
+|----|---------|-----------|----------|
+| AI-05 | **Live Intelligence Feed** | Scrollable feed of AI-generated insight cards triggered by real statistical events. Triggers: energy spike >30pts in <15min, 3+ simultaneous reports, multi-peak window, city-level threshold. Template-based sentences — no LLM hallucination risk. Cards expire after 45 mins. | HIGH |
+| AI-06 | **Scout Streak + Territory Leaderboard** | Streak counter on scout profile. Weekly-reset leaderboard by neighborhood (e.g. "Top Scout — Victoria Island"). Tier upgrade + streak notifications automated. | HIGH |
+| AI-07 | **Scout Credibility % on Profile** | Show "Scout Reliability: 94%" publicly on scout profile, computed from SIS. Builds trust for users reading scout reports. | MEDIUM |
+
+### Tier 3 — Scale Phase (Needs 30+ Days Data)
+
+| ID | Feature | What it is | Priority |
+|----|---------|-----------|----------|
+| AI-08 | **Pulse Forecast** | 60-minute predictive energy curve per venue. "Trending toward peak in ~45 min." Needs historical venue data to build time-of-week curves. Cross-venue spillover detection. | HIGH (after data) |
+| AI-09 | **Vibe Match** | User picks 3–5 energy descriptors → pgvector similarity search → ranked live venue matches. Free via Postgres pgvector extension. | MEDIUM |
+
+---
+
 ## 🟡 Product Features (Confirmed, Not Started)
 
 From the March 14 feature pipeline.
@@ -67,6 +97,43 @@ Built this session. Some parts need follow-up.
 
 ---
 
+## 🚀 Growth & Viral Features (Backlog — High Impact)
+
+| ID | Feature | What it is | Priority |
+|----|---------|-----------|----------|
+| VIRAL-01 | **"I Was There" Receipt Card** | After a scout is at a venue when it peaks, auto-generate a shareable card: venue name, score, timestamp, VIIBE logo. Instagram Story gold. Every share is a free ad. Single feature that could 10x organic acquisition. Backend: `/api/shares/receipt` endpoint generating OG image. Frontend: share sheet after check-out. | HIGH |
+| VIRAL-02 | **Weekly Lagos Scene Report** | Every Monday auto-generate from prior week's data: top 3 venues, biggest rise/fall, peak hour across the city, "Scene of the Week" moment. Publish as Twitter thread + Instagram carousel. TechCabal bait. Backend: scheduled job, report endpoint. | HIGH |
+| VIRAL-03 | **Daily "Lagos Is At X Energy" Tweet** | Automated daily post from Agent API: "Lagos is at 84 energy tonight. Escape: 91. Quilox: 87." Shareable, creates curiosity, drives inbound. Cron job + Twitter API. | MEDIUM |
+| VIRAL-04 | **Waitlist Referral System** | "Invite 3 friends, skip the queue" mechanic. Unique referral links, position boost on referral completion. Drives viral waitlist growth. | MEDIUM |
+| VIRAL-05 | **Open Graph Share Cards** | OG meta tags on landing page + venue pages so links shared on Twitter/LinkedIn/WhatsApp generate rich preview cards with live vibe score. | MEDIUM |
+| VIRAL-06 | **Press Kit Page (`/press`)** | Brand assets, key stats, founder bio, downloadable media. Required for TechCabal/TechNext press pickup. | LOW |
+
+---
+
+## 🏗️ Infrastructure (Backlog — Engineering)
+
+| ID | Feature | What it is |
+|----|---------|-----------|
+| INFRA-01 | **Backend modularization** | Split monolithic routes into bounded service modules. Improve testability and onboarding for new devs. |
+| INFRA-02 | **MongoDB indexes audit** | Audit all collections against actual query patterns. Add missing compound indexes. Remove unused ones. |
+| INFRA-03 | **Redis adapter for Socket.IO scaling** | Replace in-memory Socket.IO with Redis adapter for horizontal scaling across Railway replicas. Required before multi-region. |
+| INFRA-04 | **Embeddable Live Venue Widget** | `<iframe>` or JS snippet venue owners drop on their Linktree/website showing live Vibe Score + current energy state. Drives ambient awareness and backlinks. Backend: `/api/widget/:venue_id` returning embeddable HTML. |
+
+---
+
+## 🔵 BetConstruct B2B (Active Opportunity)
+
+Research completed 2026-03-27. See `.planning/research/BETCONSTRUCT_STRATEGY.md` for full intel.
+
+| ID | Action | Notes |
+|----|--------|-------|
+| BC-01 | **Follow up AGE conference contact** | Warm lead — met them in person. Do not cold-email generic inbox. |
+| BC-02 | **Build Tipster Marketplace MVP** | Demo-quality prototype against Swarm API (public GitHub SDK, MIT). Bettor profiles + verified records + copy-bet UI. 4–6 weeks. |
+| BC-03 | **Atmosphere Intelligence API spec** | Define data schema: pre-match atmosphere index, in-play sentiment update, home advantage score. |
+| BC-04 | **Target SiGMA Africa / ICE Barcelona** | BetConstruct exhibits at both. Walk in with working demo + one-pager. |
+
+---
+
 ## 🔵 Ideas (Discussed, Not Committed)
 
 Things that came up in conversation worth keeping.
@@ -85,9 +152,10 @@ Things that came up in conversation worth keeping.
 
 | Date | What was built |
 |------|---------------|
+| 2026-03-20 | waitlist.py EmailStr fix (Railway crash resolved), landing page mobile nav, scroll animations, merchant analytics demo, Emergent gold palette merge (#C9A84C), "How It Works" section. Backlog captured: VIRAL-01–06, INFRA-01–04. |
 | 2026-03-17 | Score transparency signals, dwell tracking, scout consensus, ambient audio opt-in, multi-signal weighted blend, reactor ring track upgrade (D), VIBE_SCORE_FORMULA.md |
 | 2026-03-14 | UI redesign A–C, E–J. Reactor scale, backdrop, typography, public floor header, VenueCard gradient, category filter, stats bar animation. Feature pipeline captured. |
 
 ---
 
-*Last updated: 2026-03-17*
+*Last updated: 2026-03-27*

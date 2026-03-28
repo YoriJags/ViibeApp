@@ -165,6 +165,13 @@ export default function VenueDetailScreen() {
   const [sessionBoltCount, setSessionBoltCount] = useState(0);
   const [activeTab, setActiveTab] = useState<'now' | 'intel' | 'crew' | 'info'>('now');
 
+  // ── AI-04: Comparative framing ────────────────────────────────────────────
+  const [comparative, setComparative] = useState<{
+    label: 'hotter' | 'cooler' | 'similar' | 'no_history';
+    framing: string | null;
+    diff?: number;
+  } | null>(null);
+
   // ── Reactor auto-scroll refs ─────────────────────────────────────────────
   const scrollViewRef    = useRef<any>(null);
   const reactorLayoutY   = useRef<number>(0);
@@ -351,6 +358,12 @@ export default function VenueDetailScreen() {
       const status = await getUserRatingStatus(id || '');
       setRatingStatus(status);
     }
+
+    // AI-04: Comparative framing — fire-and-forget, non-blocking
+    fetch(`${API_URL}/api/venues/${id}/comparative`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.framing || data?.label) setComparative(data); })
+      .catch(() => {});
 
     setLoading(false);
   };
@@ -951,6 +964,20 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
                         </View>
                       );
                     })()}
+
+                    {/* AI-04: Comparative framing */}
+                    {comparative && comparative.label !== 'no_history' && comparative.framing && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                        <Ionicons
+                          name={comparative.label === 'hotter' ? 'flame' : comparative.label === 'cooler' ? 'snow' : 'remove'}
+                          size={12}
+                          color={comparative.label === 'hotter' ? '#FF6B35' : comparative.label === 'cooler' ? '#60A5FA' : 'rgba(255,255,255,0.3)'}
+                        />
+                        <Text style={{ fontSize: 11, fontWeight: '600', color: comparative.label === 'hotter' ? '#FF6B35' : comparative.label === 'cooler' ? '#60A5FA' : 'rgba(255,255,255,0.35)' }}>
+                          {comparative.framing}
+                        </Text>
+                      </View>
+                    )}
 
                     {/* Scout consensus */}
                     {(venue.consensus_count ?? 0) >= 2 && venue.consensus_label !== 'insufficient' && (

@@ -182,6 +182,68 @@ async def notify_vibe_spike(venue_id: str, new_score: float, vibe_label: str):
         )
 
 
+async def notify_moment_locked(venue_id: str, venue_name: str, participant_count: int):
+    """
+    Notify users near a venue when a Moment Locks.
+
+    Target audience — users most likely to be physically nearby:
+      1. Users who have checked into this venue in the last 7 days
+      2. Users who have this venue in their lobby
+    De-duped. Respects nearby_alerts preference.
+    Capped at 200 recipients to avoid notification spam at large venues.
+
+    Message is intentional FOMO: short, real, no fluff.
+    """
+    from datetime import timedelta
+    now    = __import__('datetime').datetime.now(__import__('datetime').timezone.utc)
+    cutoff = now - timedelta(days=7)
+
+    # Gather candidate user IDs from both sources
+    checkin_ids = {
+        e["user_id"]
+        async for e in db.checkins.find(
+            {"venue_id": venue_id, "timestamp": {"$gte": cutoff}},
+            {"user_id": 1},
+        )
+    }
+    lobby_ids = {
+        e["user_id"]
+        async for e in db.lobby.find({"venue_id": venue_id}, {"user_id": 1})
+    }
+    candidate_ids = list(checkin_ids | lobby_ids)[:200]
+
+    sent = 0
+    for user_id in candidate_ids:
+        prefs = await db.alert_preferences.find_one({"user_id": user_id})
+        if not prefs or not prefs.get("nearby_alerts", True):
+            continue
+        token = prefs.get("expo_push_token", "")
+        if not token.startswith("ExponentPushToken"):
+            continue
+
+        # Vary the copy slightly so it doesn't feel templated
+        body = (
+            f"Something just happened at {venue_name}."
+            if participant_count < 10
+            else f"{participant_count} scouts felt it simultaneously at {venue_name}."
+        )
+
+        success = await send_push_notification(
+            user_id=user_id,
+            title="⚡ MOMENT LOCKED",
+            body=body,
+            data={
+                "type":              "moment_locked",
+                "venue_id":          venue_id,
+                "participant_count": participant_count,
+            },
+        )
+        if success:
+            sent += 1
+
+    logger.info(f"moment_locked push — venue={venue_id} sent={sent}/{len(candidate_ids)}")
+
+
 async def notify_campaign_active(venue_id: str, city: str, multiplier: int):
     """Notify users who have this venue in their lobby about an active campaign."""
     venue = await db.venues.find_one({"id": venue_id})

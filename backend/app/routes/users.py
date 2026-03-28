@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.config import db
 from app.models import User, UserCreate, UserLogin, MusicPreferencesUpdate, ReactorSkinUpdate, ZodiacUpdate
 from app.services.auth import create_session_token, require_auth
+from app.services.scout_identity import get_scout_identity
 from pydantic import BaseModel as PydanticBase
 
 
@@ -23,13 +24,14 @@ router = APIRouter(tags=["users"])
 
 @router.post("/users/login")
 async def login_user(login_data: UserLogin):
-    """Login by phone number - returns existing user with session token."""
+    """Login by phone number - returns existing user with session token and scout identity context."""
     user = await db.users.find_one({"phone": login_data.phone}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found. Please sign up first.")
 
     session_token = await create_session_token(user["id"])
-    return {**user, "session_token": session_token}
+    identity = await get_scout_identity(user)
+    return {**user, "session_token": session_token, "identity": identity}
 
 
 @router.post("/users")
@@ -49,7 +51,8 @@ async def create_user(user_data: UserCreate):
     await db.users.insert_one(user.dict())
 
     session_token = await create_session_token(user.id)
-    return {**user.dict(), "session_token": session_token}
+    identity = await get_scout_identity(user.dict())
+    return {**user.dict(), "session_token": session_token, "identity": identity}
 
 
 @router.get("/users/{user_id}")
@@ -62,6 +65,23 @@ async def get_user(user_id: str):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@router.get("/users/me/identity")
+async def get_my_identity(user: dict = Depends(require_auth)):
+    """
+    Return the authenticated user's scout identity context.
+
+    The frontend uses this to:
+      - Route to the correct onboarding flow (identity.onboarding)
+      - Gate features by capability (identity.capabilities)
+      - Show tier progression (identity.ratings_to_next)
+      - Understand the user's role in the network (identity.role)
+
+    This endpoint is the single source of truth for identity — never hardcode
+    tier logic in the frontend.
+    """
+    return await get_scout_identity(user)
 
 
 @router.put("/users/me/music-preferences")

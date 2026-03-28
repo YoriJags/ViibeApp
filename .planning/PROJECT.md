@@ -131,17 +131,64 @@ Word of mouth is delayed. Social media is curated, not live. Google Maps is mont
 
 ---
 
-## Business Model — 4 Revenue Streams
+## Business Model — 6 Revenue Streams
 
 | Stream | Description | Scale |
 |--------|-------------|-------|
 | **VIBE+ Subscription** | Consumer premium tier — VibeOscillator, priority intel, premium badges | Scales with user base |
 | **Merchant SaaS** | Venue dashboard, Pulse Drops, analytics, energy campaigns | Scales with venue count |
 | **White-Label Licensing** | Enterprise/government license — branded deployment per city/district | High ACV, long contract |
-| **Agent API Licensing** | Hotels, travel apps, AI assistants pay for real-time crowd intelligence feed | Scales with Gulf expansion |
+| **Agent API Licensing** | Hotels, travel apps, AI assistants, betting operators pay for real-time crowd intelligence feed | Scales with Gulf expansion + B2B |
+| **Data Licensing** | City intelligence reports, longitudinal datasets sold to brands, investors, tourism boards | $5K–$100K per deal |
+| **AI Training Data** | Human-labeled, geo-tagged, real-time event data licensed to AI labs (OpenAI, Anthropic, Scale AI) | $100K–$5M per dataset |
 
 **Gross margin: 90%+** (software/data — no physical inventory)
 **Unit economics target: LTV/CAC 10–25×**
+
+### Monetization Roadmap (Foursquare Playbook)
+
+**Phase 1 — Now (Pre-Seed):** Build the dataset. Scout volume is the only metric.
+- 3 pilot B2B buyers: one venue ($500/mo), one brand ($1K/mo), one tourism body ($500/mo)
+- Total: ~$2K MRR. Proves demand for the raise.
+
+**Phase 2 — Post-Raise (Seed):** Launch VIIBE Data API
+- Free developer tier → $299/mo Growth → Enterprise custom
+- First data license: Lagos city intelligence report to international brand. Price: $5K–$25K one-time.
+- Begin structuring data for AI training sale (zero additional collection required)
+
+**Phase 3 — Scale (Series A):** Vertical data products
+- Music industry: touring decisions, market sizing
+- Betting operators: atmosphere intelligence, in-play crowd signals
+- City governments: crowd flow data, smart city planning
+- AI training data marketplace listing (Snowflake, Nasdaq Data Link)
+
+---
+
+## AI Intelligence Layer
+
+The AI layer sits on top of the sensor stack. It is not a feature — it is the signal processing infrastructure that makes raw scout reports trustworthy, predictive, and investable.
+
+### Tier 1 — Build Now
+| Feature | What it does | Why |
+|---|---|---|
+| **Scout Integrity Score (SIS)** | Hidden reliability weight per scout (0–100). New scouts = 0.3× multiplier. Proven scouts = 1.5×. Never shown to scouts. | Kills fake ratings. Answers "how do you prevent gaming?" |
+| **Signal Extraction Layer** | Every scout text → async GPT-4o-mini → structured JSON (vibe dimension, intensity, contradiction flag, named entities). < $0.001/report. | Text becomes machine-readable. Multi-modal signal fusion. |
+| **Energy Decay Mechanic** | Pulse Score visually degrades after 45 mins. Dead scores expire after 90 mins. | Trust-critical. Dead scores pretending to be live kills credibility. |
+| **Comparative Framing** | "Hotter than last Saturday at this time." One MongoDB aggregation query per venue. | Context makes numbers actionable. |
+
+### Tier 2 — Build in 90 Days
+| Feature | What it does | Why |
+|---|---|---|
+| **Live Intelligence Feed** | Scrollable feed of AI-generated insight cards triggered by real statistical events (energy spikes, multi-peak windows, city patterns). Template-based, no hallucination risk. | The Bloomberg headline ticker for live scenes. Investor-visible. |
+| **Scout Streak + Territory Leaderboard** | Streak counter + weekly-reset neighborhood leaderboard. | Primary supply-side retention mechanic. Scouts defend streaks and titles. |
+
+### Tier 3 — Build at Scale (Needs 30+ Days of Data)
+| Feature | What it does | Why |
+|---|---|---|
+| **Pulse Forecast** | 60-minute predictive energy curve per venue. "Trending toward peak in ~45 min." | Real-time + predictive = product, not just feature. Biggest differentiator vs. Google Maps. |
+| **Vibe Match** | Vector similarity recommendations. User picks energy descriptors → ranked venues. Built on pgvector (free). | Consumer face of AI infrastructure. |
+
+**AI infra cost at MVP scale: < $50/month.** This was a $5K+/month problem 24 months ago.
 
 ---
 
@@ -154,10 +201,14 @@ Each sensor layer adds a proprietary data point that cannot be bought, scraped, 
 | 1–2 | Tap rhythm + Vibe Rating | ✓ Live |
 | 3 | Ambient decibel (opt-in) | ✓ Live |
 | 4 | Kinetic / Accelerometer | 🔨 In build |
+| 4b | Scout Integrity Score (AI layer) | 🔨 In build |
+| 4c | NLP Signal Extraction (AI layer) | 🔨 In build |
 | 5 | BLE Proximity / Crowd density | 🗓️ Pipeline |
 | 6 | Biometric wearable (HR) | 🗓️ Pipeline |
 
 The moat compounds every night the platform operates. A competitor cannot replicate the dataset — they would need to rebuild the user base from zero.
+
+**The lock-in:** Once a buyer has 18 months of VIIBE longitudinal data, they cannot switch. No new entrant can provide the historical time series.
 
 ---
 
@@ -253,4 +304,20 @@ Primary acquisition targets (in priority order):
 
 ---
 
-*Last updated: 2026-03-20*
+## B2B Expansion — BetConstruct Strategy
+
+VIIBE's scout data is a direct input into the betting intelligence market. Three products to build and sell to BetConstruct (630+ operator clients, deepest African B2B presence):
+
+1. **Tipster Signal Marketplace** — white-label SDK operators activate inside their platform. Bettors build public verified records, earn followers, monetize picks. Followers copy bets. Revenue share: 20% to VIIBE, 80% to operator. BetConstruct cannot build this — it requires social identity mechanics foreign to sportsbook engineering culture.
+
+2. **Atmosphere Intelligence API** — VIIBE scout data as pre-match + in-play crowd signal for betting operators. $500/event or $2K/month per city. First product that combines human-verified crowd intelligence with betting data.
+
+3. **African League Data Feed** — NPFL, Ghana Premier League, CAF coverage that Sportradar prices out of reach for African operators. VIIBE's local presence is the advantage.
+
+**Path to BetConstruct:** Follow up AGE conference contact. Build Swarm API demo (public GitHub SDK). Target SiGMA Africa or ICE Barcelona.
+
+See `.planning/research/BETCONSTRUCT_STRATEGY.md` for full intelligence report.
+
+---
+
+*Last updated: 2026-03-27*

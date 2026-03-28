@@ -75,6 +75,10 @@ from app.routes.insider import router as insider_router
 from app.routes.agent_api import router as agent_api_router
 from app.routes.shares import router as shares_router
 from app.routes.scene_report import router as scene_report_router
+from app.routes.moments import router as moments_router
+from app.routes.public_api import router as public_api_router
+from app.routes.venue_seeder import router as venue_seeder_router
+from app.routes.privacy import router as privacy_router
 
 # ===== Create FastAPI App =====
 app = FastAPI(title="Viibe App API", version="3.0.0")
@@ -146,6 +150,13 @@ api_router.include_router(waitlist_router)
 api_router.include_router(agent_api_router)
 api_router.include_router(shares_router)
 api_router.include_router(scene_report_router)
+api_router.include_router(moments_router)
+# ── External Read API (versioned, API-key authenticated) ─────────────────────
+api_router.include_router(public_api_router)
+# ── Passive venue onboarding pipeline ────────────────────────────────────────
+api_router.include_router(venue_seeder_router)
+# ── NDPR compliance (consent, data export, right to erasure) ─────────────────
+api_router.include_router(privacy_router)
 
 # Include the API router in the main app
 app.include_router(api_router)

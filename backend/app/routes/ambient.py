@@ -21,6 +21,12 @@ class AmbientPing(BaseModel):
     db_level: float = Field(..., ge=-160, le=0)  # dB is negative (0 = loudest)
 
 
+class AudioPing(BaseModel):
+    venue_id:  str
+    db_level:  float = Field(..., ge=-160, le=0)
+    music_bpm: int   = Field(default=0, ge=0, le=200)
+
+
 @router.post("/ambient/ping")
 async def ambient_ping(data: AmbientPing, user: dict = Depends(require_auth)):
     """
@@ -31,6 +37,23 @@ async def ambient_ping(data: AmbientPing, user: dict = Depends(require_auth)):
         "venue_id":  data.venue_id,
         "user_id":   user["id"],
         "db_level":  data.db_level,
+        "timestamp": datetime.now(timezone.utc),
+    })
+    return {"ok": True}
+
+
+@router.post("/ambient/audio-ping")
+async def audio_ping(data: AudioPing, user: dict = Depends(require_auth)):
+    """
+    Receives dB level + music BPM derived from on-device beat detection.
+    No audio stored — only numeric values.
+    music_bpm = 0 means not enough peaks detected (venue too quiet or sensor warming up).
+    """
+    await db.ambient_readings.insert_one({
+        "venue_id":  data.venue_id,
+        "user_id":   user["id"],
+        "db_level":  data.db_level,
+        "music_bpm": data.music_bpm if data.music_bpm > 0 else None,
         "timestamp": datetime.now(timezone.utc),
     })
     return {"ok": True}

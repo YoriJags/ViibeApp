@@ -135,6 +135,11 @@ class Rating(BaseModel):
     is_correction: bool = False
     vibe_score: float = 0.0
     synced: bool = True
+    # taxonomy_id: identifies the rating taxonomy template used for this rating.
+    # None = default Lagos nightlife template. Set when a market-specific taxonomy
+    # is introduced (e.g. "nairobi_v1", "accra_v1"). Placeholder for multi-market expansion.
+    taxonomy_id: Optional[str] = None
+    vibe_note: Optional[str] = None    # Free-text scout note — enriched async by Signal Extraction Layer
 
 
 class RatingCreate(BaseModel):
@@ -147,6 +152,8 @@ class RatingCreate(BaseModel):
     photo_base64: Optional[str] = None
     coordinates: Coordinates
     offline_id: Optional[str] = None
+    taxonomy_id: Optional[str] = None  # None = default Lagos template
+    vibe_note: Optional[str] = None    # Scout's free-text note — processed by Signal Extraction Layer
 
 
 # ===== Merchant Wallet =====

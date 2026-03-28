@@ -13,6 +13,7 @@ from typing import Optional
 
 from app.config import db, logger
 from app.services.auth import get_current_user
+from app.services.signal_identity import get_or_create_signal_token
 
 router = APIRouter(prefix="/api/kinetic", tags=["Kinetic"])
 
@@ -41,9 +42,12 @@ async def kinetic_ping(
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
 
+    # Use signal_token instead of user_id — behavioral signals are decoupled from identity
+    signal_token = await get_or_create_signal_token(user["id"])
+
     doc = {
         "venue_id":        payload.venue_id,
-        "user_id":         user["id"],
+        "signal_token":    signal_token,
         "movement_bpm":    payload.movement_bpm,
         "movement_energy": payload.movement_energy,
         "is_dancing":      80 <= payload.movement_bpm <= 180 and payload.movement_energy > 30,

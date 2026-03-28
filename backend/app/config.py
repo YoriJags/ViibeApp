@@ -82,6 +82,8 @@ async def ensure_indexes():
     await db.ratings.create_index([("user_id", 1), ("venue_id", 1), ("timestamp", -1)])
     await db.ratings.create_index([("venue_id", 1), ("timestamp", -1)])
     await db.ratings.create_index([("timestamp", -1), ("superseded", 1)])
+    # taxonomy_id: sparse index for future multi-market queries (null = default Lagos template)
+    await db.ratings.create_index("taxonomy_id", sparse=True)
 
     # venues: city+score for leaderboard, city+area for district ranking
     await db.venues.create_index([("city", 1), ("current_vibe_score", -1)])
@@ -140,9 +142,13 @@ async def ensure_indexes():
     await db.stories.create_index([("venue_id", 1), ("created_at", -1)])
     await db.stories.create_index([("user_id", 1), ("created_at", -1)])
 
-    # vibe snapshots: timeline queries + TTL (72h)
+    # vibe snapshots: permanent audit-grade records — no TTL
+    # Snapshots carry full score provenance (sample_size, confidence_band, signal_weights)
+    # and must be retained indefinitely for data licensing due diligence.
+    # MIGRATION: if upgrading from the 72h TTL version, drop the old index:
+    #   db.vibe_snapshots.drop_index("timestamp_1")
     await db.vibe_snapshots.create_index([("venue_id", 1), ("timestamp", -1)])
-    await db.vibe_snapshots.create_index("timestamp", expireAfterSeconds=259200)
+    await db.vibe_snapshots.create_index([("timestamp", -1)])
 
     # crews: invite code lookup + member lookup
     await db.crews.create_index("invite_code", unique=True)
@@ -179,6 +185,16 @@ async def ensure_indexes():
     await db.venue_emoji_pulses.create_index(
         [("venue_id", 1), ("user_id", 1)], unique=True
     )
+
+    # api_keys: external partner key lookups (public read API)
+    await db.api_keys.create_index("key", unique=True)
+    await db.api_keys.create_index([("active", 1)])
+
+    # NDPR compliance collections
+    await db.consent_records.create_index("user_id", unique=True)
+    await db.consent_audit_log.create_index([("user_id", 1), ("timestamp", -1)])
+    await db.deletion_requests.create_index([("user_id", 1), ("status", 1)])
+    await db.deletion_requests.create_index([("status", 1), ("deletion_due_by", 1)])
 
     logger.info("MongoDB indexes ensured")
 

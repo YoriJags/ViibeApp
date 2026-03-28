@@ -27,9 +27,11 @@ import { useVibeStore } from '../store/vibeStore';
 import { calculateDistance } from '../utils/geo';
 import { resolveSkinPalette } from '../config/skins';
 import SurgeFullScreen, { SurgeState } from './SurgeFullScreen';
+import MomentOverlay, { MomentOverlayProps } from './MomentOverlay';
 import { useHapticVelocity } from '../hooks/useHapticVelocity';
 import { useRetryFetch } from '../hooks/useRetryFetch';
 import { useKineticBuffer } from '../hooks/useKineticBuffer';
+import { useMomentTrigger, MomentTriggerEvent } from '../hooks/useMomentTrigger';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -508,6 +510,17 @@ export default function VibeReactor({
   const [questSucceeded,  setQuestSucceeded]   = useState(false);
   const [stationaryNudge, setStationaryNudge]  = useState(false);
 
+  // ── Moment overlay state ─────────────────────────────────────────────────────
+  const [momentOverlay, setMomentOverlay] = useState<{
+    state: 'personal' | 'locked';
+    participantCount?: number;
+    gesture?: MomentTriggerEvent['gesture'];
+  } | null>(null);
+
+  const handleMomentFired = useCallback((event: MomentTriggerEvent) => {
+    setMomentOverlay({ state: 'personal', gesture: event.gesture });
+  }, []);
+
   // ── Spark particle system ────────────────────────────────────────────────────
   const sparksRef = useRef<Spark[]>([]);
   const rafRef    = useRef<number>(0);
@@ -600,6 +613,13 @@ export default function VibeReactor({
   })();
 
   const { getIntensity, getGForce, fireHaptic } = useHapticVelocity({ enabled: isEligible });
+
+  useMomentTrigger({
+    venueId,
+    isInsideGeofence: isEligible,
+    enabled: true,
+    onMomentFired: handleMomentFired,
+  });
   const { post: retryPost, pending: tapping }   = useRetryFetch();
 
   // ── Breathing animation ──────────────────────────────────────────────────────
@@ -679,12 +699,17 @@ export default function VibeReactor({
       if (d.id === venueId && (d.current_vibe_score ?? 100) >= CHARGE_LOW_SCORE)
         setDangerZone(false);
     };
+    const onMomentLocked = (d: { venue_id: string; participant_count: number }) => {
+      if (d.venue_id !== venueId) return;
+      setMomentOverlay({ state: 'locked', participantCount: d.participant_count });
+    };
 
     socket.on('surge_update',            onSurge);
     socket.on('kinetics_update',         onKinetics);
     socket.on('quest_succeeded',         onQuestDone);
     socket.on('global_charge_depletion', onDepletion);
     socket.on('venue_update',            onVenueUpd);
+    socket.on('moment_locked',           onMomentLocked);
 
     return () => {
       socket.off('surge_update',            onSurge);
@@ -692,6 +717,7 @@ export default function VibeReactor({
       socket.off('quest_succeeded',         onQuestDone);
       socket.off('global_charge_depletion', onDepletion);
       socket.off('venue_update',            onVenueUpd);
+      socket.off('moment_locked',           onMomentLocked);
     };
   }, [socket, venueId]);
 
@@ -1171,6 +1197,16 @@ export default function VibeReactor({
           Move your body 🕺 — Peak energy needs real motion
         </Text>
       )}
+
+      {/* Moment overlay — personal trigger or Moment Lock */}
+      <MomentOverlay
+        state={momentOverlay?.state ?? null}
+        vibeColor={color}
+        participantCount={momentOverlay?.participantCount}
+        gesture={momentOverlay?.gesture}
+        venueName={venueName}
+        onDismiss={() => setMomentOverlay(null)}
+      />
 
       {/* Full-screen charger */}
       <SurgeFullScreen

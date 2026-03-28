@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { User } from '../types';
 import { DEMO_USER, DEMO_VENUES, DEMO_STREAK, DEMO_CREW, DEMO_ACTIVE_CAMPAIGNS } from '../../data/demoData';
 import type { VibeStore } from '../vibeStore';
+import analytics from '../../services/analytics';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -124,6 +125,7 @@ export const createAuthSlice: StateCreator<
       if (response.ok) {
         const user = await response.json();
         set({ user, isAuthenticated: true });
+        analytics.identify(user.id);
         return user;
       }
       return null;
@@ -145,6 +147,7 @@ export const createAuthSlice: StateCreator<
         const data = await response.json();
         const { session_token, ...user } = data;
         set({ user, sessionToken: session_token, loading: false, isAuthenticated: true });
+        analytics.identify(user.id);
         return true;
       }
       set({ loading: false });
@@ -168,6 +171,7 @@ export const createAuthSlice: StateCreator<
         const data = await response.json();
         const { session_token, ...user } = data;
         set({ user, sessionToken: session_token, loading: false, isAuthenticated: true });
+        analytics.identify(user.id);
         return { success: true };
       }
       const errorData = await response.json().catch(() => ({}));

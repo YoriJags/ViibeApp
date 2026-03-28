@@ -5,7 +5,9 @@ Submit ratings, offline sync, and user-venue rating status.
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Request
 
+import asyncio
 from app.config import db, MAX_RATINGS_PER_VENUE_PER_DAY, RATING_COOLDOWN_MINUTES
+from app.services.signal_identity import get_or_create_signal_token
 from app.models import Rating, RatingCreate, Coordinates
 from app.services.vibe import (
     calculate_vibe_score,
@@ -14,6 +16,8 @@ from app.services.vibe import (
     is_within_geofence,
     update_user_clout,
 )
+from app.services.scout_integrity import get_sis_weight
+from app.services.signal_extraction import extract_signal
 from app.routes.coins import award_coins, COIN_EARN, VIBE_PLUS_MULTIPLIER
 
 BURST_THRESHOLD = 4        # ratings triggering provisional hold
@@ -102,14 +106,24 @@ async def create_rating(rating_data: RatingCreate):
             {"$set": {"superseded": True}},
         )
 
-    # Compute and stamp scout credibility weight before insert
-    credibility = await compute_scout_credibility(rating_data.user_id)
+    # Compute scout credibility weight using Scout Integrity Score (SIS)
+    credibility = await get_sis_weight(rating_data.user_id)
+
+    # Attach signal_token — behavioral signal is decoupled from Scout identity at ingestion
+    signal_token = await get_or_create_signal_token(rating_data.user_id)
 
     rating_doc = rating.dict()
     rating_doc["provisional"] = is_provisional
     rating_doc["provisional_until"] = provisional_until
     rating_doc["credibility_weight"] = credibility
+    rating_doc["signal_token"] = signal_token
     await db.ratings.insert_one(rating_doc)
+
+    # ── Async signal extraction (AI-02) ───────────────────────────────────────
+    # Runs in background — zero latency impact on this response.
+    vibe_note = getattr(rating_data, "vibe_note", None) or rating_doc.get("vibe_note")
+    if vibe_note:
+        asyncio.create_task(extract_signal(rating.id, vibe_note, vibe_score))
 
     aggregate = await calculate_venue_aggregate(rating_data.venue_id)
     await db.venues.update_one(
@@ -214,9 +228,10 @@ async def create_rating(rating_data: RatingCreate):
     await broadcast_city_pulse(venue.get("city", "lagos"))
 
     # ── Analytics event (server-side — most reliable signal) ─────────────────
+    # signal_token is used here — analytics events never store user_id
     await db.events.insert_one({
         "event":        "rating_submitted",
-        "user_id":      rating_data.user_id,
+        "signal_token": signal_token,
         "properties": {
             "venue_id":     rating_data.venue_id,
             "venue_name":   venue.get("name", ""),

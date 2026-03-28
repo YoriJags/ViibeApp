@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — VIIBE</title>
+<meta name="description" content="VIIBE Privacy Policy — how we collect, use, and protect your data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --base:#08070F; --surface:#0f0e17; --cyan:#00F0FF; --coral:#FF3366; --gold:#C9A84C;
+    --white:#FFFFFF; --w60:rgba(255,255,255,0.6); --w35:rgba(255,255,255,0.35);
+    --w10:rgba(255,255,255,0.08); --w05:rgba(255,255,255,0.05);
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--base); color: var(--white); font-family: 'Inter', sans-serif; overflow-x: hidden; line-height: 1.7; }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.3;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 20px 40px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--w05); background: rgba(8,7,15,0.9);
+    backdrop-filter: blur(12px);
+  }
+  .nav-logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; text-decoration: none; color: var(--white); letter-spacing: -0.01em; }
+  .nav-logo span { color: var(--cyan); }
+  .nav-back { font-size: 11px; color: var(--w35); text-decoration: none; letter-spacing: 0.1em; transition: color 0.2s; }
+  .nav-back:hover { color: var(--white); }
+
+  /* Content */
+  .content {
+    max-width: 760px; margin: 0 auto; padding: 120px 40px 80px;
+  }
+
+  .page-label {
+    font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; font-weight: 600;
+    color: var(--cyan); margin-bottom: 16px;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif; font-size: clamp(32px, 4vw, 48px);
+    font-weight: 700; line-height: 1.1; margin-bottom: 8px;
+  }
+  .meta { font-size: 12px; color: var(--w35); margin-bottom: 48px; letter-spacing: 0.05em; }
+
+  .divider { width: 48px; height: 1px; background: var(--cyan); margin: 40px 0; }
+
+  h2 {
+    font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700;
+    margin-bottom: 16px; margin-top: 40px; color: var(--white);
+  }
+  h2:first-of-type { margin-top: 0; }
+
+  p { font-size: 14px; color: var(--w60); margin-bottom: 16px; }
+
+  ul { padding-left: 0; list-style: none; margin-bottom: 16px; }
+  ul li {
+    font-size: 14px; color: var(--w60); padding: 6px 0 6px 20px;
+    position: relative; border-bottom: 1px solid var(--w05);
+  }
+  ul li:last-child { border-bottom: none; }
+  ul li::before { content: '—'; position: absolute; left: 0; color: var(--cyan); font-size: 11px; top: 8px; }
+
+  .highlight-box {
+    border-left: 2px solid var(--cyan); padding: 16px 20px; margin: 24px 0;
+    background: rgba(0,240,255,0.03);
+  }
+  .highlight-box p { margin-bottom: 0; font-size: 13px; }
+
+  .section-tag {
+    display: inline-block; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
+    border: 1px solid var(--w10); color: var(--w35); padding: 2px 8px; margin-bottom: 12px; font-weight: 600;
+  }
+
+  a { color: var(--cyan); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--w05); padding: 32px 40px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--w35); max-width: 760px; margin: 0 auto;
+  }
+  footer a { color: var(--w35); text-decoration: none; }
+  footer a:hover { color: var(--white); }
+
+  @media (max-width: 600px) {
+    nav { padding: 16px 20px; }
+    .content { padding: 100px 20px 60px; }
+    footer { padding: 24px 20px; flex-direction: column; gap: 12px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">V<span>II</span>BE</a>
+  <a href="/" class="nav-back">← Back to VIIBE</a>
+</nav>
+
+<div class="content">
+  <p class="page-label">Legal</p>
+  <h1>Privacy Policy</h1>
+  <p class="meta">Effective date: March 2026 &nbsp;·&nbsp; VIIBE (Viibez) &nbsp;·&nbsp; Lagos, Nigeria</p>
+
+  <div class="highlight-box">
+    <p>This policy explains what data VIIBE collects, how it is used, and the rights you have over it. We are committed to plain-language transparency. If you have questions, contact us at <a href="mailto:yoriajagun08@gmail.com">yoriajagun08@gmail.com</a>.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>1. Who We Are</h2>
+  <p>VIIBE (trading as Viibez) is a real-time scene intelligence platform that measures live crowd energy at physical venues. We are based in Lagos, Nigeria and operate under the Nigeria Data Protection Regulation (NDPR) 2019.</p>
+  <p>References to "VIIBE", "we", "us", or "our" in this policy refer to the VIIBE platform and its operator.</p>
+
+  <h2>2. Data We Collect</h2>
+  <p class="section-tag">Account data</p>
+  <ul>
+    <li>Username and display name (call name)</li>
+    <li>Phone number — used for SMS verification only</li>
+    <li>Email address — optional, collected only if provided</li>
+    <li>Profile picture — optional, uploaded by you</li>
+    <li>Zodiac sign and music preferences — optional, set during onboarding</li>
+  </ul>
+
+  <p class="section-tag">Activity data</p>
+  <ul>
+    <li>Venue ratings you submit — energy level, crowd size, gate status</li>
+    <li>Venue check-ins — timestamp and venue identifier</li>
+    <li>Crew/Cartel membership and interactions</li>
+    <li>Clout points, streaks, and rank history</li>
+  </ul>
+
+  <p class="section-tag">Sensor data (with your permission)</p>
+  <ul>
+    <li>Location — one-time foreground read when you rate or check in. We do not track your location continuously or in the background.</li>
+    <li>Ambient sound level — a decibel number only, sampled every 30 seconds when you opt in. No audio is recorded, stored, or transmitted.</li>
+    <li>Accelerometer / movement — BPM and intensity values derived from your phone's motion sensor when you are inside a venue geofence. Raw sensor data never leaves your device; only the derived value is sent.</li>
+  </ul>
+
+  <p class="section-tag">Technical data</p>
+  <ul>
+    <li>Device type and operating system version</li>
+    <li>Push notification token (for re-engagement alerts, if you opt in)</li>
+    <li>App version and crash logs</li>
+  </ul>
+
+  <h2>3. How We Use Your Data</h2>
+  <ul>
+    <li>To calculate and display live Pulse Scores for venues in your city</li>
+    <li>To maintain your Scout rank, clout points, and streak history</li>
+    <li>To power crew/cartel coordination features</li>
+    <li>To send you push notifications you have opted into</li>
+    <li>To detect and prevent fraudulent or coordinated score manipulation</li>
+    <li>To improve the accuracy and reliability of the scoring system over time</li>
+    <li>To provide anonymised, aggregate crowd intelligence data to venue operators and API partners</li>
+  </ul>
+
+  <div class="highlight-box">
+    <p><strong style="color:var(--white);">Privacy-by-design:</strong> Behavioral signals (ratings, kinetic readings, ambient levels) are stored against an anonymous signal token — not directly against your user identity. Your identity and your behavioral history are separated at the database layer. This means your individual activity cannot be linked back to you from the behavioral data alone.</p>
+  </div>
+
+  <h2>4. Data Sharing</h2>
+  <p>We do not sell your personal data. We share data only in the following circumstances:</p>
+  <ul>
+    <li><strong style="color:var(--white);">Venue operators</strong> — receive aggregated, anonymised crowd intelligence (scores, energy levels, crowd density). They do not receive individual user data.</li>
+    <li><strong style="color:var(--white);">API partners</strong> (hotels, travel platforms, AI assistants) — receive the same aggregated city-level data via our Agent API. No personal identifiers are included.</li>
+    <li><strong style="color:var(--white);">Infrastructure providers</strong> — Railway (backend hosting), MongoDB Atlas (database), Firebase (authentication), Vercel (web). Each is bound by their own data processing agreements.</li>
+    <li><strong style="color:var(--white);">Legal requirements</strong> — if required by Nigerian law or a valid court order.</li>
+  </ul>
+
+  <h2>5. Data Retention</h2>
+  <ul>
+    <li>Account data — retained for as long as your account is active</li>
+    <li>Venue ratings and Pulse Score snapshots — retained indefinitely (they form the core historical dataset)</li>
+    <li>Kinetic and ambient sensor readings — deleted within 2 hours of collection (operational use only)</li>
+    <li>Push notification tokens — deleted when you revoke permission or delete your account</li>
+    <li>User sessions — 7-day rolling retention</li>
+  </ul>
+
+  <h2>6. Your Rights</h2>
+  <p>Under the NDPR, you have the following rights:</p>
+  <ul>
+    <li><strong style="color:var(--white);">Access</strong> — request a copy of all data we hold about you</li>
+    <li><strong style="color:var(--white);">Correction</strong> — request that inaccurate data be corrected</li>
+    <li><strong style="color:var(--white);">Erasure</strong> — request deletion of your account and personal data. Requests are processed within 30 days. Anonymised behavioral signals in aggregated datasets are not personally identifiable and are not subject to erasure.</li>
+    <li><strong style="color:var(--white);">Withdrawal of consent</strong> — you can revoke sensor permissions (location, microphone, motion) at any time through your device settings. This does not affect your ability to use VIIBE.</li>
+    <li><strong style="color:var(--white);">Portability</strong> — request an export of your data in a machine-readable format</li>
+  </ul>
+  <p>To exercise any of these rights, contact us at <a href="mailto:yoriajagun08@gmail.com">yoriajagun08@gmail.com</a>. We will respond within 30 days.</p>
+
+  <h2>7. Security</h2>
+  <p>We use HTTPS for all data in transit. Database access is restricted to authenticated services. Authentication tokens are managed via Firebase Auth. We do not store passwords — phone verification is handled via SMS OTP.</p>
+  <p>Despite these measures, no system is perfectly secure. We will notify affected users and the relevant authority promptly in the event of a data breach.</p>
+
+  <h2>8. Children</h2>
+  <p>VIIBE is available to users aged 10 and above. For users under 18, we recommend parental guidance. We do not knowingly collect data from children under 10. If you believe a child under 10 has created an account, contact us and we will delete it promptly.</p>
+
+  <h2>9. Third-Party Links</h2>
+  <p>The app may display links to external venues, social profiles, or platforms. This policy does not apply to those third-party services. We are not responsible for their privacy practices.</p>
+
+  <h2>10. Changes to This Policy</h2>
+  <p>We may update this policy as the product evolves. Material changes will be communicated via in-app notification. The effective date at the top of this page will always reflect the most recent version.</p>
+
+  <h2>11. Contact</h2>
+  <p>For any privacy questions, data requests, or concerns:</p>
+  <ul>
+    <li>Email: <a href="mailto:yoriajagun08@gmail.com">yoriajagun08@gmail.com</a></li>
+    <li>Platform: VIIBE (Viibez), Lagos, Nigeria</li>
+  </ul>
+
+  <div class="divider"></div>
+  <p style="font-size:12px;color:var(--w35);">VIIBE · Privacy Policy · Effective March 2026 · Lagos, Nigeria</p>
+</div>
+
+<footer>
+  <span>© 2026 VIIBE (Viibez)</span>
+  <div style="display:flex;gap:24px;">
+    <a href="/privacy">Privacy Policy</a>
+    <a href="/terms">Terms of Service</a>
+    <a href="/">Home</a>
+  </div>
+</footer>
+
+</body>
+</html>
