@@ -5,10 +5,12 @@ Auto-activates Claude when ANTHROPIC_API_KEY is set; falls back to rule-based sc
 """
 import os
 import uuid
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.config import db, logger
+from app.services.auth import require_auth
+from app.routes.subscriptions import _check_vibe_plus
 
 router = APIRouter(tags=["planner"])
 
@@ -22,8 +24,11 @@ class PlannerChatRequest(BaseModel):
 
 
 @router.post("/planner/chat")
-async def planner_chat(body: PlannerChatRequest):
-    """Night Planner — Claude AI concierge with rule-based fallback."""
+async def planner_chat(body: PlannerChatRequest, request: Request):
+    """Night Planner — Claude AI concierge with rule-based fallback. Requires Vibe+."""
+    user = await require_auth(request)
+    if not await _check_vibe_plus(user):
+        raise HTTPException(status_code=402, detail="Night Planner requires Vibe+. Upgrade to access the AI concierge.")
     city = body.city.lower()
     message = body.message.strip()
     if not message:
