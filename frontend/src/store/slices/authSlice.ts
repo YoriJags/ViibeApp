@@ -28,8 +28,12 @@ export interface AuthSlice {
   updateUserClout: (cloutEarned: number) => void;
   fetchUser: () => Promise<void>;
   fetchAuthUser: () => Promise<User | null>;
-  createUser: (username: string, phone: string) => Promise<boolean>;
-  loginUser: (phone: string) => Promise<{ success: boolean; error?: string }>;
+  /** Step 1 of auth: request an OTP to be sent to the phone via SMS. */
+  requestOtp: (phone: string) => Promise<{ success: boolean; error?: string }>;
+  /** Step 2 for new accounts: verify OTP + create account → session token. */
+  createUser: (username: string, phone: string, otp: string) => Promise<boolean>;
+  /** Step 2 for existing accounts: verify OTP → session token. */
+  loginUser: (phone: string, otp: string) => Promise<{ success: boolean; error?: string }>;
   processGoogleAuth: (sessionId: string) => Promise<boolean>;
   logout: () => Promise<void>;
   completeOnboarding: () => void;
@@ -133,13 +137,28 @@ export const createAuthSlice: StateCreator<
     }
   },
 
-  createUser: async (username, phone) => {
+  requestOtp: async (phone) => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/otp/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      if (response.ok) return { success: true };
+      const errorData = await response.json().catch(() => ({}));
+      return { success: false, error: errorData.detail || 'Could not send OTP. Try again.' };
+    } catch {
+      return { success: false, error: 'Connection error' };
+    }
+  },
+
+  createUser: async (username, phone, otp) => {
     set({ loading: true });
     try {
       const response = await fetch(`${API_URL}/api/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, phone }),
+        body: JSON.stringify({ username, phone, otp }),
       });
       if (response.ok) {
         const data = await response.json();
@@ -156,13 +175,13 @@ export const createAuthSlice: StateCreator<
     }
   },
 
-  loginUser: async (phone) => {
+  loginUser: async (phone, otp) => {
     set({ loading: true });
     try {
       const response = await fetch(`${API_URL}/api/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone, otp }),
       });
       if (response.ok) {
         const data = await response.json();
@@ -172,7 +191,7 @@ export const createAuthSlice: StateCreator<
       }
       const errorData = await response.json().catch(() => ({}));
       set({ loading: false });
-      return { success: false, error: errorData.detail || 'User not found. Please sign up first.' };
+      return { success: false, error: errorData.detail || 'Invalid or expired verification code.' };
     } catch (error) {
       console.error('Error logging in:', error);
       set({ loading: false });

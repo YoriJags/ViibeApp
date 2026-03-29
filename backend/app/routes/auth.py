@@ -1,14 +1,41 @@
 """
 Vibe App - Authentication Routes
-Phone-based auth (signup/login via users routes), session management.
-All auth endpoints return a session_token for the client to store and send as Bearer token.
+Phone-based auth (signup/login via users routes), session management, OTP delivery.
+
+Auth flow:
+  1. POST /auth/otp/request   { phone }          → sends OTP via SMS
+  2. POST /users/login        { phone, otp }     → verifies OTP, returns session_token
+     POST /users             { username, phone, otp } → same for new accounts
 """
+import os
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.config import db
-from app.services.auth import get_current_user
+from app.models import OTPRequest
+from app.services.auth import (
+    _extract_session_token,
+    generate_and_store_otp,
+    get_current_user,
+)
+from app.services.sms import send_otp
 
 router = APIRouter(tags=["auth"])
+
+_SECURE_COOKIE = os.environ.get("ENVIRONMENT", "production").lower() != "development"
+
+
+@router.post("/auth/otp/request")
+async def request_otp(payload: OTPRequest):
+    """
+    Send a one-time password to the given phone number.
+
+    Rate-limited to 3 requests / 60 s per IP (enforced in RateLimitMiddleware).
+    Always returns 200 — never reveal whether the phone is registered.
+    """
+    otp = await generate_and_store_otp(payload.phone)
+    await send_otp(payload.phone, otp)
+    # Intentionally vague response — do not leak whether phone is registered
+    return {"message": "If that number is valid, an OTP has been sent."}
 
 
 @router.get("/auth/me")
@@ -22,14 +49,24 @@ async def get_me(request: Request):
 
 @router.post("/auth/logout")
 async def logout(request: Request, response: Response):
-    """Logout by clearing the session."""
-    session_token = request.cookies.get("session_token")
-    if not session_token:
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            session_token = auth_header[7:]
+    """
+    Invalidate the current session.
 
-    if session_token:
-        await db.user_sessions.delete_one({"session_token": session_token})
-    response.delete_cookie(key="session_token", path="/")
+    Hashes the incoming raw token before the DB lookup, matching the storage
+    convention in auth.py (only hashes are persisted).
+    """
+    from app.services.auth import _sha256  # local import to avoid circular at module level
+
+    raw_token = _extract_session_token(request)
+    if raw_token:
+        token_hash = _sha256(raw_token)
+        await db.user_sessions.delete_one({"session_token": token_hash})
+
+    response.delete_cookie(
+        key="session_token",
+        path="/",
+        httponly=True,
+        secure=_SECURE_COOKIE,
+        samesite="lax",
+    )
     return {"message": "Logged out"}

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.config import db
 from app.models import User, UserCreate, UserLogin, MusicPreferencesUpdate, ReactorSkinUpdate, ZodiacUpdate
-from app.services.auth import create_session_token, require_auth
+from app.services.auth import create_session_token, require_auth, verify_otp
 from pydantic import BaseModel as PydanticBase
 
 
@@ -23,10 +23,23 @@ router = APIRouter(tags=["users"])
 
 @router.post("/users/login")
 async def login_user(login_data: UserLogin):
-    """Login by phone number - returns existing user with session token."""
+    """
+    Login by phone number + OTP.
+
+    The OTP must be requested first via POST /api/auth/otp/request.
+    Returns a session token on success.
+
+    NOTE: intentionally returns 401 for both "phone not found" and "wrong OTP"
+    to prevent phone-number enumeration attacks.
+    """
+    otp_valid = await verify_otp(login_data.phone, login_data.otp)
+    if not otp_valid:
+        raise HTTPException(status_code=401, detail="Invalid or expired verification code.")
+
     user = await db.users.find_one({"phone": login_data.phone}, {"_id": 0})
     if not user:
-        raise HTTPException(status_code=404, detail="User not found. Please sign up first.")
+        # OTP was valid but phone not registered — unified message to prevent enumeration
+        raise HTTPException(status_code=401, detail="Invalid or expired verification code.")
 
     session_token = await create_session_token(user["id"])
     return {**user, "session_token": session_token}
@@ -34,12 +47,23 @@ async def login_user(login_data: UserLogin):
 
 @router.post("/users")
 async def create_user(user_data: UserCreate):
-    """Create a new user or return existing user if phone matches. Returns session token."""
+    """
+    Register a new user, verified by OTP.
+
+    If the phone is already registered the OTP is still required — this prevents
+    an attacker from obtaining a session for an existing account by submitting a
+    registration request with a known phone number.
+    Returns a session token on success.
+    """
+    otp_valid = await verify_otp(user_data.phone, user_data.otp)
+    if not otp_valid:
+        raise HTTPException(status_code=401, detail="Invalid or expired verification code.")
+
     existing_username = await db.users.find_one({"username": user_data.username})
     if existing_username:
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    # Check if phone already exists - return that user instead (login flow)
+    # Phone already registered → treat as login (OTP already verified above)
     existing_phone = await db.users.find_one({"phone": user_data.phone}, {"_id": 0})
     if existing_phone:
         session_token = await create_session_token(existing_phone["id"])

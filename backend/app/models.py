@@ -2,10 +2,27 @@
 Vibe App - Pydantic Models
 All data models used across the application.
 """
+import re
 import uuid
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal
+
+# Accepts: 080xxxxxxxx, 090xxxxxxxx, +2348xxxxxxxx, 2348xxxxxxxx (11 or 13/14 digits)
+_NG_PHONE_RE = re.compile(
+    r"^\+?234[789]\d{9}$"   # international form: +234XXXXXXXXXX
+    r"|^0[789]\d{9}$"       # local form:         0XXXXXXXXXX
+)
+
+
+def _normalise_phone(phone: str) -> str:
+    """Normalise Nigerian phone numbers to E.164 (+234XXXXXXXXX)."""
+    phone = phone.strip().replace(" ", "").replace("-", "")
+    if phone.startswith("0") and len(phone) == 11:
+        return "+234" + phone[1:]
+    if phone.startswith("234") and not phone.startswith("+"):
+        return "+" + phone
+    return phone
 
 
 # ===== Shared =====
@@ -17,13 +34,53 @@ class Coordinates(BaseModel):
 
 # ===== Users =====
 
+class OTPRequest(BaseModel):
+    phone: str
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        normalised = _normalise_phone(v)
+        if not _NG_PHONE_RE.match(normalised) and not _NG_PHONE_RE.match(v.strip()):
+            raise ValueError("Invalid phone number. Use Nigerian format (e.g. 08012345678).")
+        return normalised
+
+
 class UserCreate(BaseModel):
     username: str
     phone: str
+    otp: str
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        normalised = _normalise_phone(v)
+        if not _NG_PHONE_RE.match(normalised) and not _NG_PHONE_RE.match(v.strip()):
+            raise ValueError("Invalid phone number. Use Nigerian format (e.g. 08012345678).")
+        return normalised
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Username cannot be empty.")
+        if len(v) > 30:
+            raise ValueError("Username must be 30 characters or less.")
+        return v
 
 
 class UserLogin(BaseModel):
     phone: str
+    otp: str
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        normalised = _normalise_phone(v)
+        if not _NG_PHONE_RE.match(normalised) and not _NG_PHONE_RE.match(v.strip()):
+            raise ValueError("Invalid phone number. Use Nigerian format (e.g. 08012345678).")
+        return normalised
 
 
 class User(BaseModel):

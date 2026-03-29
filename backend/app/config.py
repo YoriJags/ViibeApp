@@ -43,7 +43,23 @@ GEOFENCE_RADIUS_METERS = 100  # Default fallback; venues override via geofence_r
 MAX_RATINGS_PER_VENUE_PER_DAY = 2
 RATING_COOLDOWN_MINUTES = 5       # Scouts can re-rate same venue every 5 minutes
 SESSION_EXPIRY_DAYS = 7
+MAX_SESSIONS_PER_USER = 5         # Oldest sessions evicted when limit exceeded
 VIBE_SCORE_WINDOW_HOURS = 1
+
+# ===== OTP / Phone Verification =====
+OTP_EXPIRY_MINUTES = 10           # OTP valid window
+MAX_OTP_ATTEMPTS = 3              # Failed attempts before OTP is invalidated
+OTP_LENGTH = 6                    # Digits
+
+# ===== Proxy Trust =====
+# Comma-separated list of trusted reverse-proxy IPs (e.g. "127.0.0.1,10.0.0.1").
+# Only when the connecting IP is in this list will X-Forwarded-For be trusted.
+# Leave empty (default) to always use the direct TCP connection IP.
+TRUSTED_PROXY_IPS: set[str] = {
+    ip.strip()
+    for ip in os.environ.get("TRUSTED_PROXY_IPS", "").split(",")
+    if ip.strip()
+}
 
 PULSE_DROP_TIERS = {
     "spark": {
@@ -96,7 +112,12 @@ async def ensure_indexes():
 
     # user_sessions: auth lookups on every request
     await db.user_sessions.create_index("session_token", unique=True)
+    await db.user_sessions.create_index("user_id")
     await db.user_sessions.create_index("expires_at", expireAfterSeconds=0)
+
+    # phone_otps: one pending OTP per phone, auto-expire via TTL
+    await db.phone_otps.create_index("phone", unique=True)
+    await db.phone_otps.create_index("expires_at", expireAfterSeconds=0)
 
     # pulse_drops: venue history + admin ledger
     await db.pulse_drops.create_index([("venue_id", 1), ("created_at", -1)])

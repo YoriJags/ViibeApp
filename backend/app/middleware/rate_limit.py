@@ -10,7 +10,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 
-from app.config import logger
+from app.config import TRUSTED_PROXY_IPS, logger
 
 
 class RateLimitStore:
@@ -46,7 +46,8 @@ store = RateLimitStore()
 RATE_LIMIT_RULES: dict[str, tuple[int, int]] = {
 
     # ── Auth / Identity ──────────────────────────────────────────────────────
-    "/api/users/login":      (10, 60),   # login attempts
+    "/api/auth/otp":         (3,  60),   # OTP requests (strict: 3/min to limit SMS abuse)
+    "/api/users/login":      (5,  60),   # login attempts
     "/api/auth/session":     (10, 60),   # session refresh
     "/api/users":            (5,  60),   # signup / user creation
 
@@ -96,13 +97,24 @@ RATE_LIMIT_RULES: dict[str, tuple[int, int]] = {
 
 
 def _get_client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    real_ip = request.headers.get("x-real-ip")
-    if real_ip:
-        return real_ip
-    return request.client.host if request.client else "unknown"
+    """
+    Return the client IP used as the rate-limit key.
+
+    X-Forwarded-For is ONLY trusted when the direct TCP peer is in
+    TRUSTED_PROXY_IPS (set via env var).  Trusting it unconditionally
+    lets any client spoof the header and bypass per-IP limits.
+    """
+    direct_ip = request.client.host if request.client else "unknown"
+
+    if direct_ip in TRUSTED_PROXY_IPS:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+        real_ip = request.headers.get("x-real-ip")
+        if real_ip:
+            return real_ip
+
+    return direct_ip
 
 
 def _find_rule(path: str) -> tuple[str, tuple[int, int]] | None:
