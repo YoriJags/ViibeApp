@@ -148,10 +148,25 @@ Things that came up in conversation worth keeping.
 
 ---
 
+## 🔵 ReachNG → VIIBE Crossover (Deferred — Do After ReachNG is Live)
+
+Ideas surfaced during ReachNG build session (2026-03-29). High value, low urgency — revisit once first ReachNG client is closed.
+
+| ID | Task | What it is | Priority |
+|----|------|-----------|----------|
+| MCP-01 | **VIIBE MCP Server** | FastMCP server connecting VIIBE's MongoDB to Claude Desktop. Enables natural language queries: "Which VI venues underperformed this week?", "Draft a merchant report for Mercury Lagos", "Summarise last month's top venues for the pitch deck." Replaces need for a custom analytics dashboard — Claude becomes the interface. | HIGH |
+| MCP-02 | **Merchant acquisition via ReachNG** | Point ReachNG's events vertical at Lagos venue owners to auto-onboard VIIBE merchants. Same engine, different brief. Every reply from a venue owner is a potential BILL-03 (₦150k/mo Merchant SaaS) customer. | HIGH |
+| MCP-03 | **Investor outreach via ReachNG** | Build a fintech/consumer investor brief in ReachNG. Target seed funds active in African consumer tech. Claude personalises each email referencing their portfolio. Automates the INVT outreach pipeline. | MEDIUM |
+| MCP-04 | **"Digital Employee" merchant pitch reframe** | When pitching VIIBE merchant SaaS, lead with the "digital employee" framing: "VIIBE is a live intelligence agent that works 24/7 — telling you when your venue is peaking, when it's cooling, and when your competitors are outperforming you." Stronger than "analytics dashboard." | MEDIUM |
+| MCP-05 | **Agent API — natural language query endpoint** | Extend the existing `/api/v1/agent/` endpoints to accept natural language questions. Claude interprets the query, runs the MongoDB aggregation, returns structured insight. Powers both the MCP tools and a future conversational merchant dashboard. | LOW |
+
+---
+
 ## 📋 Session Log
 
 | Date | What was built |
 |------|---------------|
+| 2026-03-29 | ReachNG build session — fintech + legal verticals, reply routing, dashboard, per-client prompts, notifications. VIIBE crossover ideas captured in MCP-01–05. |
 | 2026-03-20 | waitlist.py EmailStr fix (Railway crash resolved), landing page mobile nav, scroll animations, merchant analytics demo, Emergent gold palette merge (#C9A84C), "How It Works" section. Backlog captured: VIRAL-01–06, INFRA-01–04. |
 | 2026-03-17 | Score transparency signals, dwell tracking, scout consensus, ambient audio opt-in, multi-signal weighted blend, reactor ring track upgrade (D), VIBE_SCORE_FORMULA.md |
 | 2026-03-14 | UI redesign A–C, E–J. Reactor scale, backdrop, typography, public floor header, VenueCard gradient, category filter, stats bar animation. Feature pipeline captured. |
