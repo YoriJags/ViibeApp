@@ -6,7 +6,7 @@ All auth endpoints return a session_token for the client to store and send as Be
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.config import db
-from app.services.auth import get_current_user
+from app.services.auth import get_current_user, _hash_token
 
 router = APIRouter(tags=["auth"])
 
@@ -30,6 +30,6 @@ async def logout(request: Request, response: Response):
             session_token = auth_header[7:]
 
     if session_token:
-        await db.user_sessions.delete_one({"session_token": session_token})
+        await db.user_sessions.delete_one({"session_token": _hash_token(session_token)})
     response.delete_cookie(key="session_token", path="/")
     return {"message": "Logged out"}

@@ -17,13 +17,19 @@ class Coordinates(BaseModel):
 
 # ===== Users =====
 
+class OTPRequest(BaseModel):
+    phone: str
+
+
 class UserCreate(BaseModel):
     username: str
     phone: str
+    otp: str
 
 
 class UserLogin(BaseModel):
     phone: str
+    otp: str
 
 
 class User(BaseModel):

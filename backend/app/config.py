@@ -12,6 +12,9 @@ import socketio
 ROOT_DIR = Path(__file__).parent.parent
 load_dotenv(ROOT_DIR / '.env')
 
+# ===== Runtime environment =====
+ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
+
 # ===== Database =====
 MONGO_URL = os.environ.get('MONGO_URL', '')
 DB_NAME = os.environ.get('DB_NAME', 'vibe_app')
@@ -23,10 +26,20 @@ db = client[DB_NAME]
 PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY', '')
 PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', '')
 
+# ===== CORS =====
+# Comma-separated list of allowed origins.
+# Production: set ALLOWED_ORIGINS=https://viibez.com,https://app.viibez.com
+# Development: defaults to common local dev ports.
+_raw_origins = os.environ.get(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://localhost:8081,http://localhost:19006",
+)
+ALLOWED_ORIGINS: list[str] = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 # ===== Socket.IO =====
 sio = socketio.AsyncServer(
     async_mode='asgi',
-    cors_allowed_origins='*',
+    cors_allowed_origins=ALLOWED_ORIGINS,
     logger=False,
     engineio_logger=False,
 )
@@ -187,8 +200,18 @@ async def ensure_indexes():
     )
 
     # api_keys: external partner key lookups (public read API)
-    await db.api_keys.create_index("key", unique=True)
+    # key_hash: hashed key for secure lookups (key field retained for migration)
+    await db.api_keys.create_index("key", unique=True, sparse=True)
+    await db.api_keys.create_index("key_hash", unique=True, sparse=True)
     await db.api_keys.create_index([("active", 1)])
+
+    # agent_api_keys: key_hash for secure lookups
+    await db.agent_api_keys.create_index("key_hash", unique=True, sparse=True)
+    await db.agent_api_keys.create_index([("active", 1)])
+
+    # phone_otps: OTP verification — TTL auto-expiry + unique per phone
+    await db.phone_otps.create_index("phone", unique=True)
+    await db.phone_otps.create_index("expires_at", expireAfterSeconds=0)
 
     # NDPR compliance collections
     await db.consent_records.create_index("user_id", unique=True)

@@ -83,10 +83,13 @@ const profileCallNameStyles = StyleSheet.create({
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode, isFeatureEnabled, isVibePlus, avatarConfig, updateAvatar, crew, fetchCrew, replayAppTutorial, updateCallName } = useVibeStore();
-  const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup' | 'zodiac'>('welcome');
+  const { user, fetchUser, fetchAuthUser, requestOtp, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode, isFeatureEnabled, isVibePlus, avatarConfig, updateAvatar, crew, fetchCrew, replayAppTutorial, updateCallName } = useVibeStore();
+  const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup' | 'otp_pending' | 'zodiac'>('welcome');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  // Track whether otp_pending was triggered from login or signup
+  const pendingAuthAction = React.useRef<'login' | 'signup'>('login');
   const [debrief, setDebrief] = useState<{ debrief: string; night_title?: string; stats?: any } | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [showVibePlus, setShowVibePlus] = useState(false);
@@ -143,12 +146,39 @@ export default function ProfileScreen() {
       return;
     }
 
-    const success = await createUser(username.trim(), phone.trim());
-    if (success) {
-      // Go to optional zodiac step before landing on profile
-      setAuthMode('zodiac');
+    // Step 1: request OTP before creating the account
+    const result = await requestOtp(phone.trim());
+    if (!result.success) {
+      Alert.alert('Error', result.error || 'Could not send verification code.');
+      return;
+    }
+    pendingAuthAction.current = 'signup';
+    setOtp(result.dev_otp ?? ''); // Pre-fill in dev when Twilio not configured
+    setAuthMode('otp_pending');
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp.trim()) {
+      Alert.alert('Error', 'Please enter the verification code.');
+      return;
+    }
+
+    if (pendingAuthAction.current === 'signup') {
+      const success = await createUser(username.trim(), phone.trim(), otp.trim());
+      if (success) {
+        setOtp('');
+        setAuthMode('zodiac');
+      } else {
+        Alert.alert('Error', 'Invalid code or username already taken. Try again.');
+      }
     } else {
-      Alert.alert('Error', 'Username might already exist. Try another.');
+      const result = await loginUser(phone.trim(), otp.trim());
+      if (result.success) {
+        setOtp('');
+        setAuthMode('welcome');
+      } else {
+        Alert.alert('Login Failed', result.error || 'Invalid or expired code.');
+      }
     }
   };
 
@@ -208,12 +238,15 @@ export default function ProfileScreen() {
       return;
     }
 
-    const result = await loginUser(phone.trim());
-    if (result.success) {
-      setAuthMode('welcome');
-    } else {
-      Alert.alert('Login Failed', result.error || 'User not found. Please sign up first.');
+    // Step 1: send OTP before verifying identity
+    const result = await requestOtp(phone.trim());
+    if (!result.success) {
+      Alert.alert('Error', result.error || 'Could not send verification code.');
+      return;
     }
+    pendingAuthAction.current = 'login';
+    setOtp(result.dev_otp ?? ''); // Pre-fill in dev when Twilio not configured
+    setAuthMode('otp_pending');
   };
 
   const handleLogout = async () => {
@@ -440,6 +473,73 @@ export default function ProfileScreen() {
           >
             <Text style={{ color: '#888' }}>
               Already have an account? <Text style={{ color: '#FF3366' }}>Login</Text>
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // OTP Verification step — shown after requesting a code (login or signup)
+  if (authMode === 'otp_pending') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.signupContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => {
+              setAuthMode(pendingAuthAction.current === 'signup' ? 'signup' : 'login');
+              setOtp('');
+            }}
+          >
+            <Ionicons name="arrow-back" size={24} color="#FFF" />
+          </TouchableOpacity>
+
+          <Text style={styles.signupTitle}>Verify your number</Text>
+          <Text style={styles.signupSubtitle}>
+            Enter the 6-digit code sent to {phone}
+          </Text>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Verification Code</Text>
+            <TextInput
+              style={[styles.input, { letterSpacing: 8, textAlign: 'center', fontSize: 22 }]}
+              value={otp}
+              onChangeText={(v) => setOtp(v.replace(/[^0-9]/g, '').slice(0, 6))}
+              placeholder="000000"
+              placeholderTextColor="#444"
+              keyboardType="number-pad"
+              maxLength={6}
+              autoFocus
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.signupButton}
+            onPress={handleVerifyOtp}
+            disabled={loading || otp.length < 6}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.signupButtonText}>Verify</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{ marginTop: 20, alignItems: 'center' }}
+            onPress={async () => {
+              const result = await requestOtp(phone.trim());
+              if (result.success) {
+                setOtp(result.dev_otp ?? '');
+                Alert.alert('Code resent', 'A new code has been sent to your phone.');
+              } else {
+                Alert.alert('Error', result.error || 'Could not resend code.');
+              }
+            }}
+          >
+            <Text style={{ color: '#888' }}>
+              Didn't receive it? <Text style={{ color: '#FF3366' }}>Resend code</Text>
             </Text>
           </TouchableOpacity>
         </ScrollView>

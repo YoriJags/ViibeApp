@@ -7,7 +7,7 @@ from fastapi import FastAPI, APIRouter
 from starlette.middleware.cors import CORSMiddleware
 import socketio
 
-from app.config import sio, logger, ensure_indexes
+from app.config import sio, logger, ensure_indexes, ALLOWED_ORIGINS
 from app.middleware.rate_limit import RateLimitMiddleware
 
 # Import realtime handlers to register Socket.IO events
@@ -165,9 +165,10 @@ app.include_router(api_router)
 app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Agent-Key"],
+    allow_credentials=True,
 )
 
 # ===== Startup Events =====

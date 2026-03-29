@@ -1,27 +1,40 @@
 """
 Vibe App - Authentication Service
 Handles user session management, token generation, and auth dependencies.
+
+Session tokens are stored as SHA-256 hashes in the database.
+Only the plaintext token is returned to the client and never persisted.
 """
-import uuid
+import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from fastapi import Request, HTTPException, Depends
 from typing import Optional
 from app.config import db, SESSION_EXPIRY_DAYS
 
 
+def _hash_token(token: str) -> str:
+    """SHA-256 hash a session token for safe database storage."""
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
 async def create_session_token(user_id: str) -> str:
-    """Create a new session token for a user and store it in the database."""
-    session_token = str(uuid.uuid4())
+    """
+    Create a new session token for a user and store its hash in the database.
+    Returns the plaintext token (never stored, only sent to client once).
+    """
+    session_token = secrets.token_urlsafe(32)
+    token_hash = _hash_token(session_token)
     expires_at = datetime.now(timezone.utc) + timedelta(days=SESSION_EXPIRY_DAYS)
 
     await db.user_sessions.insert_one({
         "user_id": user_id,
-        "session_token": session_token,
+        "session_token": token_hash,   # Only the hash is persisted
         "expires_at": expires_at,
         "created_at": datetime.now(timezone.utc),
     })
 
-    return session_token
+    return session_token  # Plaintext returned to client once
 
 
 async def get_current_user(request: Request) -> Optional[dict]:
@@ -34,7 +47,8 @@ async def get_current_user(request: Request) -> Optional[dict]:
     if not session_token:
         return None
 
-    session = await db.user_sessions.find_one({"session_token": session_token}, {"_id": 0})
+    token_hash = _hash_token(session_token)
+    session = await db.user_sessions.find_one({"session_token": token_hash}, {"_id": 0})
     if not session:
         return None
 

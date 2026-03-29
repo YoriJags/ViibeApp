@@ -18,6 +18,7 @@ To issue an API key:
       "scopes": ["venues:read", "scores:read", "history:read"],
   })
 """
+import hashlib
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Header, Query
 from app.config import db
@@ -27,11 +28,26 @@ router = APIRouter(prefix="/v1", tags=["public-api-v1"])
 
 # ── API Key authentication dependency ─────────────────────────────────────────
 
+def _hash_api_key(key: str) -> str:
+    """SHA-256 hash an API key for secure database lookup."""
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
 async def _require_api_key(x_api_key: str = Header(...)):
-    """Validate X-API-Key header against the api_keys collection."""
+    """
+    Validate X-API-Key header against the api_keys collection.
+    Keys are matched by their SHA-256 hash (key_hash field).
+    Legacy plaintext key field is checked as a fallback during migration.
+    """
     if not x_api_key:
         raise HTTPException(status_code=401, detail="X-API-Key header required")
-    key_doc = await db.api_keys.find_one({"key": x_api_key, "active": True})
+
+    key_hash = _hash_api_key(x_api_key)
+    # Primary: hash-based lookup (secure)
+    key_doc = await db.api_keys.find_one({"key_hash": key_hash, "active": True})
+    if not key_doc:
+        # Fallback: plaintext lookup for keys issued before migration
+        key_doc = await db.api_keys.find_one({"key": x_api_key, "active": True})
     if not key_doc:
         raise HTTPException(status_code=403, detail="Invalid or inactive API key")
     return key_doc

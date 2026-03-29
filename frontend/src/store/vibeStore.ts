@@ -10,8 +10,8 @@
  * All existing imports (useVibeStore, types, helpers) remain unchanged.
  */
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persist } from 'zustand/middleware';
+import { hybridStorage } from './secureStorage';
 
 import { createAuthSlice, AuthSlice } from './slices/authSlice';
 import { createVenueSlice, VenueSlice } from './slices/venueSlice';
@@ -36,7 +36,7 @@ export const useVibeStore = create<VibeStore>()(
     }),
     {
       name: 'vibe-store',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: hybridStorage,
       partialize: (state) => ({
         // Auth
         user: state.user,

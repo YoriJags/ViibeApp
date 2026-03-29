@@ -17,6 +17,7 @@ Endpoints (admin only):
   GET  /api/v1/agent/keys             — List all API keys + usage stats
   DELETE /api/v1/agent/keys/{key}     — Revoke a key
 """
+import hashlib
 import secrets
 from datetime import datetime, timezone
 from typing import Optional
@@ -34,9 +35,16 @@ router = APIRouter(prefix="/v1/agent", tags=["Agent API"])
 AGENT_API_KEYS_COLLECTION = "agent_api_keys"
 
 
+def _hash_api_key(key: str) -> str:
+    """SHA-256 hash an API key for secure database storage and lookup."""
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
 async def _validate_api_key(request: Request) -> dict:
     """
     Check X-Agent-Key header or ?api_key= param against the agent_api_keys collection.
+    Keys are matched by SHA-256 hash (key_hash field).
+    Legacy plaintext key field is checked as a fallback during migration.
     Returns the key document on success, raises 401 on failure.
     """
     key = (
@@ -49,15 +57,22 @@ async def _validate_api_key(request: Request) -> dict:
             detail="API key required. Pass X-Agent-Key header or ?api_key= param.",
         )
 
+    key_hash = _hash_api_key(key)
+    # Primary: hash-based lookup (secure)
     record = await db[AGENT_API_KEYS_COLLECTION].find_one(
-        {"key": key, "active": True}, {"_id": 0}
+        {"key_hash": key_hash, "active": True}, {"_id": 0}
     )
+    if not record:
+        # Fallback: plaintext lookup for keys issued before hash migration
+        record = await db[AGENT_API_KEYS_COLLECTION].find_one(
+            {"key": key, "active": True}, {"_id": 0}
+        )
     if not record:
         raise HTTPException(status_code=401, detail="Invalid or inactive API key.")
 
-    # Bump usage counter — fire and forget
+    # Bump usage counter — fire and forget (match on hash, not plaintext)
     await db[AGENT_API_KEYS_COLLECTION].update_one(
-        {"key": key},
+        {"key_hash": key_hash},
         {
             "$inc": {"request_count": 1},
             "$set": {"last_used_at": datetime.now(timezone.utc).isoformat()},
@@ -258,8 +273,12 @@ async def issue_api_key(body: IssueKeyRequest, request: Request):
         raise HTTPException(status_code=403, detail="Super admin access required.")
 
     key = "viibe_" + secrets.token_urlsafe(32)
+    key_hash = _hash_api_key(key)
+    key_prefix = key[:14]  # "viibe_" + 8 chars — safe to display for identification
     record = {
-        "key":           key,
+        # key_hash stored, never the plaintext key
+        "key_hash":      key_hash,
+        "key_prefix":    key_prefix,
         "label":         body.label,
         "partner":       body.partner,
         "rate_limit":    body.rate_limit,
@@ -271,7 +290,15 @@ async def issue_api_key(body: IssueKeyRequest, request: Request):
     }
     await db[AGENT_API_KEYS_COLLECTION].insert_one(record)
     record.pop("_id", None)
-    return {"status": "issued", "api_key": record}
+    # Return the plaintext key exactly once — it cannot be retrieved again
+    return {
+        "status": "issued",
+        "api_key": {
+            **record,
+            "key": key,   # shown ONCE at creation only
+            "warning": "Store this key securely — it will not be shown again.",
+        },
+    }
 
 
 @router.get("/keys")
@@ -281,22 +308,23 @@ async def list_api_keys(request: Request):
     if not user or not user.get("is_super_admin"):
         raise HTTPException(status_code=403, detail="Super admin access required.")
 
+    # Exclude key_hash and any legacy plaintext key from the response
     keys = await db[AGENT_API_KEYS_COLLECTION].find(
-        {}, {"_id": 0}
+        {}, {"_id": 0, "key_hash": 0, "key": 0}
     ).sort("created_at", -1).to_list(200)
     return {"count": len(keys), "keys": keys}
 
 
-@router.delete("/keys/{key}")
-async def revoke_api_key(key: str, request: Request):
-    """Revoke (deactivate) an Agent API key. Super admin only."""
+@router.delete("/keys/{key_prefix}")
+async def revoke_api_key(key_prefix: str, request: Request):
+    """Revoke (deactivate) an Agent API key by its prefix. Super admin only."""
     user = await get_current_user(request)
     if not user or not user.get("is_super_admin"):
         raise HTTPException(status_code=403, detail="Super admin access required.")
 
     result = await db[AGENT_API_KEYS_COLLECTION].update_one(
-        {"key": key}, {"$set": {"active": False}}
+        {"key_prefix": key_prefix}, {"$set": {"active": False}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Key not found.")
-    return {"status": "revoked", "key": key}
+    return {"status": "revoked", "key_prefix": key_prefix}

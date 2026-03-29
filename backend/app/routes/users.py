@@ -1,15 +1,27 @@
 """
 Vibe App - User Routes
-User registration, login, and profile retrieval.
-Returns session tokens on signup/login for proper auth.
+User registration, login, and profile management.
+
+Authentication is two-step:
+  1. POST /users/request-otp  { phone }         → sends a 6-digit OTP via SMS
+  2. POST /users/login         { phone, otp }   → verifies OTP, returns session token
+     POST /users               { username, phone, otp } → same for new accounts
+
+In development (ENVIRONMENT != "production") the OTP is also returned in the
+response body so developers can test without Twilio credentials.
 """
+import os
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.config import db
-from app.models import User, UserCreate, UserLogin, MusicPreferencesUpdate, ReactorSkinUpdate, ZodiacUpdate
+from app.models import User, UserCreate, UserLogin, OTPRequest, MusicPreferencesUpdate, ReactorSkinUpdate, ZodiacUpdate
 from app.services.auth import create_session_token, require_auth
+from app.services.otp import create_otp, verify_otp
+from app.services.sms import send_otp
 from app.services.scout_identity import get_scout_identity
 from pydantic import BaseModel as PydanticBase
+
+ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
 
 
 class CallNameUpdate(PydanticBase):
@@ -22,9 +34,42 @@ class PushTokenUpdate(PydanticBase):
 router = APIRouter(tags=["users"])
 
 
+@router.post("/users/request-otp")
+async def request_otp_endpoint(payload: OTPRequest):
+    """
+    Step 1 of authentication: generate and SMS a 6-digit OTP to the phone number.
+    The OTP expires in 10 minutes and is invalidated after 5 wrong guesses.
+
+    Always returns 200 so as not to reveal whether a phone number exists.
+    In development the OTP is echoed in the response for convenience.
+    """
+    otp = await create_otp(payload.phone)
+    sent = await send_otp(payload.phone, otp)
+
+    if not sent:
+        if ENVIRONMENT == "production":
+            raise HTTPException(
+                status_code=503,
+                detail="SMS service temporarily unavailable. Please try again shortly.",
+            )
+        # Development: log and expose OTP so tests can proceed without Twilio
+        import logging
+        logging.getLogger("vibe_app").info(f"[DEV] OTP for {payload.phone}: {otp}")
+        return {"message": "OTP generated (SMS not configured in dev).", "dev_otp": otp}
+
+    return {"message": "OTP sent to your phone number."}
+
+
 @router.post("/users/login")
 async def login_user(login_data: UserLogin):
-    """Login by phone number - returns existing user with session token and scout identity context."""
+    """
+    Step 2 of authentication (existing users): verify OTP and return a session token.
+    """
+    # OTP verification first — before touching the user record
+    otp_valid = await verify_otp(login_data.phone, login_data.otp)
+    if not otp_valid:
+        raise HTTPException(status_code=401, detail="Invalid or expired OTP.")
+
     user = await db.users.find_one({"phone": login_data.phone}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found. Please sign up first.")
@@ -36,18 +81,26 @@ async def login_user(login_data: UserLogin):
 
 @router.post("/users")
 async def create_user(user_data: UserCreate):
-    """Create a new user or return existing user if phone matches. Returns session token."""
+    """
+    Step 2 of authentication (new users): verify OTP, create account, return session token.
+    If the phone already exists the existing account is returned (idempotent signup).
+    """
+    # OTP verification first
+    otp_valid = await verify_otp(user_data.phone, user_data.otp)
+    if not otp_valid:
+        raise HTTPException(status_code=401, detail="Invalid or expired OTP.")
+
     existing_username = await db.users.find_one({"username": user_data.username})
     if existing_username:
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    # Check if phone already exists - return that user instead (login flow)
+    # If phone already has an account, log them in
     existing_phone = await db.users.find_one({"phone": user_data.phone}, {"_id": 0})
     if existing_phone:
         session_token = await create_session_token(existing_phone["id"])
         return {**existing_phone, "session_token": session_token}
 
-    user = User(**user_data.dict())
+    user = User(**user_data.dict(exclude={"otp"}))
     await db.users.insert_one(user.dict())
 
     session_token = await create_session_token(user.id)

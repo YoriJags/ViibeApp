@@ -46,9 +46,13 @@ store = RateLimitStore()
 RATE_LIMIT_RULES: dict[str, tuple[int, int]] = {
 
     # ── Auth / Identity ──────────────────────────────────────────────────────
-    "/api/users/login":      (10, 60),   # login attempts
-    "/api/auth/session":     (10, 60),   # session refresh
-    "/api/users":            (5,  60),   # signup / user creation
+    "/api/users/request-otp": (3, 300),  # OTP requests: 3 per 5 min (prevents SMS spam)
+    "/api/users/login":       (10, 60),  # login attempts
+    "/api/auth/session":      (10, 60),  # session refresh
+    "/api/users":             (5,  60),  # signup / user creation
+
+    # ── Admin (sensitive treasury / moderation actions) ───────────────────────
+    "/api/admin":             (30, 60),  # admin dashboard endpoints
 
     # ── AI / LLM (expensive Claude calls) ───────────────────────────────────
     "/api/planner":          (5,  60),   # Night Planner (Claude)
