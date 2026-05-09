@@ -3,10 +3,11 @@ Vibe App - Rating Routes
 Submit ratings, offline sync, and user-venue rating status.
 """
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 
 import asyncio
 from app.config import db, MAX_RATINGS_PER_VENUE_PER_DAY, RATING_COOLDOWN_MINUTES
+from app.services.auth import require_auth
 from app.services.signal_identity import get_or_create_signal_token
 from app.models import Rating, RatingCreate, Coordinates
 from app.services.vibe import (
@@ -31,8 +32,11 @@ router = APIRouter(tags=["ratings"])
 
 
 @router.post("/ratings")
-async def create_rating(rating_data: RatingCreate):
+async def create_rating(rating_data: RatingCreate, user: dict = Depends(require_auth)):
     """Submit a vibe rating for a venue. Geofence-enforced."""
+    # Enforce: authenticated user_id must match submitted user_id
+    if rating_data.user_id != user["id"]:
+        raise HTTPException(status_code=403, detail="Cannot submit ratings on behalf of another user")
     venue = await db.venues.find_one({"id": rating_data.venue_id})
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
@@ -274,15 +278,19 @@ async def create_rating(rating_data: RatingCreate):
 
 
 @router.post("/ratings/sync")
-async def sync_offline_ratings(request: Request):
-    """Sync ratings that were created offline."""
+async def sync_offline_ratings(request: Request, user: dict = Depends(require_auth)):
+    """Sync ratings that were created offline. All ratings must belong to the authenticated user."""
     body = await request.json()
     ratings = body.get("ratings", [])
+    if not isinstance(ratings, list) or len(ratings) > 50:
+        raise HTTPException(status_code=400, detail="ratings must be a list of at most 50 items")
     synced = []
 
     for rating_data in ratings:
+        # Force user_id to the authenticated user — ignore any client-supplied value
+        rating_data["user_id"] = user["id"]
         try:
-            result = await create_rating(RatingCreate(**rating_data))
+            result = await create_rating(RatingCreate(**rating_data), user=user)
             synced.append({"offline_id": rating_data.get("offline_id"), "success": True})
         except Exception as e:
             synced.append({"offline_id": rating_data.get("offline_id"), "success": False, "error": str(e)})
@@ -291,8 +299,10 @@ async def sync_offline_ratings(request: Request):
 
 
 @router.get("/ratings/user/{user_id}/venue/{venue_id}")
-async def get_user_venue_ratings(user_id: str, venue_id: str):
-    """Get a user's ratings for a specific venue in the last 24 hours."""
+async def get_user_venue_ratings(user_id: str, venue_id: str, user: dict = Depends(require_auth)):
+    """Get a user's ratings for a specific venue in the last 24 hours. Own data only."""
+    if user_id != user["id"] and not user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="Cannot access another user's rating history")
     now = datetime.now(timezone.utc)
     day_ago = now - timedelta(hours=24)
 

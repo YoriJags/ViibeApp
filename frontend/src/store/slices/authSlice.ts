@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { User } from '../types';
 import { DEMO_USER, DEMO_VENUES, DEMO_STREAK, DEMO_CREW, DEMO_ACTIVE_CAMPAIGNS } from '../../data/demoData';
 import type { VibeStore } from '../vibeStore';
+import { saveSessionToken, deleteSessionToken } from '../vibeStore';
 import analytics from '../../services/analytics';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -25,6 +26,7 @@ export interface AuthSlice {
   // ── Actions ──────────────────────────────────────────────────────────────────
   getAuthHeaders: () => Record<string, string>;
   setUser: (user: User | null) => void;
+  setSessionToken: (token: string) => void;
   setIsAuthenticated: (auth: boolean) => void;
   updateUserClout: (cloutEarned: number) => void;
   fetchUser: () => Promise<void>;
@@ -82,6 +84,7 @@ export const createAuthSlice: StateCreator<
   },
 
   setUser: (user) => set({ user, isAuthenticated: !!user }),
+  setSessionToken: (token) => { set({ sessionToken: token }); saveSessionToken(token); },
   setIsAuthenticated: (auth) => set({ isAuthenticated: auth }),
 
   updateUserClout: (cloutEarned) => {
@@ -146,6 +149,7 @@ export const createAuthSlice: StateCreator<
       if (response.ok) {
         const data = await response.json();
         const { session_token, ...user } = data;
+        if (session_token) saveSessionToken(session_token);
         set({ user, sessionToken: session_token, loading: false, isAuthenticated: true });
         analytics.identify(user.id);
         return true;
@@ -170,6 +174,7 @@ export const createAuthSlice: StateCreator<
       if (response.ok) {
         const data = await response.json();
         const { session_token, ...user } = data;
+        if (session_token) saveSessionToken(session_token);
         set({ user, sessionToken: session_token, loading: false, isAuthenticated: true });
         analytics.identify(user.id);
         return { success: true };
@@ -196,6 +201,7 @@ export const createAuthSlice: StateCreator<
       if (response.ok) {
         const data = await response.json();
         const { session_token, ...user } = data;
+        if (session_token) saveSessionToken(session_token);
         set({ user, sessionToken: session_token, loading: false, isAuthenticated: true });
         return true;
       }
@@ -210,6 +216,7 @@ export const createAuthSlice: StateCreator<
 
   logout: async () => {
     const { sessionToken } = get();
+    deleteSessionToken(); // wipe from SecureStore
     set({
       user: null,
       sessionToken: null,

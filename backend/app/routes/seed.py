@@ -2,6 +2,7 @@
 Vibe App - Seed & Dev Routes
 Test data seeding and developer utilities.
 """
+import os
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Request
 
@@ -10,9 +11,22 @@ from app.models import User, Venue, MerchantWallet
 
 router = APIRouter(tags=["dev"])
 
+_DEV_SECRET = os.environ.get("DEV_SEED_SECRET", "")
+
+
+def _require_dev_secret(request: Request) -> None:
+    """Block dev/seed routes unless the correct secret header is provided.
+    Set DEV_SEED_SECRET env var. If unset, all dev routes are locked."""
+    if not _DEV_SECRET:
+        raise HTTPException(status_code=403, detail="Dev routes disabled (DEV_SEED_SECRET not configured)")
+    provided = request.headers.get("X-Dev-Secret", "")
+    if provided != _DEV_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid dev secret")
+
 
 @router.post("/dev/promote-user")
 async def promote_user(request: Request):
+    _require_dev_secret(request)
     """Promote a user to admin/merchant for testing. DEV ONLY."""
     body = await request.json()
     user_id = body.get("user_id")
@@ -49,8 +63,9 @@ async def promote_user(request: Request):
 
 
 @router.post("/seed")
-async def seed_data():
+async def seed_data(request: Request):
     """Seed Lagos venues for testing."""
+    _require_dev_secret(request)
     await db.venues.delete_many({})
     await db.ratings.delete_many({})
     await db.users.delete_many({})

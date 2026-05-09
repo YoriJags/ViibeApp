@@ -31,7 +31,10 @@ async def login_user(login_data: UserLogin):
 
     session_token = await create_session_token(user["id"])
     identity = await get_scout_identity(user)
-    return {**user, "session_token": session_token, "identity": identity}
+    # Strip internal/sensitive fields before returning
+    _INTERNAL_FIELDS = {"is_super_admin", "is_admin", "phone", "email"}
+    safe_user = {k: v for k, v in user.items() if k not in _INTERNAL_FIELDS}
+    return {**safe_user, "session_token": session_token, "identity": identity}
 
 
 @router.post("/users")

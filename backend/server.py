@@ -163,11 +163,18 @@ app.include_router(api_router)
 
 # ===== Middleware =====
 app.add_middleware(RateLimitMiddleware)
+import os as _os
+_ALLOWED_ORIGINS = [o.strip() for o in _os.environ.get(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:8081,http://localhost:3000"
+).split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Agent-Key", "X-Dev-Secret"],
 )
 
 # ===== Startup Events =====

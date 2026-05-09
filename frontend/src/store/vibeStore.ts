@@ -12,6 +12,14 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+
+// Session token must never be stored in AsyncStorage (unencrypted, accessible on rooted devices).
+// Use SecureStore for the token; AsyncStorage is fine for non-sensitive preferences.
+const SESSION_TOKEN_KEY = 'viibe_session_token';
+export const saveSessionToken = (token: string) => SecureStore.setItemAsync(SESSION_TOKEN_KEY, token);
+export const loadSessionToken = () => SecureStore.getItemAsync(SESSION_TOKEN_KEY);
+export const deleteSessionToken = () => SecureStore.deleteItemAsync(SESSION_TOKEN_KEY);
 
 import { createAuthSlice, AuthSlice } from './slices/authSlice';
 import { createVenueSlice, VenueSlice } from './slices/venueSlice';
@@ -40,7 +48,7 @@ export const useVibeStore = create<VibeStore>()(
       partialize: (state) => ({
         // Auth
         user: state.user,
-        sessionToken: state.sessionToken,
+        // sessionToken intentionally excluded — stored in SecureStore, not AsyncStorage
         isAuthenticated: state.isAuthenticated,
         hasSeenOnboarding: state.hasSeenOnboarding,
         hasSeenMerchantOnboarding: state.hasSeenMerchantOnboarding,
@@ -63,6 +71,10 @@ export const useVibeStore = create<VibeStore>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.setHasHydrated(true);
+          // Restore session token from SecureStore on app launch
+          loadSessionToken().then(token => {
+            if (token) state.setSessionToken(token);
+          });
           if (state.user?.id) state.fetchUser();
         }
       },

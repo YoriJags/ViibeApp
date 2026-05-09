@@ -19,8 +19,13 @@ router = APIRouter(tags=["merchant"])
 # ===== Wallet Routes =====
 
 @router.get("/merchant/wallet/{venue_id}")
-async def get_merchant_wallet(venue_id: str):
-    """Get merchant wallet for a venue."""
+async def get_merchant_wallet(venue_id: str, request: Request):
+    """Get merchant wallet for a venue. Requires ownership."""
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if user.get("merchant_venue_id") != venue_id and not user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="You can only access your own venue wallet")
     wallet = await db.merchant_wallets.find_one({"venue_id": venue_id}, {"_id": 0})
     if not wallet:
         wallet = MerchantWallet(
@@ -39,6 +44,11 @@ async def get_merchant_wallet(venue_id: str):
 @router.post("/merchant/wallet/{venue_id}/topup/initialize")
 async def initialize_wallet_topup(venue_id: str, request: Request):
     """Initialize Paystack payment for wallet top-up. Idempotent via idempotency_key."""
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if user.get("merchant_venue_id") != venue_id and not user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="You can only top up your own venue wallet")
     body = await request.json()
     amount = body.get("amount", 0)
     email = body.get("email", "")
@@ -123,11 +133,24 @@ async def initialize_wallet_topup(venue_id: str, request: Request):
 
 
 @router.post("/merchant/wallet/verify/{reference}")
-async def verify_wallet_topup(reference: str):
-    """Verify Paystack payment and credit wallet. Idempotent - safe to call multiple times."""
+async def verify_wallet_topup(reference: str, request: Request = None):
+    """Verify Paystack payment and credit wallet. Idempotent - safe to call multiple times.
+    When called directly (not via webhook), requires authenticated merchant ownership."""
+    if request is not None:
+        # Direct HTTP call — enforce ownership. Webhook calls pass request=None.
+        user = await get_current_user(request)
+        if not user:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        # Ownership verified after we look up the pending topup below
     pending = await db.pending_topups.find_one({"reference": reference})
     if not pending:
         raise HTTPException(status_code=404, detail="Transaction not found")
+
+    # Ownership check for direct HTTP calls
+    if request is not None:
+        user = await get_current_user(request)
+        if user and user.get("merchant_venue_id") != pending["venue_id"] and not user.get("is_super_admin"):
+            raise HTTPException(status_code=403, detail="You can only verify your own venue's transactions")
 
     if pending.get("status") == "completed":
         wallet = await db.merchant_wallets.find_one({"venue_id": pending["venue_id"]}, {"_id": 0})

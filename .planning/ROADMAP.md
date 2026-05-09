@@ -47,10 +47,11 @@ Plans:
   2. A tester with a TestFlight invite can install VIIBE on a physical iPhone, log in with OTP, and reach the home feed — no Expo Go required
   3. The Mapbox `RNMapboxMapsDownloadToken` is not present in `app.json` or any committed file; it is stored in EAS Secrets and injected at build time via `app.config.js`
   4. App Store listing exists with metadata, screenshots, privacy policy URL, and build uploaded — ready for review submission at mid-October deadline
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — EAS build config: complete eas.json profiles, app.config.js with Mapbox token from EAS Secrets, token removed from app.json
+- [ ] 02-02-PLAN.md — iOS production build, TestFlight distribution, App Store Connect listing metadata
 
 ### Phase 3: Push Notifications
 **Goal**: VIIBE delivers real-time push alerts to scouts and merchants, making the "city's energy visible in real-time" value proposition tangible on a locked phone screen
@@ -61,10 +62,12 @@ Plans:
   2. A merchant who sends a live blast from their dashboard triggers a push notification delivered to scouts within 2km of the venue within 30 seconds
   3. When a venue's vibe score drops below 50, the venue's merchant receives a push notification on their device
   4. A scout on a Transsion/Tecno/Infinix device (where FCM may be killed) can open the in-app notification center and see the last 20 notifications fetched from the server
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — Consolidate push token registration to single canonical path (POST /api/alerts/register)
+- [ ] 03-02-PLAN.md — Geo-targeted live blast (2km radius) + automatic vibe-score-below-50 merchant alert
+- [ ] 03-03-PLAN.md — Server-side notification inbox: db.notifications persistence, API, and NotificationsScreen
 
 ### Phase 4: Growth Loops
 **Goal**: Scouts can spread VIIBE virally through WhatsApp and Instagram, and every new user who signs up via referral strengthens the scout network that drives the 300-active-scouts seed KPI
@@ -93,7 +96,7 @@ Plans:
 - [ ] 05-01: TBD
 
 ### Phase 6: Investor Deliverables
-**Goal**: VIIBE is fundable — every artifact an investor or journalist needs exists, is accurate, and tells a coherent story from Lagos nightlife intelligence to global experience layer
+**Goal**: VIIBE is fundable — every artifact an investor or journalist needs exists, is accurate, and tells a coherent story from Lagos scene intelligence to global experience layer
 **Depends on**: Phase 5
 **Requirements**: INVT-01, INVT-02, INVT-03, INVT-04
 **Success Criteria** (what must be TRUE):
@@ -101,10 +104,12 @@ Plans:
   2. PITCH_DECK.md contains all Phase 1+2 features (VibeReactor, GlobalVibePill, Dual Home Mode, AI Oracle, Night Planner, Vibe DNA), current market research numbers (₦1.5T Lagos nightlife, PwC 8.6% CAGR), and a traction narrative matching actual seed milestone progress
   3. VIBEAPP_STRATEGY_BLUEPRINT.md reflects current feature inventory, the Detty December anchor strategy, the revised go-to-market timeline with App Store submission by mid-October 2026, and the exit path narrative
   4. docs/FINANCIAL_MODEL.md covers dual revenue streams (consumer Vibe+ at ₦2,000/month + merchant SaaS at ₦150,000/month), RevenueCat/Apple IAP billing architecture with Apple 15–30% cut caveat, and the seed milestone targets (300+ scouts, 5 paying merchants, 3 months retention data)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: TBD
+- [ ] 06-01-PLAN.md — Detty December War Room screen with demo data (INVT-01)
+- [ ] 06-02-PLAN.md — Update PITCH_DECK.md + VIBEAPP_STRATEGY_BLUEPRINT.md (INVT-02, INVT-03)
+- [ ] 06-03-PLAN.md — Update docs/FINANCIAL_MODEL.md with dual revenue model and seed targets (INVT-04)
 
 ## Progress
 
@@ -113,9 +118,9 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Billing Foundation | 0/2 | In progress | - |
-| 2. EAS Build + Distribution | 0/TBD | Not started | - |
-| 3. Push Notifications | 0/TBD | Not started | - |
+| 1. Billing Foundation | 0/3 | In progress | - |
+| 2. EAS Build + Distribution | 0/2 | Not started | - |
+| 3. Push Notifications | 0/3 | Not started | - |
 | 4. Growth Loops | 0/TBD | Not started | - |
 | 5. Analytics + Merchant SaaS | 0/TBD | Not started | - |
-| 6. Investor Deliverables | 0/TBD | Not started | - |
+| 6. Investor Deliverables | 0/3 | Not started | - |

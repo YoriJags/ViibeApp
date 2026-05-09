@@ -90,7 +90,9 @@ export default function BookingModal({
   const handlePaymentNav = async (navUrl: string) => {
     // Paystack redirects to callback_url after payment
     if (navUrl.includes('viibe://booking/confirm/') || navUrl.includes('/booking/confirm/')) {
-      const ref = navUrl.split('/').pop() || reference;
+      // Always use the reference we initiated — never trust the one from the URL
+      // (prevents deep-link injection where a malicious URL swaps the reference)
+      const ref = reference;
       // Verify payment
       try {
         const res = await fetch(`${API_URL}/api/bookings/verify/${ref}`, { method: 'POST' });

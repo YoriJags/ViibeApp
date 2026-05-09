@@ -43,7 +43,7 @@ async def paystack_webhook(request: Request):
         reference = data.get("reference", "")
 
         if reference.startswith("VIBE-TOPUP-"):
-            await verify_wallet_topup(reference)
+            await verify_wallet_topup(reference, request=None)  # webhook: signature already verified
 
         elif reference.startswith("VIIBE-PLUS-"):
             await verify_subscription_by_reference(reference)

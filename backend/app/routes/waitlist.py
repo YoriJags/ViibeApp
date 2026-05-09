@@ -17,6 +17,10 @@ class WaitlistEntry(BaseModel):
 
 @router.post("")
 async def join_waitlist(entry: WaitlistEntry):
+    if len(entry.email) > 254 or "@" not in entry.email:
+        raise HTTPException(status_code=400, detail="Invalid email address")
+    if len(entry.role) > 50 or len(entry.city) > 100:
+        raise HTTPException(status_code=400, detail="Invalid input")
     existing = await db.waitlist.find_one({"email": entry.email})
     if existing:
         raise HTTPException(status_code=409, detail="Already on waitlist")

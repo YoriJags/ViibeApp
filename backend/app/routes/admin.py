@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.config import db, PULSE_DROP_TIERS
 from app.models import AdminOverride, AirdropRequest
-from app.services.auth import get_current_user
+from app.services.auth import get_current_user, require_admin as _require_admin
 from app.services.vibe import calculate_venue_aggregate
 from app.services.realtime import broadcast_venue_update, connected_clients
 
