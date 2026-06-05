@@ -14,18 +14,30 @@ Routes:
 """
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, HTTPException, Header
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import Optional
+from collections import Counter
 from app.config import db, logger, sio
 from app.services.notifications import send_push_notification
 from app.services.attribution import (
     IntentFunnel,
     ArrivalStats,
     assemble_report,
+    compute_lift,
+    estimate_revenue,
     AVG_SPEND_NGN,
+)
+from app.services.lift_report import (
+    VenueNight,
+    build_weekly_report,
+    render_report_card,
 )
 
 router = APIRouter()
+
+# Lagos is UTC+1, no DST — apply for human-facing night labels without a tz dep.
+LAGOS_OFFSET = timedelta(hours=1)
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -535,4 +547,117 @@ async def get_venue_attribution(
         },
         "estimated_revenue_ngn": report.estimated_revenue_ngn,
         "confidence": report.confidence,
+    }
+
+
+# ─── MERCHANT: WEEKLY LIFT REPORT (the shareable artifact) ────────────────────
+# Wealth organ #2. Rolls a week of attribution into one screenshot-able card:
+# best night, peak hour, lift vs the prior 4 weeks, run-up taps, est. revenue.
+# JSON for the dashboard; ?format=html for the share/IG/sales card.
+
+async def _arrivals_with_ts(venue_id: str, start: datetime, end: datetime):
+    """(user_id, timestamp) for every verified arrival in [start, end)."""
+    checkins = await db.checkins.find(
+        {"venue_id": venue_id, "created_at": {"$gte": start, "$lt": end}},
+        {"user_id": 1, "created_at": 1, "_id": 0},
+    ).to_list(5000)
+    ratings = await db.ratings.find(
+        {"venue_id": venue_id, "timestamp": {"$gte": start, "$lt": end}},
+        {"user_id": 1, "timestamp": 1, "_id": 0},
+    ).to_list(5000)
+    out = [(c["user_id"], c["created_at"]) for c in checkins if c.get("user_id") and c.get("created_at")]
+    out += [(r["user_id"], r["timestamp"]) for r in ratings if r.get("user_id") and r.get("timestamp")]
+    return out
+
+
+def _peak_hour_label(timestamps: list) -> Optional[str]:
+    """Busiest local clock-hour among arrival timestamps, as '1am' / '12am'."""
+    if not timestamps:
+        return None
+    hours = []
+    for ts in timestamps:
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        hours.append((ts + LAGOS_OFFSET).hour)
+    peak = Counter(hours).most_common(1)[0][0]
+    suffix = "am" if peak < 12 else "pm"
+    display = peak % 12 or 12
+    return f"{display}{suffix}"
+
+
+@router.get("/merchant/venues/{venue_id}/lift-report")
+async def get_lift_report(
+    venue_id: str,
+    format: str = "json",
+    authorization: str = Header(default=""),
+):
+    user = await _require_user(authorization)
+    venue = await _require_merchant_for_venue(user, venue_id)
+    venue_name = venue.get("name", "Your venue")
+
+    now = _now()
+    # Nightlife crosses midnight — group each "night" as a noon→noon window so
+    # Friday-evening-into-Saturday-morning reads as one Friday night.
+    noon_today = now.replace(hour=12, minute=0, second=0, microsecond=0)
+    anchor_noon = noon_today if now < noon_today else noon_today + timedelta(days=1)
+
+    nights = []
+    for k in range(7):
+        start = anchor_noon - timedelta(days=k + 1)
+        end = anchor_noon - timedelta(days=k)
+
+        arr = await _arrivals_with_ts(venue_id, start, end)
+        unique_users = {uid for uid, _ in arr}
+        verified = len(unique_users)
+        peak = _peak_hour_label([ts for _, ts in arr])
+
+        taps = await db.venue_intent_events.count_documents(
+            {"venue_id": venue_id, "type": "direction", "ts": {"$gte": start, "$lt": end}}
+        )
+
+        baseline = []
+        for wk in range(1, 5):
+            b_ids = await _unique_arrivals_in(venue_id, start - timedelta(weeks=wk), end - timedelta(weeks=wk))
+            baseline.append(len(b_ids))
+        lift = compute_lift(verified, baseline)
+
+        nights.append(VenueNight(
+            day_label=start.strftime("%A"),
+            verified_arrivals=verified,
+            pre_arrival_taps=taps,
+            peak_hour_label=peak,
+            lift_pct=lift.lift_pct,
+            estimated_revenue_ngn=estimate_revenue(verified),
+        ))
+
+    nights.reverse()  # chronological in the card (oldest → most recent)
+    week_start = anchor_noon - timedelta(days=7)
+    week_end = anchor_noon - timedelta(days=1)
+    week_label = f"{week_start.strftime('%b %d')} – {week_end.strftime('%b %d, %Y')}"
+
+    report = build_weekly_report(venue_name, week_label, nights)
+
+    if format == "html":
+        return HTMLResponse(render_report_card(report))
+
+    return {
+        "venue_id": venue_id,
+        "venue_name": report.venue_name,
+        "week_label": report.week_label,
+        "headline": report.headline,
+        "total_arrivals": report.total_arrivals,
+        "total_revenue_ngn": report.total_revenue_ngn,
+        "total_taps": report.total_taps,
+        "best_night": report.best_night.day_label if report.best_night else None,
+        "nights": [
+            {
+                "day": n.day_label,
+                "verified_arrivals": n.verified_arrivals,
+                "pre_arrival_taps": n.pre_arrival_taps,
+                "peak_hour": n.peak_hour_label,
+                "lift_pct": n.lift_pct,
+                "estimated_revenue_ngn": n.estimated_revenue_ngn,
+            }
+            for n in report.nights
+        ],
     }
