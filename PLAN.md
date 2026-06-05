@@ -20,6 +20,37 @@ Until this is hit, Phases 9 + 10 stay frozen. Anything that doesn't move the cor
 
 ---
 
+## Wealth Organs (the spine) — what actually makes money
+
+The product doctrine that makes VIIBE the *best* version of itself, not just a
+prettier map. The map is a liability at low density (empty looks dead). These
+organs make VIIBE **valuable at N=1, more valuable at N, never look dead, and
+earn money before it earns scale.** Wealth exits through revenue×multiple or
+strategic/data acquisition — both route through one chokepoint: *proof the live
+signal is real and moves money.* Build for that proof, in this order.
+
+| # | Organ | Why it makes money | Status |
+|---|-------|--------------------|--------|
+| 1 | **Attribution loop** (`attribution.py`, `/merchant/venues/{id}/attribution`) | "Did VIIBE bring me people?" — intent→verified arrivals→lift→naira. Converts free pilots to paying merchants AND is the dataset acquirers want. | ✅ Shipped |
+| 2 | **Weekly Lift Report** (`lift_report.py`, `?format=html` card) | One screenshot-able artifact = sales pitch + retention hook + virality engine. | ✅ Shipped |
+| 3 | **Agent API distribution** (`agent_dist.py`, `/agent-distribution/`) | Be the data source agents query before competitors exist. The acquirer story, made concrete. | ✅ Shipped |
+| 4 | **Freeze wealth-neutral polish** | Kinetic/torch/oscillator are density generators, not wealth organs. Past "fun enough," more polish is procrastination. | ⛔ Doctrine below |
+
+### Product doctrine (carry into every session)
+
+1. **Valuable at N=1.** Lead with the *answer* ("go to Rhapsody's, it's the live one"), not the map. The map is the proof layer, never the front door.
+2. **Money before scale.** The merchant terminal delivers value with a handful of scouts — "did my ₦500k DJ lift the room?" needs sensors, not a crowd. Revenue must not wait on liquidity.
+3. **Honest-scarcity is the brand.** "We'd rather show you nothing than lie to you." Every wealth organ refuses to fabricate (no lift without a baseline; low confidence on thin samples). This is the trust wedge buyers remember — make it the public tagline, not a buried doctrine.
+
+### Freeze doctrine (extends the P9–P11 freeze)
+
+> **No new consumer-delight feature ships until wealth organs #1–#3 are live in
+> production AND at least one merchant is paying off the back of a Lift Report.**
+> The kinetic/torch/oscillator surfaces are good enough. The next line of code
+> serves attribution, the corridor (P8), or a paying contract — or it waits.
+
+---
+
 ## Phase 1 — Decay Engine (foundation)
 
 The keystone. Pure math, fully unit-testable, no UI risk. Every other phase depends on this being right.
