@@ -18,6 +18,12 @@ from pydantic import BaseModel
 from typing import Optional
 from app.config import db, logger, sio
 from app.services.notifications import send_push_notification
+from app.services.attribution import (
+    IntentFunnel,
+    ArrivalStats,
+    assemble_report,
+    AVG_SPEND_NGN,
+)
 
 router = APIRouter()
 
@@ -424,4 +430,109 @@ async def get_blast_attribution(
             "total_estimated_revenue_ngn": total_revenue,
             "avg_conversion_rate": avg_conversion,
         },
+    }
+
+
+# ─── MERCHANT: ALWAYS-ON ATTRIBUTION (no blast required) ──────────────────────
+# The money organ. Answers "did VIIBE bring me people?" even on a night the
+# merchant never sent a blast — intent (views/taps/enroute) -> verified arrivals
+# (geofence check-ins + ratings) -> lift vs the venue's own last-N comparable
+# windows -> naira. Honest-scarcity: thin samples report low confidence, never
+# a fabricated lift.
+
+async def _unique_arrivals_in(venue_id: str, start: datetime, end: datetime) -> set:
+    """Distinct verified bodies in [start, end): geofence check-ins + ratings,
+    deduped by user. One scout who checked in AND rated is one arrival."""
+    checkins = await db.checkins.find(
+        {"venue_id": venue_id, "created_at": {"$gte": start, "$lt": end}},
+        {"user_id": 1, "_id": 0},
+    ).to_list(5000)
+    ratings = await db.ratings.find(
+        {"venue_id": venue_id, "timestamp": {"$gte": start, "$lt": end}},
+        {"user_id": 1, "_id": 0},
+    ).to_list(5000)
+    return {d["user_id"] for d in (checkins + ratings) if d.get("user_id")}
+
+
+@router.get("/merchant/venues/{venue_id}/attribution")
+async def get_venue_attribution(
+    venue_id: str,
+    hours: float = 4.0,
+    baseline_weeks: int = 4,
+    authorization: str = Header(default=""),
+):
+    user = await _require_user(authorization)
+    await _require_merchant_for_venue(user, venue_id)
+
+    now = _now()
+    window_start = now - timedelta(hours=hours)
+
+    # ── Intent funnel (top of funnel demand) ──────────────────────────────────
+    profile_views = await db.venue_intent_events.count_documents(
+        {"venue_id": venue_id, "type": "profile_view", "ts": {"$gte": window_start}}
+    )
+    direction_taps = await db.venue_intent_events.count_documents(
+        {"venue_id": venue_id, "type": "direction", "ts": {"$gte": window_start}}
+    )
+    enroute_intents = await db.venue_headings.count_documents(
+        {"venue_id": venue_id, "status": "enroute", "created_at": {"$gte": window_start}}
+    )
+    funnel = IntentFunnel(
+        profile_views=profile_views,
+        direction_taps=direction_taps,
+        enroute_intents=enroute_intents,
+    )
+
+    # ── Identified intent users (for matched conversion) ──────────────────────
+    intent_event_users = await db.venue_intent_events.find(
+        {"venue_id": venue_id, "type": "direction", "ts": {"$gte": window_start},
+         "user_id": {"$ne": None}},
+        {"user_id": 1, "_id": 0},
+    ).to_list(5000)
+    heading_users = await db.venue_headings.find(
+        {"venue_id": venue_id, "status": "enroute", "created_at": {"$gte": window_start}},
+        {"user_id": 1, "_id": 0},
+    ).to_list(5000)
+    intent_user_ids = {d["user_id"] for d in (intent_event_users + heading_users) if d.get("user_id")}
+
+    # ── Verified arrivals this window ─────────────────────────────────────────
+    arrival_ids = await _unique_arrivals_in(venue_id, window_start, now)
+    arrivals = ArrivalStats(verified_arrivals=len(arrival_ids), arrival_user_ids=frozenset(arrival_ids))
+
+    # ── Baseline: same clock-window on the prior N weeks ──────────────────────
+    baseline_counts = []
+    for wk in range(1, baseline_weeks + 1):
+        b_start = window_start - timedelta(weeks=wk)
+        b_end = now - timedelta(weeks=wk)
+        baseline_counts.append(len(await _unique_arrivals_in(venue_id, b_start, b_end)))
+
+    report = assemble_report(
+        window_hours=hours,
+        funnel=funnel,
+        arrivals=arrivals,
+        intent_user_ids=intent_user_ids,
+        baseline_arrival_counts=baseline_counts,
+        avg_spend=AVG_SPEND_NGN,
+    )
+
+    return {
+        "venue_id": venue_id,
+        "window_hours": report.window_hours,
+        "funnel": {
+            "profile_views": report.funnel.profile_views,
+            "direction_taps": report.funnel.direction_taps,
+            "enroute_intents": report.funnel.enroute_intents,
+            "total_intent": report.funnel.total_intent,
+        },
+        "verified_arrivals": report.verified_arrivals,
+        "matched_conversions": report.matched_conversions,
+        "matched_conversion_pct": report.matched_conversion_pct,
+        "lift": {
+            "current": report.lift.current,
+            "baseline": report.lift.baseline,
+            "lift_pct": report.lift.lift_pct,
+            "honest": report.lift.honest,
+        },
+        "estimated_revenue_ngn": report.estimated_revenue_ngn,
+        "confidence": report.confidence,
     }

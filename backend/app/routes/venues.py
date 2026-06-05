@@ -5,11 +5,39 @@ Venue listing, details, direction clicks, and city data.
 from typing import Optional
 from datetime import datetime, timedelta, timezone
 import asyncio
-from fastapi import APIRouter
+from fastapi import APIRouter, Header
 
 from app.config import db, CITIES
 
 router = APIRouter(tags=["venues"])
+
+
+async def _resolve_user_id(authorization: str) -> Optional[str]:
+    """Best-effort user id from a Bearer token. Anonymous (None) is fine —
+    intent events still count toward window volume even without a person."""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    user = await db.users.find_one({"token": authorization.split(" ")[1]}, {"id": 1})
+    return user.get("id") if user else None
+
+
+async def _log_intent(venue_id: str, intent_type: str, authorization: str = "") -> None:
+    """
+    Append a timestamped intent event for attribution (the money organ).
+    `intent_type` ∈ {"profile_view", "direction"}. Runs alongside the existing
+    counter `$inc` — counters stay for the legacy dashboard; events power the
+    tap→arrival correlation. Best-effort: never breaks the parent request.
+    """
+    try:
+        user_id = await _resolve_user_id(authorization)
+        await db.venue_intent_events.insert_one({
+            "venue_id": venue_id,
+            "type":     intent_type,
+            "user_id":  user_id,
+            "ts":       datetime.now(timezone.utc),
+        })
+    except Exception:
+        pass
 
 
 async def _update_venue_scores(venue_id: str) -> None:
@@ -174,7 +202,7 @@ async def get_venues(city: Optional[str] = None):
 
 
 @router.get("/venues/{venue_id}")
-async def get_venue(venue_id: str):
+async def get_venue(venue_id: str, authorization: str = Header(default="")):
     """Get a single venue by ID. Increments profile views."""
     from fastapi import HTTPException
     venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
@@ -183,6 +211,7 @@ async def get_venue(venue_id: str):
 
     # Increment profile views + refresh reputation scores in background
     await db.venues.update_one({"id": venue_id}, {"$inc": {"profile_views": 1}})
+    asyncio.create_task(_log_intent(venue_id, "profile_view", authorization))
     asyncio.create_task(_update_venue_scores(venue_id))
 
     venue["pulse"] = compute_pulse(venue)
@@ -195,9 +224,11 @@ async def get_venue(venue_id: str):
 
 
 @router.post("/venues/{venue_id}/direction-click")
-async def record_direction_click(venue_id: str):
-    """Record when user clicks direction/location icon."""
+async def record_direction_click(venue_id: str, authorization: str = Header(default="")):
+    """Record when user clicks direction/location icon. The strongest pre-arrival
+    intent signal — someone asking for directions is about to come."""
     await db.venues.update_one({"id": venue_id}, {"$inc": {"direction_clicks": 1}})
+    asyncio.create_task(_log_intent(venue_id, "direction", authorization))
     return {"message": "Direction click recorded"}
 
 
