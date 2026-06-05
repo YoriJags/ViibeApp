@@ -181,7 +181,14 @@ export const createVenueSlice: StateCreator<
 
   recordDirectionClick: async (venueId) => {
     if (get().isDemoMode) return;
-    try { await fetch(`${API_URL}/api/venues/${venueId}/direction-click`, { method: 'POST' }); } catch {}
+    // Send auth headers when available so attribution can match this tap to the
+    // scout who later arrives (per-user matched conversion). Endpoint stays
+    // anonymous-friendly — headers are best-effort, never required.
+    try {
+      await fetch(`${API_URL}/api/venues/${venueId}/direction-click`, {
+        method: 'POST', headers: get().getAuthHeaders(),
+      });
+    } catch {}
   },
 
   fetchLobby: async () => {
