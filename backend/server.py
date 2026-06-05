@@ -161,6 +161,10 @@ api_router.include_router(privacy_router)
 # Include the API router in the main app
 app.include_router(api_router)
 
+# ── Agent API distribution (discovery manifest + tight OpenAPI, app-root paths)
+from app.routes.agent_dist import router as agent_dist_router
+app.include_router(agent_dist_router)
+
 # ===== Middleware =====
 app.add_middleware(RateLimitMiddleware)
 import os as _os
