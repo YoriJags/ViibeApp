@@ -37,14 +37,14 @@ The keystone. Pure math, fully unit-testable, no UI risk. Every other phase depe
 
 Wire each layer into existing app events. No new client work — uses signals already being sent.
 
-- [ ] L1: hook `vibe_pulse` socket event → Decay Engine
+- [x] L1: hook `vibe_pulse` socket event → Decay Engine (`decay_ingest.ingest_pulse`)
 - [ ] **P10.0 schema readiness**: pulse event accepts optional `creator_id` + `set_window` (no logic, just plumbing)
-- [ ] L2: hook dwell heartbeats (`useDwellTracker`) → presence ceiling
-- [ ] L3a: surface mic dB samples (`useAmbientMeter`) to backend ingest endpoint
+- [x] L2: hook dwell heartbeats (`dwell_ping`) → presence ceiling (`ingest_dwell`)
+- [x] L3a: surface mic dB samples (`ambient_ping`/`audio_ping`) → ingest endpoint (`ingest_ambient`)
 - [ ] L3b: BLE density (deferred unless explicitly approved — adds permissions plumbing)
-- [ ] Geofence-exit detection → explicit decay event
-- [ ] Per-scout contribution attribution (so departures can subtract correctly)
-- [ ] Integration tests: full ingest → decay → query roundtrip
+- [ ] Geofence-exit detection → explicit decay event *(adapter `ingest_exit` built + tested; no frontend exit event emits it yet)*
+- [x] Per-scout contribution attribution (so departures can subtract correctly — `apply_departure`, tested)
+- [x] Integration tests: full ingest → decay → query roundtrip (`test_decay_ingest.py`, 12 tests)
 
 ## Phase 3 — Cross-validation Gates (kills stale peaks)
 

@@ -8,6 +8,7 @@ from collections import defaultdict
 from datetime import datetime, timezone, timedelta
 
 from app.config import sio, db, logger
+from app.services.decay_ingest import ingest_pulse
 
 connected_clients = set()
 
@@ -236,6 +237,15 @@ async def vibe_pulse(sid, data):
 
     if not venue_id:
         return
+
+    # Phase 2 — feed the Energy Decay Engine (L1 active layer). In-memory,
+    # synchronous, fraud-aware; never touches vibe_score directly.
+    ingest_pulse(
+        venue_id=venue_id,
+        scout_id=user_id,
+        avg_g_force=data.get("avg_g_force", 1.0),
+        stationary_peak_abuse=bool(data.get("stationary_peak_abuse", False)),
+    )
 
     pulse_state = _venue_pulses[venue_id]
     now = datetime.now(timezone.utc)

@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from app.config import db
 from app.services.auth import require_auth
+from app.services.decay_ingest import ingest_ambient
 
 router = APIRouter(tags=["ambient"])
 
@@ -39,6 +40,8 @@ async def ambient_ping(data: AmbientPing, user: dict = Depends(require_auth)):
         "db_level":  data.db_level,
         "timestamp": datetime.now(timezone.utc),
     })
+    # Phase 2 — ambient dB into the Energy Decay Engine (L3 layer).
+    ingest_ambient(venue_id=data.venue_id, db_level=data.db_level, scout_id=user["id"])
     return {"ok": True}
 
 
@@ -56,6 +59,8 @@ async def audio_ping(data: AudioPing, user: dict = Depends(require_auth)):
         "music_bpm": data.music_bpm if data.music_bpm > 0 else None,
         "timestamp": datetime.now(timezone.utc),
     })
+    # Phase 2 — ambient dB into the Energy Decay Engine (L3 layer).
+    ingest_ambient(venue_id=data.venue_id, db_level=data.db_level, scout_id=user["id"])
     return {"ok": True}
 
 

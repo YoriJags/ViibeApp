@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from app.config import db
 from app.services.auth import require_auth
+from app.services.decay_ingest import ingest_dwell
 
 router = APIRouter(tags=["dwell"])
 
@@ -39,6 +40,9 @@ async def dwell_ping(data: DwellPing, user: dict = Depends(require_auth)):
         "venue_id":  data.venue_id,
         "last_ping": {"$gte": window},
     })
+
+    # Phase 2 — presence heartbeat into the Energy Decay Engine (L2 layer).
+    ingest_dwell(venue_id=data.venue_id, scout_id=user_id)
 
     if session:
         duration_minutes = round((now - session["entered_at"]).total_seconds() / 60)
