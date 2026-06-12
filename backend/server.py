@@ -165,6 +165,17 @@ app.include_router(api_router)
 from app.routes.agent_dist import router as agent_dist_router
 app.include_router(agent_dist_router)
 
+
+# ── Liveness / health (no DB — safe for Railway health checks & uptime pings) ──
+@app.get("/health", tags=["health"])
+async def health():
+    return {"status": "ok", "service": "viibe-api", "version": app.version}
+
+
+@app.get("/", tags=["health"])
+async def root():
+    return {"service": "VIIBE Scene Intelligence API", "status": "ok", "docs": "/docs"}
+
 # ===== Middleware =====
 app.add_middleware(RateLimitMiddleware)
 import os as _os
