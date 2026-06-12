@@ -9,7 +9,9 @@ dist/
 web-build/
 expo-env.d.ts
 
-# Native
+# Native (Continuous Native Generation — android/ios are prebuilt by EAS from app.json)
+/android
+/ios
 .kotlin/
 *.orig.*
 *.jks
