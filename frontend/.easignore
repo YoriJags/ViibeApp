@@ -1,0 +1,14 @@
+# Files excluded from the EAS Build upload archive.
+# Keeps the upload small and clean, and lets EAS prebuild the native projects
+# fresh from app.json (CNG). Including android/ or the .expo web cache here was
+# corrupting the project tarball (paths with '#', stale com.viibe.nightlife),
+# which broke extraction on the build worker (PREPARE_PROJECT tar failure).
+
+node_modules/
+android/
+ios/
+.expo/
+dist/
+web-build/
+*.log
+.DS_Store
