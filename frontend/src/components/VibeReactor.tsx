@@ -66,6 +66,15 @@ const DEMO_SURGE: SurgeState = {
   next_level: 'BUZZING', tap_count: 0, total_surges: 0,
 };
 
+// Neutral baseline used when the surge fetch fails, so the Reactor always
+// renders and stays tappable instead of vanishing. A successful tap (/bolt)
+// replaces this with real server state.
+const BASELINE_SURGE: SurgeState = {
+  charge_pct: 0, level: 'dormant', level_label: 'DORMANT',
+  level_color: '#1A1040', level_progress: 0, taps_to_next: 3,
+  next_level: 'STIRRING', tap_count: 0, total_surges: 0,
+};
+
 const DEMO_LEVELS = [
   { level: 'dormant',  label: 'DORMANT',  color: '#1A1040', min: 0,    next: 'STIRRING'  },
   { level: 'stirring', label: 'STIRRING', color: '#1155EE', min: 0.08, next: 'BUZZING'   },
@@ -635,8 +644,12 @@ export default function VibeReactor({
     if (isDemoMode) { setSurge(DEMO_SURGE); return; }
     try {
       const res = await fetch(`${API_URL}/api/venues/${venueId}/surge`);
-      if (res.ok) setSurge(await res.json());
+      if (res.ok) { setSurge(await res.json()); return; }
     } catch {}
+    // Fetch failed (network/endpoint) → never leave the Reactor blank. Fall back
+    // to a baseline so it still renders and the user can tap; don't clobber a
+    // surge we already loaded on an earlier successful fetch.
+    setSurge(prev => prev ?? BASELINE_SURGE);
   }, [venueId, isDemoMode]);
 
   useEffect(() => { fetchSurge(); }, [venueId]);
