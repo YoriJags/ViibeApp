@@ -27,6 +27,7 @@ import Animated, {
   withRepeat, Easing, cancelAnimation, runOnJS,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
+import { Ionicons } from '@expo/vector-icons';
 import { Canvas, Circle, Paint, BlurMask } from '@shopify/react-native-skia';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
