@@ -2,7 +2,6 @@
   "name": "viibe-app-root",
   "version": "1.0.0",
   "private": true,
-  "scripts": {
-    "postinstall": "cd frontend && npm install"
-  }
+  "comment": "Backend deploys via Dockerfile (see railway.toml). Frontend lives in frontend/. No root install step — a postinstall here would drag the whole frontend into a backend build under Nixpacks.",
+  "scripts": {}
 }

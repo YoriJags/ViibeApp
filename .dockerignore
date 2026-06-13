@@ -1,0 +1,20 @@
+# The backend image only needs backend/. Keep the Docker build context tiny so
+# builds are fast and don't time out uploading the whole monorepo.
+frontend/
+node_modules/
+**/node_modules/
+.git/
+.venv/
+**/__pycache__/
+**/*.pyc
+.expo/
+android/
+ios/
+*.apk
+*.keystore
+.planning/
+*.md
+strategy/
+pitch-docs/
+design-reference/
+.pytest_cache/
