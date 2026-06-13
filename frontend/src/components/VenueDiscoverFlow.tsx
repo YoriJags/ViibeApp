@@ -178,6 +178,11 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
   const cardEntrance = useRef(new Animated.Value(60)).current;
   const glowPulse = useRef(new Animated.Value(0.6)).current;
 
+  // The PanResponder is created once (stable), so its callbacks would close
+  // over the first render's handlers and a frozen cardIdx. Route swipe releases
+  // through this ref so the gesture always advances the CURRENT card.
+  const swipeHandlers = useRef<{ fire: () => void; skip: () => void }>({ fire: () => {}, skip: () => {} });
+
   const currentVenue = shuffled[cardIdx] ?? null;
   const nextVenue = shuffled[cardIdx + 1] ?? null;
 
@@ -254,6 +259,11 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
     ]).start(() => advance(false));
   };
 
+  // Refresh the ref every render so the stable PanResponder calls the latest
+  // closures (correct cardIdx / currentVenue), fixing the stuck-deck bug.
+  swipeHandlers.current.fire = animateFire;
+  swipeHandlers.current.skip = animateSkip;
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
@@ -268,9 +278,9 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
       },
       onPanResponderRelease: (_, g) => {
         if (g.dx > SWIPE_THRESHOLD || g.vx > 0.85) {
-          animateFire();
+          swipeHandlers.current.fire();
         } else if (g.dx < -SWIPE_THRESHOLD || g.vx < -0.85) {
-          animateSkip();
+          swipeHandlers.current.skip();
         } else {
           setSwipeDir(null);
           Animated.parallel([
