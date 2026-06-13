@@ -402,6 +402,10 @@ async def broadcast_venue_update(venue_id: str):
 
         # Score-based alerts
         score = venue.get("current_vibe_score", 100)
+
+        # First Spark / Pioneer — vindicate the night's pioneer if the venue heated up.
+        from app.routes.pioneer import resolve_pioneers
+        await resolve_pioneers(venue_id, score)
         if score < CHARGE_LOW_SCORE:
             await sio.emit("global_charge_depletion", {
                 "venue_id": venue_id,

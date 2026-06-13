@@ -137,6 +137,15 @@ async def create_rating(rating_data: RatingCreate, user: dict = Depends(require_
 
     await update_user_clout(rating_data.user_id, rating_data.venue_id, vibe_score)
 
+    # First Spark / Pioneer — first scout to call this venue tonight claims it
+    # (fire-and-forget; no-op if already claimed). claim_score = venue score now.
+    from app.routes.pioneer import claim_pioneer_if_first
+    asyncio.create_task(claim_pioneer_if_first(
+        rating_data.venue_id,
+        rating_data.user_id,
+        aggregate.get("current_vibe_score", vibe_score),
+    ))
+
     # ── Award Vibe Coins ──────────────────────────────────────────────────────
     # PHASE 1 (now): pool-funded coins only — every coin backed by venue money.
     # PHASE 2 (post-funding): enable PLATFORM_BASE_COINS to award base coins

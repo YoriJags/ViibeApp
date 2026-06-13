@@ -79,6 +79,7 @@ from app.routes.moments import router as moments_router
 from app.routes.public_api import router as public_api_router
 from app.routes.venue_seeder import router as venue_seeder_router
 from app.routes.privacy import router as privacy_router
+from app.routes.pioneer import router as pioneer_router
 
 # ===== Create FastAPI App =====
 app = FastAPI(title="Viibe App API", version="3.0.0")
@@ -101,6 +102,7 @@ api_router.include_router(webhooks_router)
 if os.environ.get("ENVIRONMENT", "development") != "production":
     api_router.include_router(seed_router)
 api_router.include_router(lobby_router)
+api_router.include_router(pioneer_router)
 api_router.include_router(checkins_router)
 api_router.include_router(streaks_router)
 api_router.include_router(stories_router)
