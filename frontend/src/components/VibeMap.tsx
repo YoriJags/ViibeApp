@@ -399,7 +399,11 @@ export default function VibeMap({
   return (
     <View style={styles.container}>
       <WebView
-        source={{ html }}
+        // baseUrl gives the inline HTML a real https origin. Without it, Android
+        // WebView serves the page from a null origin and Mapbox GL JS's tile/style
+        // requests to api.mapbox.com are blocked → blank dark map. (iOS is lenient,
+        // but we set it on both for parity.)
+        source={{ html, baseUrl: 'https://api.mapbox.com/' }}
         style={styles.webview}
         onMessage={handleMessage}
         scrollEnabled={false}
@@ -408,6 +412,7 @@ export default function VibeMap({
         domStorageEnabled
         startInLoadingState={false}
         originWhitelist={['*']}
+        mixedContentMode="always"
         allowsInlineMediaPlayback
         mediaPlaybackRequiresUserAction={false}
       />
