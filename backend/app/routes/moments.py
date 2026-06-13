@@ -22,8 +22,69 @@ import asyncio
 from app.config import db, sio, logger
 from app.services.auth import require_auth
 from app.services.notifications import notify_moment_locked
+from app.services.moment_charge import (
+    current_charge, is_unlocked, progress, participants as charge_participants,
+    UNLOCK_THRESHOLD,
+)
 
 router = APIRouter(tags=["moments"])
+
+
+def _night_start(now: datetime) -> datetime:
+    """Start of the current night (noon boundary): an evening past midnight is
+    one night."""
+    noon = now.replace(hour=12, minute=0, second=0, microsecond=0)
+    return noon if now >= noon else noon - timedelta(days=1)
+
+
+async def _check_async_moment(venue_id: str, venue_name: str, now: datetime) -> None:
+    """
+    Async Moment: charge accumulates across the night from moment gestures.
+    When cumulative (decayed, per-scout-capped) charge crosses the threshold and
+    no Moment has locked tonight, unlock it — no simultaneity required.
+    """
+    night_start = _night_start(now)
+    # Already locked tonight (simultaneous or async)? Don't double-fire.
+    existing = await db.moment_locks.find_one(
+        {"venue_id": venue_id, "locked_at": {"$gte": night_start}}
+    )
+    if existing:
+        return
+
+    docs = await db.moments.find(
+        {"venue_id": venue_id, "server_ts": {"$gte": night_start}},
+        {"_id": 0, "server_ts": 1, "gesture": 1, "user_id": 1},
+    ).to_list(5000)
+
+    contributions = [
+        (d["server_ts"].timestamp(), d.get("gesture", "tap"), d.get("user_id", ""))
+        for d in docs if d.get("server_ts")
+    ]
+    charge = current_charge(contributions, now=now.timestamp())
+    if not is_unlocked(charge):
+        return
+
+    parts = charge_participants(contributions)
+    await db.moment_locks.insert_one({
+        "venue_id":          venue_id,
+        "venue_name":        venue_name,
+        "locked_at":         now,
+        "participant_count": len(parts),
+        "participant_ids":   list(parts),
+        "lock_type":         "async",
+        "charge":            charge,
+    })
+    await sio.emit("moment_locked", {
+        "venue_id":          venue_id,
+        "venue_name":        venue_name,
+        "participant_count": len(parts),
+        "locked_at":         now.isoformat(),
+        "lock_type":         "async",
+    }, room=f"venue_{venue_id}")
+    logger.info(f"ASYNC MOMENT LOCKED — venue={venue_id} charge={charge} scouts={len(parts)}")
+    asyncio.create_task(notify_moment_locked(
+        venue_id=venue_id, venue_name=venue_name or "a venue", participant_count=len(parts),
+    ))
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -158,12 +219,49 @@ async def record_moment(
                 )
             )
 
+    # ── Async Moment: cumulative charge across the night ───────────────────────
+    # Only if a simultaneous lock didn't just fire this tick.
+    if not moment_locked:
+        asyncio.create_task(_check_async_moment(venue_id, venue.get("name", ""), now))
+
     return {
         "ok":           True,
         "moment_id":    moment_id,
         "moment_locked": moment_locked,
         "scouts_in_window": len(unique_scouts),
         "threshold":    MOMENT_LOCK_THRESHOLD,
+    }
+
+
+@router.get("/venues/{venue_id}/moment-charge")
+async def get_moment_charge(venue_id: str):
+    """Live async-Moment charge for the venue tonight — drives the charging UI."""
+    now = datetime.now(timezone.utc)
+    night_start = _night_start(now)
+
+    locked = await db.moment_locks.find_one(
+        {"venue_id": venue_id, "locked_at": {"$gte": night_start}},
+        {"_id": 0, "lock_type": 1, "participant_count": 1, "locked_at": 1},
+    )
+
+    docs = await db.moments.find(
+        {"venue_id": venue_id, "server_ts": {"$gte": night_start}},
+        {"_id": 0, "server_ts": 1, "gesture": 1, "user_id": 1},
+    ).to_list(5000)
+    contributions = [
+        (d["server_ts"].timestamp(), d.get("gesture", "tap"), d.get("user_id", ""))
+        for d in docs if d.get("server_ts")
+    ]
+    charge = current_charge(contributions, now=now.timestamp())
+
+    return {
+        "venue_id":          venue_id,
+        "charge":            charge,
+        "threshold":         UNLOCK_THRESHOLD,
+        "progress":          progress(charge),
+        "contributors":      len(charge_participants(contributions)),
+        "unlocked_tonight":  locked is not None,
+        "lock":              locked,
     }
 
 
