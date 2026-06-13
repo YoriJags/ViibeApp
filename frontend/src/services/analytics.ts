@@ -123,7 +123,7 @@ class AnalyticsService {
       for (const ev of batch) {
         posthog.capture(ev.event, {
           ...ev.properties,
-          user_id:    ev.user_id,
+          user_id:    ev.user_id ?? null,
           client_ts:  ev.timestamp,
         });
       }

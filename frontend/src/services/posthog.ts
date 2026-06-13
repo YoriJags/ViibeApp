@@ -13,11 +13,10 @@ export let posthog: PostHog | null = null;
 export async function initPostHog(): Promise<void> {
   if (!POSTHOG_KEY || posthog) return;
   try {
-    posthog = await PostHog.initAsync(POSTHOG_KEY, {
+    // posthog-react-native v4: synchronous constructor (no initAsync).
+    posthog = new PostHog(POSTHOG_KEY, {
       host: POSTHOG_HOST,
-      captureApplicationLifecycleEvents: true, // app opens, installs, updates
-      captureDeepLinks: false,
-      defaultOptIn: true,
+      captureAppLifecycleEvents: true, // app opens, installs, updates
     });
   } catch (e) {
     // Non-fatal — analytics degrades gracefully

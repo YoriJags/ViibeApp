@@ -250,6 +250,9 @@ export interface VibeDNA {
   affinities: VenueAffinity[];
   tap_affinities?: { venue_type: string; tap_count: number; share: number }[];
   dominant_type: string;
+  // Optional energy archetype derived by the backend DNA endpoint when available
+  // (e.g. { label: 'Peak Seeker' }); absent for older payloads, hence optional.
+  energy_preference?: { label: string };
   night_style: 'early_bird' | 'night_owl' | 'midnight_crew';
   night_style_label: string;
   total_ratings_analyzed: number;

@@ -93,7 +93,7 @@ const CITIES = [
 
 export default function MapScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string }>();
+  const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string; autoOpen?: string }>();
   const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode, tabBarHidden, setTabBarHidden, sceneMood, sceneMoodSetAt, setSceneMood, isInsideVenue, activeVenueId, activeVenueName } = useVibeStore();
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);

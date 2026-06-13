@@ -25,8 +25,13 @@ import { createAuthSlice, AuthSlice } from './slices/authSlice';
 import { createVenueSlice, VenueSlice } from './slices/venueSlice';
 import { createScoutSlice, ScoutSlice } from './slices/scoutSlice';
 import { createSocketSlice, SocketSlice } from './slices/socketSlice';
+import type { SensorPrefs } from './types';
 // ─── Combined store type ──────────────────────────────────────────────────────
-export type VibeStore = AuthSlice & VenueSlice & ScoutSlice & SocketSlice;
+type SensorPrefsSlice = {
+  sensorPrefs: SensorPrefs;
+  setSensorPrefs: (prefs: Partial<SensorPrefs>) => void;
+};
+export type VibeStore = AuthSlice & VenueSlice & ScoutSlice & SocketSlice & SensorPrefsSlice;
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 export const useVibeStore = create<VibeStore>()(

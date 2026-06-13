@@ -164,7 +164,7 @@ export default function ScoutSensorsScreen({ navigation }: any) {
                 </View>
                 <Switch
                   value={isEnabled}
-                  onValueChange={() => !isPipeline && toggle(sensor.key)}
+                  onValueChange={() => { if (!isPipeline) toggle(sensor.key); }}
                   disabled={isPipeline}
                   trackColor={{ false: '#1e1e2e', true: '#5b21b6' }}
                   thumbColor={isEnabled ? '#7c3aed' : '#475569'}
