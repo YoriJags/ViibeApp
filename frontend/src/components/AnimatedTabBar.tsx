@@ -58,16 +58,22 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
   const scaleAnims = useRef(tabs.map(() => new Animated.Value(1))).current;
   const glowAnims = useRef(tabs.map(() => new Animated.Value(0))).current;
 
+  // `tabs` may be a filtered subset of the navigator's screens (launch mode
+  // hides Crew and Intel), so it is NOT positionally aligned with state.routes.
+  // Everything below resolves by route name instead of index.
+  const focusedRouteName = state.routes[state.index]?.name;
+  const activeTabIdx = Math.max(0, tabs.findIndex((t: any) => t.name === focusedRouteName));
+
   useEffect(() => {
     Animated.spring(pillAnim, {
-      toValue: state.index * tabWidth,
+      toValue: activeTabIdx * tabWidth,
       tension: 70,
       friction: 12,
       useNativeDriver: true,
     }).start();
 
     tabs.forEach((_, idx) => {
-      const isFocused = idx === state.index;
+      const isFocused = idx === activeTabIdx;
       Animated.parallel([
         Animated.spring(scaleAnims[idx], {
           toValue: isFocused ? 1.18 : 1,
@@ -82,7 +88,7 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
         }),
       ]).start();
     });
-  }, [state.index]);
+  }, [activeTabIdx]);
 
   return (
     <Animated.View style={[styles.wrapper, { transform: [{ translateY: slideAnim }] }]}>
@@ -111,17 +117,19 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
 
         <View style={styles.row}>
           {tabs.map((tab, index) => {
-            const isFocused = state.index === index;
+            const route = state.routes.find((r: any) => r.name === tab.name);
+            const isFocused = focusedRouteName === tab.name;
 
             const onPress = () => {
+              if (!route) return;
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               const event = navigation.emit({
                 type: 'tabPress',
-                target: state.routes[index]?.key,
+                target: route.key,
                 canPreventDefault: true,
               });
               if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(state.routes[index]?.name);
+                navigation.navigate(tab.name);
               }
             };
 
