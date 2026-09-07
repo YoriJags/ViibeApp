@@ -10,8 +10,8 @@
  *  - Crew emoji pins with battery-aware color
  *  - User location dot
  */
-import React, { useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN || '';
@@ -140,6 +140,17 @@ function buildHTML(
 <body>
   <div id="map"></div>
   <script>
+    function reportMapError(where, msg) {
+      try {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'map_error', where: where, message: String(msg || '')
+        }));
+      } catch (e) {}
+    }
+    window.onerror = function (m) { reportMapError('script', m); };
+    if (typeof mapboxgl === 'undefined') {
+      reportMapError('sdk', 'mapbox-gl.js did not load');
+    }
     mapboxgl.accessToken = '${token}';
 
     var map = new mapboxgl.Map({
@@ -156,6 +167,9 @@ function buildHTML(
     var venues = ${JSON.stringify(venueGeoJSON)};
     var crew   = ${JSON.stringify(crewGeoJSON)};
 
+    map.on('error', function (e) {
+      reportMapError('mapbox', (e && e.error && e.error.message) || 'map error');
+    });
     map.on('load', function () {
 
       // ── Venues source ──────────────────────────────────────────────────
@@ -386,6 +400,8 @@ export default function VibeMap({
     [venues, crewPins, userLocation?.lat, userLocation?.lng, zoomLevel],
   );
 
+  const [mapError, setMapError] = useState<string | null>(null);
+
   const handleMessage = (event: any) => {
     try {
       const msg = JSON.parse(event.nativeEvent.data);
@@ -393,11 +409,33 @@ export default function VibeMap({
         const venue = venues.find((v) => v.id === msg.id);
         if (venue) onVenuePress(venue);
       }
+      if (msg.type === 'map_error') {
+        setMapError(`${msg.where}: ${msg.message}`);
+      }
     } catch {}
   };
 
+  // A missing key used to render as a silent black rectangle. Say what is wrong
+  // instead, so a broken build is diagnosable from the device.
+  if (!MAPBOX_TOKEN) {
+    return (
+      <View style={[styles.container, styles.fallback]}>
+        <Text style={styles.fallbackTitle}>Map unavailable</Text>
+        <Text style={styles.fallbackBody}>
+          This build has no map key (EXPO_PUBLIC_MAPBOX_TOKEN). Venue data still
+          works; only the map view is affected.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
+      {mapError ? (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText} numberOfLines={2}>Map: {mapError}</Text>
+        </View>
+      ) : null}
       <WebView
         // baseUrl gives the inline HTML a real https origin. Without it, Android
         // WebView serves the page from a null origin and Mapbox GL JS's tile/style
@@ -415,6 +453,8 @@ export default function VibeMap({
         mixedContentMode="always"
         allowsInlineMediaPlayback
         mediaPlaybackRequiresUserAction={false}
+        onError={(e) => setMapError(e.nativeEvent?.description || 'webview failed')}
+        onHttpError={(e) => setMapError(`http ${e.nativeEvent?.statusCode}`)}
       />
     </View>
   );
@@ -423,4 +463,12 @@ export default function VibeMap({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   webview: { flex: 1, backgroundColor: '#0A0A0F' },
+  fallback: { alignItems: 'center', justifyContent: 'center', padding: 28, backgroundColor: '#0A0A0F' },
+  fallbackTitle: { color: '#F4EFE6', fontSize: 16, fontWeight: '700', marginBottom: 8 },
+  fallbackBody: { color: '#A89B8C', fontSize: 13, textAlign: 'center', lineHeight: 19 },
+  errorBanner: {
+    position: 'absolute', top: 8, left: 8, right: 8, zIndex: 10,
+    backgroundColor: 'rgba(255,77,0,0.92)', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10,
+  },
+  errorText: { color: '#0B0908', fontSize: 11, fontWeight: '700' },
 });
