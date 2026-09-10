@@ -108,6 +108,19 @@ function buildHTML(
     #map { width: 100%; height: 100%; }
     .mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib { display: none !important; }
 
+    /* Zoom buttons, themed to match the app rather than Mapbox default white */
+    .mapboxgl-ctrl-group {
+      background: rgba(22,17,13,0.92) !important;
+      border: 1px solid rgba(255,255,255,0.12) !important;
+      border-radius: 10px !important;
+      overflow: hidden;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.55) !important;
+    }
+    .mapboxgl-ctrl-group button + button { border-top: 1px solid rgba(255,255,255,0.10) !important; }
+    .mapboxgl-ctrl-group button { width: 34px !important; height: 34px !important; background: transparent !important; }
+    .mapboxgl-ctrl-group button .mapboxgl-ctrl-icon { filter: invert(1) brightness(1.6); opacity: 0.85; }
+    .mapboxgl-ctrl-group button:hover { background: rgba(255,77,0,0.18) !important; }
+
     /* Venue tap popup */
     .vibe-popup .mapboxgl-popup-content {
       background: rgba(10,10,20,0.93);
@@ -164,6 +177,14 @@ function buildHTML(
       dragRotate: false,
     });
 
+    // Pinch, double-tap and button zoom. Rotation stays disabled so the map
+    // never ends up crooked in someone's hand.
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+    map.touchZoomRotate.enable();
+    map.touchZoomRotate.disableRotation();
+    map.scrollZoom.enable();
+    map.doubleClickZoom.enable();
+
     var venues = ${JSON.stringify(venueGeoJSON)};
     var crew   = ${JSON.stringify(crewGeoJSON)};
 
@@ -174,6 +195,35 @@ function buildHTML(
 
       // ── Venues source ──────────────────────────────────────────────────
       map.addSource('venues', { type: 'geojson', data: venues });
+
+      // 0. Heat field — hotspots across the city. Dominant when zoomed out,
+      //    hands over to the individual pins as you zoom in. Weighted by the
+      //    venue's live score so a packed room contributes far more heat than
+      //    a quiet one, which is what makes clusters read as real hotspots.
+      map.addLayer({
+        id: 'venue-heat',
+        type: 'heatmap',
+        source: 'venues',
+        maxzoom: 16,
+        paint: {
+          // Presence registers at all, intensity is left to the colour ramp
+          // below: a quiet night reads as a dim ember haze, never white hot.
+          'heatmap-weight': ['interpolate', ['linear'], ['get', 'score'], 0, 0.05, 20, 0.28, 45, 0.52, 70, 0.78, 100, 1],
+          'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 9, 1.1, 13, 1.9, 16, 2.6],
+          'heatmap-color': [
+            'interpolate', ['linear'], ['heatmap-density'],
+            0,    'rgba(11,9,8,0)',
+            0.15, 'rgba(122,46,0,0.35)',
+            0.35, 'rgba(232,93,0,0.55)',
+            0.55, 'rgba(255,77,0,0.70)',
+            0.75, 'rgba(255,179,0,0.82)',
+            1,    'rgba(255,243,214,0.92)'
+          ],
+          'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 9, 34, 13, 62, 16, 95],
+          // fade the field away once pins carry the detail
+          'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.85, 14.5, 0.25, 16, 0]
+        },
+      });
 
       // 1. Outer pulse ring — animates for hot (electric/peak/lit) venues
       map.addLayer({
