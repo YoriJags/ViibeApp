@@ -22,10 +22,19 @@ import { useVibeStore } from '../store/vibeStore';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
-const HEAT = {
-  coal: '#0B0908', ash: '#16110D', soot: '#2E241C',
-  bone: '#F4EFE6', smoke: '#A89B8C',
-  ember: '#FF4D00', amber: '#FFB300', whitehot: '#FFF3D6',
+// Matched to the venue screen this card sits on (glassy cards, gold labels,
+// the app's orange accent) rather than the thermal palette used on the
+// marketing site. A lone warm-brown card in a midnight-blue app reads as a
+// bug, however good it looks in isolation.
+const UI = {
+  cardBg: 'rgba(255,255,255,0.04)',
+  cardBorder: 'rgba(255,255,255,0.08)',
+  btnBg: 'rgba(255,255,255,0.06)',
+  text: '#FFFFFF',
+  muted: 'rgba(255,255,255,0.5)',
+  gold: '#C9A84C',
+  accent: '#FF6B35',
+  onAccent: '#1A1A2E',
 };
 
 /** Ask only once the reading is close to expiring (readings die at 15 min). */
@@ -85,7 +94,7 @@ export default function PulseCheckCard({
   return (
     <View style={styles.card}>
       <View style={styles.headRow}>
-        <Ionicons name="hourglass-outline" size={14} color={HEAT.ember} />
+        <Ionicons name="hourglass-outline" size={14} color={UI.gold} />
         <Text style={styles.head}>THIS READING IS GOING STALE</Text>
       </View>
 
@@ -103,7 +112,7 @@ export default function PulseCheckCard({
             activeOpacity={0.8}
           >
             {busy === d
-              ? <ActivityIndicator size="small" color={HEAT.coal} />
+              ? <ActivityIndicator size="small" color={UI.onAccent} />
               : <Text style={[styles.btnText, d === 'same' && styles.btnTextSame]}>
                   {d === 'cooling' ? 'Cooling' : d === 'same' ? 'Same' : 'Hotter'}
                 </Text>}
@@ -125,25 +134,26 @@ export default function PulseCheckCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: HEAT.ash,
+    backgroundColor: UI.cardBg,
     borderWidth: 1,
-    borderColor: HEAT.soot,
-    borderRadius: 14,
+    borderColor: UI.cardBorder,
+    borderRadius: 12,
     padding: 16,
+    marginHorizontal: 16,
     marginBottom: 14,
   },
   headRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  head: { color: HEAT.ember, fontSize: 10, fontWeight: '700', letterSpacing: 1.6 },
-  question: { color: HEAT.bone, fontSize: 19, fontWeight: '700', marginBottom: 14 },
-  reads: { color: HEAT.amber },
+  head: { color: UI.gold, fontSize: 10, fontWeight: '700', letterSpacing: 1.6 },
+  question: { color: UI.text, fontSize: 19, fontWeight: '700', marginBottom: 14 },
+  reads: { color: UI.accent },
   row: { flexDirection: 'row', gap: 9 },
   btn: {
     flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center',
-    borderWidth: 1, borderColor: HEAT.soot, backgroundColor: HEAT.coal,
+    borderWidth: 1, borderColor: UI.cardBorder, backgroundColor: UI.btnBg,
   },
-  btnSame: { backgroundColor: HEAT.ember, borderColor: HEAT.ember },
-  btnText: { color: HEAT.bone, fontSize: 14, fontWeight: '700' },
-  btnTextSame: { color: HEAT.coal },
-  why: { color: HEAT.smoke, fontSize: 11, marginTop: 11, lineHeight: 16 },
-  error: { color: HEAT.ember, fontSize: 11, marginTop: 8 },
+  btnSame: { backgroundColor: UI.accent, borderColor: UI.accent },
+  btnText: { color: UI.text, fontSize: 14, fontWeight: '700' },
+  btnTextSame: { color: UI.onAccent },
+  why: { color: UI.muted, fontSize: 11, marginTop: 11, lineHeight: 16 },
+  error: { color: UI.accent, fontSize: 11, marginTop: 8 },
 });

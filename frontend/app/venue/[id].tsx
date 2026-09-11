@@ -1351,11 +1351,11 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
               onPress={() => setShowReactor(v => !v)}
               activeOpacity={0.8}
             >
-              <Ionicons name="flash-outline" size={14} color="#A89B8C" />
+              <Ionicons name="flash-outline" size={14} color="rgba(255,255,255,0.5)" />
               <Text style={styles.reactorToggleText}>
                 {showReactor ? 'Hide reactor' : 'Open reactor'}
               </Text>
-              <Ionicons name={showReactor ? 'chevron-up' : 'chevron-down'} size={14} color="#A89B8C" />
+              <Ionicons name={showReactor ? 'chevron-up' : 'chevron-down'} size={14} color="rgba(255,255,255,0.5)" />
             </TouchableOpacity>
             {showReactor && (
             <View style={styles.reactorWrap}>
@@ -1924,9 +1924,10 @@ const styles = StyleSheet.create({
   reactorToggle: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
     paddingVertical: 11, marginHorizontal: 16, marginBottom: 10,
-    borderRadius: 10, borderWidth: 1, borderColor: '#2E241C', backgroundColor: '#16110D',
+    borderRadius: 10, borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.04)',
   },
-  reactorToggleText: { color: '#A89B8C', fontSize: 12, fontWeight: '600', letterSpacing: 0.6 },
+  reactorToggleText: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600', letterSpacing: 0.6 },
   reactorWrap: {
     paddingHorizontal: 20,
   },
