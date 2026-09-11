@@ -594,3 +594,13 @@ async def get_icons_spotted(venue_id: str, request: Request):
         {"_id": 0},
     ).to_list(50)
     return {"spotted": spotted}
+
+@router.get("/admin/freshness")
+async def get_freshness(days: int = 14):
+    """
+    The freshness scoreboard: median reading age, coverage, and how often a
+    scout re-reports during one visit. Real users and demo scouts are reported
+    separately so ambient activity never flatters the real numbers.
+    """
+    from app.services.freshness import freshness_report
+    return await freshness_report(days=days)

@@ -444,3 +444,110 @@ async def _emit_icon_spotted(user_doc: dict | None, venue: dict, venue_id: str) 
         }, room=f"venue_{venue_id}")
     except Exception:
         pass  # non-critical
+
+
+# ─── Pulse check: the one-tap decay refresh ──────────────────────────────────
+# A full vibe check is three questions, right once per visit and far too much
+# to repeat every fifteen minutes. Without repetition the reading goes stale
+# and the map quietly starts lying. So a present scout can answer one thing
+# instead of three, against what the room currently reads.
+#
+# This deliberately does NOT go through create_rating: that route caps at two
+# ratings per venue per day, which is correct for considered opinions and
+# wrong for refreshes. A pulse check is the same visit being confirmed, not a
+# second opinion, so it gets its own, time-based limits.
+
+MAX_PULSE_CHECKS_PER_VENUE_PER_DAY = 12   # a long night at ~15 min intervals
+PULSE_CHECK_COOLDOWN_MINUTES = 5          # no point refreshing faster than decay
+
+
+@router.post("/venues/{venue_id}/pulse-check")
+async def pulse_check(
+    venue_id: str,
+    payload: dict,
+    user: dict = Depends(require_auth),
+):
+    """
+    One-tap refresh of a venue's reading: same / hotter / cooling.
+    Presence-verified, like every other reading we accept.
+    """
+    from app.services.pulse_check import shift_energy, carry_forward, DELTAS
+
+    delta = str(payload.get("delta", "")).lower()
+    if delta not in DELTAS:
+        raise HTTPException(status_code=400, detail="delta must be same, hotter or cooling")
+
+    coords_raw = payload.get("coordinates")
+    if not coords_raw:
+        raise HTTPException(status_code=400, detail="coordinates required")
+
+    venue = await db.venues.find_one({"id": venue_id})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    coords = Coordinates(**coords_raw)
+    venue_radius = venue.get("geofence_radius_m", 100)
+    if not is_within_geofence(coords, Coordinates(**venue["coordinates"]), radius_m=venue_radius):
+        raise HTTPException(
+            status_code=403,
+            detail=f"You must be within {int(venue_radius)}m of the venue to confirm the vibe.",
+        )
+
+    now = datetime.now(timezone.utc)
+    recent = await db.ratings.find({
+        "user_id": user["id"],
+        "venue_id": venue_id,
+        "source": "pulse_check",
+        "timestamp": {"$gte": now - timedelta(hours=24)},
+    }).sort("timestamp", -1).to_list(50)
+
+    if len(recent) >= MAX_PULSE_CHECKS_PER_VENUE_PER_DAY:
+        raise HTTPException(status_code=429, detail="Enough refreshes on this venue for today.")
+
+    if recent:
+        last = recent[0]["timestamp"]
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        wait = PULSE_CHECK_COOLDOWN_MINUTES * 60 - (now - last).total_seconds()
+        if wait > 0:
+            raise HTTPException(status_code=429, detail=f"Still fresh, try again in {int(wait)}s.")
+
+    energy = shift_energy(venue.get("energy_level"), delta)
+    rest = carry_forward(venue)
+    vibe_score = calculate_vibe_score(energy, rest["capacity"], rest["gate"])
+
+    await db.ratings.insert_one({
+        "id": __import__("uuid").uuid4().hex,
+        "user_id": user["id"],
+        "venue_id": venue_id,
+        "energy": energy,
+        "capacity": rest["capacity"],
+        "gate": rest["gate"],
+        "venue_specific": None,
+        "photo_base64": None,
+        "timestamp": now,
+        "is_correction": False,
+        "vibe_score": vibe_score,
+        "synced": True,
+        "taxonomy_id": None,
+        "vibe_note": None,
+        "provisional": False,
+        "provisional_until": None,
+        "credibility_weight": await get_sis_weight(user["id"]),
+        "signal_token": await get_or_create_signal_token(user["id"]),
+        "source": "pulse_check",
+        "delta": delta,
+    })
+
+    aggregate = await calculate_venue_aggregate(venue_id)
+    if aggregate:
+        await db.venues.update_one({"id": venue_id}, {"$set": aggregate})
+
+    return {
+        "ok": True,
+        "delta": delta,
+        "energy": energy,
+        "venue_vibe_score": aggregate.get("current_vibe_score") if aggregate else None,
+        "energy_level": aggregate.get("energy_level") if aggregate else None,
+        "refreshes_left_today": MAX_PULSE_CHECKS_PER_VENUE_PER_DAY - len(recent) - 1,
+    }
