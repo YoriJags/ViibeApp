@@ -48,6 +48,11 @@ def _lagos_hour(now: datetime) -> int:
 
 def _heat_budget(now: datetime) -> float:
     """0..1 scale of how alive the city should plausibly read right now."""
+    # Demo override: hold the city at peak-night energy regardless of the clock,
+    # so the map is presentable whenever it is being shown. Off by default;
+    # unset DEMO_PEAK to return to honest time-of-day behaviour.
+    if os.environ.get("DEMO_PEAK", "0") == "1":
+        return 1.0
     h = _lagos_hour(now)
     is_weekend = now.weekday() >= 4  # Fri/Sat/Sun
     if 22 <= h or h < 3:
