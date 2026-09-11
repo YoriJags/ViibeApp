@@ -46,6 +46,7 @@ import ArrivalIntelCard from '../../src/components/ArrivalIntelCard';
 import CrowdCompositionBar from '../../src/components/CrowdCompositionBar';
 import BookingModal from '../../src/components/BookingModal';
 import VibeReactor from '../../src/components/VibeReactor';
+import PulseCheckCard from '../../src/components/PulseCheckCard';
 import SurgeCelebration from '../../src/components/SurgeCelebration';
 import FirstScoutCelebration from '../../src/components/FirstScoutCelebration';
 import ResonancePrompt from '../../src/components/ResonancePrompt';
@@ -206,12 +207,16 @@ export default function VenueDetailScreen() {
   const checkinDotAnim = useRef(new Animated.Value(1)).current;
   const readyBannerAnim = useRef(new Animated.Value(0)).current;
   const readyDotAnim = useRef(new Animated.Value(1)).current;
+  // The reactor is optional now, not the thing that greets you in a venue.
+  const [showReactor, setShowReactor] = useState(false);
+  const pulseLayoutY = useRef(0);
 
-  // ── Auto-scroll: bring VibeReactor to top when entering geofence on NOW tab
+  // ── Auto-scroll on entering the geofence: bring the refresh prompt up, not
+  //    the reactor. What we want from someone who just walked in is a reading.
   useEffect(() => {
-    if (isInsideVenue && activeTab === 'now' && reactorLayoutY.current > 0) {
+    if (isInsideVenue && activeTab === 'now' && pulseLayoutY.current > 0) {
       setTimeout(() => {
-        scrollViewRef.current?.scrollTo({ y: reactorLayoutY.current - 12, animated: true });
+        scrollViewRef.current?.scrollTo({ y: pulseLayoutY.current - 12, animated: true });
       }, 400); // brief delay lets spring animation settle
     }
   }, [isInsideVenue]);
@@ -1322,10 +1327,37 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
           />
         )}
 
-        {/* ====== VIBE REACTOR ====== */}
+        {/* ====== KEEP THE READING FRESH ====== */}
+        {id && venue && (
+          <View onLayout={e => { pulseLayoutY.current = e.nativeEvent.layout.y; }}>
+            <ErrorBoundary label="Pulse Check">
+              <PulseCheckCard
+                venueId={id}
+                energyLevel={venue.energy_level}
+                lastRatedMinsAgo={(venue as any).last_rated_mins_ago}
+                watchersNow={(venue as any).orbit?.watching_now}
+                isInsideVenue={!!isInsideVenue}
+                onRefreshed={() => { if (id) fetchVenue(id); }}
+              />
+            </ErrorBoundary>
+          </View>
+        )}
+
+        {/* ====== VIBE REACTOR (optional) ====== */}
         {id && venue && (
           <>
-            <Text style={styles.sectionLabel}>REACTOR</Text>
+            <TouchableOpacity
+              style={styles.reactorToggle}
+              onPress={() => setShowReactor(v => !v)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="flash-outline" size={14} color="#A89B8C" />
+              <Text style={styles.reactorToggleText}>
+                {showReactor ? 'Hide reactor' : 'Open reactor'}
+              </Text>
+              <Ionicons name={showReactor ? 'chevron-up' : 'chevron-down'} size={14} color="#A89B8C" />
+            </TouchableOpacity>
+            {showReactor && (
             <View style={styles.reactorWrap}>
               <ErrorBoundary label="Vibe Reactor">
                 <View onLayout={e => { reactorLayoutY.current = e.nativeEvent.layout.y; }}>
@@ -1345,6 +1377,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
                 </View>
               </ErrorBoundary>
             </View>
+            )}
           </>
         )}
 
@@ -1888,6 +1921,12 @@ const styles = StyleSheet.create({
   },
 
   // ====== REACTOR WRAP ======
+  reactorToggle: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
+    paddingVertical: 11, marginHorizontal: 16, marginBottom: 10,
+    borderRadius: 10, borderWidth: 1, borderColor: '#2E241C', backgroundColor: '#16110D',
+  },
+  reactorToggleText: { color: '#A89B8C', fontSize: 12, fontWeight: '600', letterSpacing: 0.6 },
   reactorWrap: {
     paddingHorizontal: 20,
   },
