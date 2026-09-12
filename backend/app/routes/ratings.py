@@ -543,6 +543,31 @@ async def pulse_check(
     if aggregate:
         await db.venues.update_one({"id": venue_id}, {"$set": aggregate})
 
+        # A refresh is a real tick on the venue's timeline. Without this the
+        # score moves while the chart stays blind to it, and a reading that
+        # never lands on the history cannot be audited or sold later.
+        await save_vibe_snapshot(venue_id, aggregate)
+
+        # A refresh can cross a surge threshold in either direction, so the
+        # same gate that guards a full rating has to run here too.
+        try:
+            await check_and_emit_surge_alert(
+                venue_id,
+                venue.get("name", ""),
+                venue.get("city", "lagos"),
+                aggregate.get("current_vibe_score", 0),
+            )
+        except Exception:
+            pass
+
+        # Live clients are watching this number; push it.
+        for push in (
+            broadcast_venue_update(venue_id),
+            broadcast_leaderboard(venue.get("city", "lagos")),
+            broadcast_city_pulse(venue.get("city", "lagos")),
+        ):
+            asyncio.create_task(push)
+
     return {
         "ok": True,
         "delta": delta,
