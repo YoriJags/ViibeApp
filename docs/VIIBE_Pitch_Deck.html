@@ -247,7 +247,7 @@
   <h1>VIIBE Investor Deck</h1>
 <p><em>Seed Round | Lagos</em></p>
 <hr>
-<h2>SLIDE 1 — THE HOOK</h2>
+<h2>SLIDE 1 · THE HOOK</h2>
 <blockquote>
 <h3>Google Maps tells you how to get there.</h3>
 <h3>VIIBE tells you if it&#39;s worth going.</h3>
@@ -258,7 +258,7 @@ same thing every night. You pick one, pay ₦10,000 at the door, and walk into a
 room holding forty people.</p>
 <p>You already know how that story ends, because it has happened to you.</p>
 <hr>
-<h2>SLIDE 2 — THE PROBLEM</h2>
+<h2>SLIDE 2 · THE PROBLEM</h2>
 <h3>An economy this size should not be running on rumour</h3>
 <p>Lagos nightlife turns over hundreds of billions of naira a year across roughly
 four thousand venues. Every other industry that moves money at this scale has
@@ -280,7 +280,7 @@ place, and went three streets over instead?</p>
 <p>They are handed an outcome with no comparison and no counterfactual, then asked
 to keep spending against it. That second gap is the one with a budget attached.</p>
 <hr>
-<h2>SLIDE 3 — THE SOLUTION</h2>
+<h2>SLIDE 3 · THE SOLUTION</h2>
 <h3>A live reading of a room, taken by the people standing in it</h3>
 <p>VIIBE makes the crowd the instrument.</p>
 <p>Someone inside a venue answers three things in about three seconds: how the
@@ -302,30 +302,61 @@ production.</li>
 <p>Nothing here is staged, and nothing can be bought. Those two constraints are
 not policy, they are the product.</p>
 <hr>
-<h2>SLIDE 4 — THE PRODUCT</h2>
+<h2>SLIDE 3B · THE SPINE</h2>
+<h3>Sense, Read, Sell</h3>
+<p>Everything in the product belongs to one of three layers. If a feature cannot
+be placed in one, it does not ship.</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Question it answers</th>
+<th>What lives there</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Sense</strong></td>
+<td>Is this real?</td>
+<td>Geofenced checks, credibility weighting, sound and tempo, dwell, decay, anti-fake gates</td>
+</tr>
+<tr>
+<td><strong>Read</strong></td>
+<td>Where should I go?</td>
+<td>The live map and heat field, venue detail, peak countdown, the Big Screen</td>
+</tr>
+<tr>
+<td><strong>Sell</strong></td>
+<td>What is it worth?</td>
+<td>Merchant dashboard, watchers, the Lift Report, the agent API</td>
+</tr>
+</tbody></table>
+<p>This is also the build order and the pitch order. Supply before product,
+product before revenue, in that sequence, always.</p>
+<hr>
+<h2>SLIDE 4 · THE PRODUCT</h2>
 <h3>Three Linked Products, One Platform</h3>
-<p><strong>The Public App — For Everyone</strong>
-The consumer experience. Find what&#39;s live tonight on a real-time map. See which venues are <code>peak</code>, <code>lit</code>, <code>charged</code>, <code>warming</code>, <code>chill</code>, or <code>quiet</code> — all from scouts actually inside right now.</p>
-<p><strong>The Merchant Portal — For Venue Owners</strong>
+<p><strong>The Public App, For Everyone</strong>
+The consumer experience. Find what&#39;s live tonight on a real-time map. See which venues are <code>peak</code>, <code>lit</code>, <code>charged</code>, <code>warming</code>, <code>chill</code>, or <code>quiet</code>, all from scouts actually inside right now.</p>
+<p><strong>The Merchant Portal, For Venue Owners</strong>
 A private dashboard showing your venue&#39;s live performance. Rating volume, energy trend, crowd level, gate reports, historical timeline. Push-notification alerts when your score drops. Paid visibility tools when you need to pull a crowd.</p>
-<p><strong>The Admin Console — For Platform Operators</strong>
+<p><strong>The Admin Console, For Platform Operators</strong>
 Full control over venue listings, merchant accounts, platform economics, and anti-cheat monitoring.</p>
 <p>All three share one backend and one MongoDB database. One coherent platform, role-based access.</p>
 <hr>
-<h2>SLIDE 5 — HOW IT WORKS (THE SCORING SYSTEM)</h2>
+<h2>SLIDE 5 · HOW IT WORKS (THE SCORING SYSTEM)</h2>
 <h3>The Most Defensible Piece of Our IP</h3>
 <p>A scout walks into Quilox at 11:30pm and submits a rating in under 60 seconds. They observe:</p>
 <ul>
 <li><strong>Energy:</strong> What is the room feeling right now? (<code>quiet</code> / <code>chill</code> / <code>warming</code> / <code>lit</code> / <code>peak</code>)</li>
 <li><strong>Capacity:</strong> How full is the venue? (<code>sparse</code> / <code>vibrant</code> / <code>full</code>)</li>
 <li><strong>Gate:</strong> How is entry flowing? (<code>clear</code> / <code>slow</code> / <code>blocked</code>)</li>
-<li><strong>Vibe-specific:</strong> Optional depth read — e.g., &quot;DJ is killing it&quot; vs &quot;DJ is mellow&quot;</li>
+<li><strong>Vibe-specific:</strong> Optional depth read, e.g., &quot;DJ is killing it&quot; vs &quot;DJ is mellow&quot;</li>
 </ul>
 <p>Our scoring engine calculates:</p>
 <pre><code>Vibe Score = min(100, (Energy × 80% + Context × 20%) × Crowd Multiplier)
 </code></pre>
 <p>Energy dominates at 80%. A full venue cannot rescue a dead crowd. A packed house amplifies real energy.</p>
-<p>Every score updates with time-decay weighting — a rating from 5 minutes ago counts 3× more than one from 45 minutes ago. When you look at a venue&#39;s score, you&#39;re seeing the freshest possible picture of the room.</p>
+<p>Every score updates with time-decay weighting, a rating from 5 minutes ago counts 3× more than one from 45 minutes ago. When you look at a venue&#39;s score, you&#39;re seeing the freshest possible picture of the room.</p>
 <p>This produces 6 display states:</p>
 <table>
 <thead>
@@ -348,7 +379,7 @@ Full control over venue listings, merchant accounts, platform economics, and ant
 <tr>
 <td><strong>CHARGED</strong></td>
 <td>Score 45–64, crowd full/vibrant</td>
-<td>Potential energy — packed, about to blow.</td>
+<td>Potential energy, packed, about to blow.</td>
 </tr>
 <tr>
 <td><strong>WARMING</strong></td>
@@ -366,9 +397,68 @@ Full control over venue listings, merchant accounts, platform economics, and ant
 <td>Nearly empty. Not tonight.</td>
 </tr>
 </tbody></table>
-<p><strong>CHARGED is our unique insight.</strong> A packed venue at score 52 is fundamentally different from an empty venue at score 52. CHARGED tells you: 300 people are in the room, the DJ hasn&#39;t hit the first drop yet — get there before it blows.</p>
+<p><strong>CHARGED is our unique insight.</strong> A packed venue at score 52 is fundamentally different from an empty venue at score 52. CHARGED tells you: 300 people are in the room, the DJ hasn&#39;t hit the first drop yet, get there before it blows.</p>
 <hr>
-<h2>SLIDE 6 — THE DATA MOAT</h2>
+<h2>SLIDE 5B · HOW THE ROOM IS SENSED</h2>
+<h3>Four signals, and the people in the room always win</h3>
+<p>The score is not a rating average. It is a weighted blend, and the weights are
+deliberate.</p>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Maximum weight</th>
+<th>What it takes to count</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Scouts in the room</strong></td>
+<td>never below 67%</td>
+<td>Geofenced, credibility-weighted</td>
+</tr>
+<tr>
+<td><strong>Sound and tempo</strong></td>
+<td>up to 15%</td>
+<td>Three or more scouts contributing; loudness and music BPM, sampled on device</td>
+</tr>
+<tr>
+<td><strong>Scout consensus</strong></td>
+<td>up to 10%</td>
+<td>Five or more independent scouts agreeing</td>
+</tr>
+<tr>
+<td><strong>Dwell time</strong></td>
+<td>up to 8%</td>
+<td>Five or more people actually staying</td>
+</tr>
+</tbody></table>
+<p>No audio ever leaves a phone. Two numbers do: how loud the room is and how fast
+the music is beating. A lounge at 90bpm and a room at 128bpm can be equally
+loud and are not the same energy.</p>
+<p><strong>Why the floor matters.</strong> Sensors can be fooled and rooms can be loud for the
+wrong reasons. A machine never outvotes the people standing in the room.</p>
+<hr>
+<h2>SLIDE 5C · THE FRESHNESS PROBLEM</h2>
+<h3>A reading nobody refreshes is how a map starts lying</h3>
+<p>Energy decays in minutes. A vibe check is accurate for roughly fifteen, and
+then it quietly becomes fiction while still looking authoritative. Every
+revenue line in this deck rests on one number staying small.</p>
+<p><strong>Pulse Check.</strong> When a scout is still inside the venue and their reading is
+about to expire, they are asked one thing instead of three: is it the same,
+hotter, or cooling. About two seconds, presence verified, three or four times a
+night instead of once.</p>
+<p><strong>What we measure, and report split between real users and demo activity so
+neither can flatter the other:</strong></p>
+<ul>
+<li>Median reading age behind each displayed score</li>
+<li>Fresh coverage: the share of venues carrying a reading under fifteen minutes</li>
+<li>Readings per visit, which the prompt should move from roughly one to three</li>
+<li>Pulse Check response rate, which says whether the ask feels like work</li>
+</ul>
+<p>Venues with no reading at all count against coverage rather than being skipped.
+Silence is not freshness.</p>
+<hr>
+<h2>SLIDE 6 · THE DATA MOAT</h2>
 <h3>Why This Gets Harder to Replicate Over Time</h3>
 <p><strong>Network effects are the only moat that compounds.</strong></p>
 <table>
@@ -388,7 +478,7 @@ Full control over venue listings, merchant accounts, platform economics, and ant
 </tr>
 <tr>
 <td>Scout accuracy graph</td>
-<td>Consistently accurate scouts become <code>elite</code> tier — their reports carry implicit trust</td>
+<td>Consistently accurate scouts become <code>elite</code> tier, their reports carry implicit trust</td>
 </tr>
 <tr>
 <td>Vibe DNA profiles</td>
@@ -398,7 +488,7 @@ Full control over venue listings, merchant accounts, platform economics, and ant
 <p><strong>VIIBE Certified</strong> is the trust pinnacle: automatically awarded when a venue hits score ≥ 85 AND 80+ ratings in 24 hours simultaneously. Cannot be bought. Cannot be gamed. Certifies peak human activity with mathematical certainty.</p>
 <p>A competitor launching today inherits zero of this. No scout network, no historical baseline, no trust graph, no DNA profiles. They start from scratch on every dimension.</p>
 <hr>
-<h2>SLIDE 6B — WHY THE SIGNAL CANNOT BE BOUGHT</h2>
+<h2>SLIDE 6B · WHY THE SIGNAL CANNOT BE BOUGHT</h2>
 <h3>Anyone can copy a venue list. Copying a number people trust is harder.</h3>
 <p>Any competitor can build a venue list. What is hard to copy is a number that
 buyers trust enough to spend against. Four enforcement layers, all shipped:</p>
@@ -433,9 +523,26 @@ buyers trust enough to spend against. Four enforcement layers, all shipped:</p>
 precondition. No venue pays for a dashboard its rivals can buy their way up,
 and no partner licenses crowd data with a price list attached.</p>
 <hr>
-<h2>SLIDE 7 — MARKET SIZE</h2>
+<h2>SLIDE 6C · WHAT A VENUE ACTUALLY BUYS</h2>
+<h3>Did your ₦500,000 DJ lift the room?</h3>
+<p>An owner can see their own floor. They are standing on it. What they cannot see
+is anything outside their building, and that is what we sell.</p>
+<p><strong>The Weekly Lift Report.</strong> Every Monday morning: intent, verified arrivals,
+and whether the room lifted against its own four-week baseline, priced in
+naira. When the baseline is too thin to support a claim, it says so rather than
+inventing encouragement.</p>
+<p><strong>Watchers in orbit.</strong> How many people were monitoring this venue from
+elsewhere in the city and did not come. Live demand pressure, counted, never
+identified.</p>
+<p><strong>The Big Screen.</strong> The venue projects its own live energy on the wall. The
+room watches itself climb the city ranking, which makes the crowd push and puts
+our instrument in front of every person in the building.</p>
+<p><strong>Comparison they cannot get anywhere else.</strong> Was Saturday good <em>for a
+Saturday</em>? How did this room rank against the district on the same night?</p>
+<hr>
+<h2>SLIDE 7 · MARKET SIZE</h2>
 <h3>Nigeria Is the Playbook. Africa Is the Prize.</h3>
-<p><strong>TAM — Total Addressable Market</strong>
+<p><strong>TAM, Total Addressable Market</strong>
 Sub-Saharan Africa entertainment and media economy:</p>
 <ul>
 <li>Nigeria is the #1 fastest-growing E&amp;M market globally (PwC, 8.6% CAGR to 2028)</li>
@@ -443,7 +550,7 @@ Sub-Saharan Africa entertainment and media economy:</p>
 <li>Sub-Saharan Africa recorded music crossed $100M (2024); Afrobeats global streams +34% in 2024</li>
 <li>Primary nightlife markets: Nigeria, Ghana, Kenya, South Africa, Egypt</li>
 </ul>
-<p><strong>SAM — Serviceable Addressable Market</strong>
+<p><strong>SAM, Serviceable Addressable Market</strong>
 Nigeria nightlife, events, and venue discovery:</p>
 <ul>
 <li>220 million population, median age 18.4</li>
@@ -453,20 +560,20 @@ Nigeria nightlife, events, and venue discovery:</p>
 <li>4,000+ licensed venues across 6 major cities</li>
 <li>Lagos top clubs average ₦360M in daily revenue; Detty December 2024 alone generated ₦4.32B across 12 days from clubs, with a total Lagos economic injection of $71.6M</li>
 </ul>
-<p><strong>SOM — Serviceable Obtainable Market (3-year target)</strong>
+<p><strong>SOM, Serviceable Obtainable Market (3-year target)</strong>
 Lagos-first, expanding to Abuja + Port Harcourt + Ibadan:</p>
 <ul>
 <li>50,000 MAU by Month 24</li>
 <li>500 active merchant venues by Month 24</li>
 <li>₦250M ($167K) ARR by end of Year 2</li>
 </ul>
-<p><strong>The Afrobeats angle:</strong> Nigerian nightlife culture is globalising. VIIBE has a natural export story into African diaspora markets in London, New York, and Toronto — cities where Afrobeats events are among the fastest-growing live entertainment categories.</p>
+<p><strong>The Afrobeats angle:</strong> Nigerian nightlife culture is globalising. VIIBE has a natural export story into African diaspora markets in London, New York, and Toronto, cities where Afrobeats events are among the fastest-growing live entertainment categories.</p>
 <hr>
-<h2>SLIDE 8 — BUSINESS MODEL</h2>
+<h2>SLIDE 8 · BUSINESS MODEL</h2>
 <h3>We sell the truth about a room to the people who own it</h3>
 <p>The consumer app collects the data. The revenue sits behind it, with three
 buyers, in this order.</p>
-<p><strong>1. Venue Intelligence Subscription — the core line</strong></p>
+<p><strong>1. Venue Intelligence Subscription, the core line</strong></p>
 <table>
 <thead>
 <tr>
@@ -489,13 +596,13 @@ buyers, in this order.</p>
 <p>This works with a handful of scouts and a single venue. No consumer scale is
 required for it to earn, so the revenue does not have to wait on liquidity.
 Most apps in this category died waiting.</p>
-<p><strong>2. Attribution: the Lift Report — the wedge that opens the door</strong></p>
+<p><strong>2. Attribution: the Lift Report, the wedge that opens the door</strong></p>
 <p>The most expensive unanswered question in Lagos nightlife is <em>&quot;did my ₦500,000
 DJ, or my ₦2M promoter campaign, actually fill the room?&quot;</em> Nobody can answer
 it today. We can, from intent through verified arrivals to energy lift, priced
 in naira. Free pilot, then it converts to a subscription. <strong>The Lift Report
 gets the meeting; the subscription is what we sell in it.</strong></p>
-<p><strong>3. Sponsored placement — advertising that cannot corrupt the signal</strong></p>
+<p><strong>3. Sponsored placement, advertising that cannot corrupt the signal</strong></p>
 <table>
 <thead>
 <tr>
@@ -533,7 +640,7 @@ venues are rendered as sponsored, the way a paid search result is. The rule is
 enforced inside the scoring engine, and a test fails the build if anyone
 re-adds a boost to the maths. Without that rule the rest of this page collapses:
 a number with a price list is not worth subscribing to.</p>
-<p><strong>4. Brand activation intelligence — where the scale revenue is</strong></p>
+<p><strong>4. Brand activation intelligence, where the scale revenue is</strong></p>
 <p>Guinness, Heineken, Trophy, Hennessy and their agencies spend heavily on Lagos
 nightlife activation with no targeting data and no verification. We sell both:
 where to activate this weekend, and whether last week&#39;s activation actually
@@ -572,7 +679,7 @@ mobility platforms.</p>
 <p>These are deliberately unglamorous. A modelled ₦45M/month would read better
 on this page and mean nothing in a diligence call.</p>
 <hr>
-<h2>SLIDE 9 — TRACTION</h2>
+<h2>SLIDE 9 · TRACTION</h2>
 <h3>Built and running in production, self-funded</h3>
 <p><strong>Live infrastructure</strong></p>
 <ul>
@@ -607,19 +714,19 @@ on this page and mean nothing in a diligence call.</p>
 next four weekends are designed to test, and it is what this raise funds. We
 are not claiming traction we do not have.</p>
 <hr>
-<h2>SLIDE 10 — GO-TO-MARKET</h2>
+<h2>SLIDE 10 · GO-TO-MARKET</h2>
 <h3>Island-First. Community-First. Network-First.</h3>
-<p><strong>Phase 1 — The Island (Months 1–3)</strong>
+<p><strong>Phase 1, The Island (Months 1–3)</strong>
 Victoria Island, Lekki Phase 1, Ikoyi. Highest venue density, highest smartphone penetration, highest spend per capita.</p>
 <p>Activation: 3 &quot;scout ambassador&quot; nights per week. Select 10–15 early users per night, each assigned 2–3 venues. Compensate with VIIBE+ subscriptions (₦2,000/month value). We need their data more than their money in month 1.</p>
-<p><strong>Phase 2 — The Merchants (Months 3–6)</strong>
+<p><strong>Phase 2, The Merchants (Months 3–6)</strong>
 Once 20 venues have 30+ days of live data, the merchant sales conversation is immediate: show them their own dashboard. Live score, crowd trend, timeline. &quot;This is your venue tonight. In real time.&quot; Free 30-day trial. No credit card required.</p>
-<p><strong>Phase 3 — The Flywheel (Months 6–18)</strong>
+<p><strong>Phase 3, The Flywheel (Months 6–18)</strong>
 Product drives itself. Accelerate with: nightlife content creator partnerships (they embed VIIBE scores in their content), university ambassador programs (Unilag, Covenant, LASU feeder networks into VI), WhatsApp community seeding in existing nightlife groups.</p>
-<p><strong>Phase 4 — City 2 (Month 12)</strong>
+<p><strong>Phase 4, City 2 (Month 12)</strong>
 Abuja. Smaller geography, tight social scene, predictable patterns for Oracle predictions, higher average spend per outing.</p>
 <hr>
-<h2>SLIDE 11 — COMPETITION</h2>
+<h2>SLIDE 11 · COMPETITION</h2>
 <table>
 <thead>
 <tr>
@@ -651,12 +758,12 @@ Abuja. Smaller geography, tight social scene, predictable patterns for Oracle pr
 </tbody></table>
 <p><strong>Honest competitive risk:</strong> A well-funded international player (Google Maps with live data) could attempt this. But:</p>
 <ul>
-<li>Building a scout network in Lagos requires local trust, local knowledge, and local payment rails — not a cheque.</li>
+<li>Building a scout network in Lagos requires local trust, local knowledge, and local payment rails, not a cheque.</li>
 <li>Our data moat starts compounding from Day 1. A competitor starting in 12 months inherits nothing.</li>
 <li>We will be the cultural reference for Nigerian nightlife intelligence before they finish due diligence.</li>
 </ul>
 <hr>
-<h2>SLIDE 12 — TECHNOLOGY</h2>
+<h2>SLIDE 12 · TECHNOLOGY</h2>
 <table>
 <thead>
 <tr>
@@ -708,7 +815,7 @@ Abuja. Smaller geography, tight social scene, predictable patterns for Oracle pr
 </tbody></table>
 <p><strong>AI is a feature, not a dependency.</strong> The platform runs without Claude. If the API is unavailable, Night Planner falls back to keyword-based rules. We never put a third-party API on the critical path.</p>
 <hr>
-<h2>SLIDE 13 — TEAM</h2>
+<h2>SLIDE 13 · TEAM</h2>
 <p><em>(Insert actual team bios here)</em></p>
 <p><strong>Founder / CEO:</strong> [Name]
 Lagos-native. Built [X]. Nightlife obsessive. Prior experience in [relevant domain].</p>
@@ -716,12 +823,12 @@ Lagos-native. Built [X]. Nightlife obsessive. Prior experience in [relevant doma
 Full-stack. Previously [X]. Responsible for all production architecture.</p>
 <p><strong>What we&#39;re hiring with this round:</strong></p>
 <ul>
-<li>Community Manager — Lagos-based, runs scout ambassador program</li>
-<li>Backend Engineer — handles roadmap velocity</li>
-<li>Account Executive — merchant sales and onboarding</li>
+<li>Community Manager, Lagos-based, runs scout ambassador program</li>
+<li>Backend Engineer, handles roadmap velocity</li>
+<li>Account Executive, merchant sales and onboarding</li>
 </ul>
 <hr>
-<h2>SLIDE 14 — FINANCIALS SUMMARY</h2>
+<h2>SLIDE 14 · FINANCIALS SUMMARY</h2>
 <p><em>(Full 5-year model in docs/FINANCIAL_MODEL.md)</em></p>
 <table>
 <thead>
@@ -770,9 +877,9 @@ Full-stack. Previously [X]. Responsible for all production architecture.</p>
 </tr>
 <tr>
 <td>Break-Even</td>
-<td>—</td>
+<td>,</td>
 <td><strong>Month 18 (Q3 2027)</strong></td>
-<td>—</td>
+<td>,</td>
 </tr>
 </tbody></table>
 <p>Revenue mix at Year 3 scale: Merchant SaaS 45% · Pulse Drops 30% · VIIBE+ 15% · Data API 10%</p>
@@ -782,7 +889,7 @@ Full-stack. Previously [X]. Responsible for all production architecture.</p>
 <li>Gross margin reflects Apple IAP platform fee (15–30% on iOS consumer subscriptions) at Year 1; improves as web and Android mix grows.</li>
 </ul>
 <hr>
-<h2>SLIDE 14B — THE TERMINAL THESIS</h2>
+<h2>SLIDE 14B · THE TERMINAL THESIS</h2>
 <h3>Most apps are discovery tools. VIIBE is infrastructure.</h3>
 <p>A terminal implies outputs that other people act on, not just consumers
 deciding where to go tonight.</p>
@@ -826,7 +933,21 @@ today; assistant integrations are the roadmap and the acquirer thesis.</p>
 <p><strong>The flywheel:</strong> more scouts means a richer signal, a richer signal is worth
 more to venues and brands, and that revenue funds the scout network.</p>
 <hr>
-<h2>SLIDE 15 — THE ASK</h2>
+<h2>SLIDE 14C · THE 10/10 MILESTONE</h2>
+<h3>One falsifiable target, and we either hit it or we do not</h3>
+<blockquote>
+<p>Four consecutive weekends. 30 or more scouts generating live data across 10 or
+more Lekki and Victoria Island venues. 1,000 or more users checking the map.
+Five venues asking for merchant access. Two paying or committed to pay.</p>
+</blockquote>
+<p>Until this is hit, expansion stays frozen. Anything that does not move the
+corridor toward this number waits.</p>
+<p><strong>The metric on the wall is repeat scout rate.</strong> Monthly actives can be bought.
+A scout who came back the following Friday cannot. And a venue writing a cheque
+because a Monday report showed them something they could not otherwise know is
+the only evidence that the signal has commercial value.</p>
+<hr>
+<h2>SLIDE 15 · THE ASK</h2>
 <h3>Raising a seed round to prove the corridor, then price the layer</h3>
 <p><strong>Use of funds</strong></p>
 <table>
@@ -879,18 +1000,18 @@ has commercial value.</p>
 <hr>
 <p><em>VIIBE. Know before you go.</em></p>
 <hr>
-<h2>APPENDIX A — THE CHARGED STATE (DEEP DIVE FOR TECHNICAL INVESTORS)</h2>
+<h2>APPENDIX A, THE CHARGED STATE (DEEP DIVE FOR TECHNICAL INVESTORS)</h2>
 <p>Investors sometimes ask why 6 states and not a simple 1–5 scale.</p>
 <p><strong>CHARGED</strong> is the business case for the 6th state.</p>
-<p>A venue with score 52 and 300 people inside is fundamentally different from a venue with score 52 and 30 people inside. In the first case: the crowd is assembled, the DJ is about to hit the first peak set — the night is about to explode. In the second: the room is sparse and going nowhere.</p>
+<p>A venue with score 52 and 300 people inside is fundamentally different from a venue with score 52 and 30 people inside. In the first case: the crowd is assembled, the DJ is about to hit the first peak set, the night is about to explode. In the second: the room is sparse and going nowhere.</p>
 <p>Both score 52 on a pure energy calculation. But the correct user action is completely opposite:</p>
 <ul>
 <li>300-person venue: <strong>&quot;Leave now, you&#39;ll miss the peak window.&quot;</strong></li>
 <li>30-person venue: <strong>&quot;Skip this one.&quot;</strong></li>
 </ul>
-<p>CHARGED surfaces this distinction in a single label that users act on in under a second. This is the kind of insight that no static review platform can produce — it requires live data from inside the room combined with crowd context that only a geofenced rating system captures.</p>
+<p>CHARGED surfaces this distinction in a single label that users act on in under a second. This is the kind of insight that no static review platform can produce, it requires live data from inside the room combined with crowd context that only a geofenced rating system captures.</p>
 <hr>
-<h2>APPENDIX B — ANTI-CHEAT SYSTEM (FOR TRUST-FOCUSED INVESTORS)</h2>
+<h2>APPENDIX B, ANTI-CHEAT SYSTEM (FOR TRUST-FOCUSED INVESTORS)</h2>
 <p>Five independent layers prevent rating manipulation:</p>
 <ol>
 <li><p><strong>GPS geofence:</strong> Rating rejected if coordinates are outside venue radius (100m default). You cannot rate a venue you are not physically at.</p>
@@ -905,25 +1026,25 @@ has commercial value.</p>
 </li>
 </ol>
 <hr>
-<h2>APPENDIX C — VIBE DNA AS RETENTION FLYWHEEL</h2>
-<p>Vibe DNA creates a personalised affinity fingerprint per user from their full rating history. As users rate more venues, DNA becomes richer. The feed sorts venues by DNA match — high-club-affinity users see clubs higher.</p>
+<h2>APPENDIX C, VIBE DNA AS RETENTION FLYWHEEL</h2>
+<p>Vibe DNA creates a personalised affinity fingerprint per user from their full rating history. As users rate more venues, DNA becomes richer. The feed sorts venues by DNA match, high-club-affinity users see clubs higher.</p>
 <p>The product gets more personalised the more you use it. After 50 ratings, VIIBE knows your nightlife preferences better than you do. After 100 ratings, you stop searching and start trusting the feed.</p>
-<p>This is the personalisation compounding loop that consumer apps dream about — a recommendation layer that improves purely as a function of usage, requiring no additional ML infrastructure.</p>
+<p>This is the personalisation compounding loop that consumer apps dream about, a recommendation layer that improves purely as a function of usage, requiring no additional ML infrastructure.</p>
 <hr>
-<h2>APPENDIX D — NIGHT PLANNER AS FUTURE REVENUE LINE</h2>
+<h2>APPENDIX D, NIGHT PLANNER AS FUTURE REVENUE LINE</h2>
 <p>Currently free (rules-based) with Claude-powered premium path. Natural evolution:</p>
 <ol>
 <li><strong>VIIBE+ gating:</strong> Multi-turn conversations unlimited for subscribers. Direct subscription driver.</li>
 <li><strong>Venue referral model:</strong> Planner recommendations that lead to check-ins earn the merchant a performance credit.</li>
-<li><strong>Branded Planner experiences:</strong> &quot;Guinness Night Planner&quot; — F&amp;B brand-sponsored concierge powered by VIIBE data. B2B brand revenue.</li>
+<li><strong>Branded Planner experiences:</strong> &quot;Guinness Night Planner&quot;, F&amp;B brand-sponsored concierge powered by VIIBE data. B2B brand revenue.</li>
 </ol>
 <p>Night Planner is currently a feature. It is building toward a dedicated revenue line.</p>
 <hr>
-<h2>APPENDIX E — VIBEREACTOR &amp; KINETIC INTELLIGENCE</h2>
+<h2>APPENDIX E, VIBEREACTOR &amp; KINETIC INTELLIGENCE</h2>
 <h3>VIIBE&#39;s Most Distinctive UX Differentiator</h3>
 <p>Nothing like VibeReactor exists in any venue app globally. It transforms passive rating into a full-body, real-time participation mechanic.</p>
 <p><strong>What it is:</strong>
-VibeReactor is a collective energy mechanism built directly into the scout rating flow. A circular charge ring fills as scouts tap — but the intensity of each tap is measured physically, not just counted.</p>
+VibeReactor is a collective energy mechanism built directly into the scout rating flow. A circular charge ring fills as scouts tap, but the intensity of each tap is measured physically, not just counted.</p>
 <p><strong>G-force tap intensity tiers:</strong></p>
 <table>
 <thead>
@@ -949,18 +1070,18 @@ VibeReactor is a collective energy mechanism built directly into the scout ratin
 <td>Maximum charge burst, full haptic feedback</td>
 </tr>
 </tbody></table>
-<p>The phone&#39;s accelerometer reads the velocity of the tap in real-time. A light tap from someone lukewarm about the room contributes less than a hard slam from someone who is genuinely in the moment. Physical intensity becomes a proxy for authentic energy — something no text-based rating system can capture.</p>
+<p>The phone&#39;s accelerometer reads the velocity of the tap in real-time. A light tap from someone lukewarm about the room contributes less than a hard slam from someone who is genuinely in the moment. Physical intensity becomes a proxy for authentic energy, something no text-based rating system can capture.</p>
 <p><strong>Collective mechanics:</strong></p>
 <ul>
 <li>Every scout in a geofenced venue contributes to a shared charge bar</li>
 <li>When the collective bar reaches critical mass, a city-wide surge event triggers</li>
-<li>The GlobalVibePill HUD displays the city&#39;s aggregate charge state in real-time — the entire city of Lagos becomes a single organism pulsing with collective energy</li>
+<li>The GlobalVibePill HUD displays the city&#39;s aggregate charge state in real-time, the entire city of Lagos becomes a single organism pulsing with collective energy</li>
 <li>Combo multipliers reward sustained engagement (BPM-driven velocity chains)</li>
 <li>Quest bursts unlock animated reward states</li>
 </ul>
 <p><strong>Why this matters for investors:</strong>
-VibeReactor solves the cold-start engagement problem. New users in low-density markets have an intrinsic reason to tap — they are contributing to something larger than their individual rating. The mechanic creates emotional investment in the city&#39;s collective charge state. Retention is tied not just to &quot;did I get useful information?&quot; but &quot;did I contribute to tonight&#39;s surge?&quot;</p>
-<p>This is VIIBE&#39;s most defensible product moment. It cannot be replicated by a feature addition to an existing app — it requires the entire scout network, geofence infrastructure, collective state management, and real-time aggregation pipeline to exist first. Incumbents cannot bolt this on.</p>
+VibeReactor solves the cold-start engagement problem. New users in low-density markets have an intrinsic reason to tap, they are contributing to something larger than their individual rating. The mechanic creates emotional investment in the city&#39;s collective charge state. Retention is tied not just to &quot;did I get useful information?&quot; but &quot;did I contribute to tonight&#39;s surge?&quot;</p>
+<p>This is VIIBE&#39;s most defensible product moment. It cannot be replicated by a feature addition to an existing app, it requires the entire scout network, geofence infrastructure, collective state management, and real-time aggregation pipeline to exist first. Incumbents cannot bolt this on.</p>
 <hr>
 <p><em>Contact: [<a href="mailto:founder@viibe.app">founder@viibe.app</a>]</em>
 <em>Deck version: March 2026</em></p>
