@@ -36,7 +36,9 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -84,6 +86,12 @@
               "resizeMode": "horizontal|vertical"
             }
           ]
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "VIIBE reads how loud a room is and how fast the music beats. No audio is recorded or stored."
         }
       ]
     ],
