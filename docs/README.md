@@ -14,6 +14,7 @@ place to edit.
 | [`docs/LAUNCH_AUDIT.md`](LAUNCH_AUDIT.md) | What ships at launch, what stays dark, what gets deleted. |
 | [`docs/PITCH_DECK.md`](PITCH_DECK.md) | The investor deck. |
 | [`docs/FINANCIAL_MODEL.md`](FINANCIAL_MODEL.md) | The numbers. |
+| [`docs/ENERGY.md`](ENERGY.md) | **What Energy means.** The definition, the scale, the blend, decay, and the honest limits. Every score and slide defers to it. |
 | [`docs/ASSISTANTS.md`](ASSISTANTS.md) | Siri / ChatGPT / Claude / Gemini integration state and steps. |
 | [`APP_FEATURES.md`](../APP_FEATURES.md) | Feature reference for what exists in the app. |
 

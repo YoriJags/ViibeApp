@@ -39,6 +39,9 @@ fastest, where a buyer already exists, and where the scout habit forms.
 
 ---
 
+**The word this all rests on is defined in [`docs/ENERGY.md`](./docs/ENERGY.md).**
+If a claim about Energy contradicts that file, that file wins.
+
 ## The spine: three layers
 
 Everything in this project belongs to exactly one layer. If you cannot place a
