@@ -25,13 +25,15 @@ export default function AmbientOptInModal({ visible, onAccept, onDecline }: Prop
             <Ionicons name="mic-outline" size={32} color="#a855f7" />
           </View>
 
-          <Text style={styles.title}>Sound Level Detection</Text>
+          <Text style={styles.title}>Sound sensing</Text>
           <Text style={styles.body}>
-            VIIBE can measure how loud the room is to verify the energy — like a dB meter.
+            VIIBE can read how loud the room is and how fast the music is beating,
+            to back up what scouts are reporting.
           </Text>
           <Text style={styles.body}>
             <Text style={styles.bold}>No audio is ever recorded or stored.</Text>
-            {' '}Only a single number (sound level) is sent, then discarded.
+            {' '}Two numbers leave your phone: the sound level and the beats per
+            minute. Never the sound itself, so nothing you say can be heard or kept.
           </Text>
           <Text style={styles.note}>
             You can turn this off anytime in Settings.

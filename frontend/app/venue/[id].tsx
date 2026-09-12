@@ -57,7 +57,7 @@ import VibeMomentum from '../../src/components/VibeMomentum';
 import NarrativeDivider from '../../src/components/NarrativeDivider';
 import analytics, { EVENT } from '../../src/services/analytics';
 import { useDwellTracker } from '../../src/hooks/useDwellTracker';
-import { useAmbientMeter } from '../../src/hooks/useAmbientMeter';
+import { useAudioSensor } from '../../src/hooks/useAudioSensor';
 import AmbientOptInModal from '../../src/components/AmbientOptInModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -118,7 +118,10 @@ export default function VenueDetailScreen() {
 
   const [ambientOptedIn, setAmbientOptedIn]       = useState(false);
   const [showAmbientModal, setShowAmbientModal]   = useState(false);
-  useAmbientMeter(id as string, isWithinGeofence, ambientOptedIn);
+  // Loudness AND tempo. The simpler dB-only meter was what ran before; this
+  // one adds music BPM, which is a different signal from volume. A lounge at
+  // 90bpm and a room at 128bpm can be equally loud and are not the same energy.
+  const audio = useAudioSensor(id as string, isWithinGeofence, ambientOptedIn);
 
   // Show opt-in prompt once when scout first enters geofence
   // ── Orbit heartbeat: tell the venue someone is watching its energy ──────────
