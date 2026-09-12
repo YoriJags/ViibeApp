@@ -1,10 +1,72 @@
 # What VIIBE means by Energy
 
-The canonical definition. Every score, chart, dashboard, API response and pitch
-slide rests on this word, so it is defined here once and everything else defers
-to it. Numbers below are read from the engine, not from an idea of it.
+## Lagos already runs on this
+
+Nobody in Lagos needs to be told that a room has energy. It is the whole basis
+on which the city goes out.
+
+You know the difference between a place that is full and a place that is
+*going*. You have stood in a venue at eleven where the music is right and the
+floor has not decided yet, and been in the same room at one when it has. You
+have walked into somewhere with forty people and known, immediately and without
+counting anything, that it was over. You have also felt the opposite: a half
+empty bar in Ikoyi where the energy is somehow higher than the packed place you
+just left.
+
+That is the signal. It is not abstract and it is not new. It is the most
+discussed subject in Lagos on a Friday night, and every person moving through
+this city on a weekend is already acting on it.
+
+**They are just acting on a broken version of it.**
+
+Right now the signal travels by rumour. A promoter posts that it is mad
+tonight, which he posts every night. Someone's story shows the one corner of
+the room that looked full, filmed an hour ago. A friend who went first sends
+a verdict to the group chat that arrives too late to use. And because Lagos
+traffic makes every wrong decision expensive, acting on that rumour costs you
+an hour of your life and ten thousand naira at a door you should not have paid.
+
+So the energy is real, the demand for it is total, and the transmission is
+garbage.
+
+**VIIBE does not invent this signal. It instruments one the city already runs on.**
+
+## What we mean when we say we measure it
+
+There is a version of this that would be dishonest, and it is the obvious one:
+count heads. Occupancy is easy to measure and it is not what anyone means by
+energy. A packed room can be dead. Twenty people can be electric.
+
+So we measure the thing itself, from the only place it can honestly be read:
+inside the room, by someone standing in it, right now. A scout answers what the
+room feels like in about three seconds. The phone confirms they are there. The
+room's own sound and tempo corroborate. How long people stay corroborates
+again. And the whole reading expires in minutes, because the feeling does.
+
+## How we show it back
+
+Energy is a temperature, so it is rendered as one. The city map runs cool
+where nothing is happening and climbs through ember and amber to white hot
+where a room is at peak. A venue is not a dot on a list; it is a heat source,
+and the field around it glows by how alive it actually is.
+
+That is the whole product in one image: **open the map, and the city looks the
+way it feels.**
+
+> **Yori's note.** This section is the part that should carry your voice rather
+> than mine, because you have stood in these rooms and I have not. Rewrite it
+> in your own words when you get a minute. The spec below is mine; the feeling
+> above should be yours.
 
 ---
+
+# The specification
+
+Everything above is what Energy is. Everything below is how it is computed.
+
+This half is canonical. Every score, chart, dashboard, API response and pitch
+slide rests on this word, so it is defined here once and everything else defers
+to it. The numbers are read from the engine, not from an idea of it.
 
 ## The definition
 
