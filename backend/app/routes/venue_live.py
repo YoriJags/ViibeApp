@@ -585,16 +585,14 @@ def _peak_hour_label(timestamps: list) -> Optional[str]:
     return f"{display}{suffix}"
 
 
-@router.get("/merchant/venues/{venue_id}/lift-report")
-async def get_lift_report(
-    venue_id: str,
-    format: str = "json",
-    authorization: str = Header(default=""),
-):
-    user = await _require_user(authorization)
-    venue = await _require_merchant_for_venue(user, venue_id)
-    venue_name = venue.get("name", "Your venue")
+async def assemble_weekly_report(venue_id: str, venue_name: str):
+    """
+    Build the weekly lift report for one venue.
 
+    Extracted so the merchant endpoint and the Monday delivery job produce
+    byte-identical reports. Two implementations of this would drift, and the
+    one a venue owner receives by email must be the same one they can open.
+    """
     now = _now()
     # Nightlife crosses midnight — group each "night" as a noon→noon window so
     # Friday-evening-into-Saturday-morning reads as one Friday night.
@@ -635,7 +633,18 @@ async def get_lift_report(
     week_end = anchor_noon - timedelta(days=1)
     week_label = f"{week_start.strftime('%b %d')} – {week_end.strftime('%b %d, %Y')}"
 
-    report = build_weekly_report(venue_name, week_label, nights)
+    return build_weekly_report(venue_name, week_label, nights)
+
+
+@router.get("/merchant/venues/{venue_id}/lift-report")
+async def get_lift_report(
+    venue_id: str,
+    format: str = "json",
+    authorization: str = Header(default=""),
+):
+    user = await _require_user(authorization)
+    venue = await _require_merchant_for_venue(user, venue_id)
+    report = await assemble_weekly_report(venue_id, venue.get("name", "Your venue"))
 
     if format == "html":
         return HTMLResponse(render_report_card(report))

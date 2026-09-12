@@ -604,3 +604,24 @@ async def get_freshness(days: int = 14):
     """
     from app.services.freshness import freshness_report
     return await freshness_report(days=days)
+
+
+@router.get("/admin/merchant-reports")
+async def list_merchant_reports(limit: int = 20):
+    """
+    Recent merchant reports and what happened to each. A report that could not
+    be sent is parked with its reason rather than dropped, so this is also the
+    queue of what still owes a venue owner an email.
+    """
+    rows = await db.merchant_reports.find(
+        {}, {"_id": 0, "html": 0}
+    ).sort("created_at", -1).to_list(limit)
+    parked = await db.merchant_reports.count_documents({"status": "parked"})
+    return {"parked_total": parked, "recent": rows}
+
+
+@router.post("/admin/merchant-reports/run")
+async def run_merchant_reports_now():
+    """Build and attempt delivery immediately, without waiting for Monday."""
+    from app.services.merchant_report import run_weekly_reports
+    return await run_weekly_reports()

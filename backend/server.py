@@ -221,6 +221,10 @@ async def startup():
     from app.services.ambient_demo import ambient_enabled, ambient_loop
     if ambient_enabled():
         asyncio.create_task(ambient_loop())
+    # Monday merchant reports: the only moment money can enter
+    from app.services.merchant_report import weekly_reports_enabled, weekly_report_loop
+    if weekly_reports_enabled():
+        asyncio.create_task(weekly_report_loop())
 
 # ===== Socket.IO ASGI App =====
 socket_app = socketio.ASGIApp(sio, app)
