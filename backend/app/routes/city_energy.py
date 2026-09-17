@@ -1,17 +1,29 @@
 """
-Vibe App - City Pulse Route
-Real-time city heartbeat: aggregate score, trend, and 30-min sparkline.
+VIIBE - City Energy
+
+Energy at city scale: the weighted aggregate of every room currently reporting,
+with trend and a 30-minute sparkline.
+
+This is the actual product. A venue reading is the sensor; the city index is
+what the sensors are for. It was called "City Pulse", which collided with Pulse
+Check (the refresh a scout performs). Pulse now means one thing: the act of
+refreshing a reading. See docs/VOCABULARY.md.
+
+The wire keeps the old field names alongside the new ones until shipped clients
+age out. Removing them is a deliberate later step, not a cleanup.
 """
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter
 
 from app.config import db
 
-router = APIRouter(tags=["city_pulse"])
+router = APIRouter(tags=["city_energy"])
 
 
-def _pulse_label(score: float) -> str:
-    """Map aggregate score to city energy label."""
+def _energy_label(score: float) -> str:
+    """Map the aggregate score onto the canonical energy ladder (docs/ENERGY.md).
+    The city uses exactly the same words as a room, because it is the same
+    quantity measured over a wider area."""
     if score >= 85: return "PEAK"
     if score >= 65: return "LIT"
     if score >= 45: return "WARMING"
@@ -19,23 +31,17 @@ def _pulse_label(score: float) -> str:
     return "QUIET"
 
 
-async def compute_city_pulse(city: str) -> dict:
+async def compute_city_energy(city: str) -> dict:
     """
-    Compute the live city pulse. Reusable by both the HTTP endpoint
-    and the Socket.IO broadcast triggered after each rating/reaction.
+    Compute live City Energy. Reusable by both the HTTP endpoint and the
+    Socket.IO broadcast fired after each rating or reaction.
     """
     now = datetime.now(timezone.utc)
     hour_ago = now - timedelta(hours=1)
     thirty_min_ago = now - timedelta(minutes=30)
     midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # Active venues: had a rating or reaction in the last hour
-    active_venues = await db.venues.find(
-        {"city": city, "current_vibe_score": {"$gt": 0}},
-        {"_id": 0, "name": 1, "current_vibe_score": 1, "vibe_state": 1, "total_ratings_24h": 1}
-    ).to_list(200)
-
-    # Filter to venues with recent activity
+    # Venues with a rating or reaction in the last hour
     recent_ratings = await db.ratings.distinct("venue_id", {
         "timestamp": {"$gte": hour_ago}
     })
@@ -43,9 +49,7 @@ async def compute_city_pulse(city: str) -> dict:
         "timestamp": {"$gte": hour_ago}
     })
     active_ids = set(recent_ratings) | set(recent_reaction_venues)
-    active_venues = [v for v in active_venues if v.get("id") or True]
 
-    # Re-fetch active venues properly (include vibe_signature for DNA majority vote)
     active_venues = await db.venues.find(
         {"city": city, "id": {"$in": list(active_ids)}},
         {"_id": 0, "id": 1, "name": 1, "current_vibe_score": 1,
@@ -59,7 +63,7 @@ async def compute_city_pulse(city: str) -> dict:
             v.get("current_vibe_score", 0) * max(v.get("total_ratings_24h", 1), 1)
             for v in active_venues
         )
-        pulse_score = round(weighted_sum / total_weight, 1)
+        energy_score = round(weighted_sum / total_weight, 1)
         top_venue = max(active_venues, key=lambda v: v.get("current_vibe_score", 0))
         trending = {"name": top_venue["name"], "score": int(top_venue["current_vibe_score"])}
         hot_venues = sum(1 for v in active_venues if v.get("current_vibe_score", 0) >= 65)
@@ -76,7 +80,7 @@ async def compute_city_pulse(city: str) -> dict:
                 sig_votes[sig] = sig_votes.get(sig, 0) + weight
         city_vibe_signature = max(sig_votes, key=sig_votes.get) if sig_votes else None
     else:
-        pulse_score = 0
+        energy_score = 0
         trending = None
         hot_venues = 0
         city_vibe_signature = None
@@ -86,8 +90,8 @@ async def compute_city_pulse(city: str) -> dict:
     reaction_scouts = set(await db.reactions.distinct("user_id", {"timestamp": {"$gte": hour_ago}}))
     active_scouts = len(rating_scouts | reaction_scouts)
 
-    # Pulses tonight (quick pulses dropped today)
-    pulses_tonight = await db.quick_pulses.count_documents({
+    # Readings taken tonight (quick reads dropped today)
+    readings_tonight = await db.quick_pulses.count_documents({
         "city": city,
         "timestamp": {"$gte": midnight}
     })
@@ -112,7 +116,7 @@ async def compute_city_pulse(city: str) -> dict:
 
     # Build sparkline oldest→newest (index 5 → index 0)
     sparkline = []
-    last_val = pulse_score
+    last_val = energy_score
     for i in range(5, -1, -1):
         if i in buckets and buckets[i]:
             val = round(sum(buckets[i]) / len(buckets[i]), 1)
@@ -129,23 +133,37 @@ async def compute_city_pulse(city: str) -> dict:
     else:
         trend = "stable"
 
+    label = _energy_label(energy_score)
+
     return {
         "city":                city,
-        "pulse_score":         pulse_score,
-        "pulse_label":         _pulse_label(pulse_score),
+        "energy_score":        energy_score,
+        "energy_label":        label,
         "trend":               trend,
         "active_scouts":       active_scouts,
         "live_venues":         len(active_venues),
         "hot_venues":          hot_venues,
-        "pulses_tonight":      pulses_tonight,
+        "readings_tonight":    readings_tonight,
         "trending_venue":      trending,
-        "sparkline":           sparkline,   # 6 values, oldest → newest, 5-min buckets
+        "sparkline":           sparkline,   # 6 values, oldest to newest, 5-min buckets
         "city_vibe_signature": city_vibe_signature,  # HIGH_VELOCITY / STEADY_GROOVE / ATMOSPHERIC_CHILL
         "updated_at":          now.isoformat(),
+
+        # Deprecated aliases for clients shipped before the rename. Remove once
+        # the old APK is out of circulation.
+        "pulse_score":         energy_score,
+        "pulse_label":         label,
+        "pulses_tonight":      readings_tonight,
     }
 
 
-@router.get("/city-pulse/{city}")
-async def get_city_pulse(city: str):
-    """GET /api/city-pulse/{city} — live city heartbeat with 30-min sparkline."""
-    return await compute_city_pulse(city)
+@router.get("/city-energy/{city}")
+async def get_city_energy(city: str):
+    """GET /api/city-energy/{city}: live City Energy with a 30-minute sparkline."""
+    return await compute_city_energy(city)
+
+
+@router.get("/city-pulse/{city}", include_in_schema=False)
+async def get_city_pulse_deprecated(city: str):
+    """Deprecated alias for shipped clients. Use /city-energy/{city}."""
+    return await compute_city_energy(city)

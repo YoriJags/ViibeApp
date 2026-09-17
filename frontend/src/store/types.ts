@@ -218,19 +218,19 @@ export interface LivePush {
   heading_count?: number;
 }
 
-export type CityPulseLabel = 'QUIET' | 'CHILL' | 'WARMING' | 'LIT' | 'PEAK';
+export type CityEnergyLabel = 'QUIET' | 'CHILL' | 'WARMING' | 'LIT' | 'PEAK';
 
 export type VibeSignature = 'HIGH_VELOCITY' | 'STEADY_GROOVE' | 'ATMOSPHERIC_CHILL';
 
-export interface CityPulseData {
+export interface CityEnergyData {
   city: string;
-  pulse_score: number;
-  pulse_label: CityPulseLabel;
+  energy_score: number;
+  energy_label: CityEnergyLabel;
   trend: 'heating_up' | 'cooling_down' | 'stable';
   active_scouts: number;
   live_venues: number;
   hot_venues: number;
-  pulses_tonight: number;
+  readings_tonight: number;
   trending_venue?: { name: string; score: number };
   sparkline: number[];
   /** Majority-vote Vibe DNA from all active venues — drives Dynamic Island liquid color */

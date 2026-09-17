@@ -1,5 +1,5 @@
 /**
- * ScoutAuraChip — compact aura level strip for the home feed header.
+ * ScoutHeatChip — compact heat level strip for the home feed header.
  * Always visible above the explore feed. Taps through to profile.
  * This is the persistent signal that "you are in a game worth playing."
  */
@@ -8,7 +8,7 @@ import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useVibeStore } from '../store/vibeStore';
-import { DEMO_AURA } from './ScoutAuraCard';
+import { DEMO_HEAT } from './ScoutHeatCard';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -16,31 +16,31 @@ const LEVEL_ICONS: Record<string, string> = {
   shadow: 'eye-off', rising: 'trending-up', scene_maker: 'star', hot: 'flame', vibe_god: 'flash',
 };
 
-export default function ScoutAuraChip() {
+export default function ScoutHeatChip() {
   const router         = useRouter();
   const user           = useVibeStore(s => s.user);
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const isDemoMode     = useVibeStore(s => s.isDemoMode);
 
-  const [aura, setAura] = useState(isDemoMode ? DEMO_AURA : null);
-  const barAnim  = useRef(new Animated.Value(isDemoMode ? DEMO_AURA.heat_progress : 0)).current;
+  const [heat, setHeat] = useState(isDemoMode ? DEMO_HEAT : null);
+  const barAnim  = useRef(new Animated.Value(isDemoMode ? DEMO_HEAT.heat_progress : 0)).current;
   const glowAnim = useRef(new Animated.Value(0.6)).current;
   const bumpAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    if (isDemoMode) { setAura(DEMO_AURA); return; }
+    if (isDemoMode) { setHeat(DEMO_HEAT); return; }
     if (!user?.id) return;
-    fetch(`${API_URL}/api/users/${user.id}/aura`, { headers: getAuthHeaders() })
+    fetch(`${API_URL}/api/users/${user.id}/heat`, { headers: getAuthHeaders() })
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setAura(data); })
+      .then(data => { if (data) setHeat(data); })
       .catch(() => {});
   }, [user?.id, isDemoMode]);
 
-  const _level    = (aura as any)?.heat_level ?? (aura as any)?.aura_level ?? 'cold';
-  const _progress = (aura as any)?.heat_progress ?? (aura as any)?.aura_progress ?? 0;
+  const _level    = (heat as any)?.heat_level ?? 'cold';
+  const _progress = (heat as any)?.heat_progress ?? 0;
 
   useEffect(() => {
-    if (!aura) return;
+    if (!heat) return;
     Animated.spring(barAnim, { toValue: _progress, tension: 60, friction: 12, useNativeDriver: false }).start();
     Animated.sequence([
       Animated.timing(bumpAnim, { toValue: 1.06, duration: 150, useNativeDriver: true }),
@@ -50,7 +50,7 @@ export default function ScoutAuraChip() {
 
   // Glow pulse for hot/on_fire
   useEffect(() => {
-    if (!aura || !['hot', 'on_fire', 'vibe_god'].includes(_level)) { glowAnim.setValue(0.7); return; }
+    if (!heat || !['hot', 'on_fire', 'vibe_god'].includes(_level)) { glowAnim.setValue(0.7); return; }
     const loop = Animated.loop(Animated.sequence([
       Animated.timing(glowAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
       Animated.timing(glowAnim, { toValue: 0.4, duration: 700, useNativeDriver: true }),
@@ -59,14 +59,14 @@ export default function ScoutAuraChip() {
     return () => loop.stop();
   }, [_level]);
 
-  if (!aura) return null;
+  if (!heat) return null;
 
-  // Support both new heat_ keys (DEMO_AURA / updated backend) and legacy aura_ keys
-  const d         = aura as any;
-  const color     = d.heat_color ?? d.aura_color ?? '#3A3A4E';
-  const label     = (d.heat_label ?? d.aura_label ?? 'Cold') as string;
-  const level     = (d.heat_level ?? d.aura_level ?? 'cold') as string;
-  const progress  = (d.heat_progress ?? d.aura_progress ?? 0) as number;
+  // The backend emits heat_ keys; aura_ aliases remain only for old clients.
+  const d         = heat as any;
+  const color     = d.heat_color ?? d.heat_color ?? '#3A3A4E';
+  const label     = (d.heat_label ?? d.heat_label ?? 'Cold') as string;
+  const level     = (d.heat_level ?? d.heat_level ?? 'cold') as string;
+  const progress  = (d.heat_progress ?? d.heat_progress ?? 0) as number;
   const iconName  = (LEVEL_ICONS[level] ?? 'star') as any;
   const pct       = Math.round(progress * 100);
 
@@ -89,7 +89,7 @@ export default function ScoutAuraChip() {
         {/* Label */}
         <View style={styles.textBlock}>
           <Text style={[styles.levelName, { color }]}>{label.toUpperCase()}</Text>
-          <Text style={styles.subLabel}>SCOUT AURA</Text>
+          <Text style={styles.subLabel}>TONIGHT'S HEAT</Text>
         </View>
 
         {/* Mini progress bar */}

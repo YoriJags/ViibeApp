@@ -46,7 +46,7 @@ export interface VenueSlice {
   fetchVenues: (city?: string) => Promise<void>;
   fetchVenue: (id: string) => Promise<Venue | null>;
   fetchCities: () => Promise<void>;
-  submitRating: (venueId: string, energy: string, capacity: string, gate: string, coordinates: { lat: number; lng: number }, photoBase64?: string) => Promise<any>;
+  submitRating: (venueId: string, energy: string, capacity: string, gate: string, coordinates: { lat: number; lng: number }, photoBase64?: string, staked?: boolean) => Promise<any>;
   getUserRatingStatus: (venueId: string) => Promise<any>;
   recordDirectionClick: (venueId: string) => Promise<void>;
   fetchLobby: () => Promise<void>;
@@ -145,7 +145,7 @@ export const createVenueSlice: StateCreator<
     } catch { return null; }
   },
 
-  submitRating: async (venueId, energy, capacity, gate, coordinates, photoBase64) => {
+  submitRating: async (venueId, energy, capacity, gate, coordinates, photoBase64, staked) => {
     const { user, isOnline, isDemoMode, addPendingRating } = get();
     if (!user) throw new Error('User not logged in');
 
@@ -163,7 +163,7 @@ export const createVenueSlice: StateCreator<
       const response = await fetch(`${API_URL}/api/ratings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.id, venue_id: venueId, energy, capacity, gate, coordinates, photo_base64: photoBase64 }),
+        body: JSON.stringify({ user_id: user.id, venue_id: venueId, energy, capacity, gate, coordinates, photo_base64: photoBase64, staked: !!staked }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || 'Failed to submit rating');

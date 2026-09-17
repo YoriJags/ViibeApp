@@ -1,8 +1,8 @@
 /**
- * CrewIntelligence — AI cartel venue picks.
+ * CrewIntelligence — AI crew venue picks.
  * One tap → Claude analyses every crew member's persona + tonight's live venue data
  * and returns ranked picks with reasons.
- * "The AI read your whole cartel. Here's where you should all be."
+ * "The AI read your whole crew. Here's where you should all be."
  */
 import React, { useRef, useState } from 'react';
 import {
@@ -23,14 +23,14 @@ interface VenuePick {
   area: string;
   energy_level: string;
   vibe_score: number;
-  match_score: number;   // 0–100, how well this fits the cartel
+  match_score: number;   // 0–100, how well this fits the crew
   reason: string;        // AI explanation
   best_for: string;      // "everyone" | "turn-up heads" | etc.
 }
 
 interface IntelResult {
   picks: VenuePick[];
-  crew_read: string;     // One-line AI read of the cartel vibe
+  crew_read: string;     // One-line AI read of the crew vibe
   ai_powered: boolean;
 }
 
@@ -40,14 +40,14 @@ const ENERGY_COLORS: Record<string, string> = {
 };
 
 const DEMO_INTEL: IntelResult = {
-  crew_read: "Your cartel is split — 2 turn-up heads and 1 chill set. You need a venue that runs both vibes.",
+  crew_read: "Your crew is split — 2 turn-up heads and 1 chill set. You need a venue that runs both vibes.",
   ai_powered: true,
   picks: [
     {
       venue_id: '1', venue_name: 'DNA Nightclub', area: 'Victoria Island',
       energy_level: 'peak', vibe_score: 94, match_score: 92,
       reason: "High energy, good mix of music — the turn-up heads go first, the chill set joins when it's right. Everyone wins.",
-      best_for: 'Full cartel',
+      best_for: 'Full crew',
     },
     {
       venue_id: '2', venue_name: 'Club Quilox', area: 'Lekki Phase 1',
@@ -58,7 +58,7 @@ const DEMO_INTEL: IntelResult = {
     {
       venue_id: '3', venue_name: 'Ember Creek', area: 'Ikoyi',
       energy_level: 'charged', vibe_score: 73, match_score: 65,
-      reason: "Luxe setting with a building scene. Good if the cartel wants to start slow and escalate.",
+      reason: "Luxe setting with a building scene. Good if the crew wants to start slow and escalate.",
       best_for: 'Chill-to-turn-up',
     },
   ],
@@ -151,7 +151,7 @@ export default function CrewIntelligence({ visible, onClose, crewName, memberPer
             <View style={styles.headerLeft}>
               <Ionicons name="sparkles" size={16} color="#9933FF" />
               <View>
-                <Text style={styles.headerTitle}>CARTEL INTEL</Text>
+                <Text style={styles.headerTitle}>CREW INTEL</Text>
                 <Text style={styles.headerSub}>{crewName}</Text>
               </View>
             </View>
@@ -167,7 +167,7 @@ export default function CrewIntelligence({ visible, onClose, crewName, memberPer
           {loading ? (
             <View style={styles.loadingBlock}>
               <ActivityIndicator color="#9933FF" size="large" />
-              <Text style={styles.loadingTitle}>Reading your cartel...</Text>
+              <Text style={styles.loadingTitle}>Reading your crew...</Text>
               <Text style={styles.loadingDesc}>Analysing {memberPersonas.length} members against tonight's scene</Text>
             </View>
           ) : intel ? (
@@ -181,14 +181,14 @@ export default function CrewIntelligence({ visible, onClose, crewName, memberPer
                 <View style={styles.crewReadHeader}>
                   <Ionicons name="flash" size={12} color="#9933FF" />
                   <Text style={styles.crewReadLabel}>
-                    {intel.ai_powered ? 'AI CARTEL READ' : 'CARTEL READ'}
+                    {intel.ai_powered ? 'AI CREW READ' : 'CREW READ'}
                   </Text>
                 </View>
                 <Text style={styles.crewReadText}>{intel.crew_read}</Text>
               </LinearGradient>
 
               {/* Picks */}
-              <Text style={styles.picksLabel}>TONIGHT'S PICKS FOR YOUR CARTEL</Text>
+              <Text style={styles.picksLabel}>TONIGHT'S PICKS FOR YOUR CREW</Text>
 
               {intel.picks.map((pick, i) => {
                 const color = ENERGY_COLORS[pick.energy_level] ?? '#6655FF';

@@ -1,7 +1,7 @@
 /**
- * CartelBattle — Cross-venue tap-off between two cartels.
+ * CrewBattle — Cross-venue tap-off between two crews.
  *
- * Captain issues a challenge to another cartel by invite code.
+ * Captain issues a challenge to another crew by invite code.
  * All members tap for their side. Rate-limited to 1 tap per 5 seconds.
  * 30-minute battle. Winner crew earns bragging rights + clout bonus.
  *
@@ -38,7 +38,7 @@ interface BattleSide {
   share: number;
 }
 
-interface CartelBattleData {
+interface CrewBattleData {
   id: string;
   status: 'pending' | 'active' | 'ended';
   seconds_left: number | null;
@@ -56,20 +56,20 @@ interface Props {
 }
 
 // ── Demo data ─────────────────────────────────────────────────────────────────
-const DEMO_BATTLE: CartelBattleData = {
+const DEMO_BATTLE: CrewBattleData = {
   id: 'demo-battle-1',
   status: 'active',
   seconds_left: 912,
   crew_a: { id: 'c1', name: 'Night Wolves', venue_name: 'DNA Nightclub', taps: 47, share: 61 },
-  crew_b: { id: 'c2', name: 'Vibez Cartel', venue_name: 'Club Quilox', taps: 30, share: 39 },
+  crew_b: { id: 'c2', name: 'Crew', venue_name: 'Club Quilox', taps: 30, share: 39 },
   total_taps: 77,
   winner: null,
 };
 
-export default function CartelBattle({ crewId, crewName, isCaptain, isDemoMode }: Props) {
+export default function CrewBattle({ crewId, crewName, isCaptain, isDemoMode }: Props) {
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
 
-  const [battle, setBattle] = useState<CartelBattleData | null>(null);
+  const [battle, setBattle] = useState<CrewBattleData | null>(null);
   const [mySide, setMySide] = useState<'a' | 'b' | null>(null);
   const [loading, setLoading] = useState(true);
   const [tapping, setTapping] = useState(false);
@@ -97,7 +97,7 @@ export default function CartelBattle({ crewId, crewName, isCaptain, isDemoMode }
       return;
     }
     try {
-      const res = await fetch(`${API_URL}/api/cartel-battles/active`, {
+      const res = await fetch(`${API_URL}/api/crew-battles/active`, {
         headers: getAuthHeaders(),
       });
       if (res.ok) {
@@ -159,7 +159,7 @@ export default function CartelBattle({ crewId, crewName, isCaptain, isDemoMode }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     tapPulseAnim(myPulse);
     try {
-      const res = await fetch(`${API_URL}/api/cartel-battles/${battle.id}/tap`, {
+      const res = await fetch(`${API_URL}/api/crew-battles/${battle.id}/tap`, {
         method: 'POST',
         headers: getAuthHeaders(),
       });
@@ -190,10 +190,10 @@ export default function CartelBattle({ crewId, crewName, isCaptain, isDemoMode }
 
   const handleChallenge = async () => {
     const code = inviteInput.trim().toUpperCase();
-    if (code.length < 4) { Alert.alert('Enter the enemy cartel\'s invite code'); return; }
+    if (code.length < 4) { Alert.alert('Enter the enemy crew\'s invite code'); return; }
     setChallenging(true);
     try {
-      const res = await fetch(`${API_URL}/api/cartel-battles/challenge`, {
+      const res = await fetch(`${API_URL}/api/crew-battles/challenge`, {
         method: 'POST',
         headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ invite_code: code }),
@@ -216,7 +216,7 @@ export default function CartelBattle({ crewId, crewName, isCaptain, isDemoMode }
     if (!battle) return;
     setAccepting(true);
     try {
-      const res = await fetch(`${API_URL}/api/cartel-battles/${battle.id}/accept`, {
+      const res = await fetch(`${API_URL}/api/crew-battles/${battle.id}/accept`, {
         method: 'POST',
         headers: getAuthHeaders(),
       });
@@ -243,7 +243,7 @@ export default function CartelBattle({ crewId, crewName, isCaptain, isDemoMode }
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <Ionicons name="flash" size={13} color="#FF3366" />
-              <Text style={styles.headerLabel}>CARTEL BATTLE</Text>
+              <Text style={styles.headerLabel}>CREW BATTLE</Text>
             </View>
           </View>
           <View style={styles.noBattleWrap}>
@@ -255,7 +255,7 @@ export default function CartelBattle({ crewId, crewName, isCaptain, isDemoMode }
                 activeOpacity={0.8}
               >
                 <Ionicons name="flash" size={14} color="#FF3366" />
-                <Text style={styles.challengeBtnText}>CHALLENGE A CARTEL</Text>
+                <Text style={styles.challengeBtnText}>CHALLENGE A CREW</Text>
               </TouchableOpacity>
             )}
             {!isCaptain && (
@@ -298,7 +298,7 @@ export default function CartelBattle({ crewId, crewName, isCaptain, isDemoMode }
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Ionicons name="flash" size={13} color="#FF3366" />
-            <Text style={styles.headerLabel}>CARTEL BATTLE</Text>
+            <Text style={styles.headerLabel}>CREW BATTLE</Text>
           </View>
           <View style={styles.headerRight}>
             {isPending ? (
@@ -450,8 +450,8 @@ function ChallengeModal({
         <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} activeOpacity={1} />
         <LinearGradient colors={['#0A0015', '#060010']} style={modal.sheet}>
           <View style={modal.handle} />
-          <Text style={modal.title}>Challenge a Cartel</Text>
-          <Text style={modal.sub}>Enter the enemy cartel's invite code. Your captain's check-in location will be used as your base.</Text>
+          <Text style={modal.title}>Challenge a Crew</Text>
+          <Text style={modal.sub}>Enter the enemy crew's invite code. Your captain's check-in location will be used as your base.</Text>
           <TextInput
             style={modal.input}
             placeholder="INVITE CODE (e.g. ABC123)"

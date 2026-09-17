@@ -172,7 +172,7 @@ Zustand store split into `PersistedState` (survives app restart via AsyncStorage
 
 **Authentication:** Session token pattern — UUID stored in `user_sessions` MongoDB collection with TTL index; extracted from `Authorization: Bearer <token>` header or `session_token` cookie; FastAPI dependencies `require_auth`, `require_admin`, `require_merchant`, `require_venue_owner` in `backend/app/services/auth.py`; frontend stores `sessionToken` in Zustand persist (AsyncStorage)
 
-**Real-time:** Socket.IO server (`sio`) defined in `backend/app/config.py`, event handlers registered in `backend/app/services/realtime.py` via side-effect import; broadcasts on `venue_update`, `leaderboard_update`, `city_pulse`, `global_vibe_charge`, `kinetic_tap` events
+**Real-time:** Socket.IO server (`sio`) defined in `backend/app/config.py`, event handlers registered in `backend/app/services/realtime.py` via side-effect import; broadcasts on `venue_update`, `leaderboard_update`, `city_energy`, `global_vibe_charge`, `kinetic_tap` events
 
 ---
 

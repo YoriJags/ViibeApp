@@ -12,7 +12,7 @@ const FEATURES = [
   { icon: '🧬', text: 'Vibe DNA — behavioral fingerprint powering personalised picks', color: C.purple },
   { icon: '✨', text: 'Ask Vibe — AI concierge (Claude API path ready to activate)', color: C.cyan },
   { icon: '📊', text: 'Merchant intelligence — live analytics + campaign ROI tools', color: C.green },
-  { icon: '⚡', text: 'City Pulse — real-time city heartbeat, 247 scouts active tonight', color: C.orange },
+  { icon: '⚡', text: 'City Energy — real-time city heartbeat, 247 scouts active tonight', color: C.orange },
 ];
 
 function CheckItem({ item, frame, delay }: { item: typeof FEATURES[0]; frame: number; delay: number }) {

@@ -1,6 +1,6 @@
 /**
  * TopThreeStrip — Horizontal strip of tonight's top 3 venues by vibe score.
- * Goes below CityPulseBar on the home screen.
+ * Goes below CityEnergyBar on the home screen.
  * Tapping a card navigates to the venue detail page.
  */
 import React, { useRef, useEffect } from 'react';

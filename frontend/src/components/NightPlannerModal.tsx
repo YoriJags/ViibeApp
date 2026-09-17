@@ -257,7 +257,7 @@ export default function NightPlannerModal({ visible, onClose, city }: NightPlann
           {isEmpty && (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>Ask me anything</Text>
-              <Text style={styles.emptySub}>I'll find the right scene in {city.charAt(0).toUpperCase() + city.slice(1)} — clubs, restaurants, events, brunch</Text>
+              <Text style={styles.emptySub}>I'll find the right scene in {city.charAt(0).toUpperCase() + city.slice(1)}: clubs, restaurants, events, brunch</Text>
               <View style={styles.suggestionsGrid}>
                 {SUGGESTED_PROMPTS.map((p, i) => (
                   <TouchableOpacity key={i} style={styles.suggestionChip} onPress={() => handleSend(p)} activeOpacity={0.7}>

@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import {
   PendingRating, PulseDrop, StreakData, ActiveCheckin,
-  Crew, CrewMemberLocation, CrewVote, VibeDNA, CityPulseData,
+  Crew, CrewMemberLocation, CrewVote, VibeDNA, CityEnergyData,
 } from '../types';
 import type { VibeStore } from '../vibeStore';
 
@@ -19,7 +19,7 @@ export interface ScoutSlice {
   crewLocations: CrewMemberLocation[];
   ghostMode: boolean;
   vibeDNA: VibeDNA | null;
-  cityPulse: CityPulseData | null;
+  cityEnergy: CityEnergyData | null;
   demoRatedVenues: Record<string, number>;
   demoPulsedVenues: Record<string, number>;
 
@@ -41,7 +41,7 @@ export interface ScoutSlice {
   fetchCrewLocations: (crewId: string) => Promise<void>;
   toggleGhostMode: () => void;
   fetchVibeDNA: (userId: string) => Promise<void>;
-  fetchCityPulse: (city: string) => Promise<void>;
+  fetchCityEnergy: (city: string) => Promise<void>;
   dropQuickPulse: (venueId: string, lat: number, lng: number) => Promise<{ success: boolean; clout_earned?: number }>;
 }
 
@@ -61,7 +61,7 @@ export const createScoutSlice: StateCreator<
   crewLocations: [],
   ghostMode: false,
   vibeDNA: null,
-  cityPulse: null,
+  cityEnergy: null,
   demoRatedVenues: {},
   demoPulsedVenues: {},
 
@@ -252,20 +252,20 @@ export const createScoutSlice: StateCreator<
     } catch {}
   },
 
-  fetchCityPulse: async (city) => {
+  fetchCityEnergy: async (city) => {
     const { isDemoMode } = get();
     if (isDemoMode) {
       const { DEMO_CITY_PULSE } = require('../../data/demoData');
-      set({ cityPulse: { ...DEMO_CITY_PULSE, city } });
+      set({ cityEnergy: { ...DEMO_CITY_PULSE, city } });
       return;
     }
     try {
-      const res = await fetch(`${API_URL}/api/city-pulse/${city}`);
+      const res = await fetch(`${API_URL}/api/city-energy/${city}`);
       if (res.ok) {
         const data = await res.json();
-        set({ cityPulse: data });
+        set({ cityEnergy: data });
         // Trigger city charge flag when pulse crosses 70%
-        if (data.pulse_score > 70) {
+        if (data.energy_score > 70) {
           set({ cityChargeActive: true });
         } else {
           set({ cityChargeActive: false });
@@ -285,7 +285,7 @@ export const createScoutSlice: StateCreator<
         user: state.user ? { ...state.user, clout_points: (state.user.clout_points || 0) + 3 } : state.user,
       }));
       const { DEMO_CITY_PULSE } = require('../../data/demoData');
-      set((state) => ({ cityPulse: state.cityPulse ? { ...state.cityPulse, pulses_tonight: state.cityPulse.pulses_tonight + 1 } : { ...DEMO_CITY_PULSE, pulses_tonight: DEMO_CITY_PULSE.pulses_tonight + 1 } }));
+      set((state) => ({ cityEnergy: state.cityEnergy ? { ...state.cityEnergy, readings_tonight: state.cityEnergy.readings_tonight + 1 } : { ...DEMO_CITY_PULSE, readings_tonight: DEMO_CITY_PULSE.readings_tonight + 1 } }));
       return { success: true, clout_earned: 3 };
     }
 
@@ -299,7 +299,7 @@ export const createScoutSlice: StateCreator<
       if (data.clout_earned) {
         set((state) => ({ user: state.user ? { ...state.user, clout_points: (state.user.clout_points || 0) + data.clout_earned } : state.user }));
       }
-      get().fetchCityPulse(get().selectedCity);
+      get().fetchCityEnergy(get().selectedCity);
       return { success: true, clout_earned: data.clout_earned };
     } catch { return { success: false }; }
   },

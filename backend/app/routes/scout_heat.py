@@ -1,32 +1,41 @@
 """
-Tonight's Heat — nightly Scout Heat score. Resets each night at 5AM.
+Tonight's Heat: the nightly Scout Heat score. Resets each night at 5AM.
 
-Heat is about what you did TONIGHT, not your career history.
-Every night is a clean slate. Anyone can be On Fire.
+Heat is about what YOU did tonight, not your career history. Every night is a
+clean slate, and anyone can be On Fire.
 
 Levels:
-  Cold     (0 pts)  — Not out yet tonight
-  Warming  (1-9)    — You showed up
-  Hot      (10-24)  — You're moving
-  On Fire  (25+)    — The scene feels you
+  Cold    (0 pts)   Not out yet tonight
+  Moving  (1-9)     You showed up
+  Hot     (10-24)   You are working
+  On Fire (25+)     The scene feels you
 
-Also tracks: hot_nights (career count of nights where user reached Hot or above).
-"47 Hot Nights" is your honest, unfakeable reputation.
+Also tracks hot_nights, the career count of nights the user reached Hot or
+above. "47 Hot Nights" is an honest, unfakeable reputation, because it can only
+be earned by being in rooms.
+
+This describes a PERSON, never a room, which is why none of its words appear on
+the energy ladder. The second level used to be "Warming" and collided with
+energy's WARMING. See docs/VOCABULARY.md.
+
+This module was called `aura.py`, a name that appeared nowhere in its own
+contents. Nothing was ever stored or spent as "aura": there is no such currency
+and there never was. Only clout and coins exist.
 
 Routes:
-  GET /api/me/aura          — Current user's heat (authenticated)
-  GET /api/users/:id/aura   — Any user's public heat
+  GET /api/me/heat          Current user's heat (authenticated)
+  GET /api/users/:id/heat   Any user's public heat
 """
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from app.config import db
 from app.services.auth import require_auth
 
-router = APIRouter(tags=["aura"])
+router = APIRouter(tags=["scout_heat"])
 
 HEAT_LEVELS = [
     (0,  0,   "cold",     "Cold",     "#3A3A4E"),
-    (1,  9,   "warming",  "Warming",  "#6655FF"),
+    (1,  9,   "moving",   "Moving",   "#6655FF"),
     (10, 24,  "hot",      "Hot",      "#FF9933"),
     (25, 9999, "on_fire", "On Fire",  "#FF3366"),
 ]
@@ -123,7 +132,7 @@ async def _compute_heat(user_id: str) -> dict:
         "bolts_tonight": bolts_tonight,
         "hot_nights": hot_nights_count,
         "streak_days": streak_days,
-        # Backwards-compat keys (ScoutAuraChip reads these)
+        # Deprecated keys for clients shipped before the rename.
         "aura_level": lv,
         "aura_label": lbl,
         "aura_color": color,
@@ -131,13 +140,15 @@ async def _compute_heat(user_id: str) -> dict:
     }
 
 
-@router.get("/me/aura")
-async def get_my_aura(user: dict = Depends(require_auth)):
+@router.get("/me/heat")
+@router.get("/me/aura", include_in_schema=False)  # deprecated alias
+async def get_my_heat(user: dict = Depends(require_auth)):
     return await _compute_heat(user["id"])
 
 
-@router.get("/users/{user_id}/aura")
-async def get_user_aura(user_id: str):
+@router.get("/users/{user_id}/heat")
+@router.get("/users/{user_id}/aura", include_in_schema=False)  # deprecated alias
+async def get_user_heat(user_id: str):
     user = await db.users.find_one({"id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

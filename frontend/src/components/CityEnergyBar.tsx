@@ -1,8 +1,8 @@
 /**
- * CityPulseBar — Compact city heartbeat bar for the home screen.
+ * CityEnergyBar — Compact city heartbeat bar for the home screen.
  * Shows: city name · live score · trend · 30-min sparkline · scout/venue counts.
- * Tap expands to fullscreen city pulse dashboard.
- * Updates via Socket.IO city_pulse_update event (handled in vibeStore).
+ * Tap expands to fullscreen city energy dashboard.
+ * Updates via Socket.IO city_energy_update event (handled in vibeStore).
  */
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { CityPulseData } from '../store/vibeStore';
+import { CityEnergyData } from '../store/vibeStore';
 
 const LABEL_COLORS: Record<string, string> = {
   PEAK:    '#FF3366',
@@ -40,8 +40,8 @@ const TREND_COLOR: Record<string, string> = {
   stable:       '#9933FF',
 };
 
-interface CityPulseBarProps {
-  pulse: CityPulseData;
+interface CityEnergyBarProps {
+  pulse: CityEnergyData;
   onPress?: () => void;
 }
 
@@ -73,18 +73,18 @@ const sparkSt = StyleSheet.create({
 });
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function CityPulseBar({ pulse, onPress }: CityPulseBarProps) {
+export default function CityEnergyBar({ pulse, onPress }: CityEnergyBarProps) {
   const pulseAnim    = useRef(new Animated.Value(0.7)).current;
   const dotAnim      = useRef(new Animated.Value(1)).current;
   const scoutsScale  = useRef(new Animated.Value(1)).current;
   const venuesScale  = useRef(new Animated.Value(1)).current;
   const [fullscreen, setFullscreen] = useState(false);
 
-  const color = LABEL_COLORS[pulse.pulse_label] ?? LABEL_COLORS.CHILL;
+  const color = LABEL_COLORS[pulse.energy_label] ?? LABEL_COLORS.CHILL;
   const trendColor = TREND_COLOR[pulse.trend] ?? '#9933FF';
 
   useEffect(() => {
-    if (pulse.pulse_score >= 65) {
+    if (pulse.energy_score >= 65) {
       Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
@@ -94,7 +94,7 @@ export default function CityPulseBar({ pulse, onPress }: CityPulseBarProps) {
     } else {
       pulseAnim.setValue(1);
     }
-  }, [pulse.pulse_score]);
+  }, [pulse.energy_score]);
 
   useEffect(() => {
     Animated.loop(
@@ -140,9 +140,9 @@ export default function CityPulseBar({ pulse, onPress }: CityPulseBarProps) {
             <Text style={styles.cityName}>{cityName.toUpperCase()}</Text>
             <View style={styles.scoreRow}>
               <Animated.Text style={[styles.score, { color, opacity: pulseAnim }]}>
-                {pulse.pulse_score}
+                {pulse.energy_score}
               </Animated.Text>
-              <Text style={[styles.label, { color }]}>{pulse.pulse_label}</Text>
+              <Text style={[styles.label, { color }]}>{pulse.energy_label}</Text>
               <Text style={[styles.trend, { color }]}>
                 {TREND_ICON[pulse.trend]} {TREND_LABEL[pulse.trend]}
               </Text>
@@ -179,7 +179,7 @@ export default function CityPulseBar({ pulse, onPress }: CityPulseBarProps) {
             <View style={fs.header}>
               <View style={fs.headerLeft}>
                 <Animated.View style={[fs.liveDot, { backgroundColor: color, opacity: dotAnim }]} />
-                <Text style={fs.title}>CITY PULSE</Text>
+                <Text style={fs.title}>CITY ENERGY</Text>
                 <Text style={[fs.cityChip, { color }]}>{cityName.toUpperCase()}</Text>
               </View>
               <TouchableOpacity style={fs.closeBtn} onPress={() => setFullscreen(false)}>
@@ -192,9 +192,9 @@ export default function CityPulseBar({ pulse, onPress }: CityPulseBarProps) {
               <LinearGradient colors={[`${color}18`, `${color}06`]} style={[fs.heroCard, { borderColor: color + '30' }]}>
                 <View style={fs.heroLeft}>
                   <Animated.Text style={[fs.heroScore, { color, opacity: pulseAnim }]}>
-                    {pulse.pulse_score}
+                    {pulse.energy_score}
                   </Animated.Text>
-                  <Text style={[fs.heroLabel, { color }]}>{pulse.pulse_label}</Text>
+                  <Text style={[fs.heroLabel, { color }]}>{pulse.energy_label}</Text>
                 </View>
                 <View style={fs.heroRight}>
                   <View style={[fs.trendChip, { backgroundColor: trendColor + '18', borderColor: trendColor + '40' }]}>
@@ -220,7 +220,7 @@ export default function CityPulseBar({ pulse, onPress }: CityPulseBarProps) {
                 </View>
                 <View style={[fs.statCard, { borderColor: color + '40' }]}>
                   <Ionicons name="flash" size={18} color={color} />
-                  <Text style={[fs.statNum, { color }]}>{pulse.pulse_score}</Text>
+                  <Text style={[fs.statNum, { color }]}>{pulse.energy_score}</Text>
                   <Text style={fs.statLabel}>CITY SCORE</Text>
                 </View>
               </View>
@@ -241,10 +241,10 @@ export default function CityPulseBar({ pulse, onPress }: CityPulseBarProps) {
                 <View style={[fs.moodDot, { backgroundColor: color }]} />
                 <View style={{ flex: 1, gap: 4 }}>
                   <Text style={[fs.moodTitle, { color }]}>
-                    {pulse.pulse_label === 'PEAK'    ? 'Lagos is PEAKING right now' :
-                     pulse.pulse_label === 'LIT'     ? 'The city is fully lit tonight' :
-                     pulse.pulse_label === 'WARMING' ? 'The scene is warming up' :
-                     pulse.pulse_label === 'CHILL'   ? 'Chill night — select spots active' :
+                    {pulse.energy_label === 'PEAK'    ? 'Lagos is PEAKING right now' :
+                     pulse.energy_label === 'LIT'     ? 'The city is fully lit tonight' :
+                     pulse.energy_label === 'WARMING' ? 'The scene is warming up' :
+                     pulse.energy_label === 'CHILL'   ? 'Chill night — select spots active' :
                      'Quiet right now — early hours'}
                   </Text>
                   <Text style={fs.moodDesc}>

@@ -20,7 +20,7 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 const DEMO_BRIEFINGS: Record<string, string> = {
   morning: "Oga scout, good morning! Lagos is still catching its breath from last night — Quilox peaked at 94% and nearly 40 scouts passed through. Check your DNA card; you're moving up the rankings fast. Hit a venue tonight and keep that momentum going.",
-  evening: "E don dey time! The city is starting to wake up — energy is building at Club DNA and Escape. Your cartel has 3 members confirmed for tonight, so coordinate before the best spots fill up. First scout to drop a rating gets double clout.",
+  evening: "E don dey time! The city is starting to wake up — energy is building at Club DNA and Escape. Your crew has 3 members confirmed for tonight, so coordinate before the best spots fill up. First scout to drop a rating gets double clout.",
   night:   "The night is LIVE right now. Quilox is at peak, Escape is lit — scouts are rating in real time. Your crew is out, the leaderboard is moving. Drop a rating and secure your position before midnight resets the count.",
 };
 

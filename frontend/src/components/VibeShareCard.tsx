@@ -42,8 +42,8 @@ export interface ShareNightData {
   username:       string;
   scoutStatus?:   string;          // 'Scout', 'Elite Scout', etc.
   rank?:          number;
-  auraLabel:      string;          // 'On Fire', 'Hot', etc.
-  auraColor:      string;          // hex
+  heatLabel:      string;          // 'On Fire', 'Hot', etc.
+  heatColor:      string;          // hex
   heatScore:      number;
   boltsTonight:   number;
   checkinsTonight: number;
@@ -102,7 +102,7 @@ function SparklineCanvas({ values, color }: { values: number[]; color: string })
 
 const CardView = React.forwardRef<View, { data: ShareNightData }>(({ data }, ref) => {
   const dnaColor = data.dnaSignature ? DNA_COLORS[data.dnaSignature] : null;
-  const accentColor = dnaColor ?? data.auraColor;
+  const accentColor = dnaColor ?? data.heatColor;
 
   return (
     <View ref={ref} style={[styles.card, { width: CARD_W }]} collapsable={false}>
@@ -112,7 +112,7 @@ const CardView = React.forwardRef<View, { data: ShareNightData }>(({ data }, ref
       />
 
       {/* Glow wash behind hero */}
-      <View style={[styles.glowWash, { shadowColor: data.auraColor }]} />
+      <View style={[styles.glowWash, { shadowColor: data.heatColor }]} />
 
       {/* ── Top row ── */}
       <View style={styles.topRow}>
@@ -123,18 +123,18 @@ const CardView = React.forwardRef<View, { data: ShareNightData }>(({ data }, ref
       {/* ── Divider ── */}
       <View style={[styles.divider, { backgroundColor: accentColor + '33' }]} />
 
-      {/* ── Hero: aura level ── */}
+      {/* ── Hero: heat level ── */}
       <View style={styles.heroBlock}>
         <Text style={styles.heroSub}>HEAT LEVEL REACHED</Text>
-        <Text style={[styles.heroLevel, { color: data.auraColor }]}>
-          {data.auraLabel.toUpperCase()}
+        <Text style={[styles.heroLevel, { color: data.heatColor }]}>
+          {data.heatLabel.toUpperCase()}
         </Text>
         <View style={styles.heroScoreRow}>
-          <Text style={[styles.heroScore, { color: data.auraColor }]}>{data.heatScore}</Text>
+          <Text style={[styles.heroScore, { color: data.heatColor }]}>{data.heatScore}</Text>
           <Text style={styles.heroScoreUnit}>pts</Text>
           {data.hotNights > 0 && (
-            <View style={[styles.hotNightsBadge, { borderColor: data.auraColor + '55' }]}>
-              <Text style={[styles.hotNightsNum, { color: data.auraColor }]}>{data.hotNights}</Text>
+            <View style={[styles.hotNightsBadge, { borderColor: data.heatColor + '55' }]}>
+              <Text style={[styles.hotNightsNum, { color: data.heatColor }]}>{data.hotNights}</Text>
               <Text style={styles.hotNightsLabel}>hot nights</Text>
             </View>
           )}
@@ -168,7 +168,7 @@ const CardView = React.forwardRef<View, { data: ShareNightData }>(({ data }, ref
         )}
         <View style={styles.sparkWrap}>
           <SparklineCanvas values={data.sparkline} color={accentColor} />
-          <Text style={styles.sparkLabel}>CITY PULSE</Text>
+          <Text style={styles.sparkLabel}>CITY ENERGY</Text>
         </View>
       </View>
 

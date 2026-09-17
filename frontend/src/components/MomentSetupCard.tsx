@@ -189,7 +189,7 @@ export default function MomentSetupCard({ forceVisible, onDismiss }: Props) {
           <View style={styles.infoRow}>
             <Ionicons name="people-outline" size={14} color="rgba(255,255,255,0.35)" />
             <Text style={styles.infoText}>
-              When 5+ scouts feel it simultaneously — a <Text style={{ color: ACCENT }}>Moment Locks</Text> and the whole venue erupts.
+              When 5+ scouts feel it at the same time, a <Text style={{ color: ACCENT }}>Moment Locks</Text> and the whole venue erupts.
             </Text>
           </View>
 
@@ -201,7 +201,7 @@ export default function MomentSetupCard({ forceVisible, onDismiss }: Props) {
               end={{ x: 1, y: 0 }}
               style={styles.ctaGradient}
             >
-              <Text style={styles.ctaText}>GOT IT — I'M READY</Text>
+              <Text style={styles.ctaText}>GOT IT, I'M READY</Text>
               <Ionicons name="flash" size={14} color="#FFF" />
             </LinearGradient>
           </TouchableOpacity>

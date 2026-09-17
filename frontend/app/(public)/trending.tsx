@@ -110,7 +110,7 @@ interface ScoutsData {
 
 export default function TrendingScreen() {
   const router = useRouter();
-  const { selectedCity, setSelectedCity, isDemoMode, cityPulse } = useVibeStore();
+  const { selectedCity, setSelectedCity, isDemoMode, cityEnergy } = useVibeStore();
   const [trendingData, setTrendingData] = useState<TrendingData | null>(null);
   const [scoutsData, setScoutsData] = useState<ScoutsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -266,12 +266,7 @@ export default function TrendingScreen() {
         item.trend === 'up'   ? 'heating_up'   :
         item.trend === 'down' ? 'cooling_down'  :
         'stable',
-      pulse_count: item.scout_count,
-      pulse_tier:
-        item.energy_percent >= 80 ? 'source'   :
-        item.energy_percent >= 60 ? 'electric' :
-        item.energy_percent >= 40 ? 'charged'  :
-        'stirring',
+      signal_count: item.scout_count,
       is_featured: !!(item.venue.spotlight_until && new Date(item.venue.spotlight_until) > new Date()),
     }));
   }, [venues]);
@@ -334,8 +329,8 @@ export default function TrendingScreen() {
             <VibeMarket
               venues={vibeMarketVenues}
               cityName={selectedCity.charAt(0).toUpperCase() + selectedCity.slice(1)}
-              cityScore={cityPulse?.pulse_score ?? 50}
-              cityLabel={cityPulse?.pulse_label ?? 'BUZZING'}
+              cityScore={cityEnergy?.energy_score ?? 50}
+              cityLabel={cityEnergy?.energy_label ?? 'BUZZING'}
               onVenuePress={(id) => router.push(`/venue/${id}`)}
             />
           </View>

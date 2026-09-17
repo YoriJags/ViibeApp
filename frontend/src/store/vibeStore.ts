@@ -4,7 +4,7 @@
  * Combined Zustand store composed from domain slices:
  *   authSlice   — user identity, subscriptions, demo mode
  *   venueSlice  — venues, lobby, stories, campaigns, following
- *   scoutSlice  — gamification: checkins, crews, streaks, city pulse
+ *   scoutSlice  — gamification: checkins, crews, streaks, city energy
  *   socketSlice — real-time socket, geofence HUD, online state
  *
  * All existing imports (useVibeStore, types, helpers) remain unchanged.
@@ -97,7 +97,7 @@ export type {
   StoryListItem, TimelinePoint, Crew, CrewMember,
   CrewMemberLocation, CrewVote, AlertPrefs, ActiveCampaign,
   LobbyVenue, LobbyNudge, LivePush,
-  CityPulseData, CityPulseLabel, VibeSignature,
+  CityEnergyData, CityEnergyLabel, VibeSignature,
   VenueAffinity, VibeDNA,
   NightPhase,
 } from './types';

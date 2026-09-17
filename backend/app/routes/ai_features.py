@@ -412,7 +412,7 @@ async def get_venue_ai_pulse(venue_id: str, request: Request):
 @router.post("/crew/ai-intel")
 async def get_crew_ai_intel(request: Request):
     """
-    AI venue picks tailored to the whole cartel's persona mix.
+    AI venue picks tailored to the whole crew's persona mix.
     POST body: { member_personas: ["turn_up", "chill_set", ...] }
     Fetches top venues and asks Claude to rank + explain picks.
     Cached 20 min per crew (user-scoped).
@@ -468,11 +468,11 @@ async def get_crew_ai_intel(request: Request):
                 "vibe_score": v.get("current_vibe_score", 50),
                 "match_score": max(40, v.get("current_vibe_score", 50) - 10),
                 "reason": f"{v.get('name')} is {v.get('energy_level', 'warming')} tonight with a {v.get('current_vibe_score', 50)}/100 vibe score.",
-                "best_for": "Full cartel",
+                "best_for": "Full crew",
             }
             for v in venues_list[:3]
         ]
-        result = {"picks": picks, "crew_read": f"Your cartel ({len(member_personas)} members) has mixed vibes. These spots have the best energy tonight.", "ai_powered": False}
+        result = {"picks": picks, "crew_read": f"Your crew ({len(member_personas)} members) has mixed vibes. These spots have the best energy tonight.", "ai_powered": False}
         await _set_cache(cache_key, result)
         return result
 
@@ -484,7 +484,7 @@ async def get_crew_ai_intel(request: Request):
             f"Task: Pick the top 3 venues for this crew. Consider the persona mix — find spots that work for everyone or explain the tradeoffs.\n"
             f"Be direct, use Lagos nightlife slang where natural.\n\n"
             f"Respond with valid JSON only:\n"
-            f'{{"crew_read": "1 sentence reading the cartel vibe", '
+            f'{{"crew_read": "1 sentence reading the crew vibe", '
             f'"picks": [{{"venue_name": "...", "match_score": 0-100, "reason": "2 sentence explanation", "best_for": "brief label"}}]}}'
         )
         raw = _claude(prompt, max_tokens=600)
@@ -503,7 +503,7 @@ async def get_crew_ai_intel(request: Request):
                 "vibe_score":   matched_venue.get("current_vibe_score", 50),
                 "match_score":  p.get("match_score", 70),
                 "reason":       p.get("reason", ""),
-                "best_for":     p.get("best_for", "Full cartel"),
+                "best_for":     p.get("best_for", "Full crew"),
             })
 
         result = {"picks": enriched_picks, "crew_read": parsed.get("crew_read", ""), "ai_powered": True}
@@ -519,7 +519,7 @@ async def get_crew_ai_intel(request: Request):
                 "vibe_score": v.get("current_vibe_score", 50),
                 "match_score": max(40, v.get("current_vibe_score", 50) - 5),
                 "reason": f"Top energy venue tonight. Strong {v.get('energy_level', 'warming')} vibes — worth the move.",
-                "best_for": "Full cartel",
+                "best_for": "Full crew",
             }
             for v in venues_list[:3]
         ]
@@ -613,7 +613,7 @@ async def get_scout_briefing(request: Request):
         for v in top_venues
     ]) if top_venues else "No live venue data yet"
 
-    crew_line = f"Your cartel '{crew_name}' has {crew_out} members out tonight." if crew_name else "You're rolling solo tonight."
+    crew_line = f"Your crew '{crew_name}' has {crew_out} members out tonight." if crew_name else "You're rolling solo tonight."
 
     api_key = _get_api_key()
     if not api_key:

@@ -83,20 +83,6 @@ def is_within_geofence(user_coords: Coordinates, venue_coords: Coordinates, radi
     return distance <= radius_m
 
 
-async def compute_scout_credibility(user_id: str) -> float:
-    """
-    Scout credibility weight — 0.1 to 1.0.
-    Based purely on experience (total ratings submitted).
-    New scouts start at low weight; established scouts carry full weight.
-    30+ ratings = full credibility. No ML, no manipulation — just track record.
-    """
-    total = await db.ratings.count_documents({"user_id": user_id})
-    # 0 ratings → 0.15 (floor, not zero — every voice counts a little)
-    # 10 ratings → 0.48
-    # 30 ratings → 1.0 (cap)
-    return min(1.0, max(0.15, total / 30))
-
-
 async def _calculate_kinetic_momentum(venue_id: str, now: datetime) -> float:
     """
     Dynamic Equilibrium — kinetic momentum floor.
@@ -354,7 +340,7 @@ async def calculate_venue_signature(venue_id: str, now: datetime) -> dict:
     then classifies via _classify_vibe_signature.
 
     Returns a dict suitable for inclusion in the venue aggregate and for
-    persistence on the venue document (consumed by compute_city_pulse).
+    persistence on the venue document (consumed by compute_city_energy).
     """
     cutoff = now - timedelta(minutes=30)
     pulses = await db.vibe_pulses.find(
@@ -700,7 +686,7 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         {"$set": {
             "viibe_certified":    viibe_certified,
             "viibe_certified_at": viibe_certified_at,
-            # Persisted so compute_city_pulse can do a majority vote
+            # Persisted so compute_city_energy can do a majority vote
             "vibe_signature":     sig["signature"],
         }},
     )
@@ -814,7 +800,7 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         "kinetic_momentum":   live["momentum_floor"],
         "decay_protected":    live["decay_protected"],
         "fraud_excluded":     live["excluded_fraud"],
-        # Vibe DNA — string label only; city_pulse majority vote and the
+        # Vibe DNA, string label only; city_energy majority vote and the
         # frontend VibeSignature type both expect the bare signature
         "vibe_signature":        sig["signature"],
         "vibe_signature_detail": sig,
@@ -1067,11 +1053,12 @@ async def save_vibe_snapshot(venue_id: str, aggregate: dict):
     await db.vibe_snapshots.insert_one(snapshot)
 
     # Aura Shield check
-    await _check_aura_shield(venue_id, aggregate)
+    await _check_score_alerts(venue_id, aggregate)
 
 
-async def _check_aura_shield(venue_id: str, aggregate: dict):
+async def _check_score_alerts(venue_id: str, aggregate: dict):
     """Check if venue's Aura Shield should trigger an alert."""
+    # Collection name predates the rename; renaming it needs a migration.
     shield = await db.aura_shields.find_one({"venue_id": venue_id})
     if not shield or not shield.get("enabled"):
         return

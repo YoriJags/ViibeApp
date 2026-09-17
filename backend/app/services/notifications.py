@@ -121,7 +121,7 @@ async def notify_merchant_vibe_alert(venue_id: str, current_score: float, reason
         user_id=owner_id,
         title=f"Aura Shield Alert: {venue_name}",
         body=reason,
-        data={"type": "aura_shield", "venue_id": venue_id, "score": current_score},
+        data={"type": "score_alert", "venue_id": venue_id, "score": current_score},
     )
 
 

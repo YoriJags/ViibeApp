@@ -163,7 +163,7 @@ export default function ResonancePrompt({
               <Text style={styles.resonanceSub}>{activeLabel.sub}</Text>
             </View>
           ) : (
-            <Text style={styles.hint}>Tap a bolt — dismiss in {Math.round(AUTO_DISMISS_MS / 1000)}s</Text>
+            <Text style={styles.hint}>Tap a bolt. Dismiss in {Math.round(AUTO_DISMISS_MS / 1000)}s</Text>
           )}
         </View>
       </BlurView>

@@ -1,5 +1,5 @@
 /**
- * CartelRadarMap — "Find Your Crew" squad location tracker
+ * CrewRadarMap — "Find Your Crew" squad location tracker
  *
  * Shows live crew member positions on a mini-map inside the crew screen.
  * Tap the expand button to go fullscreen.
@@ -24,7 +24,7 @@ import { MockMap } from './MockMap';
 import VibeMap from './VibeMap';
 import BatteryIndicator from './BatteryIndicator';
 
-interface CartelRadarMapProps {
+interface CrewRadarMapProps {
   crewId: string;
   crewSize: number;
   height?: number;
@@ -32,7 +32,7 @@ interface CartelRadarMapProps {
 
 const POLL_INTERVAL_MS = 15000;
 
-const CartelRadarMap: React.FC<CartelRadarMapProps> = ({
+const CrewRadarMap: React.FC<CrewRadarMapProps> = ({
   crewId,
   crewSize,
   height = 280,
@@ -203,7 +203,7 @@ const CartelRadarMap: React.FC<CartelRadarMapProps> = ({
         {!mapReady && (
           <View style={styles.mapOverlay}>
             <Text style={styles.overlayIcon}>📡</Text>
-            <Text style={styles.overlayText}>Scanning for your Cartel...</Text>
+            <Text style={styles.overlayText}>Scanning for your Crew...</Text>
           </View>
         )}
 
@@ -212,7 +212,7 @@ const CartelRadarMap: React.FC<CartelRadarMapProps> = ({
           <View style={styles.mapOverlay}>
             <Ionicons name="location-outline" size={28} color="#333" />
             <Text style={styles.overlayTitle}>No one's out yet</Text>
-            <Text style={styles.overlaySubtitle}>Check in at a venue — your Cartel can find you here</Text>
+            <Text style={styles.overlaySubtitle}>Check in at a venue so your Crew can find you here</Text>
           </View>
         )}
 
@@ -222,7 +222,7 @@ const CartelRadarMap: React.FC<CartelRadarMapProps> = ({
         {ghostMode && (
           <View style={styles.ghostBanner}>
             <Ionicons name="moon" size={12} color="#00D4FF" />
-            <Text style={styles.ghostBannerText}>You're in Ghost Mode — your pin is hidden</Text>
+            <Text style={styles.ghostBannerText}>You're in Ghost Mode. Your pin is hidden</Text>
           </View>
         )}
       </View>
@@ -244,7 +244,7 @@ const CartelRadarMap: React.FC<CartelRadarMapProps> = ({
             <View style={styles.fsTopBar}>
               <View style={styles.fsTopLeft}>
                 <View style={styles.liveDotLg} />
-                <Text style={styles.fsTopTitle}>CARTEL RADAR</Text>
+                <Text style={styles.fsTopTitle}>CREW RADAR</Text>
                 <Text style={styles.fsTopSub}>{outCount} out tonight</Text>
               </View>
               <View style={styles.fsTopRight}>
@@ -282,7 +282,7 @@ const CartelRadarMap: React.FC<CartelRadarMapProps> = ({
             {ghostMode && (
               <View style={styles.ghostBanner}>
                 <Ionicons name="moon" size={12} color="#00D4FF" />
-                <Text style={styles.ghostBannerText}>Ghost Mode — your pin is hidden</Text>
+                <Text style={styles.ghostBannerText}>Ghost Mode. Your pin is hidden</Text>
               </View>
             )}
           </View>
@@ -570,4 +570,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CartelRadarMap;
+export default CrewRadarMap;

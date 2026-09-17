@@ -17,7 +17,7 @@ This kit is the *discovery + registration* layer.
 |------|----------|---------|
 | `venues_live` | `GET /api/v1/agent/venues/live` | "Where's the best energy in Lagos right now?" |
 | `venue_snapshot` | `GET /api/v1/agent/venues/{id}` | "How's Quilox right now?" |
-| `city_pulse` | `GET /api/v1/agent/city/pulse` | "How alive is Lagos tonight?" |
+| `city_energy` | `GET /api/v1/agent/city/pulse` | "How alive is Lagos tonight?" |
 
 Auth: `X-Agent-Key` header. Data is real-time (≤5 min) and **decay-honest** — it
 reports low/empty rather than faking a stale peak. That honesty is the selling

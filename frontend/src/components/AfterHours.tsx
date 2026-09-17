@@ -74,7 +74,7 @@ interface Props {
 export default function AfterHours({ visible, onClose, isDemoMode }: Props) {
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const user           = useVibeStore(s => s.user);
-  const cityPulse      = useVibeStore(s => s.cityPulse);
+  const cityEnergy      = useVibeStore(s => s.cityEnergy);
   const vibeDNA        = useVibeStore(s => s.vibeDNA);
   const [recap, setRecap] = useState<NightRecap | null>(null);
   const [loading, setLoading] = useState(false);
@@ -274,8 +274,8 @@ export default function AfterHours({ visible, onClose, isDemoMode }: Props) {
             username:        user?.username ?? user?.name ?? 'Scout',
             scoutStatus:     user?.scout_status ?? undefined,
             rank:            (user as any)?.rank ?? undefined,
-            auraLabel:       recap.heat_label,
-            auraColor:       recap.heat_color,
+            heatLabel:       recap.heat_label,
+            heatColor:       recap.heat_color,
             heatScore:       recap.heat_score,
             boltsTonight:    recap.bolts_tonight,
             checkinsTonight: recap.checkins_tonight,
@@ -283,9 +283,9 @@ export default function AfterHours({ visible, onClose, isDemoMode }: Props) {
             streakDays:      recap.streak_days,
             hotNights:       recap.hot_nights,
             topVenueName:    recap.top_venue?.venue_name,
-            dnaSignature:    cityPulse?.city_vibe_signature ?? (vibeDNA as any)?.dominant_type,
-            sparkline:       cityPulse?.sparkline ?? [40, 55, 60, 70, 75, 78],
-            city:            cityPulse?.city ?? 'Lagos',
+            dnaSignature:    cityEnergy?.city_vibe_signature ?? (vibeDNA as any)?.dominant_type,
+            sparkline:       cityEnergy?.sparkline ?? [40, 55, 60, 70, 75, 78],
+            city:            cityEnergy?.city ?? 'Lagos',
             date:            new Date().toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }),
             isDemoMode,
           }}

@@ -97,19 +97,19 @@ export default function VibePassport({ visible, onClose, isDemoMode }: Props) {
     if (isDemoMode) { setData(DEMO_PASSPORT); return; }
     setLoading(true);
     try {
-      const [auraRes, tapRes] = await Promise.all([
-        fetch(`${API_URL}/api/me/aura`, { headers: getAuthHeaders() }),
+      const [heatRes, tapRes] = await Promise.all([
+        fetch(`${API_URL}/api/me/heat`, { headers: getAuthHeaders() }),
         fetch(`${API_URL}/api/me/tap-history`, { headers: getAuthHeaders() }),
       ]);
-      const aura = auraRes.ok ? await auraRes.json() : null;
+      const heat = heatRes.ok ? await heatRes.json() : null;
       const tap  = tapRes.ok  ? await tapRes.json()  : null;
-      if (aura && tap) {
+      if (heat && tap) {
         setData({
-          heat_level:     aura.heat_level,
-          heat_label:     aura.heat_label,
-          heat_score:     aura.heat_score,
-          hot_nights:     aura.hot_nights,
-          streak_days:    aura.streak_days,
+          heat_level:     heat.heat_level,
+          heat_label:     heat.heat_label,
+          heat_score:     heat.heat_score,
+          hot_nights:     heat.hot_nights,
+          streak_days:    heat.streak_days,
           total_taps:     tap.all_time.total_taps,
           top_venue_name: tap.all_time.top_venue?.venue_name ?? null,
           total_ratings:  user?.total_ratings ?? 0,

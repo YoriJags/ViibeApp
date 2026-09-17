@@ -25,7 +25,7 @@
 **`total_ratings_24h` Counter Never Resets:**
 - Issue: The `total_ratings_24h` field on venues is incremented with `$inc` on every rating but there is no scheduled job, cron task, or TTL-based mechanism to reset it. The field grows indefinitely, making the "24h" label a misnomer after day one.
 - Files: `backend/api/index.py` (line 469), `backend/app/services/vibe.py`
-- Impact: Pulse tiers (`compute_pulse()` in `index.py` line 133) and city pulse weighting (`city_pulse.py`) are based on this stale counter, producing inflated "activity" scores.
+- Impact: Pulse tiers (`compute_pulse()` in `index.py` line 133) and city energy weighting (`city_energy.py`) are based on this stale counter, producing inflated "activity" scores.
 - Fix approach: Add a MongoDB TTL collection that stores rating events and aggregates on-demand, or run a nightly reset job using Railway's scheduled tasks.
 
 **API URL Duplicated Across 42+ Components:**

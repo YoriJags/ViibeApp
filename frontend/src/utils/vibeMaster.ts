@@ -179,7 +179,7 @@ export const getVenueCommentary = (venue: VenueSummary, city: string): string =>
 /**
  * Generate city-wide pulse commentary
  */
-export const getCityPulse = (stats: CityStats): string => {
+export const getCityEnergy = (stats: CityStats): string => {
   const mood = getCityMood(stats);
   let templates: string[];
   
@@ -202,9 +202,9 @@ export const getCityPulse = (stats: CityStats): string => {
   
   // If we have a top venue that's electric, add venue-specific flair
   if (stats.topVenue && stats.topVenue.vibeScore >= 80) {
-    const cityPulse = fillTemplate(getRandomTemplate(templates), stats.topVenue.name, stats.city);
+    const cityEnergy = fillTemplate(getRandomTemplate(templates), stats.topVenue.name, stats.city);
     const venueFlair = getVenueCommentary(stats.topVenue, stats.city);
-    return `${cityPulse}\n\n🏆 Top Spot: ${venueFlair}`;
+    return `${cityEnergy}\n\n🏆 Top Spot: ${venueFlair}`;
   }
   
   return fillTemplate(
@@ -296,7 +296,7 @@ export default {
   getVibeLevel,
   getCityMood,
   getVenueCommentary,
-  getCityPulse,
+  getCityEnergy,
   generateDailyPulse,
   getCloutRewardMessage,
 };

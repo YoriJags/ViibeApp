@@ -1,5 +1,5 @@
 /**
- * PUBLIC FLOOR - Crew (Viibez Cartel)
+ * PUBLIC FLOOR - Crew (Viibez Crew)
  * First-class tab. Premium dark glass design to match the Explore/Intel aesthetic.
  */
 import React, { useEffect, useRef, useState } from 'react';
@@ -21,9 +21,9 @@ import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
 import VoteCard from '../../src/components/VoteCard';
 import AvatarDisplay from '../../src/components/AvatarDisplay';
-import CartelRadarMap from '../../src/components/CartelRadarMap';
-import CartelPulse from '../../src/components/CartelPulse';
-import CartelBattle from '../../src/components/CartelBattle';
+import CrewRadarMap from '../../src/components/CrewRadarMap';
+import CrewActivity from '../../src/components/CrewActivity';
+import CrewBattle from '../../src/components/CrewBattle';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
 import { OwnBatteryIndicator } from '../../src/components/BatteryIndicator';
 import CrewIntelligence from '../../src/components/CrewIntelligence';
@@ -90,9 +90,9 @@ export default function CrewScreen() {
     if (!crew) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
-      'Leave Cartel',
+      'Leave Crew',
       crew.is_captain
-        ? 'As captain, leaving will dissolve the Cartel. Are you sure?'
+        ? 'As captain, leaving will dissolve the Crew. Are you sure?'
         : 'Are you sure you want to leave?',
       [
         { text: 'Cancel', style: 'cancel' },
@@ -153,7 +153,7 @@ export default function CrewScreen() {
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.headerTitle}>CARTEL</Text>
+              <Text style={styles.headerTitle}>CREW</Text>
               <Text style={styles.headerSub}>Your crew. Your moves.</Text>
             </View>
             <OwnBatteryIndicator size="md" />
@@ -190,7 +190,7 @@ export default function CrewScreen() {
               </LinearGradient>
             </View>
 
-            <Text style={styles.heroTitle}>Build Your Cartel</Text>
+            <Text style={styles.heroTitle}>Build Your Crew</Text>
             <Text style={styles.heroBody}>
               Move as a unit. Vote on where to go, track your squad live, and earn bonus clout for rolling deep.
             </Text>
@@ -213,13 +213,13 @@ export default function CrewScreen() {
           <View style={styles.formSection}>
             <View style={styles.formLabelRow}>
               <View style={styles.formDot} />
-              <Text style={styles.formLabel}>CREATE A CARTEL</Text>
+              <Text style={styles.formLabel}>CREATE A CREW</Text>
             </View>
             <View style={styles.inputWrap}>
               <Ionicons name="shield" size={16} color="#555" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Cartel name (max 20 chars)"
+                placeholder="Crew name (max 20 chars)"
                 placeholderTextColor="#444"
                 value={crewName}
                 onChangeText={(t) => setCrewName(t.slice(0, 20))}
@@ -238,7 +238,7 @@ export default function CrewScreen() {
                 style={styles.ctaBtn}
               >
                 <Text style={[styles.ctaBtnText, crewName.length < 2 && { color: '#444' }]}>
-                  {loading ? 'Creating...' : 'Found Cartel'}
+                  {loading ? 'Creating...' : 'Found Crew'}
                 </Text>
                 {crewName.length >= 2 && <Ionicons name="shield-checkmark" size={16} color="#FFF" />}
               </LinearGradient>
@@ -256,7 +256,7 @@ export default function CrewScreen() {
           <View style={styles.formSection}>
             <View style={styles.formLabelRow}>
               <View style={[styles.formDot, { backgroundColor: '#FF3366' }]} />
-              <Text style={styles.formLabel}>JOIN A CARTEL</Text>
+              <Text style={styles.formLabel}>JOIN A CREW</Text>
             </View>
             <View style={styles.inputWrap}>
               <Ionicons name="key" size={16} color="#555" style={styles.inputIcon} />
@@ -277,7 +277,7 @@ export default function CrewScreen() {
               style={[styles.joinBtn, inviteCode.length < 6 && { opacity: 0.4 }]}
             >
               <Text style={styles.joinBtnText}>
-                {loading ? 'Joining...' : 'Join Cartel'}
+                {loading ? 'Joining...' : 'Join Crew'}
               </Text>
               <Ionicons name="arrow-forward" size={16} color="#FF3366" />
             </TouchableOpacity>
@@ -311,16 +311,16 @@ export default function CrewScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Cartel Pulse — live crew activity */}
-        <CartelPulse
-          cartelName={crew.name}
+        {/* Crew Pulse — live crew activity */}
+        <CrewActivity
+          crewName={crew.name}
           members={(crew.member_details ?? []) as any[]}
           onPress={() => scrollRef.current?.scrollTo({ y: radarY.current, animated: true })}
         />
 
-        {/* Cartel Battle — cross-venue tap-off */}
-        <ErrorBoundary label="Cartel Battle">
-          <CartelBattle
+        {/* Crew Battle — cross-venue tap-off */}
+        <ErrorBoundary label="Crew Battle">
+          <CrewBattle
             crewId={crew.id}
             crewName={crew.name}
             isCaptain={crew.is_captain ?? false}
@@ -338,7 +338,7 @@ export default function CrewScreen() {
           />
         </ErrorBoundary>
 
-        {/* AI Cartel Intel button */}
+        {/* AI Crew Intel button */}
         <TouchableOpacity
           style={styles.intelBtn}
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowCrewIntel(true); }}
@@ -347,7 +347,7 @@ export default function CrewScreen() {
           <LinearGradient colors={['#1A0A2E', '#120A24']} style={styles.intelBtnGrad}>
             <Ionicons name="sparkles" size={16} color="#9933FF" />
             <View style={styles.intelBtnText}>
-              <Text style={styles.intelBtnTitle}>CARTEL INTEL</Text>
+              <Text style={styles.intelBtnTitle}>CREW INTEL</Text>
               <Text style={styles.intelBtnSub}>AI picks for your squad tonight</Text>
             </View>
             <Ionicons name="chevron-forward" size={14} color="#9933FF" />
@@ -457,16 +457,16 @@ export default function CrewScreen() {
           })}
         </View>
 
-        {/* Cartel Radar */}
+        {/* Crew Radar */}
         <View style={styles.section} onLayout={(e) => { radarY.current = e.nativeEvent.layout.y; }}>
           <View style={styles.sectionLabelRow}>
             <View style={[styles.sectionDot, { backgroundColor: '#00E676' }]} />
-            <Text style={styles.sectionLabel}>CARTEL RADAR</Text>
+            <Text style={styles.sectionLabel}>CREW RADAR</Text>
             <Text style={styles.sectionSub}> · live squad positions</Text>
           </View>
           <View style={styles.radarWrap}>
             <ErrorBoundary label="Radar">
-              <CartelRadarMap
+              <CrewRadarMap
                 crewId={crew.id}
                 crewSize={crew.members?.length || crew.member_details?.length || 1}
                 height={260}
@@ -498,7 +498,7 @@ export default function CrewScreen() {
           <View style={styles.section}>
             <View style={styles.sectionLabelRow}>
               <View style={[styles.sectionDot, { backgroundColor: '#FF3366' }]} />
-              <Text style={styles.sectionLabel}>CARTEL VOTE</Text>
+              <Text style={styles.sectionLabel}>CREW VOTE</Text>
             </View>
 
             {!showVotePicker ? (
@@ -840,7 +840,7 @@ const styles = StyleSheet.create({
   venuePickSelected: { borderColor: '#FF336655', backgroundColor: '#FF33660A' },
   venuePickName: { fontSize: 14, fontWeight: '600', color: '#CCC' },
 
-  // Cartel Intel button
+  // Crew Intel button
   intelBtn: { marginBottom: 16, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#9933FF33' },
   intelBtnGrad: {
     flexDirection: 'row', alignItems: 'center',

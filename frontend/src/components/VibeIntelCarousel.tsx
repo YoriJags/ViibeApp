@@ -65,7 +65,7 @@ export default function VibeIntelCarousel({
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   // Compute city stats
-  const cityPulse = useMemo(() => {
+  const cityEnergy = useMemo(() => {
     if (!venues.length) return { avg: 0, active: 0, hot: 0 };
     const avg = Math.round(
       venues.reduce((s, v) => s + v.energy_percent, 0) / venues.length,
@@ -91,7 +91,7 @@ export default function VibeIntelCarousel({
       city,
       totalVenues: venues.length,
       activeVenues: venues.length,
-      averageVibe: cityPulse.avg,
+      averageVibe: cityEnergy.avg,
       topVenue: topVenue
         ? {
             name: topVenue.venue.name,
@@ -99,7 +99,7 @@ export default function VibeIntelCarousel({
             area: topVenue.venue.area,
           }
         : null,
-      hotSpots: cityPulse.hot,
+      hotSpots: cityEnergy.hot,
       isWeekend,
     };
 
@@ -153,7 +153,7 @@ export default function VibeIntelCarousel({
     });
 
     return cards;
-  }, [venues, city, isWeekend, cityPulse]);
+  }, [venues, city, isWeekend, cityEnergy]);
 
   // Auto-rotate every 5 seconds with crossfade
   useEffect(() => {
@@ -227,19 +227,19 @@ export default function VibeIntelCarousel({
       {/* Stats strip */}
       <View style={styles.statsStrip}>
         <View style={styles.stripItem}>
-          <Text style={styles.stripValue}>{cityPulse.active}</Text>
+          <Text style={styles.stripValue}>{cityEnergy.active}</Text>
           <Text style={styles.stripLabel}>Active</Text>
         </View>
         <View style={styles.stripDivider} />
         <View style={styles.stripItem}>
           <Text style={[styles.stripValue, { color: colors.vibe.electric }]}>
-            {cityPulse.hot}
+            {cityEnergy.hot}
           </Text>
           <Text style={styles.stripLabel}>Hot Spots</Text>
         </View>
         <View style={styles.stripDivider} />
         <View style={styles.stripItem}>
-          <Text style={styles.stripValue}>{cityPulse.avg}</Text>
+          <Text style={styles.stripValue}>{cityEnergy.avg}</Text>
           <Text style={styles.stripLabel}>Avg Vibe</Text>
         </View>
       </View>

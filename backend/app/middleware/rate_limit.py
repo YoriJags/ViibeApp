@@ -80,7 +80,7 @@ RATE_LIMIT_RULES: dict[str, tuple[int, int]] = {
     # ── Social / Crew ────────────────────────────────────────────────────────
     "/api/crews":            (10, 60),   # Crew management
     "/api/battles":          (5,  60),   # Battle creation
-    "/api/cartel_battles":   (5,  60),   # Cartel battle creation
+    "/api/crew_battles":   (5,  60),   # Crew battle creation
     "/api/rolling_deep":     (10, 60),   # Crew session ops
     "/api/after_party":      (10, 60),   # After-party actions
     "/api/quests":           (15, 60),   # Quest interactions

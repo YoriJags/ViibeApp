@@ -1,7 +1,14 @@
 """
-Vibe Intelligence + Aura Shield Routes
-Deep analytics for merchants about their venue's energy patterns.
-Optimized with MongoDB aggregation pipelines instead of in-memory loops.
+Vibe Intelligence + Score Alerts.
+
+Deep analytics for merchants about their venue's energy patterns, plus the
+alert thresholds a merchant can set for their own venue.
+
+Score Alerts was called "Aura Shield". It never suppressed anything and never
+could: it stores a threshold and a list of events to notify on. But a merchant
+reading "Shield" and "Protecting your vibe" would reasonably conclude they had
+bought protection from bad scores, which is the single claim this product cannot
+make. The name now says what it does. See docs/VOCABULARY.md.
 """
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Request
@@ -13,7 +20,7 @@ from app.services.auth import get_current_user
 router = APIRouter(tags=["vibe-intelligence"])
 
 
-class AuraShieldUpdate(BaseModel):
+class ScoreAlertsUpdate(BaseModel):
     enabled: bool = False
     threshold: int = 50
     alert_on: list[str] = ["score_drop"]
@@ -165,9 +172,10 @@ async def get_vibe_intelligence(venue_id: str, request: Request):
     }
 
 
-@router.get("/merchant/venue/{venue_id}/aura-shield")
-async def get_aura_shield(venue_id: str, request: Request):
-    """Get Aura Shield configuration."""
+@router.get("/merchant/venue/{venue_id}/score-alerts")
+@router.get("/merchant/venue/{venue_id}/aura-shield", include_in_schema=False)  # deprecated alias
+async def get_score_alerts(venue_id: str, request: Request):
+    """Get this venue's Score Alert thresholds."""
     user = await get_current_user(request)
     if not user or user.get("merchant_venue_id") != venue_id:
         raise HTTPException(status_code=403, detail="Not authorized for this venue")
@@ -179,9 +187,10 @@ async def get_aura_shield(venue_id: str, request: Request):
     return config
 
 
-@router.put("/merchant/venue/{venue_id}/aura-shield")
-async def update_aura_shield(venue_id: str, body: AuraShieldUpdate, request: Request):
-    """Update Aura Shield configuration."""
+@router.put("/merchant/venue/{venue_id}/score-alerts")
+@router.put("/merchant/venue/{venue_id}/aura-shield", include_in_schema=False)  # deprecated alias
+async def update_score_alerts(venue_id: str, body: ScoreAlertsUpdate, request: Request):
+    """Update this venue's Score Alert thresholds."""
     user = await get_current_user(request)
     if not user or user.get("merchant_venue_id") != venue_id:
         raise HTTPException(status_code=403, detail="Not authorized for this venue")

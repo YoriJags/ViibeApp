@@ -18,7 +18,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
 import VibePlusModal from '../../src/components/VibePlusModal';
-import ScoutAuraCard from '../../src/components/ScoutAuraCard';
+import ScoutHeatCard from '../../src/components/ScoutHeatCard';
+import PromptCadencePicker from '../../src/components/PromptCadencePicker';
 import VibeTapCard from '../../src/components/VibeTapCard';
 import VibePassport from '../../src/components/VibePassport';
 import AfterHours from '../../src/components/AfterHours';
@@ -26,7 +27,7 @@ import AvatarBuilder from '../../src/components/AvatarBuilder';
 import AvatarDisplay from '../../src/components/AvatarDisplay';
 import AchievementBadge, { Badge } from '../../src/components/AchievementBadge';
 import CrewCard from '../../src/components/CrewCard';
-import AuraLevelUp from '../../src/components/AuraLevelUp';
+import HeatLevelUp from '../../src/components/HeatLevelUp';
 import ZodiacPicker from '../../src/components/ZodiacPicker';
 import NarrativeDivider from '../../src/components/NarrativeDivider';
 import analytics, { EVENT } from '../../src/services/analytics';
@@ -35,9 +36,9 @@ import { DEMO_BADGES, DEMO_CREW } from '../../src/data/demoData';
 
 const { width: W } = Dimensions.get('window');
 
-const AURA_CONFIG: Record<string, { level: string; label: string; color: string; perks: string[] }> = {
+const SCOUT_STATUS_CONFIG: Record<string, { level: string; label: string; color: string; perks: string[] }> = {
   newbie:  { level: 'shadow',      label: 'Shadow',      color: '#666666', perks: [] },
-  regular: { level: 'rising',      label: 'Rising',      color: '#9933FF', perks: ['Clout multiplier +1.2x', 'Cartel eligible', 'Trending feed access'] },
+  regular: { level: 'rising',      label: 'Rising',      color: '#9933FF', perks: ['Clout multiplier +1.2x', 'Crew eligible', 'Trending feed access'] },
   scout:   { level: 'scene_maker', label: 'Scene Maker', color: '#FF3366', perks: ['Vibe Oracle predictions', 'Clout multiplier +1.5x', 'Scout radar visible'] },
   elite:   { level: 'vibe_god',    label: 'Vibe God',    color: '#FFD700', perks: ['VIBE GOD status', 'Elite 2x clout multiplier', 'All Viibe+ perks free'] },
 };
@@ -92,7 +93,7 @@ export default function ProfileScreen() {
   const [showPassport, setShowPassport] = useState(false);
   const [showAfterParty, setShowAfterParty] = useState(false);
   const [showZodiacPicker, setShowZodiacPicker] = useState(false);
-  const [showAuraLevelUp, setShowAuraLevelUp] = useState(false);
+  const [showHeatLevelUp, setShowHeatLevelUp] = useState(false);
   const [showNightSummary, setShowNightSummary] = useState(false);
   const [showCallNameEdit, setShowCallNameEdit] = useState(false);
   const [callNameDraft, setCallNameDraft] = useState('');
@@ -121,14 +122,14 @@ export default function ProfileScreen() {
       .catch(() => {});
   }, [user?.id, isDemoMode]);
 
-  // Detect scout_status upgrade → fire AuraLevelUp ceremony
+  // Detect scout_status upgrade → fire HeatLevelUp ceremony
   useEffect(() => {
     const status = user?.scout_status;
     if (!status) return;
     const prev = prevScoutStatus.current;
     const ORDER = ['newbie', 'regular', 'scout', 'elite'];
     if (prev && ORDER.indexOf(status) > ORDER.indexOf(prev)) {
-      setShowAuraLevelUp(true);
+      setShowHeatLevelUp(true);
     }
     prevScoutStatus.current = status;
   }, [user?.scout_status]);
@@ -549,7 +550,7 @@ export default function ProfileScreen() {
           ) : (
             <TouchableOpacity style={styles.vibePlusUpgrade} onPress={() => setShowVibePlus(true)} activeOpacity={0.8}>
               <Ionicons name="lock-open-outline" size={13} color="#FFD700" />
-              <Text style={styles.vibePlusUpgradeText}>✦ Upgrade to Viibe+ — ₦1,500/mo</Text>
+              <Text style={styles.vibePlusUpgradeText}>✦ Upgrade to Viibe+ for ₦1,500/mo</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -582,8 +583,15 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Scout Aura */}
-        <ScoutAuraCard isDemoMode={isDemoMode} />
+        {/* Tonight's Heat */}
+        <ScoutHeatCard isDemoMode={isDemoMode} />
+
+        {/* How often VIIBE asks while you are inside a venue */}
+        {!isDemoMode && (
+          <PromptCadencePicker
+            getAuthHeaders={() => useVibeStore.getState().getAuthHeaders()}
+          />
+        )}
 
         {/* Vibe Tap History */}
         <VibeTapCard isDemoMode={isDemoMode} />
@@ -657,7 +665,7 @@ export default function ProfileScreen() {
             >
               <View style={styles.debriefLockedLeft}>
                 <Text style={styles.debriefLockedLabel}>NIGHT DEBRIEF</Text>
-                <Text style={styles.debriefLockedDesc}>Your AI-powered recap of the night — what you hit, how the vibes held up, and your scout read.</Text>
+                <Text style={styles.debriefLockedDesc}>Your AI recap of the night: what you hit, how the energy held up, and your scout read.</Text>
               </View>
               <View style={styles.debriefLockedRight}>
                 <Ionicons name="lock-closed" size={18} color="#FFD700" />
@@ -677,15 +685,15 @@ export default function ProfileScreen() {
           <Text style={styles.replayTutorialText}>How to Use VIIBE</Text>
         </TouchableOpacity>
 
-        {/* Demo: trigger AuraLevelUp ceremony */}
+        {/* Demo: trigger HeatLevelUp ceremony */}
         {isDemoMode && (
           <TouchableOpacity
             style={styles.demoTriggerBtn}
-            onPress={() => setShowAuraLevelUp(true)}
+            onPress={() => setShowHeatLevelUp(true)}
             activeOpacity={0.8}
           >
             <Ionicons name="flash" size={14} color="#9933FF" />
-            <Text style={styles.demoTriggerText}>Demo: Trigger Aura Level Up</Text>
+            <Text style={styles.demoTriggerText}>Demo: Trigger Heat Level Up</Text>
           </TouchableOpacity>
         )}
 
@@ -894,14 +902,14 @@ export default function ProfileScreen() {
         isDemoMode={isDemoMode}
       />
 
-      {/* Aura Level Up ceremony */}
-      <AuraLevelUp
-        visible={showAuraLevelUp}
-        newLevel={AURA_CONFIG[user?.scout_status ?? 'newbie']?.level ?? 'rising'}
-        newLabel={AURA_CONFIG[user?.scout_status ?? 'newbie']?.label ?? 'Rising'}
-        color={AURA_CONFIG[user?.scout_status ?? 'newbie']?.color ?? '#9933FF'}
-        perks={AURA_CONFIG[user?.scout_status ?? 'newbie']?.perks ?? []}
-        onDismiss={() => setShowAuraLevelUp(false)}
+      {/* Heat Level Up ceremony */}
+      <HeatLevelUp
+        visible={showHeatLevelUp}
+        newLevel={SCOUT_STATUS_CONFIG[user?.scout_status ?? 'newbie']?.level ?? 'rising'}
+        newLabel={SCOUT_STATUS_CONFIG[user?.scout_status ?? 'newbie']?.label ?? 'Rising'}
+        color={SCOUT_STATUS_CONFIG[user?.scout_status ?? 'newbie']?.color ?? '#9933FF'}
+        perks={SCOUT_STATUS_CONFIG[user?.scout_status ?? 'newbie']?.perks ?? []}
+        onDismiss={() => setShowHeatLevelUp(false)}
       />
 
       {/* Night Summary full-screen modal */}

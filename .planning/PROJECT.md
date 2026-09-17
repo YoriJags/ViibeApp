@@ -70,7 +70,7 @@ Word of mouth is delayed. Social media is curated, not live. Google Maps is mont
 - [x] UI rebrand — VibeReactor canvas 220→300px, atmospheric backdrop, typography overhaul
 - [x] VenueCard atmospheric gradient overlay
 - [x] VenueCategoryFilter — emoji prefix, solid accent fill, taller pills
-- [x] CityPulseBar — stats pulse animation on socket venue_update events
+- [x] CityEnergyBar — stats pulse animation on socket venue_update events
 - [x] OnboardingFlow — 2-slide intro + mode pick + call name (< 90 seconds to first tap)
 - [x] AppTutorial — 6-slide Instagram-story how-to (Reactor, Rate, Torch, Frequency, Ranks)
 - [x] Socket infrastructure — real-time venue updates, surge events, crowd sync, flash ignite

@@ -1,6 +1,6 @@
 /**
- * FloorSwitcher - Floating pill to navigate between the 3 storeys
- * Shows when user has access to multiple floors (merchant/admin roles)
+ * FloorSwitcher: floating pill to switch between Scout, Venue and Admin.
+ * Shows only when the account has more than one of them.
  * Always visible in demo mode since demo user has all roles
  */
 import React, { useState } from 'react';
@@ -29,28 +29,28 @@ interface Floor {
 const FLOORS: Floor[] = [
   {
     key: 'public',
-    label: 'Public Floor',
+    label: 'Scout',
     route: '/(public)',
     icon: 'map',
     color: '#FF2D92',
-    description: 'Discover venues & rate vibes',
+    description: 'Find where the city is alive',
   },
   {
     key: 'merchant',
-    label: 'Merchant Floor',
+    label: 'Venue',
     route: '/(merchant)',
     icon: 'analytics',
     color: '#FFD700',
-    description: 'Manage your venue & analytics',
+    description: 'Your room, and what it is worth',
     requiredRole: 'is_merchant',
   },
   {
     key: 'admin',
-    label: 'Admin Floor',
+    label: 'Admin',
     route: '/(admin)',
     icon: 'shield',
     color: '#4A90D9',
-    description: 'Platform oversight & treasury',
+    description: 'Platform oversight and treasury',
     requiredRole: 'is_super_admin',
   },
 ];
@@ -104,7 +104,7 @@ export default function FloorSwitcher({ currentFloor }: FloorSwitcherProps) {
       <Modal transparent visible={showMenu} animationType="fade">
         <Pressable style={styles.overlay} onPress={() => setShowMenu(false)}>
           <View style={styles.menu}>
-            <Text style={styles.menuTitle}>Switch Floor</Text>
+            <Text style={styles.menuTitle}>Switch view</Text>
             <Text style={styles.menuSubtitle}>
               Navigate between the 3 storeys
             </Text>

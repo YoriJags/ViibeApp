@@ -51,9 +51,9 @@ async def venue_snapshot(venue_id: str) -> dict:
 
 
 @mcp.tool()
-async def city_pulse(city: str | None = None) -> dict:
-    """City-level energy summary — how alive a city is right now, with top venues."""
-    return await _get("/api/v1/agent/city/pulse", {"city": city})
+async def city_energy(city: str | None = None) -> dict:
+    """City Energy: how alive a city is right now, with its top venues."""
+    return await _get("/api/v1/agent/city/energy", {"city": city})
 
 
 if __name__ == "__main__":

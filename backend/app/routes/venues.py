@@ -9,6 +9,7 @@ from fastapi import APIRouter, Header
 
 from app.config import db, CITIES
 from app.services.promotion import compute_promotion
+from app.services.signal_density import compute_signal_density
 
 router = APIRouter(tags=["venues"])
 
@@ -154,24 +155,6 @@ def next_open_label(venue: dict) -> Optional[str]:
     return None
 
 
-def compute_pulse(venue: dict) -> dict:
-    """Derive Source-of-Pulse data from a venue's total_ratings_24h count."""
-    count = min(int(venue.get("total_ratings_24h", 0)), 100)
-    if count >= 100:
-        tier, next_at = "source", 0
-    elif count >= 80:
-        tier, next_at = "max_pulse", 100
-    elif count >= 60:
-        tier, next_at = "electric", 80
-    elif count >= 40:
-        tier, next_at = "charged", 60
-    elif count >= 20:
-        tier, next_at = "stirring", 40
-    else:
-        tier, next_at = "dormant", 20
-    return {"count": count, "total": 100, "tier": tier, "next_tier_at": next_at}
-
-
 @router.get("/cities")
 async def get_cities():
     """Get all supported cities."""
@@ -193,7 +176,8 @@ async def get_venues(city: Optional[str] = None):
     spike_data = {r["_id"]: r["count"] async for r in db.ratings.aggregate(pipeline)}
     for venue in venues:
         venue["ratings_last_30m"] = spike_data.get(venue.get("id"), 0)
-        venue["pulse"] = compute_pulse(venue)
+        venue["signal_density"] = compute_signal_density(venue)
+        venue["pulse"] = venue["signal_density"]  # deprecated alias, remove once clients ship
         venue["promotion"] = compute_promotion(venue)
         is_open = compute_is_open_now(venue)
         venue["is_open_now"] = is_open
@@ -216,7 +200,8 @@ async def get_venue(venue_id: str, authorization: str = Header(default="")):
     asyncio.create_task(_log_intent(venue_id, "profile_view", authorization))
     asyncio.create_task(_update_venue_scores(venue_id))
 
-    venue["pulse"] = compute_pulse(venue)
+    venue["signal_density"] = compute_signal_density(venue)
+    venue["pulse"] = venue["signal_density"]  # deprecated alias, remove once clients ship
     venue["promotion"] = compute_promotion(venue)
     is_open = compute_is_open_now(venue)
     venue["is_open_now"] = is_open

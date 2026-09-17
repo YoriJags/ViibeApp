@@ -26,8 +26,7 @@ export interface VibeMarketVenue {
   current_vibe_score: number;
   vibe_velocity: 'heating_up' | 'cooling_down' | 'stable';
   energy_level?: string;
-  pulse_count: number;
-  pulse_tier: string;
+  signal_count: number;   // readings behind the row, not a claim about the room
   is_featured?: boolean;
 }
 
@@ -495,15 +494,15 @@ export default function VibeMarket({ venues, cityName, cityScore = 50, cityLabel
                 </View>
                 <View style={fs.statBlock}>
                   <Text style={fs.statValue}>{sorted.filter(v => v.vibe_velocity === 'stable').length}</Text>
-                  <Text style={[fs.statLabel, { color: '#9933FF' }]}>— STABLE</Text>
+                  <Text style={[fs.statLabel, { color: '#9933FF' }]}>▬ STABLE</Text>
                 </View>
                 <View style={fs.statBlock}>
                   <Text style={fs.statValue}>{sorted.filter(v => v.vibe_velocity === 'cooling_down').length}</Text>
                   <Text style={[fs.statLabel, { color: '#FF5252' }]}>▼ COOLING</Text>
                 </View>
                 <View style={fs.statBlock}>
-                  <Text style={fs.statValue}>{sorted.reduce((s, v) => s + v.pulse_count, 0)}</Text>
-                  <Text style={[fs.statLabel, { color: '#FFD700' }]}>PULSE</Text>
+                  <Text style={fs.statValue}>{sorted.reduce((s, v) => s + v.signal_count, 0)}</Text>
+                  <Text style={[fs.statLabel, { color: '#FFD700' }]}>READINGS</Text>
                 </View>
               </View>
 

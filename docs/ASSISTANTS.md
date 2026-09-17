@@ -9,7 +9,7 @@ All lanes wrap the same Agent API (`/api/v1/agent/*`, key-gated via
 `X-Agent-Key`). Issue keys with `railway run python backend/scripts/issue_agent_key.py "<label>"`.
 
 ### Claude (MCP) — BUILT
-`mcp-server/viibe_mcp.py` exposes `city_pulse`, `live_venues`, `venue_detail`.
+`mcp-server/viibe_mcp.py` exposes `city_energy`, `live_venues`, `venue_detail`.
 
 ```bash
 pip install "mcp[cli]" httpx
@@ -32,7 +32,7 @@ account action — cannot be done from the repo.)
 
 ## Lane 2 — OS assistants launch VIIBE
 
-- **Android (in this build)**: the **City Pulse home-screen widget**
+- **Android (in this build)**: the **City Energy home-screen widget**
   (`react-native-android-widget`, `src/widgets/`) — live Lagos energy on the
   phone wall, refreshes every 30 min, taps open the app. (Launcher shortcuts
   are pending a compatible `expo-quick-actions` release — the v6 package's

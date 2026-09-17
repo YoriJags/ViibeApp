@@ -534,7 +534,7 @@ footer a:hover { color: var(--bone); }
     <p class="sec-sub reveal">Wherever people gather, there's energy: concerts, festivals, game nights, owambe. VIIBE is building the live layer that measures all of it. Nightlife is simply where the signal decays fastest and matters most, so it's where we start.</p>
     <p class="sec-sub reveal" style="margin-top:-28px;">And the same live feed a person reads, a machine can too. When you ask <b style="color:var(--bone)">Siri, ChatGPT, Claude, or Gemini</b> "where's alive tonight?", the answer has to come from somewhere. Today, nobody holds that signal. We're building so it comes from VIIBE.</p>
     <pre class="api reveal"><span class="c"># the same map, machine-readable</span>
-GET /api/city-pulse/lagos
+GET /api/city-energy/lagos
 {
   <span class="k">"pulse_label"</span>:      <span class="v">"POPPING"</span>,
   <span class="k">"trending_venue"</span>:   <span class="v">{ "name": "Club Quilox", "score": 100 }</span>,
@@ -577,7 +577,7 @@ GET /api/city-pulse/lagos
 async function readCity() {
   try {
     const [pulse, venues] = await Promise.all([
-      fetch('/api/city-pulse/lagos').then(r => r.json()),
+      fetch('/api/city-energy/lagos').then(r => r.json()),
       fetch('/api/venues').then(r => r.json()),
     ]);
     document.getElementById('pulse-score').textContent = Math.round(pulse.pulse_score);

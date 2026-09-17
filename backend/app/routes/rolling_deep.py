@@ -1,5 +1,5 @@
 """
-Rolling Deep — Cartel Group Check-In
+Rolling Deep — Crew Group Check-In
 
 When 2+ crew members are heading to the same venue, one scout initiates
 a "Roll Deep" session. Other crew members see the alert and can confirm.

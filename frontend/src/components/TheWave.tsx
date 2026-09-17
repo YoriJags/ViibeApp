@@ -26,7 +26,7 @@ function energyLabel(energy: number) {
 }
 
 interface Props {
-  energy: number;    // 0–100 from cityPulse.pulse_score
+  energy: number;    // 0–100 from cityEnergy.energy_score
   spotsLive: number; // count of venues with score ≥ 60
   cityName: string;
 }

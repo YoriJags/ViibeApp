@@ -26,7 +26,7 @@ interface VibePromptProps {
 const PROMPT_COLORS: Record<VibePromptType, { accent: string; gradient: [string, string] }> = {
   badge_proximity:    { accent: '#9933FF', gradient: ['#9933FF', '#6B1FCC'] },
   leaderboard_impact: { accent: '#FFD700', gradient: ['#FFD700', '#FFA500'] },
-  cartel_activity:    { accent: '#FF3366', gradient: ['#FF3366', '#FF6B35'] },
+  crew_activity:    { accent: '#FF3366', gradient: ['#FF3366', '#FF6B35'] },
   streak_active:      { accent: '#FF9933', gradient: ['#FF9933', '#FF6B35'] },
   clout_milestone:    { accent: '#00D4FF', gradient: ['#00D4FF', '#3399FF'] },
 };

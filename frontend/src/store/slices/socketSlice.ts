@@ -1,12 +1,12 @@
 import { StateCreator } from 'zustand';
 import { io, Socket } from 'socket.io-client';
-import { Venue, CityPulseData, AlertPrefs } from '../types';
+import { Venue, CityEnergyData, AlertPrefs } from '../types';
 import type { LivePush } from '../types';
 import type { VibeStore } from '../vibeStore';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
-// City pulse threshold that activates the global charge HUD
+// City energy threshold that activates the global charge HUD
 const CITY_CHARGE_THRESHOLD = 70;
 
 export interface SocketSlice {
@@ -24,7 +24,7 @@ export interface SocketSlice {
   activeVenueCoords: { lat: number; lng: number } | null;
   tabBarHidden: boolean;
   alertPrefs: AlertPrefs | null;
-  /** True when city-wide pulse_score crosses CITY_CHARGE_THRESHOLD — drives GlobalVibePill pulse animation */
+  /** True when city-wide energy_score crosses CITY_CHARGE_THRESHOLD — drives GlobalVibePill pulse animation */
   cityChargeActive: boolean;
   /** Active collective surge at the current venue (null when inactive) */
   activeSurge: {
@@ -109,10 +109,10 @@ export const createSocketSlice: StateCreator<
       set({ venues: leaderboard.map((entry) => entry.venue) });
     });
 
-    newSocket.on('city_pulse_update', (data: CityPulseData) => {
-      // Update city pulse + derive cityChargeActive flag
-      const cityChargeActive = data.pulse_score > CITY_CHARGE_THRESHOLD;
-      set({ cityPulse: data, cityChargeActive });
+    newSocket.on('city_energy_update', (data: CityEnergyData) => {
+      // Update city energy + derive cityChargeActive flag
+      const cityChargeActive = data.energy_score > CITY_CHARGE_THRESHOLD;
+      set({ cityEnergy: data, cityChargeActive });
     });
 
     newSocket.on('venue_live_push', (push: LivePush) => {

@@ -1,15 +1,19 @@
 """
-Cartel Battle — cross-venue tap-off between two crews.
+Crew Battle — cross-venue tap-off between two crews.
 
-One cartel challenges another using their invite code.
+One crew challenges another using their invite code.
+
+Was "Cartel". The Mongo collection keeps the old name because renaming a
+collection is a migration, and the old route paths stay as aliases for clients
+shipped before the rename. See docs/VOCABULARY.md.
 All crew members tap for their side. Rate-limited to 1 tap per 5 seconds per user.
 Battle runs for 30 minutes once the challenge is accepted.
 
 Routes:
-  POST /cartel-battles/challenge          — captain challenges another crew (by invite code)
-  GET  /cartel-battles/active             — active or most recent battle for caller's crew
-  POST /cartel-battles/{id}/tap           — tap for your crew
-  POST /cartel-battles/{id}/accept        — opponent captain accepts the challenge
+  POST /crew-battles/challenge          — captain challenges another crew (by invite code)
+  GET  /crew-battles/active             — active or most recent battle for caller's crew
+  POST /crew-battles/{id}/tap           — tap for your crew
+  POST /crew-battles/{id}/accept        — opponent captain accepts the challenge
 """
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -17,13 +21,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.config import db
 from app.services.auth import require_auth
 
-router = APIRouter(tags=["cartel_battles"])
+router = APIRouter(tags=["crew_battles"])
 
 BATTLE_DURATION_MINUTES = 30
 TAP_COOLDOWN_SECONDS = 5  # min gap between taps per user
 
 
-async def _enrich_cartel_battle(battle: dict) -> dict:
+async def _enrich_crew_battle(battle: dict) -> dict:
     """Compute derived fields: time remaining, share%, winner."""
     taps_a = battle.get("taps_a", 0)
     taps_b = battle.get("taps_b", 0)
@@ -70,10 +74,11 @@ async def _enrich_cartel_battle(battle: dict) -> dict:
     }
 
 
-@router.post("/cartel-battles/challenge")
+@router.post("/crew-battles/challenge")
+@router.post("/cartel-battles/challenge", include_in_schema=False)  # deprecated alias
 async def challenge_crew(body: dict, user: dict = Depends(require_auth)):
     """
-    Captain challenges another cartel by invite code.
+    Captain challenges another crew by invite code.
     Finds where each crew's captain is checked in to name the locations.
     Creates battle with status=pending until the opponent accepts.
     """
@@ -84,7 +89,7 @@ async def challenge_crew(body: dict, user: dict = Depends(require_auth)):
     # Find challenger's crew
     my_crew = await db.crews.find_one({"members": user["id"]})
     if not my_crew:
-        raise HTTPException(status_code=404, detail="You're not in a cartel")
+        raise HTTPException(status_code=404, detail="You're not in a crew")
 
     if my_crew.get("captain_id") != user["id"]:
         raise HTTPException(status_code=403, detail="Only the captain can issue a challenge")
@@ -92,10 +97,10 @@ async def challenge_crew(body: dict, user: dict = Depends(require_auth)):
     # Find opponent crew
     opp_crew = await db.crews.find_one({"invite_code": invite_code})
     if not opp_crew:
-        raise HTTPException(status_code=404, detail="No cartel found with that invite code")
+        raise HTTPException(status_code=404, detail="No crew found with that invite code")
 
     if opp_crew["id"] == my_crew["id"]:
-        raise HTTPException(status_code=400, detail="Can't battle your own cartel")
+        raise HTTPException(status_code=400, detail="Can't battle your own crew")
 
     # Check for existing active battle between these two crews
     cutoff = datetime.now(timezone.utc) - timedelta(minutes=BATTLE_DURATION_MINUTES + 5)
@@ -107,7 +112,7 @@ async def challenge_crew(body: dict, user: dict = Depends(require_auth)):
         ],
     })
     if existing:
-        raise HTTPException(status_code=409, detail="A battle between these cartels is already active")
+        raise HTTPException(status_code=409, detail="A battle between these crews is already active")
 
     # Resolve location names from active check-ins (fall back to crew name)
     async def get_crew_location(crew: dict) -> str:
@@ -143,10 +148,11 @@ async def challenge_crew(body: dict, user: dict = Depends(require_auth)):
     }
     await db.cartel_battles.insert_one(battle_doc)
 
-    return {"battle": await _enrich_cartel_battle(battle_doc), "message": f"Challenge sent to {opp_crew['name']}"}
+    return {"battle": await _enrich_crew_battle(battle_doc), "message": f"Challenge sent to {opp_crew['name']}"}
 
 
-@router.post("/cartel-battles/{battle_id}/accept")
+@router.post("/crew-battles/{battle_id}/accept")
+@router.post("/cartel-battles/{battle_id}/accept", include_in_schema=False)  # deprecated alias
 async def accept_battle(battle_id: str, user: dict = Depends(require_auth)):
     """Opponent captain accepts the challenge — battle clock starts."""
     battle = await db.cartel_battles.find_one({"id": battle_id})
@@ -159,7 +165,7 @@ async def accept_battle(battle_id: str, user: dict = Depends(require_auth)):
     # Only the opponent captain can accept
     opp_crew = await db.crews.find_one({"id": battle["crew_b_id"]})
     if not opp_crew or opp_crew.get("captain_id") != user["id"]:
-        raise HTTPException(status_code=403, detail="Only the challenged cartel's captain can accept")
+        raise HTTPException(status_code=403, detail="Only the challenged crew's captain can accept")
 
     now = datetime.now(timezone.utc)
     await db.cartel_battles.update_one(
@@ -167,12 +173,13 @@ async def accept_battle(battle_id: str, user: dict = Depends(require_auth)):
         {"$set": {"status": "active", "accepted_at": now}},
     )
     updated = await db.cartel_battles.find_one({"id": battle_id})
-    return {"battle": await _enrich_cartel_battle(updated)}
+    return {"battle": await _enrich_crew_battle(updated)}
 
 
-@router.get("/cartel-battles/active")
-async def get_active_cartel_battle(user: dict = Depends(require_auth)):
-    """Returns the active or most recent cartel battle for the caller's crew."""
+@router.get("/crew-battles/active")
+@router.get("/cartel-battles/active", include_in_schema=False)  # deprecated alias
+async def get_active_crew_battle(user: dict = Depends(require_auth)):
+    """Returns the active or most recent crew battle for the caller's crew."""
     my_crew = await db.crews.find_one({"members": user["id"]})
     if not my_crew:
         return {"battle": None, "crew_id": None}
@@ -196,14 +203,15 @@ async def get_active_cartel_battle(user: dict = Depends(require_auth)):
         return {"battle": None, "crew_id": crew_id}
 
     return {
-        "battle": await _enrich_cartel_battle(battle),
+        "battle": await _enrich_crew_battle(battle),
         "crew_id": crew_id,
         "my_side": "a" if battle["crew_a_id"] == crew_id else "b",
     }
 
 
-@router.post("/cartel-battles/{battle_id}/tap")
-async def tap_cartel_battle(battle_id: str, user: dict = Depends(require_auth)):
+@router.post("/crew-battles/{battle_id}/tap")
+@router.post("/cartel-battles/{battle_id}/tap", include_in_schema=False)  # deprecated alias
+async def tap_crew_battle(battle_id: str, user: dict = Depends(require_auth)):
     """
     Tap for your crew's side.
     Rate-limited: 1 tap per TAP_COOLDOWN_SECONDS per user.
@@ -228,17 +236,17 @@ async def tap_cartel_battle(battle_id: str, user: dict = Depends(require_auth)):
     # Determine which side the user is on
     my_crew = await db.crews.find_one({"members": user["id"]})
     if not my_crew:
-        raise HTTPException(status_code=403, detail="You're not in a cartel")
+        raise HTTPException(status_code=403, detail="You're not in a crew")
 
     if my_crew["id"] == battle["crew_a_id"]:
         side = "a"
     elif my_crew["id"] == battle["crew_b_id"]:
         side = "b"
     else:
-        raise HTTPException(status_code=403, detail="Your cartel is not in this battle")
+        raise HTTPException(status_code=403, detail="Your crew is not in this battle")
 
     # Rate limit: check last tap time
-    last_tap = await db.cartel_battle_taps.find_one(
+    last_tap = await db.crew_battle_taps.find_one(
         {"battle_id": battle_id, "user_id": user["id"]},
         sort=[("created_at", -1)],
     )
@@ -254,7 +262,7 @@ async def tap_cartel_battle(battle_id: str, user: dict = Depends(require_auth)):
             )
 
     # Record tap
-    await db.cartel_battle_taps.insert_one({
+    await db.crew_battle_taps.insert_one({
         "battle_id": battle_id,
         "user_id": user["id"],
         "crew_id": my_crew["id"],
@@ -267,6 +275,6 @@ async def tap_cartel_battle(battle_id: str, user: dict = Depends(require_auth)):
 
     updated = await db.cartel_battles.find_one({"id": battle_id})
     return {
-        "battle": await _enrich_cartel_battle(updated),
+        "battle": await _enrich_crew_battle(updated),
         "my_side": side,
     }

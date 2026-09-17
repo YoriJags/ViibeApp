@@ -1,10 +1,10 @@
 """
 AfterParty Mode — Post-night debrief for scouts.
 
-Aggregates tonight's checkins, ratings, bolts, aura peak, and top venue
+Aggregates tonight's checkins, ratings, bolts, heat peak, and top venue
 into a "Your Night" summary. Triggered when a scout winds down.
 
-Night window: 5PM → 7AM (same as aura.py).
+Night window: 5PM to 7AM (same as scout_heat.py).
 
 Routes:
   GET /me/night-recap   — authenticated user's tonight summary
@@ -68,14 +68,10 @@ async def get_night_recap(user: dict = Depends(require_auth)):
     ).to_list(20)
     venues_visited = list({d["venue_id"]: d.get("venue_name", "Unknown") for d in checkin_docs}.items())
 
-    # Aura peak tonight (heat score)
+    # Tonight's Heat peak. The ladder is imported rather than restated so the
+    # two cannot drift apart, which they already had.
+    from app.routes.scout_heat import HEAT_LEVELS
     heat_score = checkins_tonight * 5 + ratings_tonight * 4 + bolts_tonight * 1
-    HEAT_LEVELS = [
-        (0,  0,   "cold",    "Cold",     "#3A3A4E"),
-        (1,  9,   "warming", "Warming",  "#6655FF"),
-        (10, 24,  "hot",     "Hot",      "#FF9933"),
-        (25, 9999, "on_fire","On Fire",  "#FF3366"),
-    ]
     level_row = HEAT_LEVELS[0]
     for row in HEAT_LEVELS:
         if heat_score >= row[0]:

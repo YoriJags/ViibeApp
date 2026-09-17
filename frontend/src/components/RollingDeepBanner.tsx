@@ -37,7 +37,7 @@ interface Props {
 }
 
 const DEMO_SESSION: Session = {
-  crew_id: 'demo', crew_name: 'WAVE CARTEL',
+  crew_id: 'demo', crew_name: 'WAVE CREW',
   venue_id: 'demo_venue', venue_name: 'Club Quilox',
   initiator_username: 'wave_captain',
   members_in: ['demo_user_1'],
@@ -169,7 +169,7 @@ export default function RollingDeepBanner({ crewId, currentUserId, isDemoMode, o
                 ? <ActivityIndicator size="small" color="#FFF" />
                 : <>
                     <Ionicons name="people" size={14} color="#FFF" />
-                    <Text style={styles.joinBtnText}>I'M IN — ROLL DEEP</Text>
+                    <Text style={styles.joinBtnText}>I'M IN, ROLL DEEP</Text>
                   </>
               }
             </LinearGradient>

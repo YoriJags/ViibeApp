@@ -22,32 +22,36 @@ import { rollVariableReward, RewardType } from './VariableRewardOverlay';
 interface Props {
   venueName: string;
   venueId: string;
-  pulseTier: 'source' | 'max_pulse' | 'electric' | 'charged' | 'stirring' | 'dormant';
+  // The venue's ENERGY state. This badge sits beside the venue name, so it has
+  // to be the thing a person would assume it is. It used to be fed from the
+  // 24h rating count, which meant "ELECTRIC" could mean "sixty ratings".
+  energyLevel: 'quiet' | 'chill' | 'warming' | 'charged' | 'lit' | 'peak';
   onDrop: (venueId: string) => Promise<void>; // caller fires the API call
   onFullRate?: () => void;                     // open the full RateVibeModal
   onVariableReward?: (type: RewardType) => void; // parent fires animation
   disabled?: boolean;                          // already dropped a pulse this session
 }
 
-const TIER_COLORS: Record<string, string> = {
-  source: '#FF3366',
-  max_pulse: '#FF6B35',
-  electric: '#FFD700',
-  charged: '#9933FF',
-  stirring: '#3399FF',
-  dormant: '#555',
+// The canonical energy ladder from docs/ENERGY.md, thermal as energy always is.
+const ENERGY_COLORS: Record<string, string> = {
+  peak:    '#FF3366',
+  lit:     '#FF6B35',
+  charged: '#FFD700',
+  warming: '#9933FF',
+  chill:   '#3399FF',
+  quiet:   '#555',
 };
 
-const TIER_LABELS: Record<string, string> = {
-  source: 'THE SOURCE',
-  max_pulse: 'MAX PULSE',
-  electric: 'ELECTRIC',
+const ENERGY_LABELS: Record<string, string> = {
+  peak:    'PEAK',
+  lit:     'LIT',
   charged: 'CHARGED',
-  stirring: 'STIRRING',
-  dormant: 'DORMANT',
+  warming: 'WARMING',
+  chill:   'CHILL',
+  quiet:   'QUIET',
 };
 
-export default function NoDulling({ venueName, venueId, pulseTier, onDrop, onFullRate, onVariableReward, disabled }: Props) {
+export default function NoDulling({ venueName, venueId, energyLevel, onDrop, onFullRate, onVariableReward, disabled }: Props) {
   const [dropped, setDropped] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -55,8 +59,8 @@ export default function NoDulling({ venueName, venueId, pulseTier, onDrop, onFul
   const flashOpacity = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const tierColor = TIER_COLORS[pulseTier] ?? '#9933FF';
-  const tierLabel = TIER_LABELS[pulseTier] ?? 'STIRRING';
+  const tierColor = ENERGY_COLORS[energyLevel] ?? '#9933FF';
+  const tierLabel = ENERGY_LABELS[energyLevel] ?? 'WARMING';
 
   const handleDrop = async () => {
     if (dropped || loading || disabled) return;

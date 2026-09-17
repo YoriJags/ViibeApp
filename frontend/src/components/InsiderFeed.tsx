@@ -19,7 +19,7 @@ import { getSceneIntelShort } from '../utils/sceneIntel';
 
 interface InsiderFeedProps {
   venues: any[];
-  cityPulse: any;
+  cityEnergy: any;
   cityName: string;
   onVenuePress: (id: string) => void;
   onSwitchMode: () => void;
@@ -29,20 +29,20 @@ interface InsiderFeedProps {
 
 export default function InsiderFeed({
   venues,
-  cityPulse,
+  cityEnergy,
   cityName,
   onVenuePress,
   onSwitchMode,
   refreshing,
   onRefresh,
 }: InsiderFeedProps) {
-  const pulse_score = cityPulse?.pulse_score ?? 0;
-  const pulse_label = (cityPulse?.pulse_label ?? 'CHILL').toUpperCase();
+  const energy_score = cityEnergy?.energy_score ?? 0;
+  const energy_label = (cityEnergy?.energy_label ?? 'CHILL').toUpperCase();
 
   const accentColor =
-    pulse_score >= 80 ? '#FF3366' :
-    pulse_score >= 60 ? '#FF9933' :
-    pulse_score >= 30 ? '#9933FF' :
+    energy_score >= 80 ? '#FF3366' :
+    energy_score >= 60 ? '#FF9933' :
+    energy_score >= 30 ? '#9933FF' :
     '#3399FF';
 
   const topVenues = [...venues]
@@ -68,7 +68,7 @@ export default function InsiderFeed({
         <View>
           <Text style={styles.headerTitle}>TONIGHT'S INTEL</Text>
           <Text style={[styles.headerSub, { color: accentColor }]}>
-            {cityName} — {pulse_label} · {pulse_score}%
+            {cityName} — {energy_label} · {energy_score}%
           </Text>
         </View>
         <TouchableOpacity style={styles.switchBtn} onPress={onSwitchMode} activeOpacity={0.75}>

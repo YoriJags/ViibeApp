@@ -52,10 +52,12 @@ interface RateVibeModalProps {
     gate: GateLevel;
     venueSpecific?: string;
     photoBase64?: string;
+    staked?: boolean;
   }) => Promise<void>;
   venueName: string;
   venueType?: VenueType;
   isGpsVerified: boolean;
+  callsRemaining?: number;   // The Call: conviction stakes left tonight
   geofenceRadius?: number;
   cooldownRemainingSeconds?: number;
   userClout?: number;
@@ -154,6 +156,7 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
   visible,
   onClose,
   onSubmit,
+  callsRemaining = 0,
   venueName,
   venueType = 'other',
   isGpsVerified,
@@ -168,6 +171,7 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
   const [venueSpec,    setVenueSpec]    = useState<string | null>(null);
   const [photo,        setPhoto]        = useState<string | null>(null);
   const [submitting,   setSubmitting]   = useState(false);
+  const [staked,       setStaked]       = useState(false);
   const [skipping,     setSkipping]     = useState(false);
   const [skipError,    setSkipError]    = useState<string | null>(null);
   const [countdown,    setCountdown]    = useState(cooldownRemainingSeconds);
@@ -318,9 +322,10 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
         gate: gate!,
         venueSpecific: venueSpec || undefined,
         photoBase64: photo || undefined,
+        staked,
       });
       setEnergy(null); setCapacity(null); setGate(null);
-      setVenueSpec(null); setPhoto(null);
+      setVenueSpec(null); setPhoto(null); setStaked(false);
       dismissSheet();
     } catch (err) {
       console.error('Rating failed:', err);
@@ -605,7 +610,7 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
                 {/* CONTEXT section — optional, helps scouts plan */}
                 <View style={styles.contextDivider}>
                   <View style={styles.contextLine} />
-                  <Text style={styles.contextLabel}>CONTEXT — optional</Text>
+                  <Text style={styles.contextLabel}>CONTEXT, OPTIONAL</Text>
                   <View style={styles.contextLine} />
                 </View>
 
@@ -644,6 +649,39 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
                     </Text>
                     {!photo && <Text style={styles.cloutBonus}>+5</Text>}
                   </TouchableOpacity>
+
+                  {/* The Call: stake credibility, not effort. Scarce on purpose. */}
+                  {(callsRemaining ?? 0) > 0 && canSubmit && (
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        Haptics.impactAsync(
+                          staked
+                            ? Haptics.ImpactFeedbackStyle.Light
+                            : Haptics.ImpactFeedbackStyle.Heavy,
+                        );
+                        setStaked(!staked);
+                      }}
+                      style={[styles.callRow, staked && styles.callRowOn]}
+                    >
+                      <View style={[styles.callDot, staked && styles.callDotOn]}>
+                        {staked && <Ionicons name="flash" size={13} color="#0b0b14" />}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.callTitle, staked && styles.callTitleOn]}>
+                          {staked ? 'Called it' : 'Call it'}
+                        </Text>
+                        <Text style={styles.callSub}>
+                          {staked
+                            ? 'Your clout rides on this read being right'
+                            : 'Stake your clout that this read is right'}
+                        </Text>
+                      </View>
+                      <Text style={styles.callCount}>
+                        {callsRemaining} left
+                      </Text>
+                    </TouchableOpacity>
+                  )}
 
                   {/* Submit */}
                   <Animated.View
@@ -824,6 +862,53 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4,
   },
 
+  callRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    marginBottom: 12,
+  },
+  callRowOn: {
+    borderColor: '#FFD700',
+    backgroundColor: 'rgba(255,215,0,0.10)',
+  },
+  callDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  callDotOn: {
+    backgroundColor: '#FFD700',
+    borderColor: '#FFD700',
+  },
+  callTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.85)',
+    letterSpacing: 0.3,
+  },
+  callTitleOn: { color: '#FFD700' },
+  callSub: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.4)',
+    marginTop: 2,
+  },
+  callCount: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.35)',
+    fontVariant: ['tabular-nums'],
+  },
   submitWrapper: {
     flex: 1.6, borderRadius: 16, overflow: 'hidden',
   },

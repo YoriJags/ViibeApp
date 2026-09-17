@@ -8,7 +8,7 @@
  *   "Quilox is packed; DJ just dropped; 15 min gate delay; heating up fast"
  */
 
-import { Venue, CityPulseData } from '../types';
+import { Venue, CityEnergyData } from '../types';
 
 // ─── Venue sentence fragments ─────────────────────────────────────────────────
 
@@ -92,14 +92,14 @@ export function getTopSceneIntel(venues: Venue[], limit = 5): string[] {
     .map(getSceneIntelSentence);
 }
 
-// ─── City pulse sentence ──────────────────────────────────────────────────────
+// ─── City energy sentence ──────────────────────────────────────────────────────
 
 /**
  * Returns a city-level intel summary for Insider Mode header.
  * Example: "Lagos is lit — 42 scouts active across 12 venues"
  */
-export function getCityPulseIntel(pulse: CityPulseData | null): string {
-  if (!pulse) return 'Loading city pulse…';
+export function getCityEnergyIntel(pulse: CityEnergyData | null): string {
+  if (!pulse) return 'Loading city energy…';
 
   const cityName = pulse.city.charAt(0).toUpperCase() + pulse.city.slice(1);
 
@@ -110,7 +110,7 @@ export function getCityPulseIntel(pulse: CityPulseData | null): string {
     LIT:     'lit right now',
     PEAK:    'at peak energy',
   };
-  const mood = moodMap[pulse.pulse_label] ?? 'active';
+  const mood = moodMap[pulse.energy_label] ?? 'active';
 
   const trendMap: Record<string, string> = {
     heating_up:   ', and heating up fast',

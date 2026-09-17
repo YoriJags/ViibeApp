@@ -10,7 +10,7 @@ Rate limit: 60 requests/minute per key (enforced by RateLimitMiddleware).
 Endpoints (public, key-gated):
   GET /api/v1/agent/venues/live       — Top venues by live energy, filterable by city/category
   GET /api/v1/agent/venues/{venue_id} — Single venue energy snapshot
-  GET /api/v1/agent/city/pulse        — City-level energy summary
+  GET /api/v1/agent/city/energy       — City-level energy summary
 
 Endpoints (admin only):
   POST /api/v1/agent/keys             — Issue a new API key
@@ -189,8 +189,9 @@ async def get_venue_snapshot(
     }
 
 
-@router.get("/city/pulse")
-async def get_city_pulse(
+@router.get("/city/energy")
+@router.get("/city/pulse", include_in_schema=False)  # deprecated alias
+async def get_city_energy(
     request: Request,
     city:    Optional[str] = Query(None, description="City slug, e.g. 'lagos' or 'dubai'"),
 ):

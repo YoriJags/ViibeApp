@@ -1,5 +1,5 @@
 /**
- * AuraShieldToggle - Aura Shield configuration for merchant settings
+ * ScoreAlertsToggle - Score Alerts configuration for merchant settings
  * Toggle + threshold slider + alert type selection
  */
 import React, { useState, useEffect } from 'react';
@@ -10,7 +10,7 @@ import { merchantTheme, spacing, borderRadius, typography } from '../theme/floor
 const { colors } = merchantTheme;
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
-interface AuraShieldToggleProps {
+interface ScoreAlertsToggleProps {
   venueId: string;
   getAuthHeaders: () => Record<string, string>;
 }
@@ -23,7 +23,7 @@ const ALERT_TYPES = [
 
 const THRESHOLD_PRESETS = [30, 40, 50, 60, 70];
 
-export default function AuraShieldToggle({ venueId, getAuthHeaders }: AuraShieldToggleProps) {
+export default function ScoreAlertsToggle({ venueId, getAuthHeaders }: ScoreAlertsToggleProps) {
   const [enabled, setEnabled] = useState(false);
   const [threshold, setThreshold] = useState(50);
   const [alertOn, setAlertOn] = useState<string[]>(['score_drop']);
@@ -37,7 +37,7 @@ export default function AuraShieldToggle({ venueId, getAuthHeaders }: AuraShield
   const fetchConfig = async () => {
     try {
       const res = await fetch(
-        `${API_URL}/api/merchant/venue/${venueId}/aura-shield`,
+        `${API_URL}/api/merchant/venue/${venueId}/score-alerts`,
         { headers: getAuthHeaders() }
       );
       if (res.ok) {
@@ -47,7 +47,7 @@ export default function AuraShieldToggle({ venueId, getAuthHeaders }: AuraShield
         setAlertOn(data.alert_on || ['score_drop']);
       }
     } catch (e) {
-      console.error('Error fetching aura shield:', e);
+      console.error('Error fetching score alerts:', e);
     } finally {
       setLoading(false);
     }
@@ -61,7 +61,7 @@ export default function AuraShieldToggle({ venueId, getAuthHeaders }: AuraShield
     setSaving(true);
     try {
       await fetch(
-        `${API_URL}/api/merchant/venue/${venueId}/aura-shield`,
+        `${API_URL}/api/merchant/venue/${venueId}/score-alerts`,
         {
           method: 'PUT',
           headers: getAuthHeaders(),
@@ -73,7 +73,7 @@ export default function AuraShieldToggle({ venueId, getAuthHeaders }: AuraShield
         }
       );
     } catch (e) {
-      console.error('Error saving aura shield:', e);
+      console.error('Error saving score alerts:', e);
     } finally {
       setSaving(false);
     }
@@ -119,9 +119,9 @@ export default function AuraShieldToggle({ venueId, getAuthHeaders }: AuraShield
             />
           </View>
           <View>
-            <Text style={styles.title}>Aura Shield</Text>
+            <Text style={styles.title}>Score Alerts</Text>
             <Text style={styles.subtitle}>
-              {enabled ? 'Protecting your vibe' : 'Shield inactive'}
+              {enabled ? 'Alerts on' : 'Alerts off'}
             </Text>
           </View>
         </View>
@@ -137,7 +137,7 @@ export default function AuraShieldToggle({ venueId, getAuthHeaders }: AuraShield
         <>
           {/* Threshold */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Alert when score drops below</Text>
+            <Text style={styles.sectionLabel}>Alert me when my score drops below</Text>
             <View style={styles.thresholdRow}>
               {THRESHOLD_PRESETS.map(val => (
                 <TouchableOpacity

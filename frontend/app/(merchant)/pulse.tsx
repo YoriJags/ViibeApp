@@ -179,7 +179,7 @@ export default function MerchantPulse() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Pulse Drops</Text>
-          <Text style={styles.headerSubtitle}>Amplify your venue — scouts see you first</Text>
+          <Text style={styles.headerSubtitle}>Amplify your venue so scouts see you first</Text>
         </View>
 
         {/* Wallet balance */}

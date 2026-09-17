@@ -154,6 +154,7 @@ class RatingCreate(BaseModel):
     offline_id: Optional[str] = None
     taxonomy_id: Optional[str] = None  # None = default Lagos template
     vibe_note: Optional[str] = None    # Scout's free-text note — processed by Signal Extraction Layer
+    staked: bool = False               # The Call: scout stakes credibility on this reading
 
 
 # ===== Merchant Wallet =====
@@ -316,7 +317,7 @@ class AlertPreferences(BaseModel):
 
 # ===== Aura Shield =====
 
-class AuraShieldConfig(BaseModel):
+class ScoreAlertsConfig(BaseModel):
     enabled: bool = False
     threshold: int = 50
     alert_on: list[str] = ["score_drop"]

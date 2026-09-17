@@ -189,7 +189,7 @@ Sharp ideas borrowed from rival apps. None overlap with our core moat — they'r
 | STEAL-02 | HYPE | **Vibe+ line-skipping at partner venues** | Bolt-on for existing Vibe+ tier. Test in P8.4 once 5+ venues signed. Direct revenue lift. |
 | STEAL-03 | Barco | **Stories on venue pages** — short scout-uploaded clips/photos pinned to a venue | Cheap UGC moat, deepens venue profiles beyond the score. Phase 8 add. |
 | STEAL-04 | BarGlance | **"8-second glance" framing** — borrow the language, not the webcams | Use in onboarding + landing copy: "take a glance before you go." |
-| STEAL-05 | NOITE | **City-level pulse summary** — "Lagos is BUZZING tonight" headline above the map | ✅ Backend exists as `city_pulse` in the Agent API (`/api/v1/agent/city/pulse`). Map headline UI still to wire. |
+| STEAL-05 | NOITE | **City-level pulse summary** — "Lagos is BUZZING tonight" headline above the map | ✅ Backend exists as `city_energy` in the Agent API (`/api/v1/agent/city/pulse`). Map headline UI still to wire. |
 
 ### Explicit "DO NOT STEAL"
 

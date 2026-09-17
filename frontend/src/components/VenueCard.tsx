@@ -4,8 +4,8 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { hapticVibe } from '../utils/hapticVibe';
 import { LinearGradient } from 'expo-linear-gradient';
-import PulseStrip, { PulseData } from './PulseStrip';
-import PulseBottomSheet from './PulseBottomSheet';
+import SignalDensityStrip, { SignalDensityData } from './SignalDensityStrip';
+import SignalDensitySheet from './SignalDensitySheet';
 import MomentumArrow from './MomentumArrow';
 
 interface Venue {
@@ -22,7 +22,7 @@ interface Venue {
   active_pulse_tier?: string | null;
   entry_fee?: string;
   music_genre?: string;
-  pulse?: PulseData;
+  signal_density?: SignalDensityData;
   viibe_certified?: boolean;
   is_open_now?: boolean | null;
   next_open?: string;
@@ -73,7 +73,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
   const borderOpacity = useRef(new Animated.Value(0.08)).current;
   const scoreScale    = useRef(new Animated.Value(0.85)).current;
   const pressDepth    = useRef(new Animated.Value(0)).current;
-  const [showPulseSheet, setShowPulseSheet] = useState(false);
+  const [showDensitySheet, setShowDensitySheet] = useState(false);
 
   const onPressIn  = () => Animated.spring(pressDepth, { toValue: 1, tension: 300, friction: 10, useNativeDriver: true }).start();
   const onPressOut = () => Animated.spring(pressDepth, { toValue: 0, tension: 200, friction: 14, useNativeDriver: true }).start();
@@ -330,9 +330,12 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
             </View>
           )}
 
-          {/* Pulse strip */}
-          {venue.pulse && (
-            <PulseStrip pulse={venue.pulse} onPress={() => setShowPulseSheet(true)} />
+          {/* How much evidence sits behind the number above it */}
+          {venue.signal_density && (
+            <SignalDensityStrip
+              density={venue.signal_density}
+              onPress={() => setShowDensitySheet(true)}
+            />
           )}
 
           {/* Pulse Drop badge */}
@@ -384,13 +387,13 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
         )}
       </TouchableOpacity>
 
-      {venue.pulse && (
-        <PulseBottomSheet
-          visible={showPulseSheet}
-          onClose={() => setShowPulseSheet(false)}
+      {venue.signal_density && (
+        <SignalDensitySheet
+          visible={showDensitySheet}
+          onClose={() => setShowDensitySheet(false)}
           venueName={venue.name}
-          pulse={venue.pulse}
-          onRatePress={() => { setShowPulseSheet(false); onRatePress?.(); }}
+          density={venue.signal_density}
+          onRatePress={() => { setShowDensitySheet(false); onRatePress?.(); }}
         />
       )}
     </Animated.View>

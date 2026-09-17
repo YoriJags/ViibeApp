@@ -159,6 +159,7 @@ async def ensure_indexes():
     await db.alert_preferences.create_index("user_id", unique=True)
 
     # aura shields: per-venue unique
+    # Score Alerts config. Collection name predates the rename.
     await db.aura_shields.create_index("venue_id", unique=True)
 
     # campaigns: venue+status, city+status+expiry, TTL auto-cleanup

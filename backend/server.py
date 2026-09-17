@@ -50,7 +50,7 @@ from app.routes.ambient import router as ambient_router
 from app.routes.kinetic import router as kinetic_router
 from app.routes.waitlist import router as waitlist_router
 from app.routes.reactions import router as reactions_router
-from app.routes.city_pulse import router as city_pulse_router
+from app.routes.city_energy import router as city_energy_router
 from app.routes.venue_live import router as venue_live_router
 from app.routes.coins import router as coins_router
 from app.routes.reward_pools import router as reward_pools_router
@@ -60,11 +60,11 @@ from app.routes.claims import router as claims_router
 from app.routes.bookings import router as bookings_router
 from app.routes.surge import router as surge_router
 from app.routes.orbit import router as orbit_router
-from app.routes.aura import router as aura_router
+from app.routes.scout_heat import router as scout_heat_router
 from app.routes.tap_history import router as tap_history_router
 from app.routes.dna import router as dna_router
 from app.routes.battles import router as battles_router
-from app.routes.cartel_battles import router as cartel_battles_router
+from app.routes.crew_battles import router as crew_battles_router
 from app.routes.heat_map import router as heat_map_router
 from app.routes.after_party import router as after_party_router
 from app.routes.resonance import router as resonance_router
@@ -128,7 +128,7 @@ api_router.include_router(feature_flags_router)
 api_router.include_router(platform_settings_router)
 api_router.include_router(subscriptions_router)
 api_router.include_router(reactions_router)
-api_router.include_router(city_pulse_router)
+api_router.include_router(city_energy_router)
 api_router.include_router(venue_live_router)
 api_router.include_router(coins_router)
 api_router.include_router(reward_pools_router)
@@ -138,11 +138,11 @@ api_router.include_router(claims_router)
 api_router.include_router(bookings_router)
 api_router.include_router(surge_router)
 api_router.include_router(orbit_router)
-api_router.include_router(aura_router)
+api_router.include_router(scout_heat_router)
 api_router.include_router(tap_history_router)
 api_router.include_router(dna_router)
 api_router.include_router(battles_router)
-api_router.include_router(cartel_battles_router)
+api_router.include_router(crew_battles_router)
 api_router.include_router(heat_map_router)
 api_router.include_router(after_party_router)
 api_router.include_router(resonance_router)
@@ -225,6 +225,9 @@ async def startup():
     from app.services.merchant_report import weekly_reports_enabled, weekly_report_loop
     if weekly_reports_enabled():
         asyncio.create_task(weekly_report_loop())
+    # The Call: settle staked readings against what the room actually did
+    from app.services.stake import settle_loop
+    asyncio.create_task(settle_loop())
 
 # ===== Socket.IO ASGI App =====
 socket_app = socketio.ASGIApp(sio, app)

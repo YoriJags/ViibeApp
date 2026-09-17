@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { merchantTheme, spacing, borderRadius, typography } from '../../src/theme/floors';
 import { useVibeStore } from '../../src/store/vibeStore';
-import AuraShieldToggle from '../../src/components/AuraShieldToggle';
+import ScoreAlertsToggle from '../../src/components/ScoreAlertsToggle';
 
 const { colors } = merchantTheme;
 
@@ -58,13 +58,13 @@ export default function MerchantSettings() {
           </TouchableOpacity>
         </View>
 
-        {/* Aura Shield */}
+        {/* Score Alerts */}
         {user?.merchant_venue_id && (
           <View style={styles.section}>
             <Text style={[styles.headerTitle, { fontSize: typography.fontSize.lg, marginBottom: spacing.md, paddingHorizontal: 0 }]}>
-              Aura Shield
+              Score Alerts
             </Text>
-            <AuraShieldToggle venueId={user.merchant_venue_id} getAuthHeaders={getAuthHeaders} />
+            <ScoreAlertsToggle venueId={user.merchant_venue_id} getAuthHeaders={getAuthHeaders} />
           </View>
         )}
 

@@ -300,7 +300,7 @@ Conversational AI venue recommendation:
 - **Claude path:** Activates when `ANTHROPIC_API_KEY` is set. Sends full venue context (live scores, energy, capacity, gate, genre) to `claude-haiku-4-5` as a structured system prompt. Returns JSON: `{reply, venue_ids, follow_up_prompts}`.
 - Follow-up chips allow multi-turn conversation without typing.
 
-### 8.6 City Pulse
+### 8.6 City Energy
 Live city heartbeat aggregated across all active venues:
 - **Pulse score:** Weighted average of all active venue scores (weighted by `total_ratings_24h`)
 - **Active scouts:** Unique users who rated or reacted in the last hour
@@ -589,7 +589,7 @@ VIIBE supports 9 venue categories, each with type-specific scoring dimensions:
 | Base64 story images | ARCH | Stories store raw base64 in MongoDB documents. No CDN. Will hit document size limits at scale. Needs Cloudinary/S3. |
 | Crew avatar_config in DB | ARCH | Live crew members may show blank avatars if they authenticated before avatar_config field was added to user schema. |
 | vibeStore.ts size | ARCH | Single 64KB Zustand store. Should be split by domain (auth, venues, crew, subscriptions, DNA). |
-| Live data fallbacks | ARCH | Most public floor features (stories, oracle, DNA, city pulse, planner) fall back to demo constants when API returns empty. Live users see demo data until enough real data accumulates. |
+| Live data fallbacks | ARCH | Most public floor features (stories, oracle, DNA, city energy, planner) fall back to demo constants when API returns empty. Live users see demo data until enough real data accumulates. |
 | Vercel api/index.py sync | ARCH | Keeping `api/index.py` in sync with `server.py` is a maintenance burden. Recommendation: freeze new routes in `index.py`; route all new write operations through Railway only. |
 | Merchant venue onboarding | MISSING | Merchants cannot self-register a venue. Admin must manually assign. Onboarding flow not built. |
 | Unit tests | MISSING | No automated tests for scoring logic, aggregation pipeline, or anti-cheat rules. |

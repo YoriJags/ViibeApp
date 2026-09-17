@@ -1,7 +1,7 @@
 import React from 'react';
 import { FlexWidget, TextWidget } from 'react-native-android-widget';
 
-export interface CityPulseData {
+export interface CityEnergyData {
   score: number;
   label: string;
   trending: string;
@@ -9,10 +9,10 @@ export interface CityPulseData {
 }
 
 /**
- * Home-screen City Pulse widget — the VIIBE instrument on the phone's wall.
+ * Home-screen City Energy widget — the VIIBE instrument on the phone's wall.
  * Thermal skin: coal background, ember->amber heat, mono data labels.
  */
-export function CityPulseWidget({ data }: { data: CityPulseData | null }) {
+export function CityEnergyWidget({ data }: { data: CityEnergyData | null }) {
   const score = data ? Math.round(data.score) : null;
   const heat = score == null ? '#A89B8C' : score >= 80 ? '#FFF3D6' : score >= 55 ? '#FFB300' : score >= 30 ? '#E85D00' : '#7A2E00';
   return (

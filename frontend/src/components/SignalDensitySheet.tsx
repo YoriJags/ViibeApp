@@ -1,7 +1,10 @@
 /**
- * PulseBottomSheet — full Source of Pulse breakdown
- * Opens when user taps the PulseStrip on a venue card.
- * Shows tier progress, scout count, top contributor, and CTA to rate.
+ * SignalDensitySheet — the full evidence breakdown behind a venue's reading.
+ * Opens when a user taps the SignalDensityStrip on a venue card.
+ *
+ * Every line here answers "how much do we actually know about this room right
+ * now", and none of them claims anything about the room itself. That is the
+ * whole point of the rename. See docs/VOCABULARY.md.
  */
 import React, { useEffect, useRef } from 'react';
 import {
@@ -14,19 +17,19 @@ import {
   Text,
   View,
 } from 'react-native';
-import { PulseData, PulseTier, TIER_CONFIG } from './PulseStrip';
+import { SignalDensityData, DensityTier, DENSITY_CONFIG } from './SignalDensityStrip';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 const SHEET_H = SCREEN_H * 0.62;
 
-const TIERS: PulseTier[] = ['dormant', 'stirring', 'charged', 'electric', 'max_pulse', 'source'];
-const TIER_THRESHOLDS: Record<PulseTier, number> = {
-  dormant:   0,
-  stirring:  20,
-  charged:   40,
-  electric:  60,
-  max_pulse: 80,
-  source:    100,
+const TIERS: DensityTier[] = ['none', 'thin', 'partial', 'firm', 'dense', 'saturated'];
+const TIER_THRESHOLDS: Record<DensityTier, number> = {
+  none:      0,
+  thin:      20,
+  partial:   40,
+  firm:      60,
+  dense:     80,
+  saturated: 100,
 };
 
 interface TopContributor {
@@ -38,32 +41,30 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   venueName: string;
-  pulse: PulseData;
+  density: SignalDensityData;
   topContributor?: TopContributor;
   onRatePress?: () => void;
 }
 
-export default function PulseBottomSheet({
+export default function SignalDensitySheet({
   visible,
   onClose,
   venueName,
-  pulse,
+  density,
   topContributor,
   onRatePress,
 }: Props) {
-  const slideAnim  = useRef(new Animated.Value(SHEET_H)).current;
+  const slideAnim   = useRef(new Animated.Value(SHEET_H)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
-  const barAnim    = useRef(new Animated.Value(0)).current;
-  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const barAnim     = useRef(new Animated.Value(0)).current;
 
-  const tier = TIER_CONFIG[pulse.tier];
-  const pct  = Math.min(pulse.count / pulse.total, 1);
-  const remaining = pulse.next_tier_at > 0 ? pulse.next_tier_at - pulse.count : 0;
-  const isSource  = pulse.tier === 'source';
+  const tier = DENSITY_CONFIG[density.tier] ?? DENSITY_CONFIG.none;
+  const pct  = Math.min(density.count / density.total, 1);
+  const remaining   = density.next_tier_at > 0 ? density.next_tier_at - density.count : 0;
+  const isSaturated = density.tier === 'saturated';
 
   useEffect(() => {
     if (visible) {
-      // Sheet slides up
       Animated.parallel([
         Animated.spring(slideAnim, {
           toValue: 0,
@@ -78,7 +79,6 @@ export default function PulseBottomSheet({
         }),
       ]).start();
 
-      // Bar fills after short delay
       setTimeout(() => {
         Animated.spring(barAnim, {
           toValue: pct,
@@ -87,15 +87,6 @@ export default function PulseBottomSheet({
           useNativeDriver: false,
         }).start();
       }, 300);
-
-      // Shimmer on the bar
-      Animated.loop(
-        Animated.timing(shimmerAnim, {
-          toValue: 1,
-          duration: 2200,
-          useNativeDriver: false,
-        })
-      ).start();
     } else {
       Animated.parallel([
         Animated.timing(slideAnim, {
@@ -110,7 +101,6 @@ export default function PulseBottomSheet({
         }),
       ]).start();
       barAnim.setValue(0);
-      shimmerAnim.setValue(0);
     }
   }, [visible]);
 
@@ -121,34 +111,31 @@ export default function PulseBottomSheet({
 
   return (
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
-      {/* Overlay */}
       <Animated.View style={[styles.overlay, { opacity: overlayAnim }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>
 
-      {/* Sheet */}
       <Animated.View
         style={[
           styles.sheet,
           { transform: [{ translateY: slideAnim }] },
         ]}
       >
-        {/* Drag handle */}
         <View style={styles.handle} />
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
 
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerEyebrow}>SOURCE OF PULSE</Text>
+            <Text style={styles.headerEyebrow}>SIGNAL DENSITY</Text>
             <Text style={styles.headerVenue}>{venueName}</Text>
-            <Text style={styles.headerSub}>Tonight's collective intelligence</Text>
+            <Text style={styles.headerSub}>How much evidence sits behind tonight's reading</Text>
           </View>
 
-          {/* Count display */}
+          {/* Count */}
           <View style={styles.countDisplay}>
             <Text style={[styles.countNumber, { color: tier.color }]}>
-              {pulse.count}
+              {density.count}
             </Text>
             <Text style={styles.countSlash}>/</Text>
             <Text style={styles.countTotal}>100</Text>
@@ -166,10 +153,9 @@ export default function PulseBottomSheet({
                 },
               ]}
             />
-            {/* Tier tick marks */}
             {TIERS.slice(1).map((t) => {
               const threshold = TIER_THRESHOLDS[t];
-              const reached   = pulse.count >= threshold;
+              const reached   = density.count >= threshold;
               return (
                 <View
                   key={t}
@@ -183,19 +169,20 @@ export default function PulseBottomSheet({
             })}
           </View>
 
-          {/* Tier icons row */}
+          {/* Tier ramp */}
           <View style={styles.tiersRow}>
             {TIERS.map((t) => {
-              const cfg       = TIER_CONFIG[t];
+              const cfg       = DENSITY_CONFIG[t];
               const threshold = TIER_THRESHOLDS[t];
-              const isActive  = pulse.tier === t;
-              const isPassed  = TIERS.indexOf(t) < TIERS.indexOf(pulse.tier);
+              const isActive  = density.tier === t;
+              const isPassed  = TIERS.indexOf(t) < TIERS.indexOf(density.tier);
 
               return (
                 <View key={t} style={styles.tierItem}>
                   <Text style={[
                     styles.tierIcon,
-                    !isActive && !isPassed && { opacity: 0.3 },
+                    { color: isActive ? cfg.color : 'rgba(255,255,255,0.5)' },
+                    !isActive && !isPassed && { opacity: 0.25 },
                   ]}>
                     {cfg.icon}
                   </Text>
@@ -211,47 +198,61 @@ export default function PulseBottomSheet({
             })}
           </View>
 
-          {/* Status + next milestone */}
+          {/* Status and what it means */}
           <View style={[styles.statusCard, { borderColor: tier.color + '40' }]}>
             <View style={[styles.statusBadge, { backgroundColor: tier.color + '20' }]}>
               <Text style={[styles.statusBadgeText, { color: tier.color }]}>
-                {tier.icon}  {tier.label.toUpperCase()}
+                {tier.icon}  SIGNAL {tier.label.toUpperCase()}
               </Text>
             </View>
 
-            {!isSource && remaining > 0 && (
+            <Text style={styles.statusMeaning}>{tier.meaning}</Text>
+
+            {!isSaturated && remaining > 0 && (
               <Text style={styles.nextMilestone}>
-                <Text style={{ color: tier.color, fontWeight: '700' }}>{remaining} scouts</Text>
-                {' '}away from {tier.nextLabel} tonight
+                <Text style={{ color: tier.color, fontWeight: '700' }}>
+                  {remaining} more {remaining === 1 ? 'reading' : 'readings'}
+                </Text>
+                {' '}and tonight's number firms up to {tier.nextLabel.toLowerCase()}.
               </Text>
             )}
 
-            {isSource && (
-              <Text style={styles.sourceMessage}>
-                👑 This venue reached SOURCE tonight.{'\n'}The community vouches for it.
+            {isSaturated && (
+              <Text style={styles.nextMilestone}>
+                Tonight's reading here rests on as much evidence as we ever collect.
               </Text>
             )}
+          </View>
+
+          {/* The line that keeps the whole screen honest */}
+          <View style={styles.clarifier}>
+            <Text style={styles.clarifierText}>
+              This bar is not the energy. It is how much we know. A room can read
+              quiet on saturated signal, and that is a confident quiet.
+            </Text>
           </View>
 
           <View style={styles.divider} />
 
-          {/* Scout count */}
+          {/* Who produced it */}
           <View style={styles.statRow}>
-            <Text style={styles.statIcon}>👥</Text>
+            <Text style={styles.statIcon}>{'●'}</Text>
             <Text style={styles.statText}>
-              <Text style={styles.statBold}>{pulse.count} scouts</Text> contributed tonight
+              <Text style={styles.statBold}>
+                {density.count} {density.count === 1 ? 'reading' : 'readings'}
+              </Text>
+              {' '}from scouts inside the room in the last 24 hours
             </Text>
           </View>
 
-          {/* Top contributor */}
           {topContributor && (
             <View style={styles.statRow}>
-              <Text style={styles.statIcon}>🏆</Text>
+              <Text style={styles.statIcon}>{'●'}</Text>
               <Text style={styles.statText}>
-                Top contributor:{' '}
+                Most readings tonight:{' '}
                 <Text style={styles.statBold}>@{topContributor.username}</Text>
-                {' · '}
-                {topContributor.rating_count} ratings
+                {' with '}
+                {topContributor.rating_count}
               </Text>
             </View>
           )}
@@ -260,26 +261,31 @@ export default function PulseBottomSheet({
 
           {/* CTA */}
           <View style={styles.ctaSection}>
-            {!isSource ? (
+            {!isSaturated ? (
               <>
                 <Text style={styles.ctaHint}>
-                  Be one of{' '}
-                  <Text style={{ color: tier.color, fontWeight: '700' }}>{remaining}</Text>
-                  {' '}to push this venue to {tier.nextLabel}
+                  If you are in the room, your reading is the only thing that moves this.
                 </Text>
                 <Pressable
                   style={[styles.ctaButton, { backgroundColor: tier.color }]}
                   onPress={onRatePress}
                 >
-                  <Text style={styles.ctaButtonText}>⭐  Rate This Venue</Text>
+                  <Text
+                    style={[
+                      styles.ctaButtonText,
+                      tier.color === '#f1f5f9' && { color: '#0b0b14' },
+                    ]}
+                  >
+                    Add your reading
+                  </Text>
                 </Pressable>
               </>
             ) : (
-              <View style={styles.sourceAchieved}>
-                <Text style={styles.sourceAchievedText}>
-                  Source status achieved 👑{'\n'}
-                  <Text style={styles.sourceAchievedSub}>
-                    This venue's vibe is fully validated by the community.
+              <View style={styles.saturatedPanel}>
+                <Text style={styles.saturatedPanelText}>
+                  Fully covered tonight.{'\n'}
+                  <Text style={styles.saturatedPanelSub}>
+                    More readings will not make this number more certain.
                   </Text>
                 </Text>
               </View>
@@ -307,10 +313,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderTopWidth: 1,
-    borderColor: 'rgba(139,92,246,0.2)',
-    shadowColor: '#8b5cf6',
+    borderColor: 'rgba(34,211,238,0.18)',
+    shadowColor: '#22d3ee',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.2,
     shadowRadius: 20,
     elevation: 20,
   },
@@ -329,13 +335,12 @@ const styles = StyleSheet.create({
     gap: 20,
   },
 
-  // Header
   header: { gap: 4 },
   headerEyebrow: {
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 3,
-    color: 'rgba(139,92,246,0.7)',
+    color: 'rgba(34,211,238,0.7)',
     textTransform: 'uppercase',
   },
   headerVenue: {
@@ -349,7 +354,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.35)',
   },
 
-  // Count
   countDisplay: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -372,7 +376,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Bar
   barTrack: {
     height: 8,
     backgroundColor: 'rgba(255,255,255,0.06)',
@@ -398,7 +401,6 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
 
-  // Tiers row
   tiersRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -416,7 +418,6 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
 
-  // Status card
   statusCard: {
     borderWidth: 1,
     borderRadius: 14,
@@ -435,19 +436,28 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
-  nextMilestone: {
+  statusMeaning: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgba(255,255,255,0.75)',
     lineHeight: 20,
   },
-  sourceMessage: {
-    fontSize: 14,
-    color: '#fbbf24',
-    lineHeight: 22,
-    textAlign: 'center',
+  nextMilestone: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.45)',
+    lineHeight: 19,
   },
 
-  // Stats
+  clarifier: {
+    borderLeftWidth: 2,
+    borderLeftColor: 'rgba(34,211,238,0.35)',
+    paddingLeft: 12,
+  },
+  clarifierText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.4)',
+    lineHeight: 18,
+  },
+
   divider: {
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.06)',
@@ -457,7 +467,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  statIcon: { fontSize: 16 },
+  statIcon: {
+    fontSize: 8,
+    color: 'rgba(34,211,238,0.6)',
+  },
   statText: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.5)',
@@ -468,7 +481,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // CTA
   ctaSection: { gap: 14 },
   ctaHint: {
     fontSize: 13,
@@ -487,23 +499,23 @@ const styles = StyleSheet.create({
     color: '#fff',
     letterSpacing: 0.5,
   },
-  sourceAchieved: {
-    backgroundColor: 'rgba(251,191,36,0.08)',
+  saturatedPanel: {
+    backgroundColor: 'rgba(241,245,249,0.06)',
     borderRadius: 14,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.25)',
+    borderColor: 'rgba(241,245,249,0.18)',
   },
-  sourceAchievedText: {
+  saturatedPanelText: {
     fontSize: 15,
-    color: '#fbbf24',
+    color: '#f1f5f9',
     fontWeight: '700',
     textAlign: 'center',
     lineHeight: 24,
   },
-  sourceAchievedSub: {
+  saturatedPanelSub: {
     fontSize: 13,
-    color: 'rgba(251,191,36,0.6)',
+    color: 'rgba(241,245,249,0.55)',
     fontWeight: '400',
   },
 });

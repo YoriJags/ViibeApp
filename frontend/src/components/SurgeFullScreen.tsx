@@ -491,7 +491,7 @@ export default function SurgeFullScreen({
         {globalSurgeActive && (
           <View style={s.surgeBanner} pointerEvents="none">
             <Text style={s.surgeBannerText}>⚡ GLOBAL SURGE ⚡</Text>
-            <Text style={s.surgeBannerSub}>1,000 taps — venue is ELECTRIC</Text>
+            <Text style={s.surgeBannerSub}>1,000 taps. The meter is MAXED</Text>
           </View>
         )}
 
@@ -579,7 +579,7 @@ export default function SurgeFullScreen({
 
           {/* Hint */}
           {localCooldown ? (
-            <Text style={s.hintText}><Text style={{ color: color + '88' }}>⏱ </Text>visual cooldown — 15s</Text>
+            <Text style={s.hintText}><Text style={{ color: color + '88' }}>⏱ </Text>visual cooldown, 15s</Text>
           ) : surge.next_level && surge.taps_to_next > 0 ? (
             <Text style={s.hintText}>
               <Text style={s.hintDim}>{surge.taps_to_next} taps to </Text>
@@ -590,7 +590,7 @@ export default function SurgeFullScreen({
               ELECTRIC — KEEP IT ALIVE
             </Animated.Text>
           ) : (
-            <Text style={s.hintText}>{cooldown ? 'Cooling down...' : 'Tap anywhere — power the venue'}</Text>
+            <Text style={s.hintText}>{cooldown ? 'Cooling down...' : 'Tap anywhere to power the venue'}</Text>
           )}
 
           {/* Sync state */}

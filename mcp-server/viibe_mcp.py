@@ -54,11 +54,11 @@ def _get(path: str, params: dict | None = None) -> dict:
 
 
 @mcp.tool()
-def city_pulse(city: str = "lagos") -> dict:
+def city_energy(city: str = "lagos") -> dict:
     """Live city-wide energy reading: city_energy (0-100), city_label
     (LOW->PEAK), venue_tiers breakdown, top_venues, active_scouts. The headline
     'is the city alive right now' number."""
-    return _get("/city/pulse", {"city": city})
+    return _get("/city/energy", {"city": city})
 
 
 @mcp.tool()

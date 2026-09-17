@@ -58,30 +58,30 @@ const HIGH_G_SPARK_FLOOR = 2.0;   // G-force threshold for particle burst
 
 // Level → index for color interpolation
 const LEVEL_INDICES: Record<string, number> = {
-  dormant: 0, stirring: 1, buzzing: 2, popping: 3, electric: 4,
+  empty: 0, trickle: 1, rising: 2, surging: 3, maxed: 4,
 };
-// deep electric blue → volatile neon purple → fire → crimson
+// deep sapphire → volatile neon purple → fire → crimson
 const DEMO_SURGE: SurgeState = {
-  charge_pct: 0.08, level: 'stirring', level_label: 'STIRRING',
+  charge_pct: 0.08, level: 'trickle', level_label: 'TRICKLE',
   level_color: '#1155EE', level_progress: 0.08, taps_to_next: 3,
-  next_level: 'BUZZING', tap_count: 0, total_surges: 0,
+  next_level: 'RISING', tap_count: 0, total_surges: 0,
 };
 
 // Neutral baseline used when the surge fetch fails, so the Reactor always
 // renders and stays tappable instead of vanishing. A successful tap (/bolt)
 // replaces this with real server state.
 const BASELINE_SURGE: SurgeState = {
-  charge_pct: 0, level: 'dormant', level_label: 'DORMANT',
+  charge_pct: 0, level: 'empty', level_label: 'EMPTY',
   level_color: '#1A1040', level_progress: 0, taps_to_next: 3,
-  next_level: 'STIRRING', tap_count: 0, total_surges: 0,
+  next_level: 'TRICKLE', tap_count: 0, total_surges: 0,
 };
 
 const DEMO_LEVELS = [
-  { level: 'dormant',  label: 'DORMANT',  color: '#1A1040', min: 0,    next: 'STIRRING'  },
-  { level: 'stirring', label: 'STIRRING', color: '#1155EE', min: 0.08, next: 'BUZZING'   },
-  { level: 'buzzing',  label: 'BUZZING',  color: '#8800EE', min: 0.32, next: 'POPPING'   },
-  { level: 'popping',  label: 'POPPING',  color: '#FF6600', min: 0.58, next: 'ELECTRIC'  },
-  { level: 'electric', label: 'ELECTRIC', color: '#FF0044', min: 0.84, next: null        },
+  { level: 'empty',  label: 'EMPTY',  color: '#1A1040', min: 0,    next: 'TRICKLE'  },
+  { level: 'trickle', label: 'TRICKLE', color: '#1155EE', min: 0.08, next: 'RISING'   },
+  { level: 'rising',  label: 'RISING',  color: '#8800EE', min: 0.32, next: 'SURGING'   },
+  { level: 'surging',  label: 'SURGING',  color: '#FF6600', min: 0.58, next: 'MAXED'  },
+  { level: 'maxed', label: 'MAXED', color: '#FF0044', min: 0.84, next: null        },
 ];
 
 // ── Segmented ring geometry (module-level for worklet access) ──────────────
@@ -176,7 +176,7 @@ const DIAL_MARKS = [
   { pct: 0.08, color: '#1155EE' },
   { pct: 0.32, color: '#8800EE' },
   { pct: 0.58, color: '#FF6600' },
-  { pct: 0.84, color: '#FFD700' },  // ELECTRIC threshold — gold
+  { pct: 0.84, color: '#FFD700' },  // MAXED threshold — gold
 ] as const;
 
 const KineticCanvas = React.memo(function KineticCanvas({
@@ -276,7 +276,7 @@ const KineticCanvas = React.memo(function KineticCanvas({
     return p;
   });
 
-  // ── Mouth focal diamond — 6 o'clock, where energy converges at ELECTRIC ───
+  // ── Mouth focal diamond — 6 o'clock, where the meter converges at MAXED ───
   const mouthMarker = React.useMemo(() => {
     const a  = 90 * (Math.PI / 180);
     const mx = CX + RING_R * Math.cos(a);
@@ -352,7 +352,7 @@ const KineticCanvas = React.memo(function KineticCanvas({
         </Paint>
       </Path>
 
-      {/* ── 7. Mid aura ── */}
+      {/* ── 7. Mid glow ── */}
       <Path path={filledPath}>
         <Paint style="stroke" strokeWidth={RING_T + 16} strokeCap="butt" color={coreColor} opacity={0.30}>
           <BlurMask blur={20} style="normal" />
@@ -595,14 +595,14 @@ export default function VibeReactor({
     interpolateColor(levelIdx.value, [0, 1, 2, 3, 4], skinPalette.value),
   );
 
-  // Ember color: jewel tones per level, turns pure gold at ELECTRIC
+  // Ember color: jewel tones per level, turns pure gold at MAXED
   const emberColor = useDerivedValue<string>(() =>
     interpolateColor(levelIdx.value, [0, 1, 2, 3, 4], [
-      '#7744CC',  // dormant  — deep violet
-      '#3388FF',  // stirring — sapphire
-      '#CC55FF',  // buzzing  — amethyst
-      '#FFAA00',  // popping  — liquid amber
-      '#FFD700',  // electric — pure gold
+      '#7744CC',  // empty    — deep violet
+      '#3388FF',  // trickle  — sapphire
+      '#CC55FF',  // rising   — amethyst
+      '#FFAA00',  // surging  — liquid amber
+      '#FFD700',  // maxed    : pure gold
     ]),
   );
 
@@ -659,13 +659,13 @@ export default function VibeReactor({
     );
   }, []);
 
-  // ── Ring progress + level color + electric glow ──────────────────────────────
+  // ── Ring progress + level color + max glow ──────────────────────────────
   useEffect(() => {
     if (!surge) return;
     ringProgress.value = withSpring(surge.charge_pct, { stiffness: 55, damping: 11 });
     levelIdx.value = withTiming(LEVEL_INDICES[surge.level] ?? 1, { duration: 500 });
 
-    if (surge.level === 'electric') {
+    if (surge.level === 'maxed') {
       glowOpacity.value = withRepeat(
         withSequence(
           withTiming(1,   { duration: 500, easing: Easing.inOut(Easing.ease) }),
@@ -678,7 +678,7 @@ export default function VibeReactor({
       glowOpacity.value = withTiming(0.85, { duration: 200 });
     }
 
-    if (surge.level === 'electric' && prevLevel.current && prevLevel.current !== 'electric') {
+    if (surge.level === 'maxed' && prevLevel.current && prevLevel.current !== 'maxed') {
       setTimeout(() => onElectric?.(surge.tap_count), 200);
     }
     prevLevel.current = surge.level;
@@ -950,7 +950,7 @@ export default function VibeReactor({
           taps_to_next: DEMO_LEVELS.find(t => t.min > lvl.min)
             ? Math.max(0, Math.ceil((DEMO_LEVELS.find(t => t.min > lvl.min)!.min - np) / 0.08))
             : 0,
-          total_surges: lvl.level === 'electric' && prev.level !== 'electric'
+          total_surges: lvl.level === 'maxed' && prev.level !== 'maxed'
             ? prev.total_surges + 1 : prev.total_surges,
         };
       });
@@ -981,7 +981,7 @@ export default function VibeReactor({
   ]);
 
   // ── Derived display values ────────────────────────────────────────────────────
-  const isElectric = surge?.level === 'electric';
+  const isMaxed = surge?.level === 'maxed';
   const color      = dangerZone ? '#FF3B30' : (surge?.level_color ?? '#5544FF');
 
   const displayTaps = localTapCount > 0 ? localTapCount : (surge?.tap_count ?? 0);
@@ -1014,7 +1014,7 @@ export default function VibeReactor({
   }));
 
   const boltStyle = useAnimatedStyle(() => ({
-    opacity: isElectric ? glowOpacity.value : 1,
+    opacity: isMaxed ? glowOpacity.value : 1,
   }));
 
   const dangerTextStyle = useAnimatedStyle(() => ({
@@ -1113,8 +1113,8 @@ export default function VibeReactor({
             orbStyle,
             {
               shadowColor:   color,
-              shadowOpacity: isElectric ? 0.9 : 0.5,
-              shadowRadius:  isElectric ? 28 : 14,
+              shadowOpacity: isMaxed ? 0.9 : 0.5,
+              shadowRadius:  isMaxed ? 28 : 14,
               borderColor:   color + '55',
             },
           ]}>
@@ -1185,7 +1185,7 @@ export default function VibeReactor({
             {surge.taps_to_next} taps to <Text style={{ color }}>{surge.next_level}</Text>
           </Text>
         ) : (
-          <Text style={[styles.subText, { color }]}>ELECTRIC — MAX CHARGE</Text>
+          <Text style={[styles.subText, { color }]}>MAXED</Text>
         )}
         {bpmNow > 0 && <Text style={styles.subText}>{Math.round(bpmNow)} BPM</Text>}
       </View>
@@ -1198,7 +1198,7 @@ export default function VibeReactor({
       {/* Danger callout */}
       {dangerZone && (
         <Animated.View style={dangerTextStyle}>
-          <Text style={styles.dangerText}>⚠ Energy dropping — keep it alive!</Text>
+          <Text style={styles.dangerText}>⚠ Energy dropping. Tap to hold it.</Text>
         </Animated.View>
       )}
 

@@ -53,7 +53,7 @@ export const DEMO_VENUES = [
     geofence_radius_m: 150,
     vibe_certified: true,
     certified_since: '2025-11-01T00:00:00Z',
-    pulse: { count: 82, total: 100, tier: 'max_pulse' as const, next_tier_at: 100 },
+    signal_density: { count: 82, total: 100, tier: 'dense' as const, next_tier_at: 100 },
   },
   {
     id: 'demo_venue_hardrock',
@@ -76,7 +76,7 @@ export const DEMO_VENUES = [
     glow_boost: 0,
     geofence_radius_m: 100,
     vibe_certified: false,
-    pulse: { count: 43, total: 100, tier: 'charged' as const, next_tier_at: 60 },
+    signal_density: { count: 43, total: 100, tier: 'partial' as const, next_tier_at: 60 },
   },
   {
     id: 'demo_venue_escape',
@@ -101,7 +101,7 @@ export const DEMO_VENUES = [
     geofence_radius_m: 100,
     vibe_certified: true,
     certified_since: '2025-10-15T00:00:00Z',
-    pulse: { count: 100, total: 100, tier: 'source' as const, next_tier_at: 0 },
+    signal_density: { count: 100, total: 100, tier: 'saturated' as const, next_tier_at: 0 },
   },
   {
     id: 'demo_venue_shiro',
@@ -711,7 +711,7 @@ export const DEMO_VIBE_MATCH = {
   matchPercent: 94,
   vibeScore: 94,
   energyLevel: 'Electric',
-  reason: 'Your Cartel member AdaObi is here + you love Electric vibes',
+  reason: 'Your Crew member AdaObi is here + you love Electric vibes',
 };
 
 // ===== TONIGHT HERO DATA =====
@@ -720,8 +720,8 @@ export const DEMO_TONIGHT = {
   currentHour: '10PM',
   cityEnergy: 'peak' as const,
   cityEnergyScore: 87,
-  cartelOutCount: 2,
-  cartelTotal: 4,
+  crewOutCount: 2,
+  crewTotal: 4,
   matchVenue: 'Escape Nightclub',
   matchVenueId: 'demo_venue_escape',
   matchPercent: 94,
@@ -729,7 +729,7 @@ export const DEMO_TONIGHT = {
 };
 
 // ===== CONNECTIVE PROMPTS =====
-export type VibePromptType = 'streak_active' | 'badge_proximity' | 'cartel_activity' | 'leaderboard_impact' | 'clout_milestone';
+export type VibePromptType = 'streak_active' | 'badge_proximity' | 'crew_activity' | 'leaderboard_impact' | 'clout_milestone';
 
 export interface VibePromptData {
   id: string;
@@ -741,7 +741,7 @@ export interface VibePromptData {
 export const DEMO_PROMPTS: VibePromptData[] = [
   { id: 'p1', type: 'streak_active', message: 'Day 7 streak! 1.5x clout multiplier active', emoji: '⚡' },
   { id: 'p2', type: 'badge_proximity', message: '2 more midnight check-ins for Night Owl badge', emoji: '🦉' },
-  { id: 'p3', type: 'cartel_activity', message: 'AdaObi just checked in at Escape Nightclub', emoji: '👥' },
+  { id: 'p3', type: 'crew_activity', message: 'AdaObi just checked in at Escape Nightclub', emoji: '👥' },
   { id: 'p4', type: 'leaderboard_impact', message: 'Quilox moved to #2 in Clubs tonight', emoji: '🏆' },
   { id: 'p5', type: 'clout_milestone', message: '750 more clout to Diamond tier', emoji: '💎' },
 ];
@@ -775,7 +775,7 @@ export const DEMO_CATEGORY_TRENDING = {
   ],
 };
 
-// Demo crew locations for CartelRadarMap
+// Demo crew locations for CrewRadarMap
 export const DEMO_CREW_LOCATIONS = [
   {
     user_id: 'demo_crew_1',
@@ -1035,16 +1035,16 @@ export const DEMO_PLANNER_CONVERSATION: PlannerMessage[] = [
   },
 ];
 
-// ===== CITY PULSE — Live city heartbeat demo data =====
+// ===== CITY ENERGY — Live city heartbeat demo data =====
 export const DEMO_CITY_PULSE = {
   city: 'lagos',
-  pulse_score: 82,
-  pulse_label: 'LIT' as const,
+  energy_score: 82,
+  energy_label: 'LIT' as const,
   trend: 'heating_up' as const,
   active_scouts: 247,
   live_venues: 34,
   hot_venues: 9,
-  pulses_tonight: 1143,
+  readings_tonight: 1143,
   trending_venue: { name: 'Quilox', score: 96 },
   sparkline: [41, 53, 62, 70, 78, 82],
   updated_at: new Date().toISOString(),

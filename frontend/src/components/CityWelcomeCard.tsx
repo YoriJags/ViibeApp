@@ -9,17 +9,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface CityWelcomeProps {
-  cityPulse: { pulse_score: number; pulse_label: string; active_scouts: number; live_venues: number } | null;
+  cityEnergy: { energy_score: number; energy_label: string; active_scouts: number; live_venues: number } | null;
   cityName: string;
   onPlannerPress: () => void;
   callName?: string;
 }
 
-export default function CityWelcomeCard({ cityPulse, cityName, onPlannerPress, callName }: CityWelcomeProps) {
-  const score = cityPulse?.pulse_score ?? 42;
-  const label = (cityPulse?.pulse_label ?? 'BUZZING').toUpperCase();
-  const scouts = cityPulse?.active_scouts ?? 0;
-  const liveSpots = cityPulse?.live_venues ?? 0;
+export default function CityWelcomeCard({ cityEnergy, cityName, onPlannerPress, callName }: CityWelcomeProps) {
+  const score = cityEnergy?.energy_score ?? 42;
+  const label = (cityEnergy?.energy_label ?? 'BUZZING').toUpperCase();
+  const scouts = cityEnergy?.active_scouts ?? 0;
+  const liveSpots = cityEnergy?.live_venues ?? 0;
 
   const color =
     score >= 80 ? '#FF3366' :

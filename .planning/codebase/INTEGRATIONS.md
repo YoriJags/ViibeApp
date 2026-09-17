@@ -80,7 +80,7 @@
 **Socket.IO:**
 - Server: `python-socketio` 5.11.4 AsyncServer (ASGI mode), wrapped around FastAPI app in `backend/server.py` as `socket_app`
 - Client: `socket.io-client` 4.8.3 in `frontend/src/store/vibeStore.ts`
-- Events emitted by server: `venue_update`, `leaderboard_update`, `venue_checkin_update`, `crew_vote_update`, `crew_checkin`, `campaign_update`, `reaction_pulse`, `city_pulse_update`, `kinetics_update`, `quest_succeeded`, `global_surge`, `global_charge_depletion`, `energy_critical`, `connection_status`
+- Events emitted by server: `venue_update`, `leaderboard_update`, `venue_checkin_update`, `crew_vote_update`, `crew_checkin`, `campaign_update`, `reaction_pulse`, `city_energy_update`, `kinetics_update`, `quest_succeeded`, `global_surge`, `global_charge_depletion`, `energy_critical`, `connection_status`
 - Events received from client: `connect`, `disconnect`, `join_venue`, `join_city`, `subscribe_leaderboard`, `join_crew_room`, `tap_velocity`, `vibe_pulse`
 - Rooms: `venue_{id}`, `city_{city}`, `leaderboard_{city}`, `crew_{id}`
 - All rooms implemented in: `backend/app/services/realtime.py`

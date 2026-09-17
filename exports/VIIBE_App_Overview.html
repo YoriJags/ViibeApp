@@ -640,7 +640,7 @@ final_score = min(100, base_score × capacity_multiplier)
 <li><strong>Claude path:</strong> Activates when <code>ANTHROPIC_API_KEY</code> is set. Sends full venue context (live scores, energy, capacity, gate, genre) to <code>claude-haiku-4-5</code> as a structured system prompt. Returns JSON: <code>{reply, venue_ids, follow_up_prompts}</code>.</li>
 <li>Follow-up chips allow multi-turn conversation without typing.</li>
 </ul>
-<h3>8.6 City Pulse</h3>
+<h3>8.6 City Energy</h3>
 <p>Live city heartbeat aggregated across all active venues:</p>
 <ul>
 <li><strong>Pulse score:</strong> Weighted average of all active venue scores (weighted by <code>total_ratings_24h</code>)</li>
@@ -1083,7 +1083,7 @@ Score &lt; 20                     → quiet state
 <tr>
 <td>Live data fallbacks</td>
 <td>ARCH</td>
-<td>Most public floor features (stories, oracle, DNA, city pulse, planner) fall back to demo constants when API returns empty. Live users see demo data until enough real data accumulates.</td>
+<td>Most public floor features (stories, oracle, DNA, city energy, planner) fall back to demo constants when API returns empty. Live users see demo data until enough real data accumulates.</td>
 </tr>
 <tr>
 <td>Merchant venue onboarding</td>

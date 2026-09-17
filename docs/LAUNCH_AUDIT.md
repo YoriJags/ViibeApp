@@ -17,7 +17,7 @@ pull it out.
 ### Consumer (the five things)
 | Surface | Modules / components |
 |---|---|
-| Live map + city pulse | `venues`, `city_pulse`, `heat_map`, `orbit` · VibeMap, CityPulseBar, VenueCard, TonightHero |
+| Live map + city energy | `venues`, `city_energy`, `heat_map`, `orbit` · VibeMap, CityEnergyBar, VenueCard, TonightHero |
 | Vibe check (3-sec rating) | `ratings`, `checkins` · RateVibeModal, SwipeRate, GPSLockIndicator, RatePromptFAB |
 | Reactor (tap-to-charge) | `surge`, `reactions`, `solo` · VibeReactor, VibeSurgeBar, SurgeFullScreen, FloatingBolt |
 | Venue detail | `venue_live`, `oracle` (heuristic only) · venue/[id], EnergyMeter, VibeOracle, TopScoutsCard |
@@ -38,7 +38,7 @@ Screens: (merchant)/* — keep all four.
 
 ## DARK — flag off, keep code (retention machinery for users who don't exist yet)
 
-Social/crew: `crews`, `cartel_battles`, `battles`, `rolling_deep`, `lobby`,
+Social/crew: `crews`, `crew_battles`, `battles`, `rolling_deep`, `lobby`,
 `vibe_quest`, `quests`, `quest_timeline`, `moments`, `resonance`, `stories`,
 `timeline`, `after_party`.
 Economy: `coins`, `reward_pools`, `subscriptions` (Vibe+), `bookings`,
@@ -48,7 +48,7 @@ Delight/lore: `cosmic` (zodiac), `dna`, `emoji_pulse`, `insider`,
 `intelligence`, `vibe_intel`, `dwell`, `kinetic` (server-side stays; UI dark).
 AI extras: keep Night Planner + Vibe Brief only; dark `roast_toast`,
 `dna_narrative`, `night_debrief`, `oracle_premium`.
-Components going dark with them: ~90 (Cartel*, Crew*, Quest*, Moment*, Coin*,
+Components going dark with them: ~90 (Crew*, Quest*, Moment*, Coin*,
 Zodiac*, Cosmic*, DNA*, Story*, Booking*, Avatar*, Aura*, Battle*, Wave,
 VibeMarket, VibePassport, VariableReward*, etc.)
 

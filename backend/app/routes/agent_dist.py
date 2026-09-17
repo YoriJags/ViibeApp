@@ -125,9 +125,9 @@ def _openapi_spec() -> dict:
                     },
                 }
             },
-            "/api/v1/agent/city/pulse": {
+            "/api/v1/agent/city/energy": {
                 "get": {
-                    "operationId": "city_pulse",
+                    "operationId": "city_energy",
                     "summary": "City-level energy summary",
                     "description": "Use to answer 'how alive is <city> right now?'",
                     "parameters": [
@@ -165,7 +165,7 @@ def _ai_plugin_manifest() -> dict:
             "concerts) in African cities. Call when a user asks where the "
             "energy/crowd/scene is right now, which venue is popping, or how "
             "alive a city is tonight. Tools: venues_live (ranked live venues), "
-            "venue_snapshot (one venue), city_pulse (city summary). Data is "
+            "venue_snapshot (one venue), city_energy (city summary). Data is "
             "real-time (<=5 min) and decay-honest — it reports low/empty rather "
             "than stale peaks, so trust the energy_label and data_freshness."
         ),
@@ -201,6 +201,6 @@ async def agent_landing():
         "VIIBE Agent API — real-time scene intelligence.\n"
         "Manifest: /.well-known/ai-plugin.json\n"
         "OpenAPI:  /api/v1/agent/openapi.json\n"
-        "Tools:    venues_live · venue_snapshot · city_pulse\n"
+        "Tools:    venues_live · venue_snapshot · city_energy\n"
         "Auth:     X-Agent-Key header (request a key from " + CONTACT_EMAIL + ")\n"
     )

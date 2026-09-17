@@ -46,6 +46,10 @@ const UI = {
 };
 
 /** Readings die at 15 minutes; ask once we are close. */
+// Fallback only. The real cadence is the scout's own setting, served by
+// /api/venues/{id}/prompt-plan, so the guards (checked in, nightly cap, settle
+// window) live in exactly one place on the server rather than being
+// reimplemented here. See backend/app/services/prompt_cadence.py.
 export const PROMPT_AFTER_MINUTES = 10;
 const READING_LIFESPAN_MINUTES = 15;
 
@@ -81,11 +85,16 @@ interface Props {
   lastRatedMinsAgo?: number | null;
   watchersNow?: number | null;
   isInsideVenue: boolean;
+  /** Minutes the scout chose between prompts. Null means they turned it off. */
+  cadenceMinutes?: number | null;
+  /** Server says this scout is due a prompt here, all guards already applied. */
+  promptDue?: boolean;
   onRefreshed?: (result: any) => void;
 }
 
 export default function PulseCheckCard({
-  venueId, energyLevel, lastRatedMinsAgo, watchersNow, isInsideVenue, onRefreshed,
+  venueId, energyLevel, lastRatedMinsAgo, watchersNow, isInsideVenue,
+  cadenceMinutes, promptDue, onRefreshed,
 }: Props) {
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const [busy, setBusy] = useState<Delta | null>(null);
@@ -102,7 +111,13 @@ export default function PulseCheckCard({
     hotter: new Animated.Value(1),
   }).current;
 
-  const stale = lastRatedMinsAgo != null && lastRatedMinsAgo >= PROMPT_AFTER_MINUTES;
+  // The server's verdict wins when we have it. Cadence of null means the scout
+  // turned prompts off, and that is honoured rather than quietly overridden.
+  const threshold = cadenceMinutes === undefined ? PROMPT_AFTER_MINUTES : cadenceMinutes;
+  const stale =
+    promptDue !== undefined
+      ? promptDue
+      : threshold != null && lastRatedMinsAgo != null && lastRatedMinsAgo >= threshold;
   const visible = isInsideVenue && stale && !gone;
 
   // Arrive, rather than blink into existence.

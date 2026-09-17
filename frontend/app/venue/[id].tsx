@@ -504,12 +504,52 @@ export default function VenueDetailScreen() {
     ]).start(() => setPersonaToast(null));
   };
 
+  // The Call: how many conviction stakes this scout has left tonight.
+  const [callsRemaining, setCallsRemaining] = useState(0);
+  const refreshCalls = React.useCallback(async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/me/calls`, { headers: getAuthHeaders() });
+      if (!r.ok) return;
+      const d = await r.json();
+      setCallsRemaining(d.remaining ?? 0);
+    } catch {
+      // Not knowing means we simply do not offer the Call. Never guess a budget.
+      setCallsRemaining(0);
+    }
+  }, []);
+  useEffect(() => { refreshCalls(); }, [refreshCalls]);
+
+  // Prompt cadence: the app asks on the scout's chosen rhythm instead of
+  // asking them to remember. All the guards are applied server side.
+  const [promptPlan, setPromptPlan] = useState<any>(null);
+  useEffect(() => {
+    if (!venue?.id) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const r = await fetch(`${API_URL}/api/venues/${venue.id}/prompt-plan`, {
+          headers: getAuthHeaders(),
+        });
+        if (!r.ok || cancelled) return;
+        const plan = await r.json();
+        if (!cancelled) setPromptPlan(plan);
+      } catch {
+        // Leave it null: the card falls back to its own timing rather than
+        // showing nothing.
+      }
+    };
+    load();
+    const t = setInterval(load, 60_000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [venue?.id]);
+
   const handleSubmitRating = async (data: {
     energy: 'quiet' | 'chill' | 'warming' | 'lit' | 'peak';
     capacity: 'sparse' | 'vibrant' | 'full';
     gate: 'clear' | 'slow' | 'blocked';
     venueSpecific?: string;
     photoBase64?: string;
+    staked?: boolean;
   }) => {
     if (!user || !venue) return;
 
@@ -522,7 +562,8 @@ export default function VenueDetailScreen() {
         const result = await submitRating(
           venue.id, data.energy as any, data.capacity, data.gate,
           { lat: userLocation?.lat || 0, lng: userLocation?.lng || 0 },
-          data.photoBase64
+          data.photoBase64,
+          data.staked,
         );
         cloutEarned = result.clout_earned || 15;
       } else {
@@ -538,6 +579,7 @@ export default function VenueDetailScreen() {
             venue_specific: data.venueSpecific,
             photo_base64: data.photoBase64,
             coordinates: { lat: userLocation?.lat || 0, lng: userLocation?.lng || 0 },
+            staked: !!data.staked,
           }),
         });
         if (!response.ok) {
@@ -564,6 +606,7 @@ export default function VenueDetailScreen() {
       // Refresh rating status so modal shows cooldown next open
       const updatedStatus = await getUserRatingStatus(venue.id);
       setRatingStatus(updatedStatus);
+      refreshCalls();
 
     } catch (error: any) {
       console.error('Rating error:', error);
@@ -874,7 +917,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
         {/* ====== VIIBE CERTIFIED BAR ====== */}
         {venue.viibe_certified && (
           <View style={styles.viibeBar}>
-            <Text style={styles.viibeBarText}>✦ VIIBE CERTIFIED — Peak Energy + Max Pulse</Text>
+            <Text style={styles.viibeBarText}>✦ VIIBE CERTIFIED: PEAK ENERGY, SATURATED SIGNAL</Text>
           </View>
         )}
 
@@ -1336,6 +1379,8 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
             <ErrorBoundary label="Pulse Check">
               <PulseCheckCard
                 venueId={id}
+                cadenceMinutes={promptPlan?.cadence_minutes}
+                promptDue={promptPlan?.due}
                 energyLevel={venue.energy_level}
                 lastRatedMinsAgo={(venue as any).last_rated_mins_ago}
                 watchersNow={(venue as any).orbit?.watching_now}
@@ -1577,6 +1622,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
           venueName={venue?.name || ''}
           venueType={venue?.venue_type as any}
           isGpsVerified={isWithinGeofence || isDemoMode}
+          callsRemaining={callsRemaining}
           geofenceRadius={venue?.geofence_radius_m || 100}
           cooldownRemainingSeconds={ratingStatus?.cooldown_remaining_seconds || 0}
           userClout={user?.clout_points || 0}

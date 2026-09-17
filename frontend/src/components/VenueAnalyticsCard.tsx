@@ -185,7 +185,7 @@ export default function VenueAnalyticsCard({ venueId, authToken }: Props) {
           {/* Slow nights with blast tip */}
           {slow_nights.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>SLOW NIGHTS — ACTION NEEDED</Text>
+              <Text style={styles.sectionTitle}>SLOW NIGHTS, ACTION NEEDED</Text>
               {slow_nights.map((sn, i) => (
                 <View key={i} style={styles.slowNightRow}>
                   <View style={styles.slowNightLeft}>

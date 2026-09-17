@@ -1,6 +1,6 @@
 /**
- * CartelPulse — Compact "Vibez Cartel" activity card.
- * Shows cartel members with their check-in status in a premium glass card.
+ * CrewActivity — Compact "Crew" activity card.
+ * Shows crew members with their check-in status in a premium glass card.
  * Staggered member row entrance for visual polish.
  */
 import React, { useEffect, useRef } from 'react';
@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AvatarDisplay from './AvatarDisplay';
 
-interface CartelMember {
+interface CrewMember {
   user_id: string;
   username: string;
   scout_status: string;
@@ -27,13 +27,13 @@ interface CartelMember {
   } | null;
 }
 
-interface CartelPulseProps {
-  cartelName: string;
-  members: CartelMember[];
+interface CrewActivityProps {
+  crewName: string;
+  members: CrewMember[];
   onPress: () => void;
 }
 
-function MemberRow({ member, index }: { member: CartelMember; index: number }) {
+function MemberRow({ member, index }: { member: CrewMember; index: number }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(-12)).current;
 
@@ -87,7 +87,7 @@ function MemberRow({ member, index }: { member: CartelMember; index: number }) {
   );
 }
 
-export default function CartelPulse({ cartelName, members, onPress }: CartelPulseProps) {
+export default function CrewActivity({ crewName, members, onPress }: CrewActivityProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(15)).current;
 
@@ -122,8 +122,8 @@ export default function CartelPulse({ cartelName, members, onPress }: CartelPuls
         <View style={s.header}>
           <View>
             <Text style={s.brandLabel}>VIIBE CREW</Text>
-            <Text style={s.cartelName} numberOfLines={1}>
-              {cartelName}
+            <Text style={s.crewName} numberOfLines={1}>
+              {crewName}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color="#555" />
@@ -175,7 +175,7 @@ const s = StyleSheet.create({
     color: '#FF3366',
     marginBottom: 2,
   },
-  cartelName: {
+  crewName: {
     fontSize: 14,
     fontWeight: '700',
     color: '#FFF',

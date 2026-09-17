@@ -185,13 +185,15 @@ async def get_venue_score_history(
     }
 
 
-@router.get("/city/{city}/pulse")
-async def get_city_pulse(
+@router.get("/city/{city}/energy")
+@router.get("/city/{city}/pulse", include_in_schema=False)  # deprecated alias
+async def get_city_energy(
     city: str,
     x_api_key: str = Header(...),
 ):
     """
-    City-level aggregate pulse with top venues and energy distribution.
+    City Energy: the aggregate across a city, with top venues and the energy
+    distribution beneath it.
     """
     await _require_api_key(x_api_key)
 

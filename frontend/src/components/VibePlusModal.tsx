@@ -179,7 +179,7 @@ export default function VibePlusModal({ visible, onClose, onSuccess }: VibePlusM
                     end={{ x: 1, y: 0 }}
                     style={styles.subscribeBtnGradient}
                   >
-                    <Text style={styles.subscribeBtnText}>Subscribe Now — ₦2,000</Text>
+                    <Text style={styles.subscribeBtnText}>Subscribe Now for ₦2,000</Text>
                   </LinearGradient>
                 </TouchableOpacity>
 
@@ -225,7 +225,7 @@ export default function VibePlusModal({ visible, onClose, onSuccess }: VibePlusM
                     end={{ x: 1, y: 0 }}
                     style={styles.subscribeBtnGradient}
                   >
-                    <Text style={styles.subscribeBtnText}>I've Paid — Verify Now</Text>
+                    <Text style={styles.subscribeBtnText}>I've Paid, Verify Now</Text>
                   </LinearGradient>
                 </TouchableOpacity>
 

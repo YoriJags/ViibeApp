@@ -232,7 +232,7 @@ export default function VibeForecast({ venueId, venueName }: VibeForecastProps) 
 
                   {/* Big chart */}
                   <View style={fs.chartSection}>
-                    <Text style={fs.sectionLabel}>ENERGY CURVE — TONIGHT</Text>
+                    <Text style={fs.sectionLabel}>ENERGY CURVE TONIGHT</Text>
                     <ForecastChart hours={eveningHours} peakHour={data.peak_hour} maxBarHeight={160} colWidth={38} barW={22} />
                   </View>
 

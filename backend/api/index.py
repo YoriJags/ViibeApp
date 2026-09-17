@@ -1171,7 +1171,7 @@ QUICK_PULSE_CLOUT    = 3
 QUICK_PULSE_COOLDOWN = 15 * 60  # 15 minutes
 
 
-def _get_pulse_label(score: float) -> str:
+def _get_energy_label(score: float) -> str:
     if score >= 85: return "PEAK"
     if score >= 65: return "LIT"
     if score >= 45: return "WARMING"
@@ -1179,8 +1179,8 @@ def _get_pulse_label(score: float) -> str:
     return "QUIET"
 
 
-def handle_get_city_pulse(city: str):
-    """GET /api/city-pulse/{city} — live city heartbeat with 30-min sparkline."""
+def handle_get_city_energy(city: str):
+    """GET /api/city-energy/{city}: live City Energy with a 30-minute sparkline."""
     db = get_db()
     if not db:
         return 503, {"detail": "Database unavailable"}
@@ -1206,12 +1206,12 @@ def handle_get_city_pulse(city: str):
             v.get("current_vibe_score", 0) * max(v.get("total_ratings_24h", 1), 1)
             for v in active_venues
         )
-        pulse_score = round(weighted_sum / total_weight, 1)
+        energy_score = round(weighted_sum / total_weight, 1)
         top_venue   = max(active_venues, key=lambda v: v.get("current_vibe_score", 0))
         trending    = {"name": top_venue["name"], "score": int(top_venue["current_vibe_score"])}
         hot_venues  = sum(1 for v in active_venues if v.get("current_vibe_score", 0) >= 65)
     else:
-        pulse_score = 0
+        energy_score = 0
         trending    = None
         hot_venues  = 0
 
@@ -1220,7 +1220,7 @@ def handle_get_city_pulse(city: str):
     reaction_scouts = set(db.reactions.distinct("user_id", {"timestamp": {"$gte": hour_ago}}))
     active_scouts   = len(rating_scouts | reaction_scouts)
 
-    pulses_tonight = db.quick_pulses.count_documents({"city": city, "timestamp": {"$gte": midnight}})
+    readings_tonight = db.quick_pulses.count_documents({"city": city, "timestamp": {"$gte": midnight}})
 
     # 30-min sparkline: 6 data points × 5-min buckets
     snapshots = list(db.vibe_snapshots.find(
@@ -1241,7 +1241,7 @@ def handle_get_city_pulse(city: str):
         buckets.setdefault(bucket, []).append(snap.get("vibe_score", 0))
 
     sparkline = []
-    last_val = pulse_score
+    last_val = energy_score
     for i in range(5, -1, -1):
         if i in buckets and buckets[i]:
             last_val = round(sum(buckets[i]) / len(buckets[i]), 1)
@@ -1255,18 +1255,25 @@ def handle_get_city_pulse(city: str):
     else:
         trend = "stable"
 
+    label = _get_energy_label(energy_score)
+
     return 200, {
-        "city":           city,
-        "pulse_score":    pulse_score,
-        "pulse_label":    _get_pulse_label(pulse_score),
-        "trend":          trend,
-        "active_scouts":  active_scouts,
-        "live_venues":    len(active_venues),
-        "hot_venues":     hot_venues,
-        "pulses_tonight": pulses_tonight,
-        "trending_venue": trending,
-        "sparkline":      sparkline,
-        "updated_at":     now.isoformat(),
+        "city":             city,
+        "energy_score":     energy_score,
+        "energy_label":     label,
+        "trend":            trend,
+        "active_scouts":    active_scouts,
+        "live_venues":      len(active_venues),
+        "hot_venues":       hot_venues,
+        "readings_tonight": readings_tonight,
+        "trending_venue":   trending,
+        "sparkline":        sparkline,
+        "updated_at":       now.isoformat(),
+
+        # Deprecated aliases for clients shipped before the rename.
+        "pulse_score":      energy_score,
+        "pulse_label":      label,
+        "pulses_tonight":   readings_tonight,
     }
 
 
@@ -2535,9 +2542,10 @@ def route_get(path, query_params, headers):
     m = re.match(r'^/api/ratings/status/([^/]+)/([^/]+)$', path)
     if m:
         return handle_get_rating_status(m.group(1), m.group(2))
-    m = re.match(r'^/api/city-pulse/([^/]+)$', path)
+    m = re.match(r'^/api/city-(?:energy|pulse)/([^/]+)$', path)
     if m:
-        return handle_get_city_pulse(m.group(1))
+        # 'city-pulse' is the deprecated spelling, kept for shipped clients.
+        return handle_get_city_energy(m.group(1))
     m = re.match(r'^/api/venues/([^/]+)/reactions/rate$', path)
     if m:
         return handle_get_reaction_rate(m.group(1))

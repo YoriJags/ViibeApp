@@ -13,22 +13,58 @@ from app.models import Rating, RatingCreate, Coordinates
 from app.services.vibe import (
     calculate_vibe_score,
     calculate_venue_aggregate,
-    compute_scout_credibility,
+    calculate_distance,
     is_within_geofence,
     update_user_clout,
 )
 from app.services.scout_integrity import get_sis_weight
+from app.services.scout_weight import compute_reading_weight
+from app.services import stake as stake_service
+from app.services.transitions import announce_transition
 from app.services.signal_extraction import extract_signal
 from app.routes.coins import award_coins, COIN_EARN, VIBE_PLUS_MULTIPLIER
 
 BURST_THRESHOLD = 4        # ratings triggering provisional hold
 BURST_WINDOW_MINUTES = 10  # window to detect burst
 BURST_HOLD_MINUTES = 15    # how long provisional ratings are held
-from app.services.realtime import broadcast_venue_update, broadcast_leaderboard, broadcast_city_pulse
+from app.services.realtime import broadcast_venue_update, broadcast_leaderboard, broadcast_city_energy
 from app.services.streaks import update_streak
 from app.services.vibe import save_vibe_snapshot, generate_venue_narrative, check_and_emit_surge_alert
 
 router = APIRouter(tags=["ratings"])
+
+
+async def _presence_inputs(user_id: str, venue: dict, coords) -> tuple:
+    """
+    (dwell_minutes, distance_m) for Scout Weight.
+
+    Dwell comes from the scout's active check-in at this venue; distance from
+    the venue centre uses the same maths as the geofence. Neither asks the user
+    to do anything, which is the point: the phone already knows.
+
+    Returns (None, None) rather than guessing when we cannot tell.
+    """
+    dwell_minutes = None
+    distance_m = None
+    try:
+        checkin = await db.checkins.find_one(
+            {"user_id": user_id, "venue_id": venue.get("id"), "status": "active"},
+            sort=[("created_at", -1)],
+        )
+        if checkin and checkin.get("created_at"):
+            started = checkin["created_at"]
+            if started.tzinfo is None:
+                started = started.replace(tzinfo=timezone.utc)
+            dwell_minutes = max(0.0, (datetime.now(timezone.utc) - started).total_seconds() / 60)
+    except Exception:
+        pass
+    try:
+        vc = venue.get("coordinates") or {}
+        if coords is not None and vc:
+            distance_m = calculate_distance(coords.lat, coords.lng, vc["lat"], vc["lng"])
+    except Exception:
+        pass
+    return dwell_minutes, distance_m
 
 
 @router.post("/ratings")
@@ -110,8 +146,27 @@ async def create_rating(rating_data: RatingCreate, user: dict = Depends(require_
             {"$set": {"superseded": True}},
         )
 
-    # Compute scout credibility weight using Scout Integrity Score (SIS)
-    credibility = await get_sis_weight(rating_data.user_id)
+    # Scout Weight: how much this reading counts. Weighted by how much it tells
+    # us that we did not already know, and how sure we are the scout was really
+    # in the room. See app/services/scout_weight.py.
+    dwell_minutes, distance_m = await _presence_inputs(
+        rating_data.user_id, venue, rating_data.coordinates
+    )
+    # The Call: a scout may stake credibility on a reading, but only a few
+    # times a night. Over budget silently degrades to an ordinary reading
+    # rather than failing the whole submission, because losing someone's
+    # reading is worse than losing their stake.
+    staked = bool(getattr(rating_data, "staked", False))
+    stake_budget = await stake_service.can_stake(rating_data.user_id)
+    if staked and not stake_budget["allowed"]:
+        staked = False
+
+    weighting = await compute_reading_weight(
+        rating_data.user_id, venue,
+        dwell_minutes=dwell_minutes, distance_m=distance_m,
+        staked=staked,
+    )
+    credibility = weighting["weight"]
 
     # Attach signal_token — behavioral signal is decoupled from Scout identity at ingestion
     signal_token = await get_or_create_signal_token(rating_data.user_id)
@@ -120,6 +175,14 @@ async def create_rating(rating_data: RatingCreate, user: dict = Depends(require_
     rating_doc["provisional"] = is_provisional
     rating_doc["provisional_until"] = provisional_until
     rating_doc["credibility_weight"] = credibility
+    # Stored so any weight can be explained after the fact. A weighting nobody
+    # can audit is indistinguishable from one that is rigged.
+    rating_doc["weight_factors"] = weighting["factors"]
+    rating_doc["staked"] = staked
+    if staked:
+        # Snapshot what the room read when the call was made, so settlement can
+        # tell a lone correct call apart from an echo of the crowd.
+        rating_doc["consensus_at_time"] = venue.get("current_vibe_score")
     rating_doc["signal_token"] = signal_token
     await db.ratings.insert_one(rating_doc)
 
@@ -209,6 +272,20 @@ async def create_rating(rating_data: RatingCreate, user: dict = Depends(require_
         current_score,
     )
 
+    # Energy transition: tell the room and the people watching it from outside.
+    # `venue` still holds the state from before this reading landed.
+    try:
+        fresh = await db.venues.find_one(
+            {"id": rating_data.venue_id},
+            {"_id": 0, "id": 1, "name": 1, "city": 1, "vibe_state": 1, "total_ratings_24h": 1},
+        )
+        if fresh:
+            asyncio.create_task(announce_transition(
+                fresh, venue.get("vibe_state"), fresh.get("vibe_state"),
+            ))
+    except Exception:
+        pass
+
     # Check for active energy campaign -> apply campaign clout multiplier
     campaign_multiplier = 1
     now = datetime.now(timezone.utc)
@@ -238,7 +315,7 @@ async def create_rating(rating_data: RatingCreate, user: dict = Depends(require_
     await broadcast_venue_update(rating_data.venue_id)
     await broadcast_leaderboard(venue.get("city", "lagos"))
     await broadcast_leaderboard("all")
-    await broadcast_city_pulse(venue.get("city", "lagos"))
+    await broadcast_city_energy(venue.get("city", "lagos"))
 
     # ── Analytics event (server-side — most reliable signal) ─────────────────
     # signal_token is used here — analytics events never store user_id
@@ -516,6 +593,14 @@ async def pulse_check(
     rest = carry_forward(venue)
     vibe_score = calculate_vibe_score(energy, rest["capacity"], rest["gate"])
 
+    # A Pulse Check is a reading like any other, so it is weighted like one.
+    # Coordinates are not resubmitted on a refresh, so proximity reads unknown
+    # while dwell, which is the stronger signal here, still counts.
+    _dwell, _dist = await _presence_inputs(user["id"], venue, None)
+    _pulse_weighting = await compute_reading_weight(
+        user["id"], venue, dwell_minutes=_dwell, distance_m=_dist,
+    )
+
     await db.ratings.insert_one({
         "id": __import__("uuid").uuid4().hex,
         "user_id": user["id"],
@@ -533,7 +618,8 @@ async def pulse_check(
         "vibe_note": None,
         "provisional": False,
         "provisional_until": None,
-        "credibility_weight": await get_sis_weight(user["id"]),
+        "credibility_weight": _pulse_weighting["weight"],
+        "weight_factors": _pulse_weighting["factors"],
         "signal_token": await get_or_create_signal_token(user["id"]),
         "source": "pulse_check",
         "delta": delta,
@@ -560,11 +646,22 @@ async def pulse_check(
         except Exception:
             pass
 
+        # A refresh can move a venue across a state boundary too, and that is
+        # exactly the moment both audiences are waiting for.
+        try:
+            asyncio.create_task(announce_transition(
+                {**venue, **aggregate},
+                venue.get("vibe_state"),
+                aggregate.get("vibe_state"),
+            ))
+        except Exception:
+            pass
+
         # Live clients are watching this number; push it.
         for push in (
             broadcast_venue_update(venue_id),
             broadcast_leaderboard(venue.get("city", "lagos")),
-            broadcast_city_pulse(venue.get("city", "lagos")),
+            broadcast_city_energy(venue.get("city", "lagos")),
         ):
             asyncio.create_task(push)
 
@@ -576,3 +673,85 @@ async def pulse_check(
         "energy_level": aggregate.get("energy_level") if aggregate else None,
         "refreshes_left_today": MAX_PULSE_CHECKS_PER_VENUE_PER_DAY - len(recent) - 1,
     }
+
+
+@router.get("/me/calls")
+async def get_my_calls(user: dict = Depends(require_auth)):
+    """
+    How many Calls this scout has left tonight, and how their settled ones went.
+
+    Calls reset on the same 5PM to 7AM night window as Tonight's Heat, so
+    "tonight" means one thing everywhere in the product.
+    """
+    budget = await stake_service.can_stake(user["id"])
+
+    settled = await db.ratings.find(
+        {
+            "user_id": user["id"],
+            "staked": True,
+            "stake_verdict": {"$exists": True},
+        },
+        {"_id": 0, "venue_id": 1, "stake_verdict": 1, "stake_clout_delta": 1,
+         "stake_outcome": 1, "vibe_score": 1, "timestamp": 1},
+    ).sort("timestamp", -1).to_list(20)
+
+    record = {"right": 0, "wrong": 0, "void": 0}
+    for row in settled:
+        verdict = row.get("stake_verdict")
+        if verdict in record:
+            record[verdict] += 1
+
+    graded = record["right"] + record["wrong"]
+    return {
+        **budget,
+        "record": record,
+        "hit_rate": round(record["right"] / graded, 3) if graded else None,
+        "recent": settled[:10],
+    }
+
+
+@router.get("/me/prompt-cadence")
+async def get_prompt_cadence(user: dict = Depends(require_auth)):
+    """The scout's chosen rhythm, and the menu of options."""
+    from app.services.prompt_cadence import CADENCE_OPTIONS, get_cadence
+    cadence = await get_cadence(user["id"])
+    return {
+        "cadence": cadence,
+        "options": [
+            {"key": "often",  "minutes": CADENCE_OPTIONS["often"],  "label": "Often",  "sub": "Every 20 min, for a room that is moving"},
+            {"key": "normal", "minutes": CADENCE_OPTIONS["normal"], "label": "Normal", "sub": "Every 35 min"},
+            {"key": "rare",   "minutes": CADENCE_OPTIONS["rare"],   "label": "Rarely", "sub": "Every hour"},
+            {"key": "off",    "minutes": None,                      "label": "Off",    "sub": "Never ask me"},
+        ],
+    }
+
+
+@router.put("/me/prompt-cadence")
+async def put_prompt_cadence(body: dict, user: dict = Depends(require_auth)):
+    """Set how often VIIBE asks while the scout is inside a venue."""
+    from app.services.prompt_cadence import set_cadence
+    try:
+        cadence = await set_cadence(user["id"], body.get("cadence"))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"cadence": cadence}
+
+
+@router.get("/venues/{venue_id}/prompt-plan")
+async def get_prompt_plan(venue_id: str, user: dict = Depends(require_auth)):
+    """
+    Whether this scout is due a prompt at this venue, and when the next one is.
+
+    The client runs the rhythm from this rather than reimplementing the rules,
+    so the guards live in exactly one place.
+    """
+    from app.services.prompt_cadence import build_plan
+    return await build_plan(user["id"], venue_id)
+
+
+@router.post("/venues/{venue_id}/prompt-shown")
+async def post_prompt_shown(venue_id: str, user: dict = Depends(require_auth)):
+    """Record that we asked, so the nightly cap is real rather than advisory."""
+    from app.services.prompt_cadence import record_prompt
+    await record_prompt(user["id"], venue_id)
+    return {"recorded": True}

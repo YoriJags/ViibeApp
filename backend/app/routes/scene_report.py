@@ -327,7 +327,7 @@ body {{
     </div>
 
     <div class="section">
-      <div class="section-label">City Pulse</div>
+      <div class="section-label">City Energy</div>
       <div class="stat-grid">
         <div class="stat">
           <div class="stat-val">{peak_label}</div>

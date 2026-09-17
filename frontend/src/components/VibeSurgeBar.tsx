@@ -15,20 +15,20 @@ interface SurgeState {
   tap_count: number; total_surges: number; is_squad_surge?: boolean;
 }
 
-const LEVEL_ORDER = ['dormant', 'stirring', 'buzzing', 'popping', 'electric'];
+const LEVEL_ORDER = ['empty', 'trickle', 'rising', 'surging', 'maxed'];
 
-// Demo level progression — full journey from STIRRING to ELECTRIC in ~12 taps
+// Demo level progression — full journey from TRICKLE to MAXED in ~12 taps
 const DEMO_LEVELS = [
-  { level: 'dormant',  label: 'DORMANT',  color: '#3A3A4E', min: 0,    next: 'BUZZING' },
-  { level: 'stirring', label: 'STIRRING', color: '#6655FF', min: 0.08, next: 'BUZZING' },
-  { level: 'buzzing',  label: 'BUZZING',  color: '#33CCFF', min: 0.32, next: 'POPPING' },
-  { level: 'popping',  label: 'POPPING',  color: '#FF9933', min: 0.58, next: 'ELECTRIC' },
-  { level: 'electric', label: 'ELECTRIC', color: '#FF3366', min: 0.84, next: null },
+  { level: 'empty',  label: 'EMPTY',  color: '#3A3A4E', min: 0,    next: 'RISING' },
+  { level: 'trickle', label: 'TRICKLE', color: '#6655FF', min: 0.08, next: 'RISING' },
+  { level: 'rising',  label: 'RISING',  color: '#33CCFF', min: 0.32, next: 'SURGING' },
+  { level: 'surging',  label: 'SURGING',  color: '#FF9933', min: 0.58, next: 'MAXED' },
+  { level: 'maxed', label: 'MAXED', color: '#FF3366', min: 0.84, next: null },
 ];
 
 export const DEMO_SURGE: SurgeState = {
-  charge_pct: 0.08, level: 'stirring', level_label: 'STIRRING', level_color: '#6655FF',
-  level_progress: 0.08, taps_to_next: 3, next_level: 'BUZZING', tap_count: 0, total_surges: 0,
+  charge_pct: 0.08, level: 'trickle', level_label: 'TRICKLE', level_color: '#6655FF',
+  level_progress: 0.08, taps_to_next: 3, next_level: 'RISING', tap_count: 0, total_surges: 0,
 };
 
 interface Props {
@@ -54,7 +54,7 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
 
   // Electric glow loop
   useEffect(() => {
-    if (surge?.level === 'electric') {
+    if (surge?.level === 'maxed') {
       Animated.loop(Animated.sequence([
         Animated.timing(glowAnim, { toValue: 1,   duration: 500, useNativeDriver: true }),
         Animated.timing(glowAnim, { toValue: 0.3, duration: 500, useNativeDriver: true }),
@@ -74,8 +74,8 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
     if (!surge) return;
     Animated.spring(barAnim, { toValue: surge.level_progress, tension: 60, friction: 12, useNativeDriver: false }).start();
 
-    // On ELECTRIC: let full-screen burst play (650ms), then close + fire celebration
-    if (surge.level === 'electric' && prevLevel.current && prevLevel.current !== 'electric') {
+    // On MAXED: let full-screen burst play (650ms), then close + fire celebration
+    if (surge.level === 'maxed' && prevLevel.current && prevLevel.current !== 'maxed') {
       setTimeout(() => setShowFull(false), 650);
       setTimeout(() => onElectric?.(surge.tap_count), 750);
     }
@@ -97,7 +97,7 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
     const handler = (data: any) => {
       if (data.venue_id !== venueId) return;
       fetchSurge();
-      if (data.new_level === 'electric' && data.prev_level !== 'electric') {
+      if (data.new_level === 'maxed' && data.prev_level !== 'maxed') {
         setTimeout(() => setShowFull(false), 650);
         setTimeout(() => onElectric?.(data.tap_count ?? 0), 750);
       }
@@ -130,7 +130,7 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
           level_color: lvl.color,
           next_level: lvl.next,
           taps_to_next: tapsToNext,
-          total_surges: lvl.level === 'electric' && prev.level !== 'electric'
+          total_surges: lvl.level === 'maxed' && prev.level !== 'maxed'
             ? prev.total_surges + 1
             : prev.total_surges,
         };
@@ -155,19 +155,19 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
   if (!surge) return null;
   const levelIdx  = LEVEL_ORDER.indexOf(surge.level);
   const color      = surge.level_color;
-  const isElectric = surge.level === 'electric';
+  const isMaxed = surge.level === 'maxed';
 
   return (
     <>
       {/* Compact trigger card */}
       <Animated.View style={[styles.container, {
         transform: [{ perspective: 900 }, { rotateX: '2deg' }, { scale: levelBump }],
-        borderColor: isElectric ? color + 'AA' : color + '33',
+        borderColor: isMaxed ? color + 'AA' : color + '33',
         shadowColor: color,
-        shadowOpacity: isElectric ? 0.55 : 0.18,
-        shadowRadius: isElectric ? 16 : 6,
+        shadowOpacity: isMaxed ? 0.55 : 0.18,
+        shadowRadius: isMaxed ? 16 : 6,
         shadowOffset: { width: 0, height: 4 },
-        elevation: isElectric ? 8 : 3,
+        elevation: isMaxed ? 8 : 3,
       }]}>
         <TouchableOpacity onPress={handleOpen} activeOpacity={0.8} style={styles.inner}>
 
@@ -181,9 +181,9 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
               borderColor: color + '88',
               backgroundColor: color + '15',
               shadowColor: color,
-              shadowOpacity: isElectric ? 0.9 : 0.6,
-              shadowRadius: isElectric ? 14 : 8,
-              transform: [{ scale: isElectric ? boltPulse : 1 }],
+              shadowOpacity: isMaxed ? 0.9 : 0.6,
+              shadowRadius: isMaxed ? 14 : 8,
+              transform: [{ scale: isMaxed ? boltPulse : 1 }],
             }]}>
               {/* 3D raised-button specular highlight */}
               <LinearGradient
@@ -193,7 +193,7 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
                 style={styles.iconShine}
                 pointerEvents="none"
               />
-              <Animated.View style={{ opacity: isElectric ? glowAnim : 1 }}>
+              <Animated.View style={{ opacity: isMaxed ? glowAnim : 1 }}>
                 <Ionicons name="flash" size={20} color={color} />
               </Animated.View>
             </Animated.View>
@@ -203,7 +203,7 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
           <View style={styles.centerBlock}>
             <View style={styles.labelRow}>
               <Text style={styles.sectionLabel}>VIBE CHARGE</Text>
-              <Animated.Text style={[styles.levelText, { color, opacity: isElectric ? glowAnim : 1 }]}>
+              <Animated.Text style={[styles.levelText, { color, opacity: isMaxed ? glowAnim : 1 }]}>
                 {surge.level_label}
               </Animated.Text>
             </View>
@@ -214,8 +214,8 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
                 width: barAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
                 backgroundColor: color,
                 shadowColor: color,
-                shadowOpacity: isElectric ? 0.9 : 0.5,
-                shadowRadius: isElectric ? 10 : 4,
+                shadowOpacity: isMaxed ? 0.9 : 0.5,
+                shadowRadius: isMaxed ? 10 : 4,
               }]}>
                 {/* Glossy shine overlay — top-to-bottom fade */}
                 <LinearGradient

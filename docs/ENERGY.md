@@ -150,12 +150,92 @@ the people standing in the room.
 
 ### Who gets to be heard
 
-Every reading carries its scout's credibility weight, earned only by track
-record: **0.15 at zero ratings, about 0.48 at ten, capped at 1.0 at thirty.**
-New voices count a little, never nothing, and never fully until they have
-earned it.
+Every reading carries a **Scout Weight**, and the question it answers is not
+"how much has this person done" but **how much does this reading tell us that we
+did not already know, and how sure are we they were really in the room.**
+
+The old standard was track record: rate thirty times and you carried full
+weight. That measured attendance, not accuracy. Worse, it scored a scout on
+agreeing with their peers, so the person who correctly called a room turning
+before anyone else was penalised as an outlier while an echo scored perfectly.
+A live signal that rewards herding is a slow signal, and slow is the one thing
+this cannot be.
+
+Five factors, each bounded, multiplied and clamped so none of them can dominate
+or silence a reading.
+
+| Factor | What it asks | Range |
+|---|---|---|
+| **Marginal information** | How much uncertainty does this remove? The first reading of the night is worth roughly twice the fiftieth. | 0.55 to 1.60 |
+| **Presence quality** | Dwell in the room and distance from its centre. Ninety minutes in beats three minutes in the door. | 0.50 to 1.25 |
+| **Integrity** | Track record and fraud signals. | 0.10 to 1.50 |
+| **Calibration** | Were they right, judged by what the room actually did next, not by what peers said at the time. | 0.60 to 1.40 |
+| **Discrimination** | A scout whose readings never vary is a constant, and a constant carries no information. | 0.60 to 1.15 |
+
+A reading is never worth nothing and never worth more than about two ordinary
+readings: **the floor is 0.15 and the ceiling is 2.0.**
+
+**Marginal information is also the incentive.** Because weight rises as Signal
+Density falls, the most valuable place a scout can be is a venue nobody has read
+tonight. That points people at the empty corners of the map, which is exactly
+where the product is blind.
+
+**Calibration and discrimination need history**, so they stay neutral at 1.0
+until `SCOUT_WEIGHT_CALIBRATION` is on. On an empty database they would be
+confident noise, and confident noise is the thing we are against.
+
+Every weight is stored with its factor breakdown on the reading itself. A
+weighting nobody can audit is indistinguishable from one that is rigged, and
+"the number cannot be bought" only means something if we can show the working.
 
 ---
+
+## The Call
+
+A scout gets three Calls a night. Attaching one to a reading says "I will stand
+behind this", and the reading carries about a third more weight immediately.
+Then the room is given half an hour, and the Call is settled against what
+actually happened.
+
+This is what replaced the tap. The tap asked for effort, and effort is cheap,
+repeatable and therefore worthless as evidence. A Call asks a scout to spend
+**credibility**, which is the only currency here that cannot be bought.
+
+Three rules stop it becoming a way to buy influence:
+
+- **Scarce.** Three a night, on the same 5PM to 7AM window as Tonight's Heat.
+- **Symmetric.** Right and wrong move the same distance. A Call is a risk, not
+  a boost. Being right while the crowd disagreed pays double; being loudly
+  wrong costs double.
+- **Void when ungradeable.** A Call on a venue nobody else reads pays nothing
+  either way, which closes the obvious exploit of staking dead rooms.
+
+## Transitions: carrying both audiences
+
+When a venue crosses a state boundary, two different people need to hear it.
+Inside the room, people can already feel it, so they get confirmation and a
+reason to refresh. Outside, the people who put the venue on their list cannot
+feel it, and that is the whole reason they added it.
+
+**Cooling is announced too.** Every competitor only ever tells you a place is
+popping, because that is the message venues want sent. Telling someone the room
+they were about to cross Lagos for is dying saves them an hour and ten thousand
+naira. A product that only reports good news is an advertising channel.
+
+Announcements are guarded three ways: enough readings must stand behind the
+claim (more for a PEAK, which reaches the most people), one announcement per
+venue per 25 minutes so a room on a boundary cannot flap, and WARMING to
+CHARGED is never announced as a rise, because a fuller room is not a hotter one.
+
+## Cadence: the app asks, so nobody has to remember
+
+Staleness was never people refusing to refresh. It is that nobody remembers.
+Once the geofence confirms a scout is inside, VIIBE asks on a rhythm they chose
+once: often, normal, rarely, or off.
+
+Guards: only while checked in, never inside the settle window after a reading,
+never more than six times a night, and **off means off.** An app that nags gets
+its notifications turned off, and then it can reach nobody at all.
 
 ## Decay: why Energy expires
 
@@ -183,27 +263,29 @@ DJ transition does not read as a dead room.
 
 ---
 
-## Pulse
+## Pulse, and City Energy
 
-The word is used two different ways, and both are legitimate. Keep them apart.
+**Pulse means exactly one thing: the act of refreshing a reading.** It used to
+mean three, which is why the words below are now fixed in place.
 
 **Pulse (the refresh).** The one-tap action a present scout takes when their
 reading is about to expire: *same, hotter, cooling*. It restates the reading
 against what the room currently shows and costs about two seconds. This is how
 Energy stays true across a night instead of being accurate once on arrival.
 
-**City Pulse (the aggregate).** One number for a whole city, weighted so more
-active venues count more. It is Energy at city scale, and the answer to "is
-Lagos out tonight".
+**City Energy (the aggregate).** One number for a whole city, weighted so more
+active venues count more. It is Energy at city scale and it uses exactly the
+same five words as a room, because it is the same quantity measured over a
+wider area. It answers "is Lagos out tonight".
 
-> **Naming debt:** a third usage exists in the code. `compute_pulse()` on a
-> venue returns a tier from raw rating *count* (dormant, stirring, charged,
-> electric, max_pulse, source). That measures **how much signal a venue is
-> receiving**, not its energy, and it reuses state names that mean something
-> else on the energy ladder. It should be renamed to something like
-> `signal_volume` before it confuses a merchant or an investor.
+> This is the number the whole system exists to produce. A venue reading is a
+> sensor; the city index is what the sensors are for.
 
----
+**Signal Density (not energy at all).** A separate, deliberately cold scale
+saying how much evidence sits behind a reading: NONE, THIN, PARTIAL, FIRM,
+DENSE, SATURATED. It shares no word and no colour with the energy ladder, and
+`tests/test_signal_density.py` fails the build if it ever does again. A room can
+read quiet on saturated signal, and that is a confident quiet.
 
 ## What makes the number trustworthy
 

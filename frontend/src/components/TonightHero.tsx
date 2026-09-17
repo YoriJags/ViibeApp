@@ -1,6 +1,6 @@
 /**
  * TonightHero - Adaptive hero card that changes with the night's phase.
- * Phase 1 "The Warm-Up": venue match + cartel teaser + city energy
+ * Phase 1 "The Warm-Up": venue match + crew teaser + city energy
  * Phase 2 "Locked In": current venue + clout + badge proximity
  * Phase 3 "The Recap": night summary + best moment
  */
@@ -29,8 +29,8 @@ interface TonightHeroProps {
   matchVenue?: string;
   matchPercent?: number;
   matchArea?: string;
-  cartelOutCount?: number;
-  cartelTotal?: number;
+  crewOutCount?: number;
+  crewTotal?: number;
   onSeePicksPress?: () => void;
   onMatchVenuePress?: () => void;
   // Phase 2 — "Locked In"
@@ -86,8 +86,8 @@ export default function TonightHero({
   matchVenue,
   matchPercent,
   matchArea,
-  cartelOutCount = 0,
-  cartelTotal = 0,
+  crewOutCount = 0,
+  crewTotal = 0,
   onSeePicksPress,
   onMatchVenuePress,
   venueName,
@@ -189,12 +189,12 @@ export default function TonightHero({
         </TouchableOpacity>
       )}
 
-      {/* Cartel teaser */}
-      {cartelOutCount > 0 && (
-        <View style={s.cartelTeaser}>
+      {/* Crew teaser */}
+      {crewOutCount > 0 && (
+        <View style={s.crewTeaser}>
           <Ionicons name="people" size={14} color="#FF3366" />
-          <Text style={s.cartelTeaserText}>
-            {cartelOutCount} of your Cartel are out tonight
+          <Text style={s.crewTeaserText}>
+            {crewOutCount} of your Crew are out tonight
           </Text>
         </View>
       )}
@@ -408,13 +408,13 @@ const s = StyleSheet.create({
     fontSize: 11,
     color: '#888',
   },
-  cartelTeaser: {
+  crewTeaser: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     marginBottom: 16,
   },
-  cartelTeaserText: {
+  crewTeaserText: {
     fontSize: 12,
     color: '#CCC',
     fontWeight: '500',

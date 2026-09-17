@@ -40,12 +40,12 @@ def presence_weight(is_present: bool) -> float:
     return 1.0 if is_present else REMOTE_TAP_WEIGHT
 
 
-def electric_gate_open(present_tappers_30m: int, hot_ratings_30m: int) -> bool:
+def max_gate_open(present_tappers_30m: int, hot_ratings_30m: int) -> bool:
     """Corroboration gate: enough verified bodies AND at least one hot vibe check."""
     return present_tappers_30m >= MIN_PRESENT_TAPPERS and hot_ratings_30m >= 1
 
 
-def apply_electric_gate(charge_pct: float, gate_open: bool) -> float:
+def apply_max_gate(charge_pct: float, gate_open: bool) -> float:
     """Cap charge below ELECTRIC while the corroboration gate is closed."""
     if charge_pct >= ELECTRIC_THRESHOLD and not gate_open:
         return ELECTRIC_CAP
@@ -74,3 +74,8 @@ def sustain_state(
     if held_minutes < SUSTAIN_MINUTES:
         return ELECTRIC_CAP, candidate_since
     return charge_pct, candidate_since
+
+
+# Deprecated aliases, kept so nothing calling the old names breaks.
+electric_gate_open = max_gate_open
+apply_electric_gate = apply_max_gate

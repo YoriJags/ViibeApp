@@ -480,11 +480,19 @@ async def broadcast_reaction(venue_id: str, data: dict):
     await sio.emit("reaction_pulse", data, room=f"venue_{venue_id}")
 
 
-async def broadcast_city_pulse(city: str):
-    """Broadcast updated city heartbeat to all city subscribers."""
-    from app.routes.city_pulse import compute_city_pulse
-    pulse = await compute_city_pulse(city)
-    await sio.emit("city_pulse_update", pulse, room=f"city_{city}")
+async def broadcast_city_energy(city: str):
+    """Push updated City Energy to every subscriber of that city."""
+    from app.routes.city_energy import compute_city_energy
+    energy = await compute_city_energy(city)
+    room = f"city_{city}"
+    await sio.emit("city_energy_update", energy, room=room)
+    # Deprecated event for clients shipped before the rename. Drop once the old
+    # APK is out of circulation.
+    await sio.emit("city_pulse_update", energy, room=room)
+
+
+# Deprecated alias so any caller missed by the rename keeps working.
+broadcast_city_pulse = broadcast_city_energy
 
 
 @sio.event

@@ -75,8 +75,8 @@
         {
           "widgets": [
             {
-              "name": "CityPulse",
-              "label": "VIIBE City Pulse",
+              "name": "CityEnergy",
+              "label": "VIIBE City Energy",
               "description": "Live Lagos energy on your home screen",
               "minWidth": "110dp",
               "minHeight": "110dp",

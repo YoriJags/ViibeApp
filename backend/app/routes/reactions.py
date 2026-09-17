@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from app.config import db
 from app.services.auth import require_auth
-from app.services.realtime import broadcast_reaction, broadcast_city_pulse
+from app.services.realtime import broadcast_reaction, broadcast_city_energy
 
 router = APIRouter(tags=["reactions"])
 
@@ -121,7 +121,7 @@ async def react_to_venue(venue_id: str, user: dict = Depends(require_auth)):
         "reactor_id": user_id,
         "burst": burst,
     })
-    await broadcast_city_pulse(venue.get("city", "lagos"))
+    await broadcast_city_energy(venue.get("city", "lagos"))
 
     return {
         "ok": True,

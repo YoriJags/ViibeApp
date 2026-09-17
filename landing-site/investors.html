@@ -134,7 +134,7 @@ footer { max-width: 880px; margin: 0 auto; padding: 0 5vw 50px; font-size: 12px;
 <script>
 (async () => {
   try {
-    const p = await fetch('/api/city-pulse/lagos').then(r => r.json());
+    const p = await fetch('/api/city-energy/lagos').then(r => r.json());
     document.getElementById('pulse-score').textContent = Math.round(p.pulse_score);
     document.getElementById('pulse-label').textContent = p.pulse_label || 'QUIET';
     const meta = [];

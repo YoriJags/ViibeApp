@@ -317,7 +317,7 @@ export default function VenueAlertModal({
               style={[styles.input, styles.inputNote]}
               value={note}
               onChangeText={setNote}
-              placeholder="e.g. Going with Tunde — need to leave by 1am"
+              placeholder="e.g. Going with Tunde, need to leave by 1am"
               placeholderTextColor="#444"
               maxLength={100}
               multiline

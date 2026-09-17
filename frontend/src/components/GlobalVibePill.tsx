@@ -3,12 +3,12 @@
  *
  * States:
  *   default     — blue pulse, shows surge level chip
- *   cityOnFire  — gold → red flare (pulse_score > 70), faster bolt
+ *   cityOnFire  — gold → red flare (energy_score > 70), faster bolt
  *   dangerZone  — red pulse border, ENERGY LOW label
  *
  * New in v2:
  *   • Reanimated-driven fire glow transition (UI thread, 120Hz capable)
- *   • Momentum sparkline — 6-bucket city pulse history inside the pill
+ *   • Momentum sparkline — 6-bucket city energy history inside the pill
  *   • Expansion panel — tap to reveal top 3 "heating up" venues before
  *     opening the full SurgeFullScreen charger
  */
@@ -121,7 +121,7 @@ export default function GlobalVibePill() {
   const getAuthHeaders   = useVibeStore(s => s.getAuthHeaders);
   const isDemoMode       = useVibeStore(s => s.isDemoMode);
   const cityChargeActive = useVibeStore(s => s.cityChargeActive);
-  const cityPulse        = useVibeStore(s => s.cityPulse);
+  const cityEnergy        = useVibeStore(s => s.cityEnergy);
   const venues           = useVibeStore(s => s.venues);
 
   const router = useRouter();
@@ -272,7 +272,7 @@ export default function GlobalVibePill() {
     .slice(0, 3);
 
   // ── Sparkline data ────────────────────────────────────────────────────────
-  const sparkline = cityPulse?.sparkline ?? [];
+  const sparkline = cityEnergy?.sparkline ?? [];
   const sparkMax  = Math.max(...sparkline, 1);
 
   // ── Animated styles (Reanimated UI thread) ────────────────────────────────
@@ -344,7 +344,7 @@ export default function GlobalVibePill() {
             {/* Label */}
             <Text style={[styles.pillLabel, { color: labelColor }]}>{labelText}</Text>
 
-            {/* Momentum sparkline (city pulse history) */}
+            {/* Momentum sparkline (city energy history) */}
             {sparkline.length > 0 && (
               <View style={styles.sparkRow}>
                 {sparkline.map((v, i) => (

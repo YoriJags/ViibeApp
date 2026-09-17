@@ -1,5 +1,5 @@
 /**
- * AuraLevelUp — cinematic Scout Aura level-up ceremony.
+ * HeatLevelUp — cinematic Tonight's Heat level-up ceremony.
  * Fires at most 4 times ever per user (Shadow→Rising→Scene Maker→Hot Scout→VIBE GOD).
  * Liquid color fill, orbital icon, staggered text reveal, perks unlock.
  */
@@ -41,7 +41,7 @@ interface Props {
   onDismiss: () => void;
 }
 
-export default function AuraLevelUp({ visible, newLevel, newLabel, color, perks, onDismiss }: Props) {
+export default function HeatLevelUp({ visible, newLevel, newLabel, color, perks, onDismiss }: Props) {
   const fillA     = useRef(new Animated.Value(0)).current;
   const iconScale = useRef(new Animated.Value(0)).current;
   const iconOpac  = useRef(new Animated.Value(0)).current;
@@ -207,7 +207,7 @@ export default function AuraLevelUp({ visible, newLevel, newLabel, color, perks,
 
           {/* Label */}
           <Animated.Text style={[styles.smallLabel, { opacity: lblOpac }]}>
-            SCOUT AURA
+            TONIGHT'S HEAT
           </Animated.Text>
 
           {/* LEVEL UP stamp */}

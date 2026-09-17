@@ -36,7 +36,7 @@ import ErrorBoundary from '../../src/components/ErrorBoundary';
 import TheWave from '../../src/components/TheWave';
 import { VibeMarketVenue } from '../../src/components/VibeMarket';
 import NoDulling from '../../src/components/NoDulling';
-import CityPulseBar from '../../src/components/CityPulseBar';
+import CityEnergyBar from '../../src/components/CityEnergyBar';
 import TopThreeStrip from '../../src/components/TopThreeStrip';
 import ActivityTicker from '../../src/components/ActivityTicker';
 import { getNightPhase } from '../../src/store/vibeStore';
@@ -46,7 +46,7 @@ import * as Haptics from 'expo-haptics';
 import CityWelcomeCard from '../../src/components/CityWelcomeCard';
 import WeekendCard from '../../src/components/WeekendCard';
 import InsiderFeed from '../../src/components/InsiderFeed';
-import ScoutAuraChip from '../../src/components/ScoutAuraChip';
+import ScoutHeatChip from '../../src/components/ScoutHeatChip';
 import VenueSpotlight from '../../src/components/VenueSpotlight';
 import VibeShiftToast from '../../src/components/VibeShiftToast';
 import LastCallStrip from '../../src/components/LastCallStrip';
@@ -94,7 +94,7 @@ const CITIES = [
 export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string; autoOpen?: string }>();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityPulse, fetchCityPulse, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode, tabBarHidden, setTabBarHidden, sceneMood, sceneMoodSetAt, setSceneMood, isInsideVenue, activeVenueId, activeVenueName } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityEnergy, fetchCityEnergy, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode, tabBarHidden, setTabBarHidden, sceneMood, sceneMoodSetAt, setSceneMood, isInsideVenue, activeVenueId, activeVenueName } = useVibeStore();
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -138,7 +138,7 @@ export default function MapScreen() {
     opacity: new Animated.Value(0),
     translateY: new Animated.Value(28),
   }))).current;
-  const legendElectricPulse = useRef(new Animated.Value(1)).current;
+  const legendPeakGlow = useRef(new Animated.Value(1)).current;
   const chevronRotate = useRef(new Animated.Value(0)).current;
 
   // Animate header glow — slow, refined pulse
@@ -152,8 +152,8 @@ export default function MapScreen() {
 
     Animated.loop(
       Animated.sequence([
-        Animated.timing(legendElectricPulse, { toValue: 1.4, duration: 800, useNativeDriver: true }),
-        Animated.timing(legendElectricPulse, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(legendPeakGlow, { toValue: 1.4, duration: 800, useNativeDriver: true }),
+        Animated.timing(legendPeakGlow, { toValue: 1, duration: 800, useNativeDriver: true }),
       ])
     ).start();
   }, []);
@@ -225,7 +225,7 @@ export default function MapScreen() {
     if (!isDemoMode) {
       fetchVenues(selectedCity);
     }
-    fetchCityPulse(selectedCity);
+    fetchCityEnergy(selectedCity);
   }, [selectedCity, isDemoMode]);
 
   // Venue Discover Flow — show once per session when venues first load
@@ -458,8 +458,8 @@ export default function MapScreen() {
     if (base.length === 0) return [];
     return [...base]
       .sort((a: any, b: any) => {
-        const pulseDiff = (b.pulse?.count ?? 0) - (a.pulse?.count ?? 0);
-        if (pulseDiff !== 0) return pulseDiff;
+        const signalDiff = (b.signal_density?.count ?? 0) - (a.signal_density?.count ?? 0);
+        if (signalDiff !== 0) return signalDiff;
         return (b.current_vibe_score ?? 0) - (a.current_vibe_score ?? 0);
       })
       .map((v: any) => ({
@@ -469,8 +469,7 @@ export default function MapScreen() {
         current_vibe_score: v.current_vibe_score ?? 0,
         vibe_velocity: v.vibe_velocity ?? 'stable',
         energy_level: v.energy_level,
-        pulse_count: v.pulse?.count ?? 0,
-        pulse_tier: v.pulse?.tier ?? 'dormant',
+        signal_count: v.signal_density?.count ?? 0,
       }));
   }, [isDemoMode, venues]);
 
@@ -478,7 +477,7 @@ export default function MapScreen() {
   // These users see CityWelcomeCard instead of TonightHero
   const isNewUser = !activeCheckin && !vibePersona;
 
-  // Full data for nearby venue (for NoDulling pulse tier)
+  // Full data for nearby venue (NoDulling shows its energy state)
   const nearbyVenueFullData = useMemo(() => {
     if (!nearbyVenue) return null;
     const base: any[] = isDemoMode ? DEMO_VENUES : venues;
@@ -650,7 +649,7 @@ export default function MapScreen() {
       {showList && userMode === 'insider' ? (
         <InsiderFeed
           venues={filteredVenues}
-          cityPulse={cityPulse}
+          cityEnergy={cityEnergy}
           cityName={cityName}
           onVenuePress={(id) => router.push(`/venue/${id}`)}
           onSwitchMode={() => setUserMode('scout')}
@@ -696,9 +695,9 @@ export default function MapScreen() {
                Orient the scout. Identity + tonight's arc.
           ═══════════════════════════════════════════════════ */}
 
-          {/* Scout Aura chip — your level, always visible */}
-          <ErrorBoundary label="Scout Aura Chip">
-            <ScoutAuraChip />
+          {/* Tonight's Heat chip — your level, always visible */}
+          <ErrorBoundary label="Tonight's Heat Chip">
+            <ScoutHeatChip />
           </ErrorBoundary>
 
           {/* Night Arc — tonight's journey progress steps */}
@@ -741,7 +740,7 @@ export default function MapScreen() {
           {/* Tonight's Hero — adaptive journey card */}
           {isNewUser ? (
             <CityWelcomeCard
-              cityPulse={cityPulse}
+              cityEnergy={cityEnergy}
               cityName={cityName}
               onPlannerPress={() => setShowPlanner(true)}
               callName={user?.call_name}
@@ -756,8 +755,8 @@ export default function MapScreen() {
               matchVenue={isDemoMode ? DEMO_TONIGHT.matchVenue : undefined}
               matchPercent={isDemoMode ? DEMO_TONIGHT.matchPercent : undefined}
               matchArea={isDemoMode ? DEMO_TONIGHT.matchArea : undefined}
-              cartelOutCount={crew ? ((crew as any).member_details?.filter((m: any) => m.checked_in).length || 0) : 0}
-              cartelTotal={crew ? ((crew as any).member_details?.length || 0) : 0}
+              crewOutCount={crew ? ((crew as any).member_details?.filter((m: any) => m.checked_in).length || 0) : 0}
+              crewTotal={crew ? ((crew as any).member_details?.length || 0) : 0}
               onSeePicksPress={() => {}}
               onMatchVenuePress={() => {
                 if (isDemoMode && DEMO_TONIGHT.matchVenueId) {
@@ -801,10 +800,10 @@ export default function MapScreen() {
             />
           </ErrorBoundary>
 
-          {/* City Pulse + Live Push */}
-          {cityPulse && (
-            <CityPulseBar
-              pulse={cityPulse}
+          {/* City Energy + Live Push */}
+          {cityEnergy && (
+            <CityEnergyBar
+              pulse={cityEnergy}
               onPress={() => router.push('/(public)/trending')}
             />
           )}
@@ -832,7 +831,7 @@ export default function MapScreen() {
           {/* WeekendCard */}
           {isWeekendActive && !weekendDismissed && (
             <WeekendCard
-              pulseScore={cityPulse?.pulse_score ?? 50}
+              pulseScore={cityEnergy?.energy_score ?? 50}
               onDismiss={() => setWeekendDismissed(true)}
               onExplore={() => router.push('/(public)/trending')}
             />
@@ -859,7 +858,7 @@ export default function MapScreen() {
               <NoDulling
                 venueName={nearbyVenue.name}
                 venueId={nearbyVenue.id}
-                pulseTier={nearbyVenueFullData.pulse?.tier ?? 'stirring'}
+                energyLevel={nearbyVenueFullData.energy_level ?? 'warming'}
                 onDrop={async (id) => {
                   const loc = userLocation ?? { lat: 6.4316, lng: 3.4223 };
                   await dropQuickPulse(id, loc.lat, loc.lng);
@@ -960,20 +959,23 @@ export default function MapScreen() {
           {/* Legend — bottom-left, compact */}
           <View style={styles.legendOverlay}>
             {[
+              // The canonical energy states from docs/ENERGY.md. These read
+              // "Moderate / Popping / Electric" before, which matched nothing
+              // else in the product.
               { color: '#3399FF', label: 'Chill' },
-              { color: '#9933FF', label: 'Moderate' },
-              { color: '#FF9933', label: 'Popping' },
-              { color: '#FF3366', label: 'Electric', pulse: true },
+              { color: '#9933FF', label: 'Warming' },
+              { color: '#FF9933', label: 'Lit' },
+              { color: '#FF3366', label: 'Peak', animate: true },
             ].map((item) => (
               <View key={item.label} style={styles.legendItem}>
                 <View style={styles.legendDotContainer}>
-                  {item.pulse && (
+                  {item.animate && (
                     <Animated.View
                       style={[
                         styles.legendDotGlow,
                         {
                           backgroundColor: item.color + '30',
-                          transform: [{ scale: legendElectricPulse }],
+                          transform: [{ scale: legendPeakGlow }],
                         },
                       ]}
                     />

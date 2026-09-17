@@ -3,14 +3,14 @@
  * Resets at 5AM. Every night is a clean slate.
  * Cold → Warming → Hot → On Fire
  *
- * "On Fire" ceremony fires via AuraLevelUp (repurposed).
+ * "On Fire" ceremony fires via HeatLevelUp (repurposed).
  * StreakCelebration still fires at streak milestones.
  */
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useVibeStore } from '../store/vibeStore';
-import AuraLevelUp from './AuraLevelUp';
+import HeatLevelUp from './HeatLevelUp';
 import StreakCelebration from './StreakCelebration';
 
 const STREAK_MILESTONES = [3, 7, 14, 30];
@@ -41,7 +41,7 @@ interface HeatState {
   streak_days: number;
 }
 
-export const DEMO_AURA: HeatState = {
+export const DEMO_HEAT: HeatState = {
   heat_score: 14,
   heat_level: 'hot',
   heat_label: 'Hot',
@@ -58,14 +58,14 @@ export const DEMO_AURA: HeatState = {
 
 interface Props { userId?: string; isDemoMode?: boolean; }
 
-export default function ScoutAuraCard({ userId, isDemoMode }: Props) {
+export default function ScoutHeatCard({ userId, isDemoMode }: Props) {
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
-  const [heat, setHeat]               = useState<HeatState | null>(isDemoMode ? DEMO_AURA : null);
+  const [heat, setHeat]               = useState<HeatState | null>(isDemoMode ? DEMO_HEAT : null);
   const [showOnFire, setShowOnFire]   = useState(false);
   const [showStreak, setShowStreak]   = useState(false);
   const prevLevel  = useRef<string | null>(null);
   const prevStreak = useRef<number>(0);
-  const barAnim    = useRef(new Animated.Value(isDemoMode ? DEMO_AURA.heat_progress : 0)).current;
+  const barAnim    = useRef(new Animated.Value(isDemoMode ? DEMO_HEAT.heat_progress : 0)).current;
   const glowAnim   = useRef(new Animated.Value(0.6)).current;
 
   useEffect(() => {
@@ -102,11 +102,11 @@ export default function ScoutAuraCard({ userId, isDemoMode }: Props) {
   }, [heat?.heat_progress, heat?.heat_level, heat?.streak_days]);
 
   const fetchHeat = useCallback(async () => {
-    if (isDemoMode) { setHeat(DEMO_AURA); return; }
+    if (isDemoMode) { setHeat(DEMO_HEAT); return; }
     try {
       const url = userId
-        ? `${API_URL}/api/users/${userId}/aura`
-        : `${API_URL}/api/me/aura`;
+        ? `${API_URL}/api/users/${userId}/heat`
+        : `${API_URL}/api/me/heat`;
       const res = await fetch(url, { headers: getAuthHeaders() });
       if (res.ok) setHeat(await res.json());
     } catch {}
@@ -134,7 +134,7 @@ export default function ScoutAuraCard({ userId, isDemoMode }: Props) {
           </View>
 
           <View style={styles.titleBlock}>
-            <Text style={styles.sectionLabel}>SCOUT AURA</Text>
+            <Text style={styles.sectionLabel}>TONIGHT'S HEAT</Text>
             <Animated.Text style={[styles.levelLabel, { color, opacity: isOnFire ? glowAnim : 1 }]}>
               {heat.heat_label.toUpperCase()}
             </Animated.Text>
@@ -188,7 +188,7 @@ export default function ScoutAuraCard({ userId, isDemoMode }: Props) {
           <Text style={styles.progressHint}>Check in · Rate · Tap the bolt to heat up</Text>
         )}
 
-        {/* Aura stats */}
+        {/* Heat stats */}
         <View style={styles.statsRow}>
           <View style={styles.statPill}>
             <Ionicons name="location" size={11} color={color} />
@@ -217,7 +217,7 @@ export default function ScoutAuraCard({ userId, isDemoMode }: Props) {
       </View>
 
       {/* On Fire ceremony */}
-      <AuraLevelUp
+      <HeatLevelUp
         visible={showOnFire}
         newLevel="on_fire"
         newLabel="On Fire"
