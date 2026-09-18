@@ -50,6 +50,40 @@ export const useVibeStore = create<VibeStore>()(
     {
       name: 'vibe-store',
       storage: createJSONStorage(() => AsyncStorage),
+
+      // Bump this whenever a persisted value's MEANING changes, not just its
+      // shape. Installing a new build over an old one keeps everything in
+      // `partialize` below, so a renamed enum (an energy state, a surge level,
+      // a heat level) can arrive from last month's storage and miss every
+      // lookup written against the new names. Version 2 is the vocabulary
+      // rename: Signal Density, City Energy, Room-meter levels, Tonight's Heat.
+      version: 2,
+      migrate: (persisted: any, fromVersion: number) => {
+        if (!persisted) return persisted;
+        if (fromVersion >= 2) return persisted;
+
+        // Keep only what is safe across the rename: identity and the flags that
+        // decide which screen opens. Everything else is cheap to refetch and
+        // was written in a vocabulary this build no longer understands.
+        return {
+          user: persisted.user,
+          isAuthenticated: persisted.isAuthenticated,
+          hasSeenOnboarding: persisted.hasSeenOnboarding,
+          hasSeenMerchantOnboarding: persisted.hasSeenMerchantOnboarding,
+          hasSeenDemoTutorial: persisted.hasSeenDemoTutorial,
+          hasSeenAppTutorial: persisted.hasSeenAppTutorial,
+          avatarConfig: persisted.avatarConfig,
+          locationSharingEnabled: persisted.locationSharingEnabled,
+          userMode: persisted.userMode,
+          selectedCity: persisted.selectedCity,
+          sensorPrefs: persisted.sensorPrefs,
+          // Deliberately dropped: isDemoMode, vibePersona, sceneMood,
+          // sceneMoodSetAt, pendingRatings. Each either carries an old
+          // vocabulary value or is safely rebuilt on next launch.
+          isDemoMode: false,
+          pendingRatings: [],
+        };
+      },
       partialize: (state) => ({
         // Auth
         user: state.user,

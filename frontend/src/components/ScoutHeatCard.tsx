@@ -16,12 +16,12 @@ import StreakCelebration from './StreakCelebration';
 const STREAK_MILESTONES = [3, 7, 14, 30];
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
-const HEAT_LEVELS = ['cold', 'warming', 'hot', 'on_fire'];
+const HEAT_LEVELS = ['cold', 'moving', 'hot', 'on_fire'];
 const HEAT_ICONS: Record<string, string> = {
-  cold: 'moon', warming: 'trending-up', hot: 'flame', on_fire: 'flash',
+  cold: 'moon', moving: 'trending-up', hot: 'flame', on_fire: 'flash',
 };
 const HEAT_PERKS: Record<string, string[]> = {
-  warming: ['You showed up. That matters.'],
+  moving: ['You showed up. That matters.'],
   hot:     ['You\'re in the scene tonight.', 'Hot Nights count +1'],
   on_fire: ['The scene feels you.', 'Hot Nights count +1', 'Scout radar visibility boost'],
 };

@@ -31,6 +31,10 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  // The first few frames of the component stack. Without this, a crash report
+  // is just a message with no idea which screen produced it, which is exactly
+  // the position we were in chasing "cannot read property 'color' of undefined".
+  where: string | null;
 }
 
 export default class ErrorBoundary extends React.Component<Props, State> {
@@ -41,19 +45,27 @@ export default class ErrorBoundary extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, where: null };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error, where: null };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error(`[ErrorBoundary:${this.props.label}]`, error.message, info.componentStack);
+    // Keep the top frames so the screen can name the component that threw.
+    const frames = (info.componentStack || '')
+      .split('\n')
+      .map(l => l.trim())
+      .filter(Boolean)
+      .slice(0, 4)
+      .join('\n');
+    this.setState({ where: frames || null });
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, where: null });
   };
 
   render() {
@@ -75,6 +87,9 @@ export default class ErrorBoundary extends React.Component<Props, State> {
           <Text style={styles.screenMessage}>
             {this.state.error?.message || 'An unexpected error occurred'}
           </Text>
+          {this.state.where && (
+            <Text style={styles.screenWhere} selectable>{this.state.where}</Text>
+          )}
           <TouchableOpacity style={styles.retryBtn} onPress={this.handleReset}>
             <Text style={styles.retryText}>Try Again</Text>
           </TouchableOpacity>
@@ -116,6 +131,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  screenWhere: {
+    fontSize: 10,
+    lineHeight: 15,
+    color: 'rgba(255,255,255,0.45)',
+    fontFamily: 'monospace',
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 4,
+    paddingHorizontal: 16,
   },
   retryBtn: {
     backgroundColor: '#8B5CF6',

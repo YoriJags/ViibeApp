@@ -77,7 +77,9 @@ export default function FloorSwitcher({ currentFloor }: FloorSwitcherProps) {
   // Don't show if user only has access to one floor
   if (accessibleFloors.length <= 1) return null;
 
-  const current = FLOORS.find((f) => f.key === currentFloor)!;
+  // Never assert here: an unmatched route must hide the pill, not crash it.
+  const current = FLOORS.find((f) => f.key === currentFloor);
+  if (!current) return null;
 
   const handleNavigate = (floor: Floor) => {
     setShowMenu(false);

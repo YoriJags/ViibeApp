@@ -69,8 +69,11 @@ export default function VibeMomentum({ venueId, isDemoMode }: Props) {
 
   if (!data) return null;
 
-  const vc = VELOCITY_CONFIG[data.velocity];
-  const fc = FRESHNESS_CONFIG[data.freshness];
+  // Both keys come from the server. An unrecognised value must degrade, not
+  // crash the venue screen.
+  const vc = VELOCITY_CONFIG[data.velocity] ?? VELOCITY_CONFIG.flat;
+  const fc = FRESHNESS_CONFIG[data.freshness] ?? FRESHNESS_CONFIG.cold;
+  if (!vc || !fc) return null;
 
   return (
     <View style={styles.wrap}>

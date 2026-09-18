@@ -162,7 +162,8 @@ export default function VenueAlertModal({
     }
   };
 
-  const selectedEnergy = ENERGY_LEVELS.find(e => e.value === threshold)!;
+  // A stored threshold that no longer matches an option must not assert.
+  const selectedEnergy = ENERGY_LEVELS.find(e => e.value === threshold) ?? ENERGY_LEVELS[0];
 
   return (
     <Modal
