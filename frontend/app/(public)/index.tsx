@@ -33,6 +33,7 @@ import VibeMatch from '../../src/components/VibeMatch';
 import NightPlannerModal from '../../src/components/NightPlannerModal';
 import VibePlusModal from '../../src/components/VibePlusModal';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
+import { useAutoPresenceSync } from '../../src/hooks/useAutoPresenceSync';
 import TheWave from '../../src/components/TheWave';
 import { VibeMarketVenue } from '../../src/components/VibeMarket';
 import NoDulling from '../../src/components/NoDulling';
@@ -96,6 +97,9 @@ export default function MapScreen() {
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string; autoOpen?: string }>();
   const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityEnergy, fetchCityEnergy, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode, tabBarHidden, setTabBarHidden, sceneMood, sceneMoodSetAt, setSceneMood, isInsideVenue, activeVenueId, activeVenueName } = useVibeStore();
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
+  // Auto presence: keep the phone watching the venues nearest to the scout.
+  // Does nothing unless they opted in on their profile.
+  useAutoPresenceSync(isDemoMode ? [] : venues);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showList, setShowList] = useState(true); // List-first: content before map

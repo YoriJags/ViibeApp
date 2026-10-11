@@ -20,6 +20,7 @@ import { useVibeStore } from '../../src/store/vibeStore';
 import VibePlusModal from '../../src/components/VibePlusModal';
 import ScoutHeatCard from '../../src/components/ScoutHeatCard';
 import PromptCadencePicker from '../../src/components/PromptCadencePicker';
+import AutoPresenceToggle from '../../src/components/AutoPresenceToggle';
 import VibeTapCard from '../../src/components/VibeTapCard';
 import VibePassport from '../../src/components/VibePassport';
 import AfterHours from '../../src/components/AfterHours';
@@ -585,6 +586,9 @@ export default function ProfileScreen() {
 
         {/* Tonight's Heat */}
         <ScoutHeatCard isDemoMode={isDemoMode} />
+
+        {/* Auto check-in: the phone notices when you walk into a venue */}
+        {!isDemoMode && <AutoPresenceToggle />}
 
         {/* How often VIIBE asks while you are inside a venue */}
         {!isDemoMode && (

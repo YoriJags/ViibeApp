@@ -11,6 +11,7 @@ from app.services.auth import require_auth
 from app.services.vibe import is_within_geofence
 from app.services.streaks import update_streak
 from app.services.realtime import emit_checkin_update
+from app.services.presence import SOURCE_AUTO, classify_visit, is_auto, present_filter
 
 router = APIRouter(tags=["checkins"])
 
@@ -36,23 +37,37 @@ async def ghost_checkin(data: GhostCheckin, user: dict = Depends(require_auth)):
             detail=f"You must be within {int(venue_radius)}m of the venue to check in. Get closer!",
         )
 
-    # Check if already checked in somewhere
+    # Check if already checked in somewhere. An AUTOMATIC check-in never blocks
+    # a manual one: the phone noticing you is not the same as you choosing to
+    # check in, and only the choice earns clout.
     active = await db.checkins.find_one({
         "user_id": user["id"],
         "status": "active",
     })
-    if active:
+    upgrade_auto = None
+    if active and is_auto(active):
+        if active.get("venue_id") == data.venue_id:
+            upgrade_auto = active
+        else:
+            await db.checkins.update_one(
+                {"_id": active["_id"]},
+                {"$set": {"status": "left", "left_at": datetime.now(timezone.utc),
+                          **classify_visit(active["created_at"], datetime.now(timezone.utc))}},
+            )
+    elif active:
         raise HTTPException(
             status_code=409,
             detail="You're already checked in at another venue. Check out first.",
         )
 
-    # Rate limit: max 3 check-ins per venue per day
+    # Rate limit: max 3 check-ins per venue per day. Automatic visits do not
+    # count against it, or simply walking in twice would lock someone out.
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     today_count = await db.checkins.count_documents({
         "user_id": user["id"],
         "venue_id": data.venue_id,
         "created_at": {"$gte": today_start},
+        "source": {"$ne": SOURCE_AUTO},
     })
     if today_count >= MAX_CHECKINS_PER_VENUE_PER_DAY:
         raise HTTPException(
@@ -69,16 +84,26 @@ async def ghost_checkin(data: GhostCheckin, user: dict = Depends(require_auth)):
     is_first_tonight = checkins_tonight == 0
 
     now = datetime.now(timezone.utc)
-    checkin_doc = {
-        "user_id": user["id"],
-        "username": user.get("username", "Anonymous"),
-        "venue_id": data.venue_id,
-        "venue_name": venue.get("name", ""),
-        "status": "active",
-        "created_at": now,
-        "expires_at": now + timedelta(hours=CHECKIN_TTL_HOURS),
-    }
-    await db.checkins.insert_one(checkin_doc)
+    if upgrade_auto:
+        # Already here automatically: keep the original arrival time so dwell
+        # stays true, and turn it into a manual check-in.
+        await db.checkins.update_one(
+            {"_id": upgrade_auto["_id"]},
+            {"$set": {"source": "manual", "upgraded_at": now,
+                      "expires_at": now + timedelta(hours=CHECKIN_TTL_HOURS)}},
+        )
+    else:
+        checkin_doc = {
+            "user_id": user["id"],
+            "username": user.get("username", "Anonymous"),
+            "venue_id": data.venue_id,
+            "venue_name": venue.get("name", ""),
+            "status": "active",
+            "source": "manual",
+            "created_at": now,
+            "expires_at": now + timedelta(hours=CHECKIN_TTL_HOURS),
+        }
+        await db.checkins.insert_one(checkin_doc)
 
     # Award clout
     await db.users.update_one(
@@ -90,10 +115,7 @@ async def ghost_checkin(data: GhostCheckin, user: dict = Depends(require_auth)):
     streak_result = await update_streak(user["id"])
 
     # Get active count for venue
-    active_count = await db.checkins.count_documents({
-        "venue_id": data.venue_id,
-        "status": "active",
-    })
+    active_count = await db.checkins.count_documents(present_filter(data.venue_id))
 
     # Broadcast to Socket.IO
     await emit_checkin_update(data.venue_id, active_count)
@@ -110,14 +132,17 @@ async def ghost_checkin(data: GhostCheckin, user: dict = Depends(require_auth)):
 
 @router.get("/checkins/venue/{venue_id}")
 async def get_venue_checkins(venue_id: str):
-    """Get active check-ins at a venue."""
-    checkins = await db.checkins.find(
-        {"venue_id": venue_id, "status": "active"},
+    """Get active check-ins at a venue.
+
+    The count includes people the phone noticed automatically. The names never
+    do: someone who simply walked in did not choose to announce themselves.
+    """
+    active_count = await db.checkins.count_documents(present_filter(venue_id))
+    named = await db.checkins.find(
+        {"venue_id": venue_id, "status": "active", "source": {"$ne": SOURCE_AUTO}},
         {"_id": 0, "user_id": 0},
     ).to_list(100)
-
-    active_count = len(checkins)
-    usernames = [c.get("username", "Anonymous") for c in checkins]
+    usernames = [c.get("username", "Anonymous") for c in named]
 
     return {
         "venue_id": venue_id,
@@ -147,10 +172,7 @@ async def checkout(venue_id: str, user: dict = Depends(require_auth)):
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="No active check-in found at this venue.")
 
-    active_count = await db.checkins.count_documents({
-        "venue_id": venue_id,
-        "status": "active",
-    })
+    active_count = await db.checkins.count_documents(present_filter(venue_id))
 
     await emit_checkin_update(venue_id, active_count)
 

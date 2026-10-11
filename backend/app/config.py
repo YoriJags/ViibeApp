@@ -132,6 +132,10 @@ async def ensure_indexes():
     await db.checkins.create_index("expires_at", expireAfterSeconds=0)
     await db.checkins.create_index([("venue_id", 1), ("status", 1)])
     await db.checkins.create_index([("user_id", 1), ("status", 1)])
+    # Auto presence: durable arrivals and departures, which outlive the
+    # check-in documents the TTL index deletes.
+    await db.presence_events.create_index([("venue_id", 1), ("at", -1)])
+    await db.presence_events.create_index([("user_id", 1), ("at", -1)])
 
     # vibe streaks: per-user unique + leaderboard
     await db.streaks.create_index("user_id", unique=True)

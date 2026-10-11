@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Privacy Policy — VIIBE</title>
-<meta name="description" content="VIIBE Privacy Policy — how we collect, use, and protect your data.">
+<title>VIIBE Privacy Policy</title>
+<meta name="description" content="VIIBE Privacy Policy: how we collect, use, and protect your data.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
@@ -66,7 +66,7 @@
     position: relative; border-bottom: 1px solid var(--w05);
   }
   ul li:last-child { border-bottom: none; }
-  ul li::before { content: '—'; position: absolute; left: 0; color: var(--cyan); font-size: 11px; top: 8px; }
+  ul li::before { content: '•'; position: absolute; left: 0; color: var(--cyan); font-size: 11px; top: 8px; }
 
   .highlight-box {
     border-left: 2px solid var(--cyan); padding: 16px 20px; margin: 24px 0;
@@ -124,25 +124,26 @@
   <p class="section-tag">Account data</p>
   <ul>
     <li>Username and display name (call name)</li>
-    <li>Phone number — used for SMS verification only</li>
-    <li>Email address — optional, collected only if provided</li>
-    <li>Profile picture — optional, uploaded by you</li>
-    <li>Zodiac sign and music preferences — optional, set during onboarding</li>
+    <li>Phone number: used for SMS verification only</li>
+    <li>Email address: optional, collected only if provided</li>
+    <li>Profile picture: optional, uploaded by you</li>
+    <li>Zodiac sign and music preferences: optional, set during onboarding</li>
   </ul>
 
   <p class="section-tag">Activity data</p>
   <ul>
-    <li>Venue ratings you submit — energy level, crowd size, gate status</li>
-    <li>Venue check-ins — timestamp and venue identifier</li>
+    <li>Venue ratings you submit: energy level, crowd size, gate status</li>
+    <li>Venue check-ins: timestamp and venue identifier</li>
     <li>Crew membership and interactions</li>
     <li>Clout points, streaks, and rank history</li>
   </ul>
 
   <p class="section-tag">Sensor data (with your permission)</p>
   <ul>
-    <li>Location — one-time foreground read when you rate or check in. We do not track your location continuously or in the background.</li>
-    <li>Ambient sound level — a decibel number only, sampled every 30 seconds when you opt in. No audio is recorded, stored, or transmitted.</li>
-    <li>Accelerometer / movement — BPM and intensity values derived from your phone's motion sensor when you are inside a venue geofence. Raw sensor data never leaves your device; only the derived value is sent.</li>
+    <li>Location when you use the app: a one-time read when you rate or check in, to confirm you are inside the venue.</li>
+    <li>Auto check-in (off unless you switch it on): if you choose to enable it in your profile, your phone uses its built-in geofencing to tell us when you arrive at or leave a venue listed on the map, including when the app is closed. We receive only which listed venue you entered or left and when, plus a recent position at the moment you arrive, used solely to confirm the arrival is genuine. We do not track your route, where you go between venues, or any location away from listed venues. Your name is never shown to anyone because of an automatic check-in; it only adds to the count of people at that venue. You can switch it off at any time in your profile or your device settings, and it stops immediately.</li>
+    <li>Ambient sound level: a decibel number only, sampled every 30 seconds when you opt in. No audio is recorded, stored, or transmitted.</li>
+    <li>Accelerometer / movement: BPM and intensity values derived from your phone's motion sensor when you are inside a venue geofence. Raw sensor data never leaves your device; only the derived value is sent.</li>
   </ul>
 
   <p class="section-tag">Technical data</p>
@@ -154,7 +155,7 @@
 
   <h2>3. How We Use Your Data</h2>
   <ul>
-    <li>To calculate and display live Pulse Scores for venues in your city</li>
+    <li>To calculate and display live Energy readings for venues in your city</li>
     <li>To maintain your Scout rank, clout points, and streak history</li>
     <li>To power crew coordination features</li>
     <li>To send you push notifications you have opted into</li>
@@ -164,40 +165,40 @@
   </ul>
 
   <div class="highlight-box">
-    <p><strong style="color:var(--white);">Privacy-by-design:</strong> Behavioral signals (ratings, kinetic readings, ambient levels) are stored against an anonymous signal token — not directly against your user identity. Your identity and your behavioral history are separated at the database layer. This means your individual activity cannot be linked back to you from the behavioral data alone.</p>
+    <p><strong style="color:var(--white);">Privacy-by-design:</strong> Behavioral signals (ratings, kinetic readings, ambient levels) are stored against an anonymous signal token, not directly against your user identity. Your identity and your behavioral history are separated at the database layer. This means your individual activity cannot be linked back to you from the behavioral data alone.</p>
   </div>
 
   <h2>4. Data Sharing</h2>
   <p>We do not sell your personal data. We share data only in the following circumstances:</p>
   <ul>
-    <li><strong style="color:var(--white);">Venue operators</strong> — receive aggregated, anonymised crowd intelligence (scores, energy levels, crowd density). They do not receive individual user data.</li>
-    <li><strong style="color:var(--white);">API partners</strong> (hotels, travel platforms, AI assistants) — receive the same aggregated city-level data via our Agent API. No personal identifiers are included.</li>
-    <li><strong style="color:var(--white);">Infrastructure providers</strong> — Railway (backend hosting), MongoDB Atlas (database), Firebase (authentication), Vercel (web). Each is bound by their own data processing agreements.</li>
-    <li><strong style="color:var(--white);">Legal requirements</strong> — if required by Nigerian law or a valid court order.</li>
+    <li><strong style="color:var(--white);">Venue operators</strong>: receive aggregated, anonymised crowd intelligence (scores, energy levels, crowd density). They do not receive individual user data.</li>
+    <li><strong style="color:var(--white);">API partners</strong> (hotels, travel platforms, AI assistants): receive the same aggregated city-level data via our Agent API. No personal identifiers are included.</li>
+    <li><strong style="color:var(--white);">Infrastructure providers</strong>: Railway (backend hosting), MongoDB Atlas (database), Firebase (authentication), Vercel (web). Each is bound by their own data processing agreements.</li>
+    <li><strong style="color:var(--white);">Legal requirements</strong>: if required by Nigerian law or a valid court order.</li>
   </ul>
 
   <h2>5. Data Retention</h2>
   <ul>
-    <li>Account data — retained for as long as your account is active</li>
-    <li>Venue ratings and Pulse Score snapshots — retained indefinitely (they form the core historical dataset)</li>
-    <li>Kinetic and ambient sensor readings — deleted within 2 hours of collection (operational use only)</li>
-    <li>Push notification tokens — deleted when you revoke permission or delete your account</li>
-    <li>User sessions — 7-day rolling retention</li>
+    <li>Account data: retained for as long as your account is active</li>
+    <li>Venue ratings and Energy snapshots: retained indefinitely (they form the core historical dataset)</li>
+    <li>Kinetic and ambient sensor readings: deleted within 2 hours of collection (operational use only)</li>
+    <li>Push notification tokens: deleted when you revoke permission or delete your account</li>
+    <li>User sessions: 7-day rolling retention</li>
   </ul>
 
   <h2>6. Your Rights</h2>
   <p>Under the NDPR, you have the following rights:</p>
   <ul>
-    <li><strong style="color:var(--white);">Access</strong> — request a copy of all data we hold about you</li>
-    <li><strong style="color:var(--white);">Correction</strong> — request that inaccurate data be corrected</li>
-    <li><strong style="color:var(--white);">Erasure</strong> — request deletion of your account and personal data. Requests are processed within 30 days. Anonymised behavioral signals in aggregated datasets are not personally identifiable and are not subject to erasure.</li>
-    <li><strong style="color:var(--white);">Withdrawal of consent</strong> — you can revoke sensor permissions (location, microphone, motion) at any time through your device settings. This does not affect your ability to use VIIBE.</li>
-    <li><strong style="color:var(--white);">Portability</strong> — request an export of your data in a machine-readable format</li>
+    <li><strong style="color:var(--white);">Access</strong>: request a copy of all data we hold about you</li>
+    <li><strong style="color:var(--white);">Correction</strong>: request that inaccurate data be corrected</li>
+    <li><strong style="color:var(--white);">Erasure</strong>: request deletion of your account and personal data. Requests are processed within 30 days. Anonymised behavioral signals in aggregated datasets are not personally identifiable and are not subject to erasure.</li>
+    <li><strong style="color:var(--white);">Withdrawal of consent</strong>: you can revoke sensor permissions (location, microphone, motion) at any time through your device settings. This does not affect your ability to use VIIBE.</li>
+    <li><strong style="color:var(--white);">Portability</strong>: request an export of your data in a machine-readable format</li>
   </ul>
   <p>To exercise any of these rights, contact us at <a href="mailto:yoriajagun08@gmail.com">yoriajagun08@gmail.com</a>. We will respond within 30 days.</p>
 
   <h2>7. Security</h2>
-  <p>We use HTTPS for all data in transit. Database access is restricted to authenticated services. Authentication tokens are managed via Firebase Auth. We do not store passwords — phone verification is handled via SMS OTP.</p>
+  <p>We use HTTPS for all data in transit. Database access is restricted to authenticated services. Authentication tokens are managed via Firebase Auth. We do not store passwords: phone verification is handled via SMS OTP.</p>
   <p>Despite these measures, no system is perfectly secure. We will notify affected users and the relevant authority promptly in the event of a data breach.</p>
 
   <h2>8. Children</h2>

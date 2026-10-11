@@ -38,7 +38,9 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "RECORD_AUDIO",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "ACCESS_BACKGROUND_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION"
       ]
     },
     "web": {
@@ -48,12 +50,6 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "@rnmapbox/maps",
-        {
-          "RNMapboxMapsDownloadToken": "sk.eyJ1IjoieW9yaWphZ3MiLCJhIjoiY21taGdpdGowMHNqMzJxcGo2aG14cWVoYiJ9.jASWCtTBtiIuytxp8EJyvg"
-        }
-      ],
       [
         "expo-splash-screen",
         {
@@ -66,7 +62,10 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow Viibe to use your location to verify vibe checks"
+          "locationAlwaysAndWhenInUsePermission": "VIIBE notices when you walk into a venue on the map, so it can count the room and ask you how it feels. It only records arriving at and leaving listed venues, never where you go in between. You can switch this off in your profile.",
+          "locationWhenInUsePermission": "VIIBE uses your location to confirm you are inside a venue when you share a reading.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isIosBackgroundLocationEnabled": false
         }
       ],
       "expo-secure-store",
