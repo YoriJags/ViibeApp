@@ -25,6 +25,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from app.config import db, logger
+from app.services.synthetic import SOURCE_DEMO, SOURCE_NONE, SOURCE_SCOUTS, is_demo_venue
 from app.services.auth import get_current_user
 
 router = APIRouter(prefix="/v1/agent", tags=["Agent API"])
@@ -81,7 +82,25 @@ def _energy_label(score: float) -> str:
 
 
 def _serialize_venue(v: dict) -> dict:
-    """Return a clean, agent-friendly venue snapshot."""
+    """Return a clean, agent-friendly venue snapshot.
+
+    A venue whose score comes from the ambient demo engine reports NO reading.
+    Machines buy this feed as the truth; a made-up number, or a misleading
+    zero, would be selling them something that is not. See services/synthetic.py.
+    """
+    if is_demo_venue(v):
+        return {
+            "id":             v.get("id"),
+            "name":           v.get("name"),
+            "category":       v.get("category"),
+            "city":           v.get("city"),
+            "neighbourhood":  v.get("neighbourhood"),
+            "energy_score":   None,
+            "energy_label":   None,
+            "energy_source":  SOURCE_NONE,
+            "active_scouts":  0,
+            "note":           "No live reading from scouts yet.",
+        }
     score = v.get("current_vibe_score") or v.get("vibe_score") or 0
     return {
         "id":             v.get("id"),
@@ -91,6 +110,7 @@ def _serialize_venue(v: dict) -> dict:
         "neighbourhood":  v.get("neighbourhood"),
         "energy_score":   round(score, 1),
         "energy_label":   _energy_label(score),
+        "energy_source":  v.get("energy_source") or SOURCE_SCOUTS,
         "active_scouts":  v.get("active_scouts", 0),
         "is_surging":     bool(v.get("is_surging", False)),
         "peak_time":      v.get("peak_time"),
@@ -125,7 +145,8 @@ async def get_live_venues(
     """
     await _validate_api_key(request)
 
-    query: dict = {"current_vibe_score": {"$gte": min_score}}
+    # Demo-driven venues are never served to machines as live readings.
+    query: dict = {"current_vibe_score": {"$gte": min_score}, "energy_source": {"$ne": SOURCE_DEMO}}
     if city:
         query["city"] = {"$regex": city, "$options": "i"}
     if category:
@@ -135,7 +156,7 @@ async def get_live_venues(
         query,
         {
             "_id": 0, "id": 1, "name": 1, "category": 1, "city": 1,
-            "neighbourhood": 1, "current_vibe_score": 1, "vibe_score": 1,
+            "neighbourhood": 1, "current_vibe_score": 1, "vibe_score": 1, "energy_source": 1,
             "active_scouts": 1, "is_surging": 1, "peak_time": 1,
             "music_genre": 1, "capacity_signal": 1, "last_activity_at": 1,
             "updated_at": 1,
@@ -173,7 +194,7 @@ async def get_venue_snapshot(
         {"id": venue_id},
         {
             "_id": 0, "id": 1, "name": 1, "category": 1, "city": 1,
-            "neighbourhood": 1, "current_vibe_score": 1, "vibe_score": 1,
+            "neighbourhood": 1, "current_vibe_score": 1, "vibe_score": 1, "energy_source": 1,
             "active_scouts": 1, "is_surging": 1, "peak_time": 1,
             "music_genre": 1, "capacity_signal": 1, "last_activity_at": 1,
             "updated_at": 1, "address": 1, "description": 1,
@@ -203,7 +224,7 @@ async def get_city_energy(
     """
     await _validate_api_key(request)
 
-    query: dict = {}
+    query: dict = {"energy_source": {"$ne": SOURCE_DEMO}}
     if city:
         query["city"] = {"$regex": city, "$options": "i"}
 

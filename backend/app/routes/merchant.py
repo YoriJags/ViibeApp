@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Request
 import httpx
 
 from app.config import db, logger, PAYSTACK_SECRET_KEY
+from app.services.synthetic import real_only_filter
 from app.models import MerchantWallet, WalletTransaction, VenueUpdateRequest
 from app.services.auth import get_current_user
 from app.services.economy import get_economy_config
@@ -409,19 +410,28 @@ async def get_venue_sentiment(venue_id: str, request: Request):
     now = datetime.now(timezone.utc)
     day_ago = now - timedelta(hours=24)
 
+    # Real readings only: a merchant's sentiment must describe their real room.
     recent_ratings = await db.ratings.find({
         "venue_id": venue_id,
         "timestamp": {"$gte": day_ago},
+        **real_only_filter(),
     }, {"_id": 0}).sort("timestamp", -1).to_list(50)
 
     gate_counts = {"clear": 0, "slow": 0, "blocked": 0}
     capacity_counts = {"sparse": 0, "vibrant": 0, "full": 0}
-    energy_counts = {"chill": 0, "popping": 0, "electric": 0}
+    # The five states a scout can actually report. This used to hold "popping"
+    # and "electric", which no rating ever contains, so the first rating of
+    # "lit", "peak", "warming" or "quiet" raised KeyError and the whole endpoint
+    # returned a 500 for any venue with real readings.
+    energy_counts = {"peak": 0, "lit": 0, "warming": 0, "chill": 0, "quiet": 0}
 
     for rating in recent_ratings:
-        gate_counts[rating.get("gate", "clear")] += 1
-        capacity_counts[rating.get("capacity", "sparse")] += 1
-        energy_counts[rating.get("energy", "chill")] += 1
+        # Unknown values are skipped rather than crashing the merchant's screen.
+        for counts, key in ((gate_counts, rating.get("gate")),
+                            (capacity_counts, rating.get("capacity")),
+                            (energy_counts, rating.get("energy"))):
+            if key in counts:
+                counts[key] += 1
 
     total = len(recent_ratings) or 1
 

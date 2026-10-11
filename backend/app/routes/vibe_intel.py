@@ -15,6 +15,10 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.config import db, logger
+from app.services.synthetic import real_only_filter
+
+# What a scout can report, highest first. Matches models.RatingCreate.energy.
+ENERGY_STATES = ("peak", "lit", "warming", "chill", "quiet")
 from app.services.auth import get_current_user
 
 router = APIRouter(tags=["vibe-intelligence"])
@@ -72,7 +76,10 @@ async def get_vibe_intelligence(venue_id: str, request: Request):
 
     # 2. Rating breakdown + vibe killers + week averages via single $facet
     ratings_pipeline = [
-        {"$match": {"venue_id": venue_id, "timestamp": {"$gte": two_weeks_ago}}},
+        # Real readings only: this is a merchant's own analytics, and a demo
+        # reading in it would be a false record of their business.
+        {"$match": {"venue_id": venue_id, "timestamp": {"$gte": two_weeks_ago},
+                    **real_only_filter()}},
         {"$facet": {
             "this_week": [
                 {"$match": {"timestamp": {"$gte": week_ago}}},
@@ -80,9 +87,12 @@ async def get_vibe_intelligence(venue_id: str, request: Request):
                     "_id": None,
                     "total": {"$sum": 1},
                     "avg_vibe": {"$avg": "$vibe_score"},
-                    "chill": {"$sum": {"$cond": [{"$eq": ["$energy", "chill"]}, 1, 0]}},
-                    "popping": {"$sum": {"$cond": [{"$eq": ["$energy", "popping"]}, 1, 0]}},
-                    "electric": {"$sum": {"$cond": [{"$eq": ["$energy", "electric"]}, 1, 0]}},
+                    # The five states a scout can actually report (see
+                    # models.RatingCreate). This used to bucket "popping" and
+                    # "electric", which no rating can ever contain, so two of
+                    # the three bars on the merchant card were always zero.
+                    **{e: {"$sum": {"$cond": [{"$eq": ["$energy", e]}, 1, 0]}}
+                       for e in ENERGY_STATES},
                     "gate_blocked": {"$sum": {"$cond": [{"$eq": ["$gate", "blocked"]}, 1, 0]}},
                     "capacity_full": {"$sum": {"$cond": [{"$eq": ["$capacity", "full"]}, 1, 0]}},
                     "unique_scouts": {"$addToSet": "$user_id"},
@@ -102,14 +112,14 @@ async def get_vibe_intelligence(venue_id: str, request: Request):
     agg = ratings_result[0] if ratings_result else {"this_week": [], "prev_week": []}
 
     tw = agg["this_week"][0] if agg["this_week"] else {
-        "total": 0, "avg_vibe": 0, "chill": 0, "popping": 0, "electric": 0,
+        "total": 0, "avg_vibe": 0, **{e: 0 for e in ENERGY_STATES},
         "gate_blocked": 0, "capacity_full": 0, "unique_scouts": [],
     }
     pw = agg["prev_week"][0] if agg["prev_week"] else {"avg_vibe": 0}
 
     total_ratings = tw["total"]
     rating_breakdown = {}
-    for k in ("chill", "popping", "electric"):
+    for k in ENERGY_STATES:
         rating_breakdown[k] = round((tw[k] / total_ratings) * 100, 1) if total_ratings > 0 else 0
 
     # Vibe killers

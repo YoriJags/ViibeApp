@@ -5,6 +5,13 @@ Core business logic for score computation, clout economy, and geofencing.
 import math
 from datetime import datetime, timedelta, timezone
 from app.config import db, GEOFENCE_RADIUS_METERS
+from app.services.synthetic import (
+    SOURCE_NONE,
+    SOURCE_SCOUTS,
+    is_synthetic,
+    real_only_filter,
+    separate as separate_synthetic,
+)
 from app.models import Coordinates
 
 
@@ -571,6 +578,10 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         ],
     }).to_list(1000)
 
+    # Real and demo readings are never blended into one number. If any real
+    # reading exists, every demo reading is dropped. See services/synthetic.py.
+    ratings, energy_source = separate_synthetic(ratings)
+
     # Snapshot the previous score for the decay buffer
     previous_score = venue.get("current_vibe_score")
 
@@ -587,6 +598,7 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
             "vibe_velocity":      "stable",
             "total_ratings_24h":  0,
             "viibe_certified":    False,
+            "energy_source":      SOURCE_NONE,
         }
 
     # ── Kinetic momentum (crowd movement floor) ───────────────────────────────
@@ -669,9 +681,12 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
 
     # ── 24h count ─────────────────────────────────────────────────────────────
     day_ago     = now - timedelta(hours=24)
+    # Evidence counts only real readings. Demo readings must never raise Signal
+    # Density or earn VIIBE CERTIFIED, which both rest on this number.
     ratings_24h = await db.ratings.count_documents({
         "venue_id":  venue_id,
         "timestamp": {"$gte": day_ago},
+        **real_only_filter(),
     })
 
     # ── VIIBE CERTIFIED ───────────────────────────────────────────────────────
@@ -775,7 +790,10 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
     ) / total_blend)
 
     # ── Transparency fields ───────────────────────────────────────────────────
-    active_scouts = len({r.get("user_id") for r in ratings if r.get("user_id")})
+    # Demo accounts are never scouts, even when a demo reading drives the score.
+    active_scouts = len({
+        r.get("user_id") for r in ratings if r.get("user_id") and not is_synthetic(r)
+    })
     timestamps = [r.get("timestamp") for r in ratings if r.get("timestamp")]
     if timestamps:
         most_recent = max(timestamps, key=lambda t: t if isinstance(t, datetime) else datetime.fromisoformat(str(t).replace("Z", "+00:00")))
@@ -795,7 +813,10 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         "gate_level":         gate_level,
         "vibe_velocity":      velocity,
         "total_ratings_24h":  ratings_24h,
-        "viibe_certified":    viibe_certified,
+        "viibe_certified":    viibe_certified and energy_source == SOURCE_SCOUTS,
+        # Where this score came from: "scouts" or "demo". Demo scores are shown
+        # in the app as demo and are never served to machines as a reading.
+        "energy_source":      energy_source,
         # Kinetic metadata
         "kinetic_momentum":   live["momentum_floor"],
         "decay_protected":    live["decay_protected"],

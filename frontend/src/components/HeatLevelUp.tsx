@@ -15,7 +15,7 @@ const ORBIT_N   = 16;
 
 const LEVEL_ICONS: Record<string, string> = {
   // Nightly heat
-  warming:  'trending-up',
+  moving:   'trending-up',
   hot:      'flame',
   on_fire:  'flash',
   // Legacy permanent levels
@@ -23,7 +23,7 @@ const LEVEL_ICONS: Record<string, string> = {
 };
 const LEVEL_TAGLINES: Record<string, string> = {
   // Heat levels
-  warming:  'You showed up.\nThat\'s where it starts.',
+  moving:   'You showed up.\nThat\'s where it starts.',
   hot:      'You\'re in the scene.\nHot Nights count +1.',
   on_fire:  'The scene feels you.\nEveryone knows you\'re out.',
   // Legacy

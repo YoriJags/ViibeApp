@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import Optional
 
 from app.config import db
+from app.services.vibe import get_venue_state
 from app.services.auth import require_auth
 
 router = APIRouter(tags=["intelligence"])
@@ -138,15 +139,9 @@ async def get_area_pulse(city: str):
         cooling = sum(1 for v in area_venues if v.get("vibe_velocity") == "cooling_down")
         trend = "rising" if rising > cooling else ("cooling" if cooling > rising else "stable")
 
-        # State label
-        if avg >= 75:
-            state = "electric"
-        elif avg >= 55:
-            state = "popping"
-        elif avg >= 35:
-            state = "warming"
-        else:
-            state = "quiet"
+        # State label, on the canonical ladder (docs/ENERGY.md), so an area
+        # and a room are described in the same words at the same score.
+        state = get_venue_state(avg, "sparse")
 
         result.append({
             "area": area_name,

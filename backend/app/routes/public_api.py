@@ -21,6 +21,7 @@ To issue an API key:
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Header, Query
 from app.config import db
+from app.services.synthetic import SOURCE_DEMO, SOURCE_SCOUTS, for_machines
 
 router = APIRouter(prefix="/v1", tags=["public-api-v1"])
 
@@ -38,7 +39,12 @@ async def _require_api_key(x_api_key: str = Header(...)):
 
 
 def _clean_venue(v: dict) -> dict:
-    """Strip internal fields and return a clean, licensable venue record."""
+    """Strip internal fields and return a clean, licensable venue record.
+
+    Demo-driven venues report no reading (see services/synthetic.py): this is
+    the licensed feed, and a demo score in it would be a false record.
+    """
+    v = for_machines(v)
     return {
         "id":              v.get("id"),
         "name":            v.get("name"),
@@ -53,6 +59,7 @@ def _clean_venue(v: dict) -> dict:
         "gate_level":      v.get("gate_level"),
         "vibe_velocity":   v.get("vibe_velocity"),
         "score_confidence": v.get("score_confidence"),
+        "energy_source":   v.get("energy_source") or SOURCE_SCOUTS,
         "active_scouts":   v.get("active_scouts"),
         "total_ratings_24h": v.get("total_ratings_24h"),
         "last_rated_mins_ago": v.get("last_rated_mins_ago"),
@@ -109,6 +116,7 @@ async def list_venues(
             "city": city,
             "is_suppressed": {"$ne": True},
             "current_vibe_score": {"$gte": min_score},
+            "energy_source": {"$ne": SOURCE_DEMO},
         },
         {"_id": 0},
     ).sort("current_vibe_score", -1).skip(offset).limit(limit)
@@ -198,7 +206,7 @@ async def get_city_energy(
     await _require_api_key(x_api_key)
 
     venues = await db.venues.find(
-        {"city": city, "is_suppressed": {"$ne": True}},
+        {"city": city, "is_suppressed": {"$ne": True}, "energy_source": {"$ne": SOURCE_DEMO}},
         {"_id": 0, "current_vibe_score": 1, "energy_level": 1, "vibe_state": 1,
          "total_ratings_24h": 1, "area": 1, "id": 1, "name": 1},
     ).to_list(500)

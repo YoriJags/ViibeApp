@@ -44,13 +44,17 @@ function getBarColor(score: number): string {
   return '#3399FF';
 }
 
+// The canonical ladder (docs/ENERGY.md). This used to match 'ELECTRIC', which the
+// forecast never sends, and had no case for CHILL, so a busy predicted hour fell
+// through to "Quiet".
 function energyDesc(label: string): string {
   switch (label?.toUpperCase()) {
-    case 'ELECTRIC': return 'Full energy — peak performance';
-    case 'LIT':      return 'High energy — great time to arrive';
-    case 'CHARGED':  return 'Building — crowd growing';
-    case 'WARMING':  return 'Early — things heating up';
-    default:         return 'Quiet — off-peak hours';
+    case 'PEAK':    return 'As alive as it gets';
+    case 'LIT':     return 'The room is going. Great time to arrive';
+    case 'CHARGED': return 'Full and building';
+    case 'WARMING': return 'Early. Things are heating up';
+    case 'CHILL':   return 'Occupied, low intensity';
+    default:        return 'Quiet. Off-peak hours';
   }
 }
 

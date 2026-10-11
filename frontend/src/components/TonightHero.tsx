@@ -24,7 +24,8 @@ interface TonightHeroProps {
   // Phase 1 — "The Warm-Up"
   currentHour?: string;
   cityName?: string;
-  cityEnergy?: 'chill' | 'moderate' | 'popping' | 'electric';
+  // Canonical state (docs/ENERGY.md), lower case. Omit when there is no real reading.
+  cityEnergy?: 'quiet' | 'chill' | 'warming' | 'charged' | 'lit' | 'peak';
   cityEnergyScore?: number;
   matchVenue?: string;
   matchPercent?: number;
@@ -47,10 +48,12 @@ interface TonightHeroProps {
 }
 
 const ENERGY_COLORS: Record<string, string> = {
-  electric: '#FF3366',
-  popping: '#FF9933',
-  moderate: '#9933FF',
-  chill: '#3399FF',
+  peak:    '#FF3366',
+  lit:     '#FF9933',
+  charged: '#FFD700',
+  warming: '#9933FF',
+  chill:   '#3399FF',
+  quiet:   '#555E6E',
 };
 
 const PHASE_GRADIENTS: Record<NightPhase, [string, string]> = {
@@ -81,7 +84,7 @@ export default function TonightHero({
   phase,
   currentHour,
   cityName = 'Lagos',
-  cityEnergy = 'electric',
+  cityEnergy = 'quiet',
   cityEnergyScore,
   matchVenue,
   matchPercent,
@@ -150,8 +153,7 @@ export default function TonightHero({
     outputRange: [0.03, 0.12],
   });
 
-  const energyColor = ENERGY_COLORS[cityEnergy] || '#FF3366';
-  const energyWord = cityEnergy.charAt(0).toUpperCase() + cityEnergy.slice(1);
+  const energyColor = ENERGY_COLORS[cityEnergy] ?? ENERGY_COLORS.quiet;
 
   const glowRadius = glowAnim.interpolate({
     inputRange: [0.6, 1],

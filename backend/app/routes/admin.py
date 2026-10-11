@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Request
 from app.config import db, PULSE_DROP_TIERS
 from app.models import AdminOverride, AirdropRequest
 from app.services.auth import get_current_user, require_admin as _require_admin
-from app.services.vibe import calculate_venue_aggregate
+from app.services.vibe import calculate_venue_aggregate, get_venue_state
 from app.services.realtime import broadcast_venue_update, connected_clients
 
 router = APIRouter(tags=["admin"])
@@ -286,12 +286,14 @@ async def get_integrity_monitor(request: Request):
     ]
 
     def get_distribution(venues):
-        return {
-            "electric": sum(1 for v in venues if v["energy_score"] >= 80),
-            "popping": sum(1 for v in venues if 60 <= v["energy_score"] < 80),
-            "moderate": sum(1 for v in venues if 40 <= v["energy_score"] < 60),
-            "quiet": sum(1 for v in venues if v["energy_score"] < 40),
-        }
+        # The admin dashboard expects the canonical states. This used to send
+        # electric / popping / moderate, so the chart's peak, lit and warming
+        # bars never received a value.
+        dist = {"peak": 0, "lit": 0, "warming": 0, "chill": 0, "quiet": 0}
+        for v in venues:
+            state = get_venue_state(v["energy_score"], "sparse")
+            dist[state] = dist.get(state, 0) + 1
+        return dist
 
     return {
         "sponsored": {

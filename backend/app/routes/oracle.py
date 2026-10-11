@@ -28,7 +28,11 @@ _PEAK_WINDOWS = {
     "church":      {"weekday": ("9:00am",  "11:30am"), "weekend": ("9:00am",  "12:00pm")},
 }
 _BASE_CONF = {"club": 82, "lounge": 78, "bar": 75, "restaurant": 80, "concert": 85, "rave": 70, "block_party": 88, "event": 80, "church": 90}
-_ENERGY_LABELS = {"club": "electric", "lounge": "popping", "bar": "popping", "restaurant": "warm", "concert": "electric", "rave": "electric", "block_party": "electric", "event": "popping", "church": "uplifting"}
+# Expected energy by venue type, on the canonical ladder (docs/ENERGY.md). It
+# used to say "electric", "popping", "warm" and "uplifting", four words no other
+# part of the product uses. These read naturally in the headline below:
+# "Bature will be lit by 11pm tonight".
+_ENERGY_LABELS = {"club": "lit", "lounge": "warming", "bar": "warming", "restaurant": "chill", "concert": "lit", "rave": "lit", "block_party": "lit", "event": "warming", "church": "lit"}
 
 
 def _best_arrival(peak_start: str) -> str:
@@ -104,7 +108,7 @@ def _heuristic_oracle(
         t_delta = 0
     confidence = max(50, min(95, base_conf + velocity_delta + activity_delta + bolt_delta + weather_delta + t_delta))
 
-    energy_label = _ENERGY_LABELS.get(venue_type, "popping")
+    energy_label = _ENERGY_LABELS.get(venue_type, "warming")
 
     # Headline override when tap surge detected
     if bolt_15min >= 20:

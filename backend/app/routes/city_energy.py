@@ -16,6 +16,14 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter
 
 from app.config import db
+from app.services.synthetic import (
+    DEMO_PREFIX,
+    SOURCE_DEMO,
+    SOURCE_NONE,
+    SOURCE_SCOUTS,
+    is_demo_venue,
+    real_only_filter,
+)
 
 router = APIRouter(tags=["city_energy"])
 
@@ -53,8 +61,21 @@ async def compute_city_energy(city: str) -> dict:
     active_venues = await db.venues.find(
         {"city": city, "id": {"$in": list(active_ids)}},
         {"_id": 0, "id": 1, "name": 1, "current_vibe_score": 1,
-         "vibe_state": 1, "total_ratings_24h": 1, "vibe_signature": 1}
+         "vibe_state": 1, "total_ratings_24h": 1, "vibe_signature": 1,
+         "energy_source": 1}
     ).to_list(200)
+
+    # Real and demo venues are never averaged together, exactly as real and demo
+    # readings are never blended within a venue. If any venue in the city has a
+    # real reading, the city is built from those alone. See services/synthetic.py.
+    demo_venues = [v for v in active_venues if is_demo_venue(v)]
+    real_venues = [v for v in active_venues if not is_demo_venue(v)]
+    if real_venues:
+        active_venues, city_source = real_venues, SOURCE_SCOUTS
+    elif demo_venues:
+        active_venues, city_source = demo_venues, SOURCE_DEMO
+    else:
+        city_source = SOURCE_NONE
 
     # Weighted average: weight by total_ratings_24h (more active venues count more)
     if active_venues:
@@ -85,10 +106,17 @@ async def compute_city_energy(city: str) -> dict:
         hot_venues = 0
         city_vibe_signature = None
 
-    # Active scouts: unique raters OR reactors in the last hour
-    rating_scouts = set(await db.ratings.distinct("user_id", {"timestamp": {"$gte": hour_ago}}))
+    # Active scouts: unique real raters OR reactors in the last hour. Demo
+    # accounts are never scouts; counting them is how the live API came to
+    # report ten scouts in Lagos who do not exist.
+    rating_scouts = set(await db.ratings.distinct(
+        "user_id", {"timestamp": {"$gte": hour_ago}, **real_only_filter()}
+    ))
     reaction_scouts = set(await db.reactions.distinct("user_id", {"timestamp": {"$gte": hour_ago}}))
-    active_scouts = len(rating_scouts | reaction_scouts)
+    active_scouts = len({
+        u for u in (rating_scouts | reaction_scouts)
+        if u and not str(u).startswith(DEMO_PREFIX)
+    })
 
     # Readings taken tonight (quick reads dropped today)
     readings_tonight = await db.quick_pulses.count_documents({
@@ -139,6 +167,10 @@ async def compute_city_energy(city: str) -> dict:
         "city":                city,
         "energy_score":        energy_score,
         "energy_label":        label,
+        # "scouts" when built from real readings, "demo" when only the ambient
+        # demo engine is running, "none" when nothing is. The app labels demo.
+        "energy_source":       city_source,
+        "demo_venues":         len(demo_venues),
         "trend":               trend,
         "active_scouts":       active_scouts,
         "live_venues":         len(active_venues),

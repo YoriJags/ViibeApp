@@ -9,36 +9,51 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface CityWelcomeProps {
-  cityEnergy: { energy_score: number; energy_label: string; active_scouts: number; live_venues: number } | null;
+  cityEnergy: {
+    energy_score: number;
+    energy_label: string;
+    energy_source?: string;
+    active_scouts: number;
+    live_venues: number;
+  } | null;
   cityName: string;
   onPlannerPress: () => void;
   callName?: string;
 }
 
 export default function CityWelcomeCard({ cityEnergy, cityName, onPlannerPress, callName }: CityWelcomeProps) {
-  const score = cityEnergy?.energy_score ?? 42;
-  const label = (cityEnergy?.energy_label ?? 'BUZZING').toUpperCase();
+  // Only a reading built from real scouts may describe the city. This card used
+  // to default to a score of 42 and the word "BUZZING" when it had no data, and
+  // it branched on ELECTRIC / POPPING / BUZZING, words the city label is never
+  // given, so a LIT or PEAK city fell through and was described as quiet.
+  const realReading = cityEnergy?.energy_source === 'scouts';
+  const score = realReading ? (cityEnergy?.energy_score ?? 0) : 0;
+  const label = realReading ? String(cityEnergy?.energy_label ?? '').toUpperCase() : 'NONE';
   const scouts = cityEnergy?.active_scouts ?? 0;
-  const liveSpots = cityEnergy?.live_venues ?? 0;
+  const liveSpots = realReading ? (cityEnergy?.live_venues ?? 0) : 0;
 
   const color =
-    score >= 80 ? '#FF3366' :
-    score >= 60 ? '#FF9933' :
-    score >= 30 ? '#9933FF' :
+    score >= 85 ? '#FF3366' :
+    score >= 65 ? '#FF9933' :
+    score >= 45 ? '#9933FF' :
     '#3399FF';
 
   const greeting = callName ? `${callName}, ` : '';
   const headline =
-    label === 'ELECTRIC' ? `🔥 ${greeting}${cityName} is going absolutely OFF` :
-    label === 'POPPING'  ? `🎉 ${greeting}${cityName} is popping right now` :
-    label === 'BUZZING'  ? `✨ ${greeting}the ${cityName} scene is building` :
-    `🌙 ${greeting}${cityName} is quiet — early spots available`;
+    label === 'PEAK'    ? `🔥 ${greeting}${cityName} is at peak right now` :
+    label === 'LIT'     ? `🎉 ${greeting}${cityName} is lit right now` :
+    label === 'WARMING' ? `✨ ${greeting}${cityName} is warming up` :
+    label === 'CHILL'   ? `🌙 ${greeting}${cityName} is out, but easy tonight` :
+    label === 'QUIET'   ? `🌙 ${greeting}${cityName} is quiet right now` :
+    `📍 ${greeting}no live readings in ${cityName} yet tonight`;
 
   const subline =
-    label === 'ELECTRIC' ? "Don't sleep — the best spots are filling fast" :
-    label === 'POPPING'  ? 'Good timing. Pick your spot before it maxes out' :
-    label === 'BUZZING'  ? 'Night is young. Get in early, earn more clout' :
-    'Quiet night — ideal to explore without the queue';
+    label === 'PEAK'    ? "Don't sleep. The best spots are filling fast" :
+    label === 'LIT'     ? 'Good timing. Pick your spot before it maxes out' :
+    label === 'WARMING' ? 'Night is young. Get in early' :
+    label === 'CHILL'   ? 'Easy night. Good for exploring without the queue' :
+    label === 'QUIET'   ? 'Quiet night. Ideal to explore without the queue' :
+    'Be the first. Your reading puts the city on the map';
 
   return (
     <View style={styles.wrap}>

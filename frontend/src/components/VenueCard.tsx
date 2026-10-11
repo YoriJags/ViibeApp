@@ -14,6 +14,8 @@ interface Venue {
   address: string;
   area: string;
   current_vibe_score: number;
+  // 'demo' when the score comes only from the ambient demo engine.
+  energy_source?: 'scouts' | 'demo' | 'none';
   energy_level: 'quiet' | 'chill' | 'warming' | 'charged' | 'lit' | 'peak';
   capacity_level: 'sparse' | 'vibrant' | 'full';
   gate_level: 'clear' | 'slow' | 'blocked';
@@ -225,6 +227,8 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
               <View style={styles.scoreBox}>
                 <Text style={[styles.energyLabel, { color: decayState === 'expired' ? 'rgba(255,255,255,0.25)' : vibeColor }]}>
                   {decayState === 'expired' ? 'STALE' : vibeStateLabel}
+                  {/* Demo energy is labelled wherever it shows. Never let it pass for real. */}
+                  {venue.energy_source === 'demo' ? ' · DEMO' : ''}
                 </Text>
                 <Text style={[styles.score, { color: decayState === 'expired' ? 'rgba(255,255,255,0.25)' : vibeColor }]}>
                   {Math.round(venue.current_vibe_score)}%

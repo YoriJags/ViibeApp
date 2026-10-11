@@ -4,6 +4,7 @@ AI-predicted energy curve for tonight using 4-week rolling averages.
 """
 from datetime import datetime, timedelta, timezone
 from app.config import db, logger
+from app.services.vibe import get_venue_state
 
 
 async def generate_forecast(venue_id: str) -> dict | None:
@@ -62,13 +63,10 @@ async def generate_forecast(venue_id: str) -> dict | None:
             weighted_avg = sum(s * w for s, w in data) / total_weight
             confidence = min(100, len(data) * 25)  # 4 samples = 100%
 
-            # Predict energy level
-            if weighted_avg >= 75:
-                energy = "electric"
-            elif weighted_avg >= 45:
-                energy = "popping"
-            else:
-                energy = "chill"
+            # Predict energy level on the canonical ladder (docs/ENERGY.md).
+            # This used to say "electric" / "popping", which the forecast card
+            # does not know, so a busy predicted hour was described as quiet.
+            energy = get_venue_state(weighted_avg, "sparse")
 
             forecast.append({
                 "hour": hour,

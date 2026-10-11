@@ -36,13 +36,13 @@ const DEMO_LEADERBOARD: ScoutEntry[] = [
   { rank: 2, user_id: '2', username: 'vibequeen_', display_name: 'Vibe Queen', bolts_tonight: 38, venues_visited: 3, ratings_tonight: 5, score: 178, heat_level: 'on_fire' },
   { rank: 3, user_id: '3', username: 'scoutlekki', display_name: 'Scout Lekki', bolts_tonight: 29, venues_visited: 3, ratings_tonight: 4, score: 141, heat_level: 'hot' },
   { rank: 4, user_id: '4', username: 'lagosnights', bolts_tonight: 21, venues_visited: 2, ratings_tonight: 4, score: 108, heat_level: 'hot' },
-  { rank: 5, user_id: '5', username: 'vibe_tester', bolts_tonight: 17, venues_visited: 2, ratings_tonight: 3, score: 88, heat_level: 'warming' },
+  { rank: 5, user_id: '5', username: 'vibe_tester', bolts_tonight: 17, venues_visited: 2, ratings_tonight: 3, score: 88, heat_level: 'moving' },
 ];
 
 const HEAT_COLORS: Record<string, string> = {
   on_fire: '#FF3366',
   hot:     '#FF8C00',
-  warming: '#6655FF',
+  moving:  '#6655FF',
   cold:    '#3A3A4E',
 };
 
@@ -193,7 +193,7 @@ export default function ScoutOfTheNight({ visible, onClose, isDemoMode, city }: 
                       {top.display_name || `@${top.username}`}
                     </Text>
                     <Text style={styles.winnerHandle}>@{top.username}</Text>
-                    <View style={[styles.heatPill, { backgroundColor: (HEAT_COLORS[top.heat_level ?? 'hot']) + '22', borderColor: (HEAT_COLORS[top.heat_level ?? 'hot']) + '55' }]}>
+                    <View style={[styles.heatPill, { backgroundColor: (HEAT_COLORS[top.heat_level ?? 'hot'] ?? HEAT_COLORS.hot) + '22', borderColor: (HEAT_COLORS[top.heat_level ?? 'hot'] ?? HEAT_COLORS.hot) + '55' }]}>
                       <Text style={[styles.heatPillText, { color: HEAT_COLORS[top.heat_level ?? 'hot'] }]}>
                         {top.heat_level?.replace('_', ' ').toUpperCase() ?? 'HOT'}
                       </Text>
@@ -235,7 +235,7 @@ export default function ScoutOfTheNight({ visible, onClose, isDemoMode, city }: 
             ) : (
               scouts.slice(1).map((s) => {
                 const rankMeta = RANK_LABELS[s.rank];
-                const heatColor = HEAT_COLORS[s.heat_level ?? 'cold'];
+                const heatColor = (HEAT_COLORS[s.heat_level ?? 'cold'] ?? HEAT_COLORS.cold);
                 const isMe = s.user_id === user?.id;
                 return (
                   <View key={s.user_id} style={[styles.row, isMe && styles.rowMe]}>

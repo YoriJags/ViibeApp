@@ -15,6 +15,12 @@ morning. A Tuesday 3pm map reads mostly quiet — believable, not dead.
 Kill switch: unset DEMO_AMBIENT (or set 0) on Railway and redeploy/restart.
 All ambient ratings come from flagged demo-scout-* users, so
 scripts/demo_energy.py --wipe still removes every trace.
+
+Demo energy is never evidence. Every reading is marked synthetic, is never
+blended with real readings, never counts as a scout or a reading, never
+certifies a venue, and is never served to machines as a reading. Venues it
+drives carry energy_source="demo" and the app labels them as demo.
+See services/synthetic.py.
 """
 import asyncio
 import os
@@ -23,9 +29,8 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from app.config import db, logger
+from app.services.synthetic import DEMO_PREFIX
 from app.services.vibe import calculate_vibe_score, calculate_venue_aggregate
-
-DEMO_PREFIX = "demo-scout-"
 AMBIENT_INTERVAL_MINUTES = 30
 ORGANIC_DEFER_MINUTES = 60
 MAX_RATINGS_PER_VENUE_PER_RUN = 4
@@ -155,6 +160,9 @@ async def ambient_tick() -> dict:
                 "provisional": False, "provisional_until": None,
                 "credibility_weight": round(random.uniform(0.75, 1.0), 2),
                 "signal_token": f"demo-{uuid.uuid4().hex[:12]}",
+                # Explicit, so nothing has to infer it from the account name.
+                # See services/synthetic.py for every rule this enforces.
+                "synthetic": True,
             })
 
         aggregate = await calculate_venue_aggregate(venue["id"])

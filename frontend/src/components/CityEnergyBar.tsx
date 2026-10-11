@@ -81,6 +81,8 @@ export default function CityEnergyBar({ pulse, onPress }: CityEnergyBarProps) {
   const [fullscreen, setFullscreen] = useState(false);
 
   const color = LABEL_COLORS[pulse.energy_label] ?? LABEL_COLORS.CHILL;
+  // Demo energy is labelled wherever it shows. See backend services/synthetic.py.
+  const isDemo = pulse.energy_source === 'demo';
   const trendColor = TREND_COLOR[pulse.trend] ?? '#9933FF';
 
   useEffect(() => {
@@ -142,7 +144,9 @@ export default function CityEnergyBar({ pulse, onPress }: CityEnergyBarProps) {
               <Animated.Text style={[styles.score, { color, opacity: pulseAnim }]}>
                 {pulse.energy_score}
               </Animated.Text>
-              <Text style={[styles.label, { color }]}>{pulse.energy_label}</Text>
+              <Text style={[styles.label, { color }]}>
+                {pulse.energy_label}{isDemo ? ' · DEMO' : ''}
+              </Text>
               <Text style={[styles.trend, { color }]}>
                 {TREND_ICON[pulse.trend]} {TREND_LABEL[pulse.trend]}
               </Text>
@@ -194,7 +198,9 @@ export default function CityEnergyBar({ pulse, onPress }: CityEnergyBarProps) {
                   <Animated.Text style={[fs.heroScore, { color, opacity: pulseAnim }]}>
                     {pulse.energy_score}
                   </Animated.Text>
-                  <Text style={[fs.heroLabel, { color }]}>{pulse.energy_label}</Text>
+                  <Text style={[fs.heroLabel, { color }]}>
+                    {pulse.energy_label}{isDemo ? ' · DEMO' : ''}
+                  </Text>
                 </View>
                 <View style={fs.heroRight}>
                   <View style={[fs.trendChip, { backgroundColor: trendColor + '18', borderColor: trendColor + '40' }]}>

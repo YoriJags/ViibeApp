@@ -35,7 +35,7 @@ const PERSONA_COLORS: Record<string, string> = {
 };
 const HEAT_COLORS: Record<string, string> = {
   cold:    '#3A3A4E',
-  warming: '#6655FF',
+  moving:  '#6655FF',
   hot:     '#FF9933',
   on_fire: '#FF3366',
 };

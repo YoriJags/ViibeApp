@@ -226,6 +226,9 @@ export interface CityEnergyData {
   city: string;
   energy_score: number;
   energy_label: CityEnergyLabel;
+  // 'scouts' when built from real readings, 'demo' from the ambient demo engine.
+  energy_source?: 'scouts' | 'demo' | 'none';
+  demo_venues?: number;
   trend: 'heating_up' | 'cooling_down' | 'stable';
   active_scouts: number;
   live_venues: number;

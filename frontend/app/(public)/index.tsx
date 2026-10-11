@@ -754,8 +754,17 @@ export default function MapScreen() {
               phase={nightPhase}
               currentHour={isDemoMode ? DEMO_TONIGHT.currentHour : new Date().toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })}
               cityName={cityName}
-              cityEnergy={(isDemoMode ? DEMO_TONIGHT.cityEnergy : 'popping') as 'chill' | 'moderate' | 'popping' | 'electric'}
-              cityEnergyScore={isDemoMode ? DEMO_TONIGHT.cityEnergyScore : 70}
+              // Real users used to be told the city was "popping" at 70, always:
+              // both values were hardcoded. Now they come from the live city
+              // reading, and only when real scouts produced it.
+              cityEnergy={(isDemoMode
+                ? DEMO_TONIGHT.cityEnergy
+                : (cityEnergy?.energy_source === 'scouts'
+                    ? String(cityEnergy.energy_label).toLowerCase()
+                    : 'quiet')) as any}
+              cityEnergyScore={isDemoMode
+                ? DEMO_TONIGHT.cityEnergyScore
+                : (cityEnergy?.energy_source === 'scouts' ? Math.round(cityEnergy.energy_score) : undefined)}
               matchVenue={isDemoMode ? DEMO_TONIGHT.matchVenue : undefined}
               matchPercent={isDemoMode ? DEMO_TONIGHT.matchPercent : undefined}
               matchArea={isDemoMode ? DEMO_TONIGHT.matchArea : undefined}

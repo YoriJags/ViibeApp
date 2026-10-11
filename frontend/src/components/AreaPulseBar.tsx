@@ -15,19 +15,21 @@ interface AreaData {
   peak_score: number;
   venue_count: number;
   trending: 'rising' | 'cooling' | 'stable';
-  state: 'electric' | 'popping' | 'warming' | 'quiet';
+  // The canonical ladder (docs/ENERGY.md); the backend now uses it for areas too.
+  state: 'peak' | 'lit' | 'warming' | 'chill' | 'quiet';
   top_venue: string;
 }
 
-const STATE_COLORS = {
-  electric: '#FF3366',
-  popping: '#FF9933',
+const STATE_COLORS: Record<string, string> = {
+  peak:    '#FF3366',
+  lit:     '#FF9933',
   warming: '#9933FF',
-  quiet: '#3399FF',
+  chill:   '#3399FF',
+  quiet:   '#555E6E',
 };
 
 const DEMO_AREAS: AreaData[] = [
-  { area: 'Victoria Island', avg_score: 78, peak_score: 94, venue_count: 4, trending: 'rising', state: 'popping', top_venue: 'DNA Nightclub' },
+  { area: 'Victoria Island', avg_score: 78, peak_score: 94, venue_count: 4, trending: 'rising', state: 'lit', top_venue: 'DNA Nightclub' },
   { area: 'Lekki', avg_score: 62, peak_score: 81, venue_count: 3, trending: 'stable', state: 'warming', top_venue: 'Club Quilox' },
   { area: 'Ikoyi', avg_score: 44, peak_score: 60, venue_count: 2, trending: 'cooling', state: 'warming', top_venue: 'The Hard Rock' },
   { area: 'Allen/Ikeja', avg_score: 28, peak_score: 38, venue_count: 2, trending: 'stable', state: 'quiet', top_venue: 'Sky Bar' },
@@ -66,7 +68,8 @@ export default function AreaPulseBar({ city, isDemoMode, onAreaPress }: Props) {
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {areas.map(area => {
-          const color = STATE_COLORS[area.state];
+          // A state this build does not know must not render the colour "undefined40".
+          const color = STATE_COLORS[area.state] ?? STATE_COLORS.quiet;
           return (
             <TouchableOpacity
               key={area.area}
