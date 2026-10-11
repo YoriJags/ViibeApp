@@ -75,12 +75,15 @@ async function report(kind: 'enter' | 'exit', venueId: string): Promise<void> {
 
     const body: Record<string, unknown> = { venue_id: venueId };
     if (kind === 'enter') {
-      // A recent fix, if the OS has one, lets the server refuse spoofed claims.
-      // Never block on a fresh GPS fix from a background wake.
-      const last = await Location.getLastKnownPositionAsync({ maxAge: 2 * 60 * 1000 });
-      if (last) {
-        body.lat = last.coords.latitude;
-        body.lng = last.coords.longitude;
+      // The server only COUNTS an arrival that comes with a position near the
+      // venue; without one it is logged as unverified, because a request with
+      // no position could have come from anywhere. So try properly: a recent
+      // cached fix first, then a fresh one, bounded so a background wake never
+      // hangs waiting for GPS.
+      const pos = await positionForArrival();
+      if (pos) {
+        body.lat = pos.coords.latitude;
+        body.lng = pos.coords.longitude;
       }
     }
 
@@ -91,6 +94,20 @@ async function report(kind: 'enter' | 'exit', venueId: string): Promise<void> {
     });
   } catch {
     // Best effort. A lost event self-heals: auto check-ins expire on their own.
+  }
+}
+
+const FRESH_FIX_TIMEOUT_MS = 15 * 1000;
+
+async function positionForArrival(): Promise<Location.LocationObject | null> {
+  try {
+    const cached = await Location.getLastKnownPositionAsync({ maxAge: 2 * 60 * 1000 });
+    if (cached) return cached;
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), FRESH_FIX_TIMEOUT_MS));
+    const fresh = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    return await Promise.race([fresh, timeout]);
+  } catch {
+    return null;
   }
 }
 

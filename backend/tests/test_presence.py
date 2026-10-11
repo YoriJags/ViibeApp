@@ -14,11 +14,11 @@ from app.services.presence import (
     PASS_THROUGH_MINUTES,
     REENTER_GRACE_MINUTES,
     SOURCE_AUTO,
+    check_position,
     classify_visit,
     decide_enter,
     is_present,
     new_auto_checkin,
-    position_plausible,
     present_filter,
 )
 
@@ -29,7 +29,8 @@ def ago(minutes: float) -> datetime:
     return NOW - timedelta(minutes=minutes)
 
 
-def checkin(source=None, minutes_old=30, status="active", venue="v1", expires_in=120):
+def checkin(source=None, minutes_old=30, status="active", venue="v1", expires_in=120,
+            verified=True):
     doc = {
         "venue_id": venue,
         "status": status,
@@ -38,6 +39,7 @@ def checkin(source=None, minutes_old=30, status="active", venue="v1", expires_in
     }
     if source:
         doc["source"] = source
+        doc["verified"] = verified
     return doc
 
 
@@ -70,7 +72,19 @@ def test_naive_timestamps_from_mongo_are_handled():
     assert is_present(doc, NOW)
 
 
-def test_mongo_filter_uses_the_same_walk_past_rule():
+def test_an_unverified_auto_visit_never_counts():
+    """
+    The regression guard for the spoofing hole. An arrival with no position is
+    any authenticated request for any venue. It may be logged; it must never
+    add a body to a room, however long it has been there.
+    """
+    assert not is_present(checkin(SOURCE_AUTO, minutes_old=120, verified=False), NOW)
+    doc = checkin(SOURCE_AUTO, minutes_old=120)
+    del doc["verified"]
+    assert not is_present(doc, NOW), "a missing flag must fail closed, not open"
+
+
+def test_mongo_filter_uses_the_same_rules():
     """The query and the Python check must never disagree about who is present."""
     f = present_filter("v1", NOW)
     assert f["venue_id"] == "v1"
@@ -78,6 +92,7 @@ def test_mongo_filter_uses_the_same_walk_past_rule():
     assert f["expires_at"] == {"$gt": NOW}
     auto_rule = next(c for c in f["$or"] if "created_at" in c)
     assert auto_rule["created_at"]["$lte"] == NOW - timedelta(minutes=PASS_THROUGH_MINUTES)
+    assert auto_rule["verified"] is True
 
 
 # ── Visits ────────────────────────────────────────────────────────────────────
@@ -137,18 +152,19 @@ def test_grace_window_only_applies_to_the_same_venue():
 
 # ── Spoofing guard ────────────────────────────────────────────────────────────
 
-def test_no_position_is_accepted_because_the_os_attested_the_geofence():
-    assert position_plausible(None, 100)
+def test_no_position_fails_closed():
+    """The server cannot see the operating system, only a request. No position, no count."""
+    assert check_position(None, 100) == "missing"
 
 
-def test_a_position_far_from_the_venue_is_refused():
-    assert position_plausible(150, 100)
-    assert not position_plausible(5000, 100)
+def test_a_position_near_the_venue_is_verified_and_a_far_one_refused():
+    assert check_position(150, 100) == "verified"
+    assert check_position(5000, 100) == "far"
 
 
 def test_missing_radius_falls_back_to_a_sane_default():
-    assert position_plausible(250, None)
-    assert not position_plausible(900, None)
+    assert check_position(250, None) == "verified"
+    assert check_position(900, None) == "far"
 
 
 # ── New visits ────────────────────────────────────────────────────────────────
@@ -159,3 +175,10 @@ def test_auto_visits_earn_nothing_and_expire_on_their_own():
     assert doc["status"] == "active"
     assert doc["expires_at"] == NOW + timedelta(hours=AUTO_TTL_HOURS)
     assert "clout" not in str(doc).lower()
+
+
+def test_a_new_visit_is_unverified_unless_told_otherwise():
+    """Forgetting to pass `verified` can only ever undercount a room."""
+    user, venue = {"id": "u1"}, {"id": "v1"}
+    assert new_auto_checkin(user, venue, NOW)["verified"] is False
+    assert new_auto_checkin(user, venue, NOW, verified=True)["verified"] is True

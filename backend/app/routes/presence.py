@@ -20,8 +20,8 @@ from app.services.presence import (
     AUTO_TTL_HOURS,
     classify_visit,
     decide_enter,
+    check_position,
     new_auto_checkin,
-    position_plausible,
     present_filter,
 )
 from app.services.realtime import emit_checkin_update
@@ -80,9 +80,13 @@ async def presence_enter(event: PresenceEvent, user: dict = Depends(require_auth
     if event.lat is not None and event.lng is not None and venue.get("coordinates"):
         vc = venue["coordinates"]
         distance = calculate_distance(event.lat, event.lng, vc["lat"], vc["lng"])
-    if not position_plausible(distance, venue.get("geofence_radius_m")):
+    position = check_position(distance, venue.get("geofence_radius_m"))
+    if position == "far":
         await _log(user["id"], event.venue_id, "enter_refused", {"distance_m": distance})
         raise HTTPException(status_code=403, detail="Position does not match this venue.")
+    # "missing" is accepted and logged, but the visit is unverified and is never
+    # counted as presence. See check_position for why this fails closed.
+    verified = position == "verified"
 
     now = datetime.now(timezone.utc)
     active = await db.checkins.find_one({"user_id": user["id"], "status": "active"})
@@ -91,7 +95,9 @@ async def presence_enter(event: PresenceEvent, user: dict = Depends(require_auth
         sort=[("left_at", -1)],
     )
     action = decide_enter(active, event.venue_id, last_left, now)
-    await _log(user["id"], event.venue_id, "enter", {"action": action, "distance_m": distance})
+    await _log(user["id"], event.venue_id, "enter", {
+        "action": action, "distance_m": distance, "verified": verified,
+    })
 
     if action in ("noop", "keep_manual"):
         return {"action": action}
@@ -101,14 +107,17 @@ async def presence_enter(event: PresenceEvent, user: dict = Depends(require_auth
         await _broadcast_count(active["venue_id"])
 
     if action == "resume":
+        # A resumed visit keeps its verification unless this event earns it.
+        resume_set = {"status": "active", "expires_at": now + timedelta(hours=AUTO_TTL_HOURS)}
+        if verified:
+            resume_set["verified"] = True
         await db.checkins.update_one(
             {"_id": last_left["_id"]},
-            {"$set": {"status": "active",
-                      "expires_at": now + timedelta(hours=AUTO_TTL_HOURS)},
+            {"$set": resume_set,
              "$unset": {"left_at": "", "dwell_minutes": "", "pass_through": ""}},
         )
     else:
-        await db.checkins.insert_one(new_auto_checkin(user, venue, now))
+        await db.checkins.insert_one(new_auto_checkin(user, venue, now, verified=verified))
 
     count = await _broadcast_count(event.venue_id)
     return {"action": action, "present_now": count}

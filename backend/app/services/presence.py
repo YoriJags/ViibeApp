@@ -67,8 +67,9 @@ def is_present(checkin: dict, now: datetime | None = None) -> bool:
     """
     Whether a check-in counts as a person being in the room right now.
 
-    Manual check-ins count immediately: the person said they were there.
-    Auto check-ins count only once they have outlasted a walk-past.
+    Manual check-ins count immediately: the person said they were there, and
+    the manual route enforces the geofence itself. Auto check-ins count only
+    once they have a verified position AND have outlasted a walk-past.
     """
     now = now or datetime.now(timezone.utc)
     if not checkin or checkin.get("status") != "active":
@@ -78,6 +79,8 @@ def is_present(checkin: dict, now: datetime | None = None) -> bool:
         return False
     if not is_auto(checkin):
         return True
+    if checkin.get("verified") is not True:
+        return False
     created = _aware(checkin.get("created_at"))
     if created is None:
         return False
@@ -96,7 +99,10 @@ def present_filter(venue_id: str, now: datetime | None = None) -> dict:
         "expires_at": {"$gt": now},
         "$or": [
             {"source": {"$ne": SOURCE_AUTO}},
-            {"created_at": {"$lte": now - timedelta(minutes=PASS_THROUGH_MINUTES)}},
+            {
+                "verified": True,
+                "created_at": {"$lte": now - timedelta(minutes=PASS_THROUGH_MINUTES)},
+            },
         ],
     }
 
@@ -142,21 +148,35 @@ def decide_enter(active: dict | None,
     return "open"
 
 
-def position_plausible(distance_m: float | None, venue_radius_m: float | None) -> bool:
+def check_position(distance_m: float | None, venue_radius_m: float | None) -> str:
     """
-    Reject an enter claim from somewhere nowhere near the venue.
+    How much an arrival claim can be believed.
 
-    No position at all is accepted: the operating system's own geofence fired,
-    which is its own attestation. A position, when sent, has to be roughly right.
+        "verified"  a position was sent and it is near the venue
+        "far"       a position was sent and it is nowhere near: refuse outright
+        "missing"   no position at all
+
+    "missing" fails CLOSED. It is tempting to say the operating system's
+    geofence fired and that is attestation enough, but the server cannot see
+    the operating system. All it sees is an authenticated request, and any
+    account can send one for any venue. Without a position the arrival is
+    logged but never counted, or a venue owner with a few accounts could pad
+    their own room, which is exactly what this product exists to prevent.
     """
     if distance_m is None:
-        return True
+        return "missing"
     radius = venue_radius_m or 100
-    return distance_m <= radius * POSITION_TOLERANCE_MULTIPLIER
+    return "verified" if distance_m <= radius * POSITION_TOLERANCE_MULTIPLIER else "far"
 
 
-def new_auto_checkin(user: dict, venue: dict, now: datetime | None = None) -> dict:
-    """The document for a fresh automatic visit. No clout, no streak."""
+def new_auto_checkin(user: dict, venue: dict, now: datetime | None = None,
+                     verified: bool = False) -> dict:
+    """
+    The document for a fresh automatic visit. No clout, no streak.
+
+    `verified` defaults to False so that forgetting to pass it can only ever
+    undercount a room, never inflate one.
+    """
     now = now or datetime.now(timezone.utc)
     return {
         "user_id": user["id"],
@@ -165,6 +185,7 @@ def new_auto_checkin(user: dict, venue: dict, now: datetime | None = None) -> di
         "venue_name": venue.get("name", ""),
         "status": "active",
         "source": SOURCE_AUTO,
+        "verified": bool(verified),
         "created_at": now,
         "expires_at": now + timedelta(hours=AUTO_TTL_HOURS),
     }
