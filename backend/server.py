@@ -227,6 +227,10 @@ async def startup():
     from app.services.merchant_report import weekly_reports_enabled, weekly_report_loop
     if weekly_reports_enabled():
         asyncio.create_task(weekly_report_loop())
+    # Relabel every venue's energy_source so no stale, unlabelled score survives
+    # a deploy. Unlabelled venues are never trusted, but they would still render.
+    from app.services.synthetic import relabel_all_venues
+    asyncio.create_task(relabel_all_venues())
     # The Call: settle staked readings against what the room actually did
     from app.services.stake import settle_loop
     asyncio.create_task(settle_loop())

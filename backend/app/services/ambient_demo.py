@@ -141,6 +141,11 @@ async def ambient_tick() -> dict:
         energies, capacities, (lo, hi) = PROFILES[tier]
         n = min(random.randint(lo, hi) if hi else 0, MAX_RATINGS_PER_VENUE_PER_RUN)
         if n == 0:
+            # Still recalculate. Skipping it here is how a venue kept an old
+            # demo score indefinitely, unlabelled, long after its readings expired.
+            aggregate = await calculate_venue_aggregate(venue["id"])
+            if aggregate:
+                await db.venues.update_one({"id": venue["id"]}, {"$set": aggregate})
             continue
 
         for scout_idx in random.sample(range(len(SCOUT_NAMES)), n):

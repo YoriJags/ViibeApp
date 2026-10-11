@@ -25,7 +25,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from app.config import db, logger
-from app.services.synthetic import SOURCE_DEMO, SOURCE_NONE, SOURCE_SCOUTS, is_demo_venue
+from app.services.synthetic import SOURCE_NONE, SOURCE_SCOUTS, has_real_reading
 from app.services.auth import get_current_user
 
 router = APIRouter(prefix="/v1/agent", tags=["Agent API"])
@@ -88,7 +88,7 @@ def _serialize_venue(v: dict) -> dict:
     Machines buy this feed as the truth; a made-up number, or a misleading
     zero, would be selling them something that is not. See services/synthetic.py.
     """
-    if is_demo_venue(v):
+    if not has_real_reading(v):
         return {
             "id":             v.get("id"),
             "name":           v.get("name"),
@@ -146,7 +146,7 @@ async def get_live_venues(
     await _validate_api_key(request)
 
     # Demo-driven venues are never served to machines as live readings.
-    query: dict = {"current_vibe_score": {"$gte": min_score}, "energy_source": {"$ne": SOURCE_DEMO}}
+    query: dict = {"current_vibe_score": {"$gte": min_score}, "energy_source": SOURCE_SCOUTS}
     if city:
         query["city"] = {"$regex": city, "$options": "i"}
     if category:
@@ -224,7 +224,7 @@ async def get_city_energy(
     """
     await _validate_api_key(request)
 
-    query: dict = {"energy_source": {"$ne": SOURCE_DEMO}}
+    query: dict = {"energy_source": SOURCE_SCOUTS}
     if city:
         query["city"] = {"$regex": city, "$options": "i"}
 

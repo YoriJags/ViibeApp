@@ -69,7 +69,45 @@ def real_only_filter() -> dict:
 
 
 def is_demo_venue(venue: dict) -> bool:
+    """Labelled as driven by demo data. Used for DISPLAY: the app shows "DEMO"."""
     return (venue or {}).get("energy_source") == SOURCE_DEMO
+
+
+def has_real_reading(venue: dict) -> bool:
+    """
+    Positively labelled as built from real scouts. Used for TRUST: anything
+    that counts, aggregates or sells a reading must use this, not
+    `not is_demo_venue(...)`.
+
+    A missing label fails CLOSED. The first version of this module treated an
+    unlabelled venue as real, to avoid hiding genuine data while aggregates
+    refreshed. In production that let one stale venue, with six demo readings
+    and none real, make the live API report Lagos as LIT "from scouts".
+    """
+    return (venue or {}).get("energy_source") == SOURCE_SCOUTS
+
+
+async def relabel_all_venues() -> dict:
+    """
+    Recalculate every venue's aggregate so each carries a current
+    energy_source. Run once at startup: without it, venues written by older
+    code keep stale scores with no label until something touches them.
+    """
+    from app.config import db, logger
+    from app.services.vibe import calculate_venue_aggregate
+
+    counts = {SOURCE_SCOUTS: 0, SOURCE_DEMO: 0, SOURCE_NONE: 0}
+    venues = await db.venues.find({}, {"_id": 0, "id": 1}).to_list(1000)
+    for v in venues:
+        try:
+            agg = await calculate_venue_aggregate(v["id"])
+            if agg:
+                await db.venues.update_one({"id": v["id"]}, {"$set": agg})
+                counts[agg.get("energy_source", SOURCE_NONE)] = counts.get(agg.get("energy_source", SOURCE_NONE), 0) + 1
+        except Exception as e:
+            logger.warning(f"relabel failed for {v.get('id')}: {e}")
+    logger.info(f"Venue energy relabelled at startup: {counts}")
+    return counts
 
 
 # Fields that carry a reading of the room. A machine consumer must never get a
@@ -85,10 +123,10 @@ def for_machines(venue: dict) -> dict:
     """
     The version of a venue an agent or API partner may see.
 
-    A demo-driven venue reports no reading at all rather than a made-up one,
-    and says plainly why.
+    Anything not positively built from real scouts, demo-driven or unlabelled,
+    reports no reading at all rather than a made-up one, and says plainly why.
     """
-    if not is_demo_venue(venue):
+    if has_real_reading(venue):
         return venue
     out = dict(venue)
     for field in READING_FIELDS:

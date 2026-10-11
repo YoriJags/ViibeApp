@@ -21,7 +21,7 @@ from app.services.synthetic import (
     SOURCE_DEMO,
     SOURCE_NONE,
     SOURCE_SCOUTS,
-    is_demo_venue,
+    has_real_reading,
     real_only_filter,
 )
 
@@ -68,8 +68,9 @@ async def compute_city_energy(city: str) -> dict:
     # Real and demo venues are never averaged together, exactly as real and demo
     # readings are never blended within a venue. If any venue in the city has a
     # real reading, the city is built from those alone. See services/synthetic.py.
-    demo_venues = [v for v in active_venues if is_demo_venue(v)]
-    real_venues = [v for v in active_venues if not is_demo_venue(v)]
+    # has_real_reading fails closed: an unlabelled venue is never trusted.
+    real_venues = [v for v in active_venues if has_real_reading(v)]
+    demo_venues = [v for v in active_venues if not has_real_reading(v)]
     if real_venues:
         active_venues, city_source = real_venues, SOURCE_SCOUTS
     elif demo_venues:

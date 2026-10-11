@@ -21,7 +21,7 @@ To issue an API key:
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Header, Query
 from app.config import db
-from app.services.synthetic import SOURCE_DEMO, SOURCE_SCOUTS, for_machines
+from app.services.synthetic import SOURCE_SCOUTS, for_machines
 
 router = APIRouter(prefix="/v1", tags=["public-api-v1"])
 
@@ -116,7 +116,7 @@ async def list_venues(
             "city": city,
             "is_suppressed": {"$ne": True},
             "current_vibe_score": {"$gte": min_score},
-            "energy_source": {"$ne": SOURCE_DEMO},
+            "energy_source": SOURCE_SCOUTS,
         },
         {"_id": 0},
     ).sort("current_vibe_score", -1).skip(offset).limit(limit)
@@ -206,7 +206,7 @@ async def get_city_energy(
     await _require_api_key(x_api_key)
 
     venues = await db.venues.find(
-        {"city": city, "is_suppressed": {"$ne": True}, "energy_source": {"$ne": SOURCE_DEMO}},
+        {"city": city, "is_suppressed": {"$ne": True}, "energy_source": SOURCE_SCOUTS},
         {"_id": 0, "current_vibe_score": 1, "energy_level": 1, "vibe_state": 1,
          "total_ratings_24h": 1, "area": 1, "id": 1, "name": 1},
     ).to_list(500)

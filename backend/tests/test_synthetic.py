@@ -11,6 +11,7 @@ from app.services.synthetic import (
     SOURCE_NONE,
     SOURCE_SCOUTS,
     for_machines,
+    has_real_reading,
     is_demo_venue,
     is_synthetic,
     real_only_filter,
@@ -83,6 +84,28 @@ def test_real_venues_pass_through_to_machines_untouched():
     assert for_machines(venue) is venue
 
 
-def test_venues_from_before_the_label_existed_are_not_treated_as_demo():
-    """Missing energy_source must not hide real data while aggregates refresh."""
-    assert not is_demo_venue({"id": "v1", "current_vibe_score": 60})
+def test_an_unlabelled_venue_is_never_trusted_as_real():
+    """
+    Regression guard for what happened in production. The first version of this
+    test asserted the OPPOSITE: that an unlabelled venue should be treated as
+    real, so as not to hide data while aggregates refreshed. One stale venue
+    holding six demo readings and no real ones then made the live API report
+    Lagos as LIT "from scouts". A missing label must fail closed.
+    """
+    unlabelled = {"id": "v1", "name": "The Blowfish Hotel", "current_vibe_score": 75.2,
+                  "vibe_state": "lit"}
+    assert not has_real_reading(unlabelled)
+    out = for_machines(unlabelled)
+    assert out["current_vibe_score"] is None, "machines must not receive it"
+    assert out["vibe_state"] is None
+    # For display it is simply not labelled demo; the startup relabel ensures it
+    # does not stay unlabelled.
+    assert not is_demo_venue(unlabelled)
+
+
+def test_only_a_positive_real_label_counts_as_real():
+    assert has_real_reading({"energy_source": SOURCE_SCOUTS})
+    assert not has_real_reading({"energy_source": SOURCE_DEMO})
+    assert not has_real_reading({"energy_source": SOURCE_NONE})
+    assert not has_real_reading({})
+    assert not has_real_reading(None)
