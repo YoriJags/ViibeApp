@@ -7,19 +7,39 @@ If something contradicts this, this wins.
 
 ## The one line
 
-> **Google Maps shows you traffic. VIIBE shows you where the city is alive.**
+> **Google Maps tells you how to get there. VIIBE tells you if it's worth going.**
 
 Say it to anyone, in any room, in one breath. It lands because everybody already
-understands the traffic layer: live, crowdsourced from people actually on the
-road, useless if it lies, and valuable enough that every other app licenses it.
+understands Maps: live, crowdsourced from people actually on the road, useless
+if it lies, and valuable enough that every other app licenses it.
 
-That is exactly what VIIBE is, for human energy instead of cars.
+That is exactly what VIIBE is, for crowds instead of cars.
 
-**The casual version** (to your mother, to a friend at a bar):
-> "You know how Maps shows red where there's traffic? We do that for where people gather."
+**The casual version** (to your mother, to a friend):
+> "You know how Maps shows red where there's traffic? We do that for concerts, festivals and raves, from the people inside."
 
 **The compressed version** (bio, tagline, app store):
-> "The live energy layer for cities. See what's popping right now."
+> "The live energy of Lagos, read by the people inside the room."
+
+## Two promises, depending on the ticket
+
+The punchline is one promise. The events VIIBE is positioned on actually ask
+two different questions, and the product should know which one it is answering.
+
+| | Concerts and festivals | Raves and door-entry nights |
+|---|---|---|
+| When people decide | When they buy the ticket, days before | On the night |
+| The question on the night | When do I leave? How bad is the gate? How full is it inside? Has the energy picked up yet? | Is it worth going at all? |
+| What VIIBE answers | Timing | Worth |
+
+Someone holding a ₦50k festival ticket has already decided to go. Telling them
+"it's worth going" is useless; telling them the gate is a mess and the crowd
+hasn't arrived yet saves them two hours. Door-entry events are where the
+punchline applies literally, because the decision is still open.
+
+What a reading can back today: energy, how full it is, and how the door is
+moving. It does not know set times or whether a headliner has started, so no
+page or deck should promise that until it does.
 
 ---
 
@@ -34,8 +54,9 @@ Consumers use it to stop guessing where to go. Venues pay for the truth about
 their own rooms. And the same feed a person reads, a machine can query, which is
 how VIIBE becomes the layer assistants answer "where's alive tonight" from.
 
-**Nightlife in Lagos is market one, not the identity.** It is where energy decays
-fastest, where a buyer already exists, and where the scout habit forms.
+**Concerts, festivals and raves in Lagos are market one, not the identity.** Big
+crowds, energy that changes by the hour, promoters who already pay for reach, and
+Detty December concentrating all of it into a few weeks.
 
 ---
 
