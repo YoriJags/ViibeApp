@@ -21,8 +21,20 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 from app.config import db
+from app.services.auth import require_auth
 
 router = APIRouter(tags=["venue-seeder"])
+
+
+async def _require_admin(request: Request) -> dict:
+    """
+    Admin from the signed-in session. These routes used to trust an X-User-Id
+    header, so anyone who knew an admin's id could seed venues as them.
+    """
+    user = await require_auth(request)
+    if not (user.get("is_admin") or user.get("is_super_admin")):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
 
 DEDUP_RADIUS_M = 50  # venues within 50m of same name are considered duplicates
 
@@ -38,6 +50,7 @@ class VenueSeedItem(BaseModel):
     music_genre: Optional[str] = None
     source: Optional[str] = None  # e.g. "google_places", "osm", "manual"
     external_id: Optional[str] = None  # external system ID for dedup tracking
+    geofence_radius_m: float = 100  # wider for parks, stadiums and festival grounds
 
 
 class VenueSeedRequest(BaseModel):
@@ -94,19 +107,17 @@ async def seed_venues(payload: VenueSeedRequest, request: Request):
 
     Returns a summary of inserted vs skipped (duplicates).
     """
-    user_id = request.headers.get("X-User-Id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Authentication required")
+    user = await _require_admin(request)
+    return await seed_items(payload.venues, user.get("id"))
 
-    user = await db.users.find_one({"id": user_id})
-    if not user or not (user.get("is_admin") or user.get("is_super_admin")):
-        raise HTTPException(status_code=403, detail="Admin access required")
 
+async def seed_items(items: list[VenueSeedItem], user_id: str | None) -> dict:
+    """Insert venues as unclaimed records, skipping duplicates. Also used by scripts."""
     inserted = []
     skipped = []
     now = datetime.now(timezone.utc)
 
-    for item in payload.venues:
+    for item in items:
         if await _is_duplicate(item.name, item.area, item.city, item.lat, item.lng):
             skipped.append({"name": item.name, "reason": "duplicate"})
             continue
@@ -138,8 +149,11 @@ async def seed_venues(payload: VenueSeedRequest, request: Request):
             "gate_level":    "clear",
             "vibe_velocity": "stable",
             "total_ratings_24h": 0,
+            # No reading yet. Without this label the map would count it as
+            # demo, and nothing here is real until a scout rates it.
+            "energy_source": "none",
             "glow_boost":    0,
-            "geofence_radius_m": 100,
+            "geofence_radius_m": item.geofence_radius_m,
             "created_at":    now,
         }
 
@@ -165,13 +179,7 @@ async def list_unclaimed_venues(
     List unclaimed venues with their accumulated scout data.
     Use this to identify which venues are ready to approach with a data pitch.
     """
-    user_id = request.headers.get("X-User-Id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
-    user = await db.users.find_one({"id": user_id})
-    if not user or not (user.get("is_admin") or user.get("is_super_admin")):
-        raise HTTPException(status_code=403, detail="Admin access required")
+    await _require_admin(request)
 
     venues = await db.venues.find(
         {"city": city, "claim_status": "unclaimed"},
