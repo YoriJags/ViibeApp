@@ -51,6 +51,17 @@ def event_body(start_in=timedelta(minutes=-30), **extra):
             "ticket_url": "https://example.com/t/1", **extra}
 
 
+def approve(client, headers, external_id):
+    eid = next(e["id"] for e in client.get("/api/partner/events", headers=headers).json()
+               if e["external_id"] == external_id)
+    assert client.post(f"/api/admin/partner-events/{eid}/approve").status_code == 200
+    return eid
+
+
+def on_map(client):
+    return [e["name"] for e in client.get("/api/events?city=lagos").json()]
+
+
 def test_the_key_is_stored_only_as_a_hash(env):
     client, db = env
     headers, pid = new_partner(client)
@@ -122,6 +133,7 @@ def test_scans_are_counts_shown_beside_readings_and_resend_safely(env):
     headers, _ = new_partner(client)
     client.put("/api/partner/events/hf-1", json=event_body(), headers=headers)
     now = datetime.now(timezone.utc)
+    approve(client, headers, "hf-1")
     win = {"start": (now - timedelta(minutes=10)).isoformat(), "end": now.isoformat(), "count": 40}
     assert client.post("/api/partner/events/hf-1/scans", json={"windows": [win]}, headers=headers).json() == {"accepted": 1}
     # Resending the same window replaces it rather than double counting.
@@ -166,3 +178,46 @@ def test_delete_removes_the_event_its_key_and_its_scans(env):
     assert client.delete("/api/partner/events/hf-1", headers=headers).status_code == 200
     assert asyncio.run(db.venues.count_documents({"id": eid})) == 0
     assert asyncio.run(db.event_keys.count_documents({"event_id": eid})) == 0
+
+
+def test_a_partner_event_stays_off_the_map_and_dark_until_approved(env):
+    client, _ = env
+    headers, _ = new_partner(client)
+    client.put("/api/partner/events/hf-1", json=event_body(), headers=headers)
+    assert on_map(client) == []
+    live = client.get("/api/partner/events/hf-1/live", headers=headers).json()
+    assert live["approved"] is False and "present_now" not in live
+    approve(client, headers, "hf-1")
+    assert on_map(client) == ["Hippie Fest"]
+    assert "present_now" in client.get("/api/partner/events/hf-1/live", headers=headers).json()
+
+
+def test_moving_an_approved_event_sends_it_back_for_approval(env):
+    client, _ = env
+    headers, _ = new_partner(client)
+    client.put("/api/partner/events/hf-1", json=event_body(), headers=headers)
+    approve(client, headers, "hf-1")
+    client.put("/api/partner/events/hf-1", json={"name": "Renamed"}, headers=headers)
+    assert on_map(client) == ["Renamed"], "a rename keeps the approval"
+    client.put("/api/partner/events/hf-1", json={"coordinates": {"lat": 6.5, "lng": 3.3}}, headers=headers)
+    assert on_map(client) == [], "a move needs a fresh check"
+
+
+def test_revoking_a_partner_unlists_its_events_and_kills_organiser_links(env):
+    client, db = env
+    headers, pid = new_partner(client)
+    client.put("/api/partner/events/hf-1", json=event_body(), headers=headers)
+    eid = approve(client, headers, "hf-1")
+    client.delete(f"/api/admin/partners/{pid}")
+    assert on_map(client) == []
+    assert asyncio.run(db.event_keys.count_documents({"event_id": eid})) == 0
+    assert client.post(f"/api/admin/partner-events/{eid}/approve").status_code == 409
+
+
+def test_markup_in_event_text_is_refused(env):
+    client, _ = env
+    headers, _ = new_partner(client)
+    for bad in ({"name": "<img src=x onerror=alert(1)>"}, {"area": "VI</script>"},
+                {"name": "x" * 121}, {"ticket_url": "javascript:alert(1)"}):
+        r = client.put("/api/partner/events/hf-bad", json=event_body(**bad), headers=headers)
+        assert r.status_code == 422, bad

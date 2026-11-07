@@ -91,6 +91,10 @@ def event_phase(event: dict, now: datetime | None = None) -> str:
 def is_listed(event: dict, now: datetime | None = None) -> bool:
     """Whether the event should appear on the map and in listings right now."""
     now = now or datetime.now(timezone.utc)
+    # A ticketing partner's event stays off the map until an admin has checked
+    # it, so a partner cannot drop a geofence on any spot and watch who arrives.
+    if event.get("partner_id") and not event.get("approved"):
+        return False
     start, end = _aware(event.get("starts_at")), _aware(event.get("ends_at"))
     if start is None or end is None:
         return False
@@ -103,6 +107,8 @@ def is_watchable(event: dict, now: datetime | None = None) -> bool:
     doors to end: a temporary geofence must not fire on an empty field the
     week before, or count people who happen to live next to it.
     """
+    if event.get("partner_id") and not event.get("approved"):
+        return False
     return event_phase(event, now) in ("doors", "live")
 
 
@@ -119,9 +125,29 @@ def event_summary(event: dict, now: datetime | None = None) -> dict:
     }
 
 
+TEXT_LIMITS = {"name": 120, "address": 200, "area": 80, "organiser_name": 120}
+
+
+def _bad_text(value) -> bool:
+    """Markup or control characters. Event text is shown on pages and the map."""
+    return any(c in "<>" or (ord(c) < 32 and c not in "\t") or ord(c) == 127 for c in str(value))
+
+
 def validate_event(payload: dict) -> list[str]:
     """Plain-English problems with an event before it is saved. Empty means valid."""
     problems = []
+    for field, limit in TEXT_LIMITS.items():
+        value = payload.get(field)
+        if value is None:
+            continue
+        if not isinstance(value, str) or len(value) > limit:
+            problems.append(f"{field} must be text of at most {limit} characters.")
+        elif _bad_text(value):
+            problems.append(f"{field} cannot contain < or > or control characters.")
+    url = payload.get("ticket_url")
+    if url is not None and (not isinstance(url, str) or len(url) > 500
+                            or not url.startswith("https://") or _bad_text(url)):
+        problems.append("ticket_url must be an https:// link of at most 500 characters.")
     if not (payload.get("name") or "").strip():
         problems.append("The event needs a name.")
     if payload.get("venue_type") not in EVENT_TYPES:

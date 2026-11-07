@@ -29,6 +29,11 @@ interface Venue {
 
 const isReal = (v: Venue) => v.energy_source === 'scouts';
 
+// JSON placed inside a <script> tag. A name containing "</script>" would
+// otherwise end the tag and run whatever follows, so "<" is written as its
+// unicode escape, which JSON reads back as the same character.
+const scriptJSON = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003c');
+
 interface CrewPin {
   id: string;
   username: string;
@@ -191,8 +196,8 @@ function buildHTML(
     map.scrollZoom.enable();
     map.doubleClickZoom.enable();
 
-    var venues = ${JSON.stringify(venueGeoJSON)};
-    var crew   = ${JSON.stringify(crewGeoJSON)};
+    var venues = ${scriptJSON(venueGeoJSON)};
+    var crew   = ${scriptJSON(crewGeoJSON)};
 
     map.on('error', function (e) {
       reportMapError('mapbox', (e && e.error && e.error.message) || 'map error');
@@ -338,11 +343,18 @@ function buildHTML(
         maxWidth: '200px',
       });
 
+      // Names come from venue owners and ticketing partners, so they are
+      // escaped before they go into the popup's HTML.
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
       function showPopup(props, lngLat) {
         popup
           .setLngLat(lngLat)
           .setHTML(
-            '<div class="popup-name">' + props.name + '</div>' +
+            '<div class="popup-name">' + esc(props.name) + '</div>' +
             '<div class="popup-score" style="color:' + props.color + '">' + props.score + '% VIBE' +
               (props.demo ? ' <span style="color:#A89B8C">DEMO</span>' : '') + '</div>'
           )

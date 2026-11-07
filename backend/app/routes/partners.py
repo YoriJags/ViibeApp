@@ -90,7 +90,12 @@ async def _own_event(partner: dict, external_id: str) -> dict:
 def _partner_view(event: dict) -> dict:
     out = public_event(event)
     out["event"] = event_summary(event)
+    out["approved"] = bool(event.get("approved"))
     return out
+
+
+# Changing any of these moves the geofence, so the event goes back for approval.
+WHERE_AND_WHEN = ("coordinates", "geofence_radius_m", "starts_at", "ends_at")
 
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
@@ -116,10 +121,38 @@ async def create_partner(payload: dict, user: dict = Depends(require_admin)):
 
 @router.delete("/admin/partners/{partner_id}")
 async def revoke_partner(partner_id: str, user: dict = Depends(require_admin)):
+    """Revoke the key, take the partner's events off the map and kill their organiser links."""
     result = await db.partners.update_one({"id": partner_id}, {"$set": {"active": False}})
     if not result.matched_count:
         raise HTTPException(status_code=404, detail="Partner not found")
-    return {"revoked": partner_id}
+    events = await db.venues.find({"kind": KIND_EVENT, "partner_id": partner_id}, {"id": 1}).to_list(5000)
+    ids = [e["id"] for e in events]
+    if ids:
+        await db.venues.update_many({"id": {"$in": ids}}, {"$set": {"approved": False}})
+        await db.event_keys.delete_many({"event_id": {"$in": ids}})
+    return {"revoked": partner_id, "events_unlisted": len(ids)}
+
+
+@router.get("/admin/partner-events")
+async def pending_partner_events(user: dict = Depends(require_admin)):
+    """Partner events waiting for a check of their place and times."""
+    docs = await db.venues.find(
+        {"kind": KIND_EVENT, "partner_id": {"$exists": True}, "approved": {"$ne": True}},
+        {"_id": 0}).to_list(500)
+    return [_partner_view(d) for d in docs]
+
+
+@router.post("/admin/partner-events/{event_id}/approve")
+async def approve_partner_event(event_id: str, user: dict = Depends(require_admin)):
+    event = await db.venues.find_one({"id": event_id, "kind": KIND_EVENT, "partner_id": {"$exists": True}})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    partner = await db.partners.find_one({"id": event["partner_id"], "active": True})
+    if not partner:
+        raise HTTPException(status_code=409, detail="That partner's key is revoked")
+    await db.venues.update_one({"id": event_id}, {"$set": {
+        "approved": True, "approved_by": user.get("id"), "approved_at": datetime.now(timezone.utc)}})
+    return {"approved": event_id}
 
 
 # ── Partner ───────────────────────────────────────────────────────────────────
@@ -145,13 +178,16 @@ async def upsert_event(external_id: str, payload: dict, partner: dict = Depends(
             "starts_at", "ends_at", "address", "area", "city", "organiser_name")}
         update["ticket_url"] = fields.get("ticket_url", existing.get("ticket_url"))
         update["updated_at"] = datetime.now(timezone.utc)
+        if any(update[k] != new_event_document(existing)[k] for k in WHERE_AND_WHEN):
+            update["approved"] = False
         await db.venues.update_one({"id": existing["id"]}, {"$set": update})
         event = await db.venues.find_one({"id": existing["id"]}, {"_id": 0})
         return {"created": False, "event": _partner_view(event)}
 
     doc = new_event_document(fields, created_by=f"partner:{partner['id']}")
     doc.update({"partner_id": partner["id"], "partner_name": partner["name"],
-                "external_id": external_id, "ticket_url": fields.get("ticket_url")})
+                "external_id": external_id, "ticket_url": fields.get("ticket_url"),
+                "approved": False})
     key = new_organiser_key()
     await db.venues.insert_one(dict(doc))
     await db.event_keys.insert_one({"event_id": doc["id"], "key": key,
@@ -175,7 +211,11 @@ async def list_partner_events(partner: dict = Depends(require_partner)):
 @router.get("/partner/events/{external_id}/live")
 async def partner_live(external_id: str, partner: dict = Depends(require_partner)):
     event = await _own_event(partner, _check_external_id(external_id))
-    return await live_payload(event)
+    if not event.get("approved"):
+        # No crowd data for a place VIIBE has not checked yet.
+        return {"approved": False, "event": _partner_view(event),
+                "detail": "Waiting for VIIBE to check the event's place and times."}
+    return {"approved": True, **(await live_payload(event))}
 
 
 @router.post("/partner/events/{external_id}/scans")

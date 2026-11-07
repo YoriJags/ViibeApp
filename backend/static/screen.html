@@ -107,6 +107,10 @@
   <div id="foot">LIVE HUMAN ENERGY · VERIFIED BY SCOUTS · NEVER FAKED</div>
 
 <script>
+// Venue and event names come from venue owners and ticketing partners. Never
+// put one into innerHTML without this.
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g,
+  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const venueId = location.pathname.split("/").filter(Boolean).pop();
 const $ = id => document.getElementById(id);
 
@@ -165,7 +169,7 @@ async function tick() {
       chase.className = "on";
       chase.innerHTML =
         "<span class='gap'>" + gap.toFixed(1) + " POINTS</span> BEHIND <b>" +
-        (above.name || "").toUpperCase() + "</b> FOR " + ordinal(rank - 1);
+        esc((above.name || "").toUpperCase()) + "</b> FOR " + ordinal(rank - 1);
     } else {
       chase.className = "";
     }

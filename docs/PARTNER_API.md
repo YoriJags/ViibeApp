@@ -46,11 +46,18 @@ safe to retry or to call on every change.
 | `coordinates` | The middle of the grounds |
 | `geofence_radius_m` | 60 to 1500. Covers the grounds, not the street outside |
 | `starts_at`, `ends_at` | ISO 8601 with a timezone. At most 4 days long |
+| `name`, `address`, `area`, `organiser_name` | Plain text, no `<` or `>`. Name up to 120 characters |
+| `ticket_url` | An `https://` link |
 
 On creation the reply includes `organiser_link`, the organiser's private live
 screen. It is shown once. Give it to the organiser.
 
-The event appears on VIIBE 7 days before it starts and stays until 2 hours after
+**Approval.** A new event waits for VIIBE to check its place and times before
+it goes on the map, and `live` returns `"approved": false` until then. Changing
+the coordinates, radius or times sends it back for a fresh check; changing the
+name, address or ticket link does not.
+
+Once approved, the event appears on VIIBE 7 days before it starts and stays until 2 hours after
 it ends. Phones check people in automatically only from doors (2 hours before
 the start) to the end.
 

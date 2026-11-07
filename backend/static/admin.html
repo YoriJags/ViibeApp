@@ -476,6 +476,10 @@
   </div>
 
   <script>
+    // Venue and event names come from venue owners and ticketing partners.
+    // Never put one into innerHTML without this.
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const API_URL = window.location.origin;
     // NOTE: Set a valid session token after logging in via the API
     const SESSION_TOKEN = localStorage.getItem('admin_session_token') || '';
@@ -668,8 +672,8 @@
           .map(v => `
             <div class="ledger-item">
               <div class="ledger-venue">
-                <div class="ledger-venue-name">${v.name}</div>
-                <div class="ledger-venue-area">${v.area} • ${v.venue_type}</div>
+                <div class="ledger-venue-name">${esc(v.name)}</div>
+                <div class="ledger-venue-area">${esc(v.area)} • ${esc(v.venue_type)}</div>
               </div>
               <div style="text-align: right;">
                 <div style="font-size: 18px; font-weight: 700; color: ${v.current_vibe_score >= 70 ? '#22C55E' : v.current_vibe_score >= 50 ? '#EAB308' : '#64748B'};">${v.current_vibe_score}%</div>
