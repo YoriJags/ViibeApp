@@ -23,6 +23,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVibeStore } from '../../src/store/vibeStore';
 import WhenToLeaveCard from '../../src/components/WhenToLeaveCard';
+import { usePlacePhoto } from '../../src/services/usePlacePhoto';
 import { sampleArrivalSound } from '../../src/services/arrivalSample';
 import { calculateDistance } from '../../src/utils/geo';
 import RateVibeModal from '../../src/components/RateVibeModal';
@@ -122,6 +123,8 @@ export default function VenueDetailScreen() {
     isInsideVenue,
   } = useVibeStore();
   const [venue, setVenue] = useState<any>(null);
+  // A scout's live snapshot beats a Google photo, so only fetch when there is none.
+  const placePhoto = usePlacePhoto(id, !!venue && !venue.last_snapshot_url);
   const [ratingStatus, setRatingStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -756,7 +759,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
         {/* ====== CINEMATIC HERO ====== */}
         <View style={styles.heroContainer}>
           <Image
-            source={{ uri: venue.last_snapshot_url || getPlaceholderImage() }}
+            source={{ uri: venue.last_snapshot_url || placePhoto?.url || getPlaceholderImage() }}
             style={styles.heroImage}
             resizeMode="cover"
           />
@@ -766,6 +769,15 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
             colors={['transparent', 'rgba(0,0,0,0.5)', '#000']}
             style={styles.heroGradient}
           />
+
+          {/* Google requires its photos to carry the author's name. */}
+          {!venue.last_snapshot_url && placePhoto && (
+            <Text style={styles.heroPhotoCredit} numberOfLines={1}>
+              Photo{placePhoto.attributions.length
+                ? `: ${placePhoto.attributions.map((a) => a.name).join(', ')}`
+                : ''} · Google
+            </Text>
+          )}
 
           {/* Pulse-drop gold shimmer */}
           {hasPulseDrop && (
@@ -1764,6 +1776,19 @@ const styles = StyleSheet.create({
   heroImage: {
     width: '100%',
     height: '100%',
+  },
+  heroPhotoCredit: {
+    position: 'absolute',
+    top: 96,
+    right: 12,
+    maxWidth: '70%',
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.75)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: 'hidden',
   },
   heroGradient: {
     position: 'absolute',

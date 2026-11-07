@@ -201,6 +201,20 @@ async def get_venues(city: Optional[str] = None):
     return venues
 
 
+@router.get("/venues/{venue_id}/photo")
+async def get_venue_photo(venue_id: str):
+    """
+    A Google Places photo for the venue, with the attributions the app must show.
+    {"photo": null} when there is none, the key is unset, or Google refused.
+    """
+    from fastapi import HTTPException
+    from app.services.place_photos import venue_photo
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    return {"photo": await venue_photo(venue, db)}
+
+
 @router.get("/venues/{venue_id}")
 async def get_venue(venue_id: str, authorization: str = Header(default="")):
     """Get a single venue by ID. Increments profile views."""

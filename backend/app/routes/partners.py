@@ -105,23 +105,32 @@ WHERE_AND_WHEN = ("coordinates", "geofence_radius_m", "starts_at", "ends_at")
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
 
-@router.post("/admin/partners")
-async def create_partner(payload: dict, user: dict = Depends(require_admin)):
-    name = (payload.get("name") or "").strip()
-    if not name:
-        raise HTTPException(status_code=422, detail="The partner needs a name")
+async def issue_partner(name: str, created_by: str | None) -> dict:
+    """
+    Create a partner and its key. The key is returned once; only its hash is
+    stored. Used by the admin route and by scripts/issue_partner_key.py.
+    """
+    name = (name or "").strip()
+    if not name or len(name) > 120 or any(c in "<>" for c in name):
+        raise HTTPException(status_code=422, detail="The partner needs a plain name of at most 120 characters")
+    if await db.partners.find_one({"name": name, "active": True}):
+        raise HTTPException(status_code=409, detail=f"An active partner called {name} already exists")
     key = KEY_PREFIX + secrets.token_urlsafe(32)
     partner = {
         "id": str(uuid.uuid4()),
         "name": name,
         "key_hash": hash_key(key),
         "active": True,
-        "created_by": user.get("id"),
+        "created_by": created_by,
         "created_at": datetime.now(timezone.utc),
     }
     await db.partners.insert_one(dict(partner))
-    # The key is shown once, here. Only its hash is kept.
     return {"partner": {"id": partner["id"], "name": name}, "api_key": key}
+
+
+@router.post("/admin/partners")
+async def create_partner(payload: dict, user: dict = Depends(require_admin)):
+    return await issue_partner(payload.get("name"), user.get("id"))
 
 
 @router.delete("/admin/partners/{partner_id}")

@@ -109,3 +109,17 @@ Use it to show a "Live on VIIBE" panel on your event page.
 Errors are plain English: `401` for a missing or wrong key, `404` for an
 unknown event, and `422` with a list of problems for a bad event or bad scan
 window.
+
+---
+
+## For VIIBE: onboarding a new partner
+
+1. Issue the key. It is written to a file, never printed:
+   `railway run python scripts/issue_partner_key.py "Partner Name" <file>` (from `backend/`)
+2. Send the partner the file's contents and this guide over a private channel,
+   then delete the file.
+3. When they send events, list what is waiting with `GET /api/admin/partner-events`,
+   check each place and time, and approve with
+   `POST /api/admin/partner-events/{id}/approve` and `{"review_version": n}`.
+4. To see every partner, run `issue_partner_key.py --list`. To cut one off, run
+   `issue_partner_key.py --revoke <partner_id>`, which also unlists their events.
