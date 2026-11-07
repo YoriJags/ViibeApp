@@ -96,9 +96,11 @@ export const createSocketSlice: StateCreator<
     const newSocket = io(API_URL, { transports: ['websocket', 'polling'], autoConnect: true });
 
     newSocket.on('connect', () => {
-      console.log('Socket connected');
-      newSocket.emit('join_city', { city: selectedCity });
-      newSocket.emit('subscribe_leaderboard', { city: selectedCity });
+      // Read the city now, not when the socket was made: after switching city
+      // a reconnect used to rejoin the old one.
+      const city = get().selectedCity;
+      newSocket.emit('join_city', { city });
+      newSocket.emit('subscribe_leaderboard', { city });
     });
 
     newSocket.on('venue_update', (venue: Venue) => {
@@ -106,7 +108,15 @@ export const createSocketSlice: StateCreator<
     });
 
     newSocket.on('leaderboard_update', (leaderboard: any[]) => {
-      set({ venues: leaderboard.map((entry) => entry.venue) });
+      // Refresh the venues we already list; never swap the list for the raw
+      // top 50, which re-added unlisted events and dropped everything else.
+      const fresh = new Map(leaderboard.map((e) => [e?.venue?.id, e.venue]));
+      set((state) => ({
+        venues: state.venues.map((v) => {
+          const u = fresh.get(v.id);
+          return u ? { ...v, ...u, event: v.event ?? u.event } : v;
+        }),
+      }));
     });
 
     newSocket.on('city_energy_update', (data: CityEnergyData) => {

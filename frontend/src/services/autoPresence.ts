@@ -51,7 +51,7 @@ type Venue = {
   event?: { phase?: string; entry?: string } | null;
 };
 
-let lastSync: { lat: number; lng: number; at: number } | null = null;
+let lastSync: { lat: number; lng: number; at: number; key: string } | null = null;
 
 // ─── The arrival prompt ──────────────────────────────────────────────────────
 // When the phone notices someone walk into a venue or event, it asks them once
@@ -128,8 +128,9 @@ TaskManager.defineTask(AUTO_PRESENCE_TASK, async ({ data, error }) => {
   if (!venueId) return;
 
   if (eventType === Location.GeofencingEventType.Enter) {
-    await report('enter', venueId);
-    await scheduleArrivalPrompt(venueId);
+    // Only prompt someone whose arrival was actually reported: a signed-out
+    // phone would be asked to rate and land on a sign-in wall.
+    if (await report('enter', venueId)) await scheduleArrivalPrompt(venueId);
   } else if (eventType === Location.GeofencingEventType.Exit) {
     await report('exit', venueId);
     // Left before the prompt fired: they were passing, so don't ask.
@@ -137,10 +138,10 @@ TaskManager.defineTask(AUTO_PRESENCE_TASK, async ({ data, error }) => {
   }
 });
 
-async function report(kind: 'enter' | 'exit', venueId: string): Promise<void> {
+async function report(kind: 'enter' | 'exit', venueId: string): Promise<boolean> {
   try {
     const token = await loadSessionToken();
-    if (!token) return; // signed out: nothing to attribute the visit to
+    if (!token) return false; // signed out: nothing to attribute the visit to
 
     const body: Record<string, unknown> = { venue_id: venueId };
     if (kind === 'enter') {
@@ -156,13 +157,18 @@ async function report(kind: 'enter' | 'exit', venueId: string): Promise<void> {
       }
     }
 
-    await fetch(`${API_URL}/api/presence/${kind}`, {
+    const res = await fetch(`${API_URL}/api/presence/${kind}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(body),
     });
+    if (!res.ok) return false;
+    // The server ignores arrivals on an event's grounds when it is not on.
+    const data = await res.json().catch(() => ({}));
+    return data?.action !== 'ignored';
   } catch {
     // Best effort. A lost event self-heals: auto check-ins expire on their own.
+    return false;
   }
 }
 
@@ -287,16 +293,26 @@ export async function syncWatchedVenues(venues: Venue[]): Promise<number> {
     const { latitude: lat, longitude: lng } = pos.coords;
 
     const now = Date.now();
+    const regions = nearestRegions(venues, lat, lng);
+    // What is being watched, so an event opening or ending forces a re-sync
+    // even when the phone has not moved.
+    const key = regions.map((r) => r.identifier).sort().join(',');
     if (
       lastSync &&
+      lastSync.key === key &&
       metresBetween(lat, lng, lastSync.lat, lastSync.lng) < RESYNC_AFTER_METRES &&
       now - lastSync.at < RESYNC_AFTER_MS
     ) {
       return 0;
     }
 
-    const regions = nearestRegions(venues, lat, lng);
-    if (!regions.length) return 0;
+    if (!regions.length) {
+      // Nothing qualifies any more (an event ended, the list changed): stop the
+      // old geofences instead of leaving them firing.
+      try { await Location.stopGeofencingAsync(AUTO_PRESENCE_TASK); } catch { /* not running */ }
+      lastSync = { lat, lng, at: now, key };
+      return 0;
+    }
 
     // The background task only gets an id when a geofence fires, so keep the
     // names (and entry type, for events) it needs to word the arrival prompt.
@@ -308,7 +324,7 @@ export async function syncWatchedVenues(venues: Venue[]): Promise<number> {
     try { await AsyncStorage.setItem(NAMES_KEY, JSON.stringify(names)); } catch { /* optional */ }
 
     await Location.startGeofencingAsync(AUTO_PRESENCE_TASK, regions);
-    lastSync = { lat, lng, at: now };
+    lastSync = { lat, lng, at: now, key };
     return regions.length;
   } catch {
     return 0;

@@ -102,9 +102,12 @@ export const createVenueSlice: StateCreator<
 
   setVenues: (venues) => set({ venues }),
 
+  // Live updates carry the raw venue record, without what GET /api/venues
+  // adds (event phase, signal density, opening hours). Merge, never replace,
+  // or an event loses its phase and its geofence rules go with it.
   updateVenue: (updatedVenue) =>
     set((state) => ({
-      venues: state.venues.map((v) => (v.id === updatedVenue.id ? updatedVenue : v)),
+      venues: state.venues.map((v) => (v.id === updatedVenue.id ? { ...v, ...updatedVenue, event: v.event ?? (updatedVenue as any).event } : v)),
     })),
 
   setSelectedCity: (city) => {

@@ -65,9 +65,12 @@ export const useVibeStore = create<VibeStore>()(
         // Keep only what is safe across the rename: identity and the flags that
         // decide which screen opens. Everything else is cheap to refetch and
         // was written in a vocabulary this build no longer understands.
+        // A v1 demo session held the made-up demo user with no token. With
+        // demo mode forced off below, it would wake up as a signed-in account.
+        const wasDemo = !!persisted.isDemoMode;
         return {
-          user: persisted.user,
-          isAuthenticated: persisted.isAuthenticated,
+          user: wasDemo ? null : persisted.user,
+          isAuthenticated: wasDemo ? false : persisted.isAuthenticated,
           hasSeenOnboarding: persisted.hasSeenOnboarding,
           hasSeenMerchantOnboarding: persisted.hasSeenMerchantOnboarding,
           hasSeenDemoTutorial: persisted.hasSeenDemoTutorial,
@@ -111,10 +114,18 @@ export const useVibeStore = create<VibeStore>()(
         if (state) {
           state.setHasHydrated(true);
           // Restore session token from SecureStore on app launch
+          // The token lives in SecureStore and loads after the rest. Checking
+          // the session before it arrived did nothing, so an expired session
+          // stayed "signed in" while every write quietly failed.
           loadSessionToken().then(token => {
-            if (token) state.setSessionToken(token);
+            if (token) {
+              state.setSessionToken(token);
+              useVibeStore.getState().fetchUser();
+            } else if (!useVibeStore.getState().isDemoMode && useVibeStore.getState().user) {
+              // A remembered user with no token cannot do anything: sign out cleanly.
+              useVibeStore.setState({ user: null, isAuthenticated: false });
+            }
           });
-          if (state.user?.id) state.fetchUser();
         }
       },
     }

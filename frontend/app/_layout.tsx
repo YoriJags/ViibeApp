@@ -51,11 +51,6 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
         await Promise.all([fetchCities(), fetchFeatureFlags()]);
         connectSocket();
         setIsReady(true);
-
-        // Register push token after init — non-blocking
-        if (sessionToken) {
-          registerForPushNotifications(sessionToken);
-        }
       } catch (error) {
         console.error('App initialization error:', error);
         setIsReady(true);
@@ -64,6 +59,14 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
 
     initializeApp();
   }, [hasHydrated]);
+
+  // Register for push whenever a session appears: on launch once the token has
+  // loaded from SecureStore (it arrives after hydration), and after sign-in or
+  // sign-up. Registering at hydration time always saw no token, so no device
+  // ever got a push token and no alert could reach anyone.
+  useEffect(() => {
+    if (sessionToken) registerForPushNotifications(sessionToken);
+  }, [sessionToken]);
 
   const handleSplashComplete = useCallback(() => {
     setShowSplash(false);

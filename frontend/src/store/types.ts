@@ -15,6 +15,9 @@ export interface City {
 export interface Venue {
   id: string;
   name: string;
+  /** Present on concerts, festivals and raves (added by GET /api/venues). */
+  event?: { phase: 'upcoming' | 'doors' | 'live' | 'ended'; entry: 'ticketed' | 'door'; event_type?: string; starts_at?: string | null; promise?: 'timing' | 'worth' };
+  energy_source?: 'scouts' | 'demo' | 'none';
   address: string;
   area: string;
   city: string;

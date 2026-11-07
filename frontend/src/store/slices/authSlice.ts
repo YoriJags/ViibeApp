@@ -110,7 +110,11 @@ export const createAuthSlice: StateCreator<
         if (response.ok) {
           const userData = await response.json();
           set({ user: userData, isAuthenticated: true });
-        } else {
+        } else if (response.status === 401 || response.status === 403) {
+          // The session is over. Sign out properly, including the stored
+          // token, which otherwise came back on the next launch. Any other
+          // error (a 500, a rate limit) is not a reason to sign someone out.
+          deleteSessionToken();
           set({ user: null, sessionToken: null, isAuthenticated: false });
         }
       }
@@ -217,6 +221,9 @@ export const createAuthSlice: StateCreator<
   logout: async () => {
     const { sessionToken } = get();
     deleteSessionToken(); // wipe from SecureStore
+    // Stop watching venue geofences: a signed-out phone must not keep
+    // prompting, or reporting arrivals it can no longer attribute.
+    import('../../services/autoPresence').then((m) => m.disableAutoPresence()).catch(() => {});
     set({
       user: null,
       sessionToken: null,

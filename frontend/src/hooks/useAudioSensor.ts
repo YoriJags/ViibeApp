@@ -32,6 +32,7 @@
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Audio } from 'expo-av';
+import { deleteAsync } from 'expo-file-system/legacy';
 import { useVibeStore } from '../store/vibeStore';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -65,6 +66,10 @@ export function useAudioSensor(
   const [isActive,  setIsActive]  = useState(false);
 
   const recordingRef    = useRef<Audio.Recording | null>(null);
+  // Bumped by every start and stop. A start that was still awaiting
+  // permission or the recorder when stop ran sees a newer number and shuts
+  // itself down, instead of leaving the microphone on with nothing to stop it.
+  const runRef          = useRef(0);
   const sampleTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const sendTimerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -151,6 +156,7 @@ export function useAudioSensor(
   // ─── Start / stop ─────────────────────────────────────────────────────────
 
   const stop = useCallback(async () => {
+    runRef.current += 1;
     if (sampleTimerRef.current) {
       clearInterval(sampleTimerRef.current);
       sampleTimerRef.current = null;
@@ -160,8 +166,12 @@ export function useAudioSensor(
       sendTimerRef.current = null;
     }
     if (recordingRef.current) {
-      try { await recordingRef.current.stopAndUnloadAsync(); } catch {}
+      const rec = recordingRef.current;
       recordingRef.current = null;
+      const uri = rec.getURI();
+      try { await rec.stopAndUnloadAsync(); } catch {}
+      // Only levels were ever read; the audio itself is not kept.
+      if (uri) deleteAsync(uri, { idempotent: true }).catch(() => {});
     }
     // Reset BPM state
     dbWindowRef.current    = [];
@@ -175,16 +185,26 @@ export function useAudioSensor(
   }, []);
 
   const start = useCallback(async () => {
+    if (recordingRef.current) return;
+    const run = ++runRef.current;
     try {
       const { status } = await Audio.requestPermissionsAsync();
-      if (status !== 'granted') return;
+      if (status !== 'granted' || run !== runRef.current) return;
 
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true });
+      if (run !== runRef.current) return;
 
       const { recording } = await Audio.Recording.createAsync({
         ...Audio.RecordingOptionsPresets.LOW_QUALITY,
         isMeteringEnabled: true,
       });
+      if (run !== runRef.current) {
+        // Stopped while the recorder was starting: undo it at once.
+        const uri = recording.getURI();
+        try { await recording.stopAndUnloadAsync(); } catch {}
+        if (uri) deleteAsync(uri, { idempotent: true }).catch(() => {});
+        return;
+      }
       recordingRef.current = recording;
       setIsActive(true);
 
