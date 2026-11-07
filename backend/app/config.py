@@ -140,6 +140,10 @@ async def ensure_indexes():
     # them on purpose, so no endpoint that returns venues can ever leak one.
     await db.venues.create_index([("kind", 1), ("city", 1), ("starts_at", 1)])
     await db.event_keys.create_index("event_id", unique=True)
+    # Ticketing partners: keys looked up by hash; events keyed by the partner's own id.
+    await db.partners.create_index("key_hash", unique=True)
+    await db.venues.create_index([("partner_id", 1), ("external_id", 1)], sparse=True)
+    await db.event_scans.create_index([("event_id", 1), ("window_start", 1)], unique=True)
 
     # vibe streaks: per-user unique + leaderboard
     await db.streaks.create_index("user_id", unique=True)

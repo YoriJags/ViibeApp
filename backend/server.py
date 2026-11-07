@@ -53,6 +53,7 @@ from app.routes.reactions import router as reactions_router
 from app.routes.city_energy import router as city_energy_router
 from app.routes.presence import router as presence_router
 from app.routes.events import router as events_router
+from app.routes.partners import router as partners_router
 from app.routes.venue_live import router as venue_live_router
 from app.routes.coins import router as coins_router
 from app.routes.reward_pools import router as reward_pools_router
@@ -133,6 +134,7 @@ api_router.include_router(reactions_router)
 api_router.include_router(city_energy_router)
 api_router.include_router(presence_router)
 api_router.include_router(events_router)
+api_router.include_router(partners_router)
 api_router.include_router(venue_live_router)
 api_router.include_router(coins_router)
 api_router.include_router(reward_pools_router)

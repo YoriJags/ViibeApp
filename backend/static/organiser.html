@@ -102,6 +102,7 @@
     <h2>The gate</h2>
     <div class="gate-word" id="gate">No reading yet</div>
     <p class="muted" id="gate-note"></p>
+    <p class="muted" id="scans-note" hidden></p>
   </section>
 
   <section class="card">
@@ -179,6 +180,14 @@
       $('gate').textContent = 'No reading yet';
       $('gate').dataset.gate = '';
       $('gate-note').textContent = 'Nobody at the gate has reported in the last 30 minutes.';
+    }
+
+    // Ticket scans from the ticketing partner: counts only, kept apart from the readings.
+    const sc = d.gate_scans;
+    $('scans-note').hidden = !sc;
+    if (sc) {
+      $('scans-note').textContent = 'Tickets scanned: ' + sc.last_30m + ' in the last 30 minutes, ' +
+        sc.total + ' so far.';
     }
 
     const en = d.energy || {};

@@ -152,7 +152,34 @@ async def organiser_view(event_id: str, key: str = Query(...)):
     stored = await db.event_keys.find_one({"event_id": event_id}) if event else None
     if not event or not stored or not secrets.compare_digest(str(stored.get("key", "")), str(key)):
         raise HTTPException(status_code=404, detail="Event not found")
+    return await live_payload(event)
 
+
+async def gate_scans(event_id: str, now: datetime) -> dict | None:
+    """
+    Gate scans a ticketing partner reported. Counts only, never people. Shown
+    beside the readings, never mixed into them: a partner selling the tickets
+    must not be able to move the energy or the advice attendees get.
+    """
+    rows = await db.event_scans.find({"event_id": event_id}, {"_id": 0}).to_list(2000)
+    if not rows:
+        return None
+    since = now - timedelta(minutes=GATE_WINDOW_MINUTES)
+
+    def ended(r):
+        t = r["window_end"]
+        return t if t.tzinfo else t.replace(tzinfo=timezone.utc)
+
+    return {
+        "total": sum(r["count"] for r in rows),
+        "last_30m": sum(r["count"] for r in rows if ended(r) >= since),
+        "last_reported_at": max(ended(r) for r in rows).isoformat(),
+    }
+
+
+async def live_payload(event: dict) -> dict:
+    """The live picture of one event, for its organiser or ticketing partner."""
+    event_id = event["id"]
     now = datetime.now(timezone.utc)
     start = event.get("starts_at")
     if start is not None and start.tzinfo is None:
@@ -179,6 +206,7 @@ async def organiser_view(event_id: str, key: str = Query(...)):
             "source": event.get("energy_source", "none"),
         },
         "signal_density": compute_signal_density(event),
+        "gate_scans": await gate_scans(event_id, now),
         # What the app is telling ticket holders right now, so the promoter
         # sees exactly what their attendees see.
         "attendees_are_told": (await _timing_for(event)) if promise_for(event) == "timing" else None,
