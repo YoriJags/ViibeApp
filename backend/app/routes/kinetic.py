@@ -15,7 +15,7 @@ from app.config import db, logger
 from app.services.auth import get_current_user
 from app.services.signal_identity import get_or_create_signal_token
 
-router = APIRouter(prefix="/api/kinetic", tags=["Kinetic"])
+router = APIRouter(prefix="/kinetic", tags=["Kinetic"])  # mounted under /api; "/api/kinetic" made it /api/api/kinetic
 
 
 class KineticPing(BaseModel):
