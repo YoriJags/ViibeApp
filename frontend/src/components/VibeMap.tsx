@@ -22,7 +22,12 @@ interface Venue {
   coordinates: { lat: number; lng: number };
   current_vibe_score?: number;
   energy_level?: string;
+  // Where the score came from. Anything other than "scouts" is not a real
+  // reading, so the map says so (fails closed: a missing label counts as demo).
+  energy_source?: 'scouts' | 'demo' | 'none';
 }
+
+const isReal = (v: Venue) => v.energy_source === 'scouts';
 
 interface CrewPin {
   id: string;
@@ -75,6 +80,7 @@ function buildHTML(
         score: Math.round(v.current_vibe_score ?? 0),
         color: ENERGY_COLORS[v.energy_level ?? 'quiet'] ?? '#9933FF',
         isHot: HOT_LEVELS.has(v.energy_level ?? '') ? 1 : 0,
+        demo: isReal(v) ? 0 : 1,
       },
     })),
   };
@@ -337,7 +343,8 @@ function buildHTML(
           .setLngLat(lngLat)
           .setHTML(
             '<div class="popup-name">' + props.name + '</div>' +
-            '<div class="popup-score" style="color:' + props.color + '">' + props.score + '% VIBE</div>'
+            '<div class="popup-score" style="color:' + props.color + '">' + props.score + '% VIBE' +
+              (props.demo ? ' <span style="color:#A89B8C">DEMO</span>' : '') + '</div>'
           )
           .addTo(map);
       }
@@ -452,6 +459,17 @@ export default function VibeMap({
 
   const [mapError, setMapError] = useState<string | null>(null);
 
+  // The heat layer glows from every scored venue. While those scores are demo
+  // values, the map must say so, or it looks warmer than the city really is.
+  const demoNote = useMemo(() => {
+    const scored = venues.filter((v) => (v.current_vibe_score ?? 0) > 0);
+    const demo = scored.filter((v) => !isReal(v)).length;
+    if (demo === 0) return null;
+    return demo === scored.length
+      ? 'Demo heat. No live readings yet.'
+      : 'Some heat is demo. Tap a venue to see which.';
+  }, [venues]);
+
   const handleMessage = (event: any) => {
     try {
       const msg = JSON.parse(event.nativeEvent.data);
@@ -484,6 +502,11 @@ export default function VibeMap({
       {mapError ? (
         <View style={styles.errorBanner}>
           <Text style={styles.errorText} numberOfLines={2}>Map: {mapError}</Text>
+        </View>
+      ) : null}
+      {demoNote && !mapError ? (
+        <View style={styles.demoBadge} pointerEvents="none">
+          <Text style={styles.demoText}>{demoNote}</Text>
         </View>
       ) : null}
       <WebView
@@ -521,4 +544,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,77,0,0.92)', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10,
   },
   errorText: { color: '#0B0908', fontSize: 11, fontWeight: '700' },
+  demoBadge: {
+    position: 'absolute', top: 8, left: 8, zIndex: 10, maxWidth: '70%',
+    backgroundColor: 'rgba(10,10,20,0.88)', borderRadius: 8, borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)', paddingVertical: 5, paddingHorizontal: 10,
+  },
+  demoText: { color: '#D8CFC2', fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
 });
