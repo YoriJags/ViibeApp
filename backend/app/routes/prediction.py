@@ -126,7 +126,8 @@ async def get_market(city: str, authorization: str = Header(default="")):
     # Caller's own prediction, if authenticated
     your_pick = None
     if authorization.startswith("Bearer "):
-        u = await db.users.find_one({"token": authorization.split(" ")[1]}, {"id": 1})
+        from app.services.auth import user_from_authorization
+        u = await user_from_authorization(authorization)
         if u:
             mine = await db[PREDICTIONS].find_one({"market": market, "scout_id": u["id"]}, {"_id": 0})
             your_pick = mine

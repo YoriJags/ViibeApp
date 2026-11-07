@@ -95,7 +95,7 @@ const CITIES = [
 export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string; autoOpen?: string }>();
-  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityEnergy, fetchCityEnergy, dropQuickPulse, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode, tabBarHidden, setTabBarHidden, sceneMood, sceneMoodSetAt, setSceneMood, isInsideVenue, activeVenueId, activeVenueName } = useVibeStore();
+  const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityEnergy, fetchCityEnergy, dropQuickPulse, pickVenue, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode, tabBarHidden, setTabBarHidden, sceneMood, sceneMoodSetAt, setSceneMood, isInsideVenue, activeVenueId, activeVenueName } = useVibeStore();
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   // Auto presence: keep the phone watching the venues nearest to the scout.
   // Does nothing unless they opted in on their profile.
@@ -522,10 +522,7 @@ export default function MapScreen() {
       {showDiscoverFlow && (
         <VenueDiscoverFlow
           venues={isDemoMode ? (require('../../src/data/demoData').DEMO_VENUES as any[]) : venues}
-          onFire={(venueId) => {
-            dropQuickPulse(venueId, userLocation?.lat ?? 6.4281, userLocation?.lng ?? 3.4219);
-            setHasRatedThisSession(true);
-          }}
+          onFire={(venue) => { pickVenue(venue); }}
           onComplete={() => setShowDiscoverFlow(false)}
         />
       )}
@@ -873,8 +870,10 @@ export default function MapScreen() {
                 venueId={nearbyVenue.id}
                 energyLevel={nearbyVenueFullData.energy_level ?? 'warming'}
                 onDrop={async (id) => {
-                  const loc = userLocation ?? { lat: 6.4316, lng: 3.4223 };
-                  await dropQuickPulse(id, loc.lat, loc.lng);
+                  // No position, no pulse. A made-up location would claim
+                  // someone is at a venue they may not be at.
+                  if (!userLocation) return;
+                  await dropQuickPulse(id, userLocation.lat, userLocation.lng);
                 }}
                 onFullRate={() => router.push({
                   pathname: '/venue/[id]',
@@ -1117,9 +1116,9 @@ export default function MapScreen() {
       <SwipeRate
         visible={showSwipeRate}
         venues={filteredVenues}
-        onFire={(venueId) => {
+        onFire={(venue) => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          dropQuickPulse(venueId, userLocation?.lat ?? 6.4316, userLocation?.lng ?? 3.4223);
+          pickVenue(venue);
         }}
         onClose={() => setShowSwipeRate(false)}
         isDemoMode={isDemoMode}

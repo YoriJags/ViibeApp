@@ -42,12 +42,10 @@ LAGOS_OFFSET = timedelta(hours=1)
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
 async def _require_user(authorization: str) -> dict:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    token = authorization.split(" ")[1]
-    user = await db.users.find_one({"token": token})
+    from app.services.auth import user_from_authorization
+    user = await user_from_authorization(authorization)
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Not authenticated")
     return user
 
 async def _require_merchant_for_venue(user: dict, venue_id: str) -> dict:
@@ -351,10 +349,8 @@ async def get_follow_status(
     venue_id: str,
     authorization: str = Header(default=""),
 ):
-    if not authorization or not authorization.startswith("Bearer "):
-        return {"following": False}
-    token = authorization.split(" ")[1]
-    user = await db.users.find_one({"token": token})
+    from app.services.auth import user_from_authorization
+    user = await user_from_authorization(authorization)
     if not user:
         return {"following": False}
 

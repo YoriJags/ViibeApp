@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, ScrollView, Image } from 'react-native';
+import { usePlacePhoto, photoCredit } from '../services/usePlacePhoto';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { hapticVibe } from '../utils/hapticVibe';
@@ -73,6 +74,8 @@ const getVibeStateKey = (score: number, capacity: string): string => {
 
 export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostBadge = true, isNearby, onRatePress, dnaMatch }) => {
   const isPulseBoosted = venue.active_pulse_tier !== null && venue.active_pulse_tier !== undefined;
+  // Events are a field on a given night, not a place Google has photos of.
+  const photo = usePlacePhoto(venue.id, !venue.event);
   const maxOpacity = venue.current_vibe_score >= 80 ? 0.65 : venue.current_vibe_score >= 60 ? 0.4 : 0.18;
   const borderOpacity = useRef(new Animated.Value(0.08)).current;
   const scoreScale    = useRef(new Animated.Value(0.85)).current;
@@ -219,6 +222,13 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
           {/* Top row: name + score */}
           <View style={styles.topRow}>
             <View style={styles.nameContainer}>
+              {photo && (
+                <Image
+                  source={{ uri: photo.url }}
+                  style={styles.thumb}
+                  accessibilityLabel={`Photo of ${venue.name}`}
+                />
+              )}
               <Text style={styles.name} numberOfLines={1}>{venue.name}</Text>
               {venue.is_featured && !isPulseBoosted && (
                 <Ionicons name="star" size={13} color="#D4AF37" />
@@ -340,6 +350,11 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
                 {[titleCase(venue.event.event_type), venue.event.entry === 'ticketed' ? 'Ticketed' : 'Door entry'].filter(Boolean).join(', ')}
               </Text>
             </View>
+          )}
+
+          {/* Google requires its photos to carry the author's name. */}
+          {photo && (
+            <Text style={styles.photoCredit} numberOfLines={1}>{photoCredit(photo)}</Text>
           )}
 
           {/* Sports-broadcast narrative */}
@@ -492,6 +507,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
+  thumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  photoCredit: { fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 6 },
   nameContainer: {
     flexDirection: 'row',
     alignItems: 'center',

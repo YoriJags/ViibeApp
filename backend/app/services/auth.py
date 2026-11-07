@@ -30,7 +30,11 @@ async def get_current_user(request: Request) -> Optional[dict]:
     Checks: Authorization Bearer header -> session_token cookie.
     Returns None if no valid session found.
     """
-    session_token = _extract_session_token(request)
+    return await user_for_session_token(_extract_session_token(request))
+
+
+async def user_for_session_token(session_token: Optional[str]) -> Optional[dict]:
+    """The user behind a live session token, or None. The one place sessions are checked."""
     if not session_token:
         return None
 
@@ -49,6 +53,17 @@ async def get_current_user(request: Request) -> Optional[dict]:
 
     user = await db.users.find_one({"id": session["user_id"]}, {"_id": 0})
     return user
+
+
+async def user_from_authorization(authorization: Optional[str]) -> Optional[dict]:
+    """
+    For routes that take the raw Authorization header. Several of these used to
+    look the token up as users.token, a field nothing ever writes, so every
+    signed-in person was treated as signed out.
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    return await user_for_session_token(authorization[7:])
 
 
 async def require_auth(request: Request) -> dict:

@@ -1,8 +1,8 @@
 /**
- * SwipeRate — Tinder-style venue quick-rating deck.
- * Shows up to 5 unrated venues. Swipe right = Fire, left = Skip.
- * Each fire swipe submits a pulse signal + earns clout.
- * "The fastest way to read the scene."
+ * SwipeRate — Tinder-style quick picks deck.
+ * Shows up to 6 places. Swipe right = Fire, left = Skip.
+ * A fire swipe is intent (follow, and "maybe" for an event that is on now),
+ * never an energy reading: a swipe from anywhere says nothing about the room.
  */
 import React, { useRef, useState, useEffect } from 'react';
 import {
@@ -34,12 +34,14 @@ interface Venue {
   music_genre?: string;
   entry_fee?: string;
   capacity_level?: string;
+  energy_source?: 'scouts' | 'demo' | 'none';
+  event?: { phase?: string };
 }
 
 interface Props {
   visible: boolean;
   venues: Venue[];
-  onFire: (venueId: string) => void;
+  onFire: (venue: Venue) => void;
   onClose: () => void;
   isDemoMode?: boolean;
 }
@@ -48,12 +50,14 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fireCount, setFireCount] = useState(0);
   const [done, setDone] = useState(false);
+  // One card at a time: a second tap during the fly-out used to fire twice.
+  const busy = useRef(false);
 
   const position = useRef(new Animated.ValueXY()).current;
   const bgOpac   = useRef(new Animated.Value(0)).current;
   const slideY   = useRef(new Animated.Value(H)).current;
 
-  const displayVenues = venues.slice(0, 6);
+  const displayVenues = venues.filter((v) => v.event?.phase !== 'ended').slice(0, 6);
 
   const fireOpacity = position.x.interpolate({
     inputRange: [0, SWIPE_THRESHOLD],
@@ -77,9 +81,10 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
   const swipeSkipRef = useRef<() => void>(() => {});
 
   advanceRef.current = (fired: boolean) => {
+    busy.current = false;
     if (fired) {
       const venue = displayVenues[currentIndex];
-      if (venue) onFire(venue.id);
+      if (venue) onFire(venue);
       setFireCount(c => c + 1);
     }
     const next = currentIndex + 1;
@@ -91,6 +96,8 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
   };
 
   swipeFireRef.current = () => {
+    if (busy.current) return;
+    busy.current = true;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Animated.timing(position, {
       toValue: { x: W * 1.5, y: -60 },
@@ -103,6 +110,8 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
   };
 
   swipeSkipRef.current = () => {
+    if (busy.current) return;
+    busy.current = true;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Animated.timing(position, {
       toValue: { x: -W * 1.5, y: -60 },
@@ -183,8 +192,8 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.headerTitle}>QUICK RATE</Text>
-            <Text style={styles.headerSub}>Swipe right to fire  ·  left to skip</Text>
+            <Text style={styles.headerTitle}>QUICK PICKS</Text>
+            <Text style={styles.headerSub}>Swipe right to follow  ·  left to skip</Text>
           </View>
           <TouchableOpacity style={styles.closeBtn} onPress={dismiss} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons name="close" size={18} color="#555" />
@@ -216,8 +225,8 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
             </Text>
             <Text style={styles.doneSub}>
               {fireCount > 0
-                ? 'Your signals are live. The scene reads you.'
-                : 'New spots rolling in — check back later.'}
+                ? "Following. You'll hear when they heat up."
+                : 'New spots are coming in. Check back later.'}
             </Text>
             <TouchableOpacity style={styles.doneBtn} onPress={dismiss} activeOpacity={0.8}>
               <Text style={styles.doneBtnText}>Done</Text>
@@ -271,13 +280,19 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
                   <Text style={styles.venueName} numberOfLines={2}>{venue.name}</Text>
                   {venue.area && <Text style={styles.venueArea}>{venue.area}</Text>}
 
-                  {/* Score bar */}
-                  <View style={styles.scoreRow}>
-                    <View style={styles.scoreTrack}>
-                      <View style={[styles.scoreFill, { width: `${venue.current_vibe_score}%` as any, backgroundColor: energy.color }]} />
+                  {/* Score bar: real readings only, demo labelled, nothing otherwise */}
+                  {venue.energy_source === 'scouts' || (venue.energy_source === 'demo' && venue.current_vibe_score > 0) ? (
+                    <View style={styles.scoreRow}>
+                      <View style={styles.scoreTrack}>
+                        <View style={[styles.scoreFill, { width: `${Math.round(venue.current_vibe_score)}%` as any, backgroundColor: energy.color }]} />
+                      </View>
+                      <Text style={[styles.scoreNum, { color: energy.color }]}>
+                        {Math.round(venue.current_vibe_score)}{venue.energy_source === 'demo' ? ' DEMO' : ''}
+                      </Text>
                     </View>
-                    <Text style={[styles.scoreNum, { color: energy.color }]}>{venue.current_vibe_score}</Text>
-                  </View>
+                  ) : (
+                    <Text style={[styles.venueArea, { marginTop: 8 }]}>No reading yet</Text>
+                  )}
 
                   {/* Chips */}
                   <View style={styles.chipsRow}>

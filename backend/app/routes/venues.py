@@ -18,9 +18,8 @@ router = APIRouter(tags=["venues"])
 async def _resolve_user_id(authorization: str) -> Optional[str]:
     """Best-effort user id from a Bearer token. Anonymous (None) is fine —
     intent events still count toward window volume even without a person."""
-    if not authorization or not authorization.startswith("Bearer "):
-        return None
-    user = await db.users.find_one({"token": authorization.split(" ")[1]}, {"id": 1})
+    from app.services.auth import user_from_authorization
+    user = await user_from_authorization(authorization)
     return user.get("id") if user else None
 
 

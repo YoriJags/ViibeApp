@@ -61,6 +61,12 @@ export interface VenueSlice {
   fetchFeatureFlags: () => Promise<void>;
   isFeatureEnabled: (flag: string) => boolean;
   followVenue: (venueId: string) => Promise<boolean>;
+  /**
+   * A fire swipe. Follows the place (it then shapes the following feed), and
+   * for an event that is on right now, also says "maybe" heading there. It is
+   * intent, never an energy reading: a swipe from home says nothing about the room.
+   */
+  pickVenue: (venue: { id: string; event?: { phase?: string } }) => Promise<boolean>;
   unfollowVenue: (venueId: string) => Promise<void>;
   fetchFollowing: () => Promise<void>;
   fetchFollowingFeed: () => Promise<void>;
@@ -329,6 +335,22 @@ export const createVenueSlice: StateCreator<
     if (isDemoMode) return true;
     if (Object.keys(featureFlags).length === 0) return true;
     return featureFlags[flag] !== false;
+  },
+
+  pickVenue: async (venue) => {
+    const { getAuthHeaders, isDemoMode, isAuthenticated } = get();
+    if (isDemoMode) return true;
+    if (!isAuthenticated) return false;
+    const followed = await get().followVenue(venue.id);
+    const onNow = venue.event?.phase === 'doors' || venue.event?.phase === 'live';
+    if (onNow) {
+      try {
+        await fetch(`${API_URL}/api/venues/${venue.id}/heading`, {
+          method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ status: 'maybe' }),
+        });
+      } catch { /* the follow still stands */ }
+    }
+    return followed;
   },
 
   followVenue: async (venueId) => {

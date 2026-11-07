@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePlacePhoto, photoCredit } from '../services/usePlacePhoto';
 
 // ─── Placeholder club images — seeded by venue ID ─────────────────────────────
 const CLUB_PLACEHOLDERS = [
@@ -62,12 +63,30 @@ interface Venue {
   venue_type?: string;
   photo_base64?: string;
   cover_image_url?: string;
+  energy_source?: 'scouts' | 'demo' | 'none';
+  event?: { phase: 'upcoming' | 'doors' | 'live' | 'ended'; entry?: string; starts_at?: string | null };
 }
 
 interface Props {
   venues: Venue[];
-  onFire: (venueId: string) => void;
+  /** A fire swipe: intent (follow, "maybe"), never an energy reading. */
+  onFire: (venue: Venue) => void;
   onComplete: () => void;
+}
+
+/** When an event is, in Lagos time. */
+function eventWhen(e: NonNullable<Venue['event']>): string {
+  if (e.phase === 'live') return 'Live now';
+  if (e.phase === 'doors') return 'Doors opening';
+  if (!e.starts_at) return 'Coming up';
+  try {
+    return new Intl.DateTimeFormat('en-NG', {
+      weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
+      timeZone: 'Africa/Lagos',
+    }).format(new Date(e.starts_at));
+  } catch {
+    return 'Coming up';
+  }
 }
 
 // ─── Venue Card Body ──────────────────────────────────────────────────────────
@@ -75,12 +94,20 @@ function VenueCardBody({ venue }: { venue: Venue }) {
   const energy = ENERGY[venue.energy_level] ?? ENERGY.quiet;
   const score = venue.current_vibe_score ?? 0;
   const scoreColor = score >= 80 ? '#00E676' : score >= 60 ? '#FFD700' : score >= 40 ? '#FF8C00' : '#666';
-  const imgUrl = getVenueImage(venue);
+  const ownImage = !!(venue.cover_image_url || venue.photo_base64);
+  const photo = usePlacePhoto(venue.id, !ownImage && !venue.event);
+  const imgUrl = ownImage ? getVenueImage(venue) : photo?.url ?? getVenueImage(venue);
+  // Only a reading from scouts in the room is shown as the energy.
+  const real = venue.energy_source === 'scouts';
+  const upcoming = venue.event && venue.event.phase === 'upcoming';
 
   return (
     <View style={styles.cardInner}>
       {/* Hero image — fills entire card */}
       <Image source={{ uri: imgUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      {photo && !ownImage && (
+        <Text style={styles.photoCredit} numberOfLines={1}>{photoCredit(photo)}</Text>
+      )}
 
       {/* Deep gradient scrim — transparent top → opaque dark bottom */}
       <LinearGradient
@@ -91,21 +118,37 @@ function VenueCardBody({ venue }: { venue: Venue }) {
 
       {/* Content — anchored to bottom */}
       <View style={styles.cardContent}>
-        {/* Energy badge */}
-        <View style={[styles.energyBadge, { borderColor: energy.color + '80', backgroundColor: energy.color + '22' }]}>
-          <View style={[styles.energyDot, { backgroundColor: energy.color }]} />
-          <Text style={[styles.energyLabel, { color: energy.color }]}>{energy.label}</Text>
-        </View>
+        {/* Energy badge, or when the event is */}
+        {venue.event ? (
+          <View style={[styles.energyBadge, { borderColor: '#FF5A1F80', backgroundColor: '#FF5A1F22' }]}>
+            <View style={[styles.energyDot, { backgroundColor: '#FF5A1F' }]} />
+            <Text style={[styles.energyLabel, { color: '#FF8A5C' }]}>
+              {eventWhen(venue.event).toUpperCase()}
+              {venue.event.entry === 'ticketed' ? '  ·  TICKETED' : venue.event.entry === 'door' ? '  ·  DOOR ENTRY' : ''}
+            </Text>
+          </View>
+        ) : (
+          <View style={[styles.energyBadge, { borderColor: energy.color + '80', backgroundColor: energy.color + '22' }]}>
+            <View style={[styles.energyDot, { backgroundColor: energy.color }]} />
+            <Text style={[styles.energyLabel, { color: energy.color }]}>{energy.label}</Text>
+          </View>
+        )}
 
         {/* Venue name */}
         <Text style={styles.venueName} numberOfLines={2}>{venue.name}</Text>
         {venue.area ? <Text style={styles.venueArea}>{venue.area}</Text> : null}
 
-        {/* Score */}
-        <View style={styles.scoreRow}>
-          <Text style={[styles.scoreNum, { color: scoreColor }]}>{score}</Text>
-          <Text style={styles.scoreLabel}>VIBE</Text>
-        </View>
+        {/* Score: real readings only; demo is labelled; nothing for an event not yet on */}
+        {!upcoming && (
+          real || (venue.energy_source === 'demo' && score > 0) ? (
+            <View style={styles.scoreRow}>
+              <Text style={[styles.scoreNum, { color: scoreColor }]}>{score}</Text>
+              <Text style={styles.scoreLabel}>{real ? 'VIBE' : 'VIBE · DEMO'}</Text>
+            </View>
+          ) : (
+            <Text style={styles.noReading}>No reading yet</Text>
+          )
+        )}
 
         {/* Meta row */}
         <View style={styles.metaRow}>
@@ -157,9 +200,9 @@ function DoneScreen({ fireCount, onComplete }: { fireCount: number; onComplete: 
 export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props) {
   const insets = useSafeAreaInsets();
 
-  // Shuffle venues once on mount
+  // Shuffle venues once on mount. A finished event is not something to swipe on.
   const shuffled = useMemo(() => {
-    const arr = [...venues];
+    const arr = venues.filter((v) => v.event?.phase !== 'ended');
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -182,6 +225,18 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
   // over the first render's handlers and a frozen cardIdx. Route swipe releases
   // through this ref so the gesture always advances the CURRENT card.
   const swipeHandlers = useRef<{ fire: () => void; skip: () => void }>({ fire: () => {}, skip: () => {} });
+  // One card at a time: a second tap during the fly-out used to fire twice
+  // and skip a card.
+  const busy = useRef(false);
+  const doneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completed = useRef(false);
+  const finish = () => {
+    if (completed.current) return;
+    completed.current = true;
+    if (doneTimer.current) clearTimeout(doneTimer.current);
+    onComplete();
+  };
+  useEffect(() => () => { if (doneTimer.current) clearTimeout(doneTimer.current); }, []);
 
   const currentVenue = shuffled[cardIdx] ?? null;
   const nextVenue = shuffled[cardIdx + 1] ?? null;
@@ -224,24 +279,27 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
 
   const advance = (fired: boolean) => {
     if (fired && currentVenue) {
-      onFire(currentVenue.id);
+      onFire(currentVenue);
       setFireCount(c => c + 1);
     }
     position.setValue({ x: 0, y: 0 });
     nextScale.setValue(0.93);
     nextOpacity.setValue(0.5);
     setSwipeDir(null);
+    busy.current = false;
     const next = cardIdx + 1;
     if (next >= shuffled.length) {
       setDone(true);
       // Auto-dismiss after 2.5s so the overlay never blocks the main UI
-      setTimeout(() => onComplete(), 2500);
+      doneTimer.current = setTimeout(finish, 2500);
     } else {
       setCardIdx(next);
     }
   };
 
   const animateFire = () => {
+    if (busy.current) return;
+    busy.current = true;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Animated.parallel([
       Animated.timing(position, { toValue: { x: W * 1.6, y: -100 }, duration: 280, useNativeDriver: true }),
@@ -251,6 +309,8 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
   };
 
   const animateSkip = () => {
+    if (busy.current) return;
+    busy.current = true;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Animated.parallel([
       Animated.timing(position, { toValue: { x: -W * 1.6, y: -100 }, duration: 260, useNativeDriver: true }),
@@ -297,7 +357,7 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
     return (
       <View style={styles.root}>
         <StatusBar barStyle="light-content" />
-        <DoneScreen fireCount={fireCount} onComplete={onComplete} />
+        <DoneScreen fireCount={fireCount} onComplete={finish} />
       </View>
     );
   }
@@ -314,7 +374,7 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
 
       {/* Top bar */}
       <View style={[styles.topBar, { top: insets.top + 8 }]}>
-        <TouchableOpacity style={styles.skipBtn} onPress={onComplete} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.skipBtn} onPress={finish} activeOpacity={0.7}>
           <Text style={styles.skipText}>Skip all</Text>
           <Ionicons name="chevron-forward" size={12} color="#333355" />
         </TouchableOpacity>
@@ -362,7 +422,7 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
 
       {/* Progress dots */}
       <View style={styles.dots}>
-        {shuffled.slice(0, Math.min(shuffled.length, 10)).map((_, i) => (
+        {shuffled.map((_, i) => (
           <View
             key={i}
             style={[
@@ -551,6 +611,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   scoreNum: { fontSize: 36, fontWeight: '900' },
+  noReading: { fontSize: 15, fontWeight: '700', color: 'rgba(255,255,255,0.6)', marginTop: 4 },
+  photoCredit: {
+    position: 'absolute', top: 12, right: 12, maxWidth: '70%', zIndex: 5,
+    fontSize: 10, color: 'rgba(255,255,255,0.8)', backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden',
+  },
   scoreLabel: { fontSize: 11, color: '#3A3A5A', fontWeight: '700', letterSpacing: 2, marginBottom: 4 },
   metaRow: {
     flexDirection: 'row',
