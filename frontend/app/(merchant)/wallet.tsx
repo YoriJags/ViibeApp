@@ -180,7 +180,7 @@ export default function MerchantWallet() {
         <View style={[styles.section, { marginTop: 24 }]}>
           <Text style={styles.sectionTitle}>Scout Reward Pool</Text>
           <Text style={styles.poolDesc}>
-            Pay scouts to visit and rate your venue. Every coin is backed by your wallet — scouts earn real cashable coins, you get real ratings.
+            Pay scouts to visit and rate your venue. Every coin is backed by your wallet, scouts earn real cashable coins, you get real ratings.
           </Text>
 
           {activePool?.active && (
@@ -189,7 +189,7 @@ export default function MerchantWallet() {
               <Text style={styles.activePoolCoins}>{activePool.coins_remaining?.toLocaleString()} coins remaining</Text>
               <Text style={styles.activePoolRate}>⟡ +{activePool.coin_rate} coins per rating</Text>
               <Text style={styles.activePoolExpiry}>
-                Expires {activePool.expires_at ? new Date(activePool.expires_at).toLocaleDateString() : '—'}
+                Expires {activePool.expires_at ? new Date(activePool.expires_at).toLocaleDateString() : '-'}
               </Text>
             </View>
           )}

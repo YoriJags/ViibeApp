@@ -14,12 +14,14 @@ import {
   TouchableOpacity,
   StatusBar,
   Image,
+  BackHandler,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePlacePhoto, photoCredit } from '../services/usePlacePhoto';
+import { ENERGY_COLORS, ENERGY_LABELS, ENERGY_ORDER, asEnergyState } from '../theme/energy';
 
 // ─── Placeholder club images — seeded by venue ID ─────────────────────────────
 const CLUB_PLACEHOLDERS = [
@@ -42,14 +44,9 @@ function getVenueImage(venue: Venue): string {
 const { width: W, height: H } = Dimensions.get('window');
 const SWIPE_THRESHOLD = W * 0.28;
 
-const ENERGY: Record<string, { color: string; label: string }> = {
-  peak:    { color: '#FF3366', label: 'PEAK'    },
-  lit:     { color: '#FF8C00', label: 'LIT'     },
-  charged: { color: '#9933FF', label: 'CHARGED' },
-  warming: { color: '#6655FF', label: 'WARMING' },
-  chill:   { color: '#3399FF', label: 'CHILL'   },
-  quiet:   { color: '#444466', label: 'QUIET'   },
-};
+const ENERGY: Record<string, { color: string; label: string }> = Object.fromEntries(
+  ENERGY_ORDER.map((k) => [k, { color: ENERGY_COLORS[k], label: ENERGY_LABELS[k] }]),
+);
 
 interface Venue {
   id: string;
@@ -91,7 +88,7 @@ function eventWhen(e: NonNullable<Venue['event']>): string {
 
 // ─── Venue Card Body ──────────────────────────────────────────────────────────
 function VenueCardBody({ venue }: { venue: Venue }) {
-  const energy = ENERGY[venue.energy_level] ?? ENERGY.quiet;
+  const energy = ENERGY[asEnergyState(venue.energy_level)];
   const score = venue.current_vibe_score ?? 0;
   const scoreColor = score >= 80 ? '#00E676' : score >= 60 ? '#FFD700' : score >= 40 ? '#FF8C00' : '#666';
   const ownImage = !!(venue.cover_image_url || venue.photo_base64);
@@ -237,6 +234,10 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
     onComplete();
   };
   useEffect(() => () => { if (doneTimer.current) clearTimeout(doneTimer.current); }, []);
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => { finish(); return true; });
+    return () => sub.remove();
+  }, []);
 
   const currentVenue = shuffled[cardIdx] ?? null;
   const nextVenue = shuffled[cardIdx + 1] ?? null;
@@ -374,9 +375,15 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
 
       {/* Top bar */}
       <View style={[styles.topBar, { top: insets.top + 8 }]}>
-        <TouchableOpacity style={styles.skipBtn} onPress={finish} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.skipBtn}
+          onPress={finish}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Skip all and close"
+        >
           <Text style={styles.skipText}>Skip all</Text>
-          <Ionicons name="chevron-forward" size={12} color="#333355" />
+          <Ionicons name="chevron-forward" size={12} color="#C7BAD8" />
         </TouchableOpacity>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${((cardIdx) / shuffled.length) * 100}%` as any, backgroundColor: energy.color }]} />
@@ -441,8 +448,10 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
           style={[styles.actionBtn, styles.skipActionBtn, swipeDir === 'skip' && styles.actionBtnSkipActive]}
           onPress={animateSkip}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Skip this one"
         >
-          <Ionicons name="close" size={26} color={swipeDir === 'skip' ? '#FF6644' : '#2A2A3E'} />
+          <Ionicons name="close" size={26} color={swipeDir === 'skip' ? '#FF6644' : '#8E8EA8'} />
         </TouchableOpacity>
 
         <View style={styles.hintWrap}>
@@ -453,6 +462,8 @@ export default function VenueDiscoverFlow({ venues, onFire, onComplete }: Props)
           style={[styles.actionBtn, styles.fireActionBtn, swipeDir === 'fire' && styles.actionBtnFireActive]}
           onPress={animateFire}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Interested, follow it"
         >
           <Text style={{ fontSize: 26 }}>🔥</Text>
         </TouchableOpacity>
@@ -491,11 +502,14 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   skipBtn: {
+    minHeight: 44,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
   },
-  skipText: { color: '#333355', fontSize: 12, fontWeight: '600' },
+  skipText: { color: '#C7BAD8', fontSize: 12, fontWeight: '600' },
   progressTrack: {
     flex: 1,
     height: 2,
@@ -509,7 +523,7 @@ const styles = StyleSheet.create({
   },
   progressCount: {
     fontSize: 11,
-    color: '#2A2A4A',
+    color: '#8E8EA8',
     fontWeight: '600',
     minWidth: 32,
     textAlign: 'right',
@@ -600,7 +614,7 @@ const styles = StyleSheet.create({
   },
   venueArea: {
     fontSize: 14,
-    color: '#3A3A5A',
+    color: '#A89B8C',
     fontWeight: '600',
     marginTop: -4,
   },
@@ -617,7 +631,7 @@ const styles = StyleSheet.create({
     fontSize: 10, color: 'rgba(255,255,255,0.8)', backgroundColor: 'rgba(0,0,0,0.45)',
     paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden',
   },
-  scoreLabel: { fontSize: 11, color: '#3A3A5A', fontWeight: '700', letterSpacing: 2, marginBottom: 4 },
+  scoreLabel: { fontSize: 11, color: '#A89B8C', fontWeight: '700', letterSpacing: 2, marginBottom: 4 },
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -632,10 +646,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#1A1A2E',
   },
-  metaText: { fontSize: 11, color: '#555577', fontWeight: '600' },
+  metaText: { fontSize: 11, color: '#A89B8C', fontWeight: '600' },
   swipeHint: {
     fontSize: 10,
-    color: '#1A1A2E',
+    color: '#8E8EA8',
     fontWeight: '600',
     letterSpacing: 1,
     marginTop: 8,
@@ -690,7 +704,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF336615',
   },
   hintWrap: { flex: 1, alignItems: 'center' },
-  hintText: { fontSize: 10, color: '#1A1A2E', fontWeight: '600', letterSpacing: 1 },
+  hintText: { fontSize: 10, color: '#8E8EA8', fontWeight: '600', letterSpacing: 1 },
 
   // ── Done screen ───────────────────────────────────────────────────────────────
   doneWrap: {
@@ -708,7 +722,7 @@ const styles = StyleSheet.create({
   },
   doneSub: {
     fontSize: 15,
-    color: '#3A3A5A',
+    color: '#A89B8C',
     textAlign: 'center',
     lineHeight: 22,
   },

@@ -60,7 +60,7 @@ function computeBadges(user: any): Badge[] {
 }
 
 const DEMO_DEBRIEF = {
-  debrief: "You hit 3 spots tonight and kept the energy electric the whole way through — that's certified scout behaviour right there.",
+  debrief: "You hit 3 spots tonight and kept the energy electric the whole way through, that's certified scout behaviour right there.",
   night_title: "Electric VI Run",
   stats: { spots_visited: 3, ratings_dropped: 3, avg_vibe_given: 87 },
 };
@@ -945,7 +945,7 @@ export default function ProfileScreen() {
                 {[
                   { val: debrief.stats.spots_visited, lbl: 'Spots Hit', icon: 'location', color: '#FF3366' },
                   { val: debrief.stats.ratings_dropped, lbl: 'Ratings', icon: 'star', color: '#FFD700' },
-                  { val: debrief.stats.avg_vibe_given > 0 ? debrief.stats.avg_vibe_given : '—', lbl: 'Avg Viibe', icon: 'pulse', color: '#9933FF' },
+                  { val: debrief.stats.avg_vibe_given > 0 ? debrief.stats.avg_vibe_given : '-', lbl: 'Avg Viibe', icon: 'pulse', color: '#9933FF' },
                 ].map((s, i) => (
                   <View key={i} style={styles.nightModalStat}>
                     <Ionicons name={s.icon as any} size={20} color={s.color} />

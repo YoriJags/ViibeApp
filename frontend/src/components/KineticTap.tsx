@@ -309,7 +309,7 @@ export default function KineticTap({
             <Text style={styles.questLabel}>COLLECTIVE QUEST</Text>
             <Text style={styles.questSub}>
               {questState.quest_state === 'cooldown'
-                ? 'Quest complete — next in 30 min'
+                ? 'Quest complete, next in 30 min'
                 : `${uniqueScouts} scout${uniqueScouts !== 1 ? 's' : ''} · target ${resonanceMin}–${resonanceMax} BPM`}
             </Text>
           </View>
@@ -339,7 +339,7 @@ export default function KineticTap({
       {/* Danger zone callout */}
       {dangerZone && (
         <Animated.Text style={[styles.dangerText, { opacity: dangerBorderAnim }]}>
-          ⚠ Energy dropping — keep it alive!
+          ⚠ Energy dropping, keep it alive!
         </Animated.Text>
       )}
     </Animated.View>

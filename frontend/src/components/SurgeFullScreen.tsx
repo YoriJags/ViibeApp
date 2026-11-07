@@ -316,7 +316,7 @@ export default function SurgeFullScreen({
     };
     const onEnergyCritical = (data: { venue_id: string; message: string }) => {
       if (data.venue_id !== venueId) return;
-      setEnergyCriticalMsg(data.message || 'ENERGY CRITICAL — 5× CLOUT FOR NEXT 30 TAPS');
+      setEnergyCriticalMsg(data.message || 'ENERGY CRITICAL, 5× CLOUT FOR NEXT 30 TAPS');
       setTimeout(() => setEnergyCriticalMsg(null), 12000);
     };
     socket.on('global_surge', onGlobalSurge);
@@ -587,7 +587,7 @@ export default function SurgeFullScreen({
             </Text>
           ) : isElectric ? (
             <Animated.Text style={[s.hintText, { color, opacity: glowAnim }]}>
-              ELECTRIC — KEEP IT ALIVE
+              ELECTRIC, KEEP IT ALIVE
             </Animated.Text>
           ) : (
             <Text style={s.hintText}>{cooldown ? 'Cooling down...' : 'Tap anywhere to power the venue'}</Text>
@@ -630,7 +630,7 @@ export default function SurgeFullScreen({
                 <Text style={s.questLabel}>COLLECTIVE QUEST</Text>
                 <Text style={s.questSub}>
                   {questState.quest_state === 'cooldown'
-                    ? 'Quest cooldown — keep tapping'
+                    ? 'Quest cooldown, keep tapping'
                     : `${questState.unique_scouts} scout${questState.unique_scouts !== 1 ? 's' : ''} · target ${questState.resonance_min}–${questState.resonance_max} BPM`}
                 </Text>
               </View>

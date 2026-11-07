@@ -53,12 +53,12 @@ const ENERGY_LABELS: Record<string, string> = {
 };
 
 function formatDate(iso: string | null): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   try {
     const d = new Date(iso);
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
   } catch {
-    return '—';
+    return '-';
   }
 }
 

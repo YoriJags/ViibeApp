@@ -215,7 +215,7 @@ export default function VibeShareCard({ data, visible, onClose }: Props) {
 
   const handleShare = useCallback(async () => {
     if (Platform.OS === 'web') {
-      Alert.alert('Share', 'Screenshot sharing is not available on web — use the mobile app.');
+      Alert.alert('Share', 'Screenshot sharing is not available on web, use the mobile app.');
       return;
     }
     if (!cardRef.current) return;

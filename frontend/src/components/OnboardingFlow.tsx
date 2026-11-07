@@ -46,7 +46,7 @@ const pages: OnboardingPage[] = [
     icon: 'map',
     iconColor: '#FF3366',
     headline: "Know exactly where\nto be tonight.",
-    body: "Clubs. Restaurants. Concerts. Lounges. Anywhere people gather, there's a live energy score.\n\nVIIBE shows you what's actually happening — right now, not last week.",
+    body: "Clubs. Restaurants. Concerts. Lounges. Anywhere people gather, there's a live energy score.\n\nVIIBE shows you what's actually happening, right now, not last week.",
     accent: '#FF3366',
   },
   {
@@ -54,7 +54,7 @@ const pages: OnboardingPage[] = [
     icon: 'flash',
     iconColor: '#9933FF',
     headline: 'Tap. Feel the vibe.\nOwn the night.',
-    body: "Step inside a venue and tap to power its live energy. The reactor ring responds to your rhythm — solo or with a crowd.\n\nBuild your scout rank, earn clout, and rise through the city.",
+    body: "Step inside a venue and tap to power its live energy. The reactor ring responds to your rhythm, solo or with a crowd.\n\nBuild your scout rank, earn clout, and rise through the city.",
     accent: '#9933FF',
   },
 ];
@@ -84,7 +84,7 @@ const MODES: {
     emoji: '🔭',
     label: 'Insider',
     subtitle: 'Know before you go.',
-    description: 'You consume intel. Get scene reports, arrival windows, and demand signals — so you always pick the right move.',
+    description: 'You consume intel. Get scene reports, arrival windows, and demand signals, so you always pick the right move.',
     gradient: ['#9933FF', '#4169E1'],
     accentColor: '#9933FF',
   },

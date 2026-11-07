@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import SignalDensityStrip, { SignalDensityData } from './SignalDensityStrip';
 import SignalDensitySheet from './SignalDensitySheet';
 import MomentumArrow from './MomentumArrow';
+import { ENERGY_COLORS, ENERGY_LABELS, energyStateFor } from '../theme/energy';
 
 interface Venue {
   id: string;
@@ -47,29 +48,21 @@ interface VenueCardProps {
 }
 
 // Premium gradient palettes per vibe state
+// The middle stop is a deeper shade; the outer stops are the shared palette.
 const VIBE_GRADIENTS: Record<string, [string, string, string]> = {
-  peak:    ['#FF3366', '#C0183E', '#FF3366'],
-  lit:     ['#FF8C00', '#E67300', '#FF8C00'],
-  charged: ['#8B31C7', '#6A1F9E', '#8B31C7'],
-  warming: ['#7B2FBE', '#5A1A99', '#7B2FBE'],
-  chill:   ['#1E78D4', '#0F5CA8', '#1E78D4'],
-  quiet:   ['#3A3F4E', '#2A2E3A', '#3A3F4E'],
+  peak:    [ENERGY_COLORS.peak,    '#C0183E', ENERGY_COLORS.peak],
+  lit:     [ENERGY_COLORS.lit,     '#E67300', ENERGY_COLORS.lit],
+  charged: [ENERGY_COLORS.charged, '#6A1F9E', ENERGY_COLORS.charged],
+  warming: [ENERGY_COLORS.warming, '#4A3FCC', ENERGY_COLORS.warming],
+  chill:   [ENERGY_COLORS.chill,   '#0F5CA8', ENERGY_COLORS.chill],
+  quiet:   [ENERGY_COLORS.quiet,   '#2A2E3A', ENERGY_COLORS.quiet],
 };
 
-const getVibeState = (score: number, capacity: string): string => {
-  if (score >= 85) return 'PEAK';
-  if (score >= 65) return 'LIT';
-  if (score >= 45) return (capacity === 'full' || capacity === 'vibrant') ? 'CHARGED' : 'WARMING';
-  if (score >= 20) return 'CHILL';
-  return 'QUIET';
-};
+const getVibeState = (score: number, capacity: string): string =>
+  ENERGY_LABELS[energyStateFor(score, capacity)];
 
 const getVibeStateKey = (score: number, capacity: string): string => {
-  if (score >= 85) return 'peak';
-  if (score >= 65) return 'lit';
-  if (score >= 45) return (capacity === 'full' || capacity === 'vibrant') ? 'charged' : 'warming';
-  if (score >= 20) return 'chill';
-  return 'quiet';
+  return energyStateFor(score, capacity);
 };
 
 export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostBadge = true, isNearby, onRatePress, dnaMatch }) => {
@@ -107,10 +100,12 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
     return VIBE_GRADIENTS[getVibeStateKey(score, capacity)][0];
   };
 
+  // One gate vocabulary everywhere: Clear, Slow, Jammed (as on "When to leave"
+  // and the organiser screen).
   const getGateLabel = (gate: string) => {
-    if (gate === 'blocked') return 'Long queue';
-    if (gate === 'slow') return 'Short wait';
-    return 'No queue';
+    if (gate === 'blocked') return 'Gate jammed';
+    if (gate === 'slow') return 'Gate slow';
+    return 'Gate clear';
   };
 
   const vibeColor = getVibeColor(venue.current_vibe_score, venue.capacity_level ?? 'sparse');

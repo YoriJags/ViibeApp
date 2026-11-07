@@ -30,7 +30,7 @@ interface VibePlusModalProps {
 
 const AI_FEATURES = [
   { icon: 'cash', label: 'Earn cashable coins', desc: 'Rate at participating venues, cash out direct to your bank' },
-  { icon: 'flash-outline', label: 'Venue Battle', desc: 'Tap-off battles between venues — cast bolts and shape the city ranking' },
+  { icon: 'flash-outline', label: 'Venue Battle', desc: 'Tap-off battles between venues, cast bolts and shape the city ranking' },
   { icon: 'flash', label: 'No rating cooldowns', desc: 'Rate venues back-to-back, build your reputation faster' },
   { icon: 'eye', label: 'Oracle AI Prediction', desc: 'Claude-powered peak time forecast' },
   { icon: 'newspaper', label: 'Viibe Brief', desc: 'Daily AI city briefing at home' },
@@ -146,7 +146,7 @@ export default function VibePlusModal({ visible, onClose, onSuccess }: VibePlusM
 
                 <Text style={styles.headline}>The Scout's Earning Toolkit</Text>
                 <Text style={styles.subheadline}>
-                  Rate venues, earn cashable coins, and get AI-powered scene intel — all in one.
+                  Rate venues, earn cashable coins, and get AI-powered scene intel, all in one.
                 </Text>
 
                 {/* Feature list */}

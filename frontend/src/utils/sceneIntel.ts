@@ -34,7 +34,7 @@ const CROWD_DESC: Record<SceneInput['capacity_level'], string> = {
 const GATE_DESC: Record<SceneInput['gate_level'], string> = {
   clear:   'Walk straight in.',
   slow:    'Short wait at the door.',
-  blocked: 'Long queue — factor in the wait.',
+  blocked: 'Long queue, factor in the wait.',
 };
 
 const VELOCITY_SUFFIX: Record<SceneInput['vibe_velocity'], string> = {
@@ -49,7 +49,7 @@ const VENUE_CONTEXT: Partial<Record<string, Partial<Record<SceneInput['energy_le
     quiet:   'Floor is quiet, DJ warming up.',
     chill:   'Early crowd forming.',
     warming: 'Building nicely.',
-    charged: 'Crowd is there — waiting on the set to peak.',
+    charged: 'Crowd is there, waiting on the set to peak.',
     lit:     'DJ is delivering.',
     peak:    'DJ just switched sets. Floor is gone.',
   },
@@ -104,7 +104,7 @@ const VENUE_CONTEXT: Partial<Record<string, Partial<Record<SceneInput['energy_le
   restaurant: {
     quiet:   'Tables available.',
     chill:   'Moderate occupancy.',
-    warming: 'Getting busy — reservations recommended.',
+    warming: 'Getting busy, reservations recommended.',
     charged: 'Almost full.',
     lit:     'Fully seated. Lively atmosphere.',
     peak:    'Fully booked, walk-ins unlikely.',
@@ -124,9 +124,9 @@ function getArrivalLine(
   gate: SceneInput['gate_level'],
 ): string {
   if (score >= 85 && velocity === 'heating_up') return 'Get there now or miss the peak.';
-  if (score >= 85 && velocity === 'cooling_down') return 'Past peak — still worth it, get in quick.';
+  if (score >= 85 && velocity === 'cooling_down') return 'Past peak, still worth it, get in quick.';
   if (score >= 85) return 'Currently at peak. Go now.';
-  if (score >= 65 && velocity === 'heating_up') return 'Good time to arrive — still climbing.';
+  if (score >= 65 && velocity === 'heating_up') return 'Good time to arrive, still climbing.';
   if (score >= 65) return 'Solid right now.';
   if (score >= 45 && velocity === 'heating_up') return 'Give it 30–45 min, it\'s building.';
   if (score >= 45) return 'Warming up. Not fully there yet.';
@@ -147,14 +147,14 @@ export function getSceneIntel(venue: SceneInput): string {
 
   // Bolt surge signal — real-time tap velocity from scouts
   const boltSignal = (bolt_velocity_15min ?? 0) >= 20
-    ? 'Scouts are surging — peak incoming.'
+    ? 'Scouts are surging, peak incoming.'
     : (bolt_velocity_15min ?? 0) >= 10
-    ? 'High bolt activity — scene is picking up.'
+    ? 'High bolt activity, scene is picking up.'
     : '';
 
   // Build sentence fragments and filter empty strings
   const parts = [
-    `${name} — ${crowd}.`,
+    `${name}, ${crowd}.`,
     context,
     velocity,
     boltSignal,

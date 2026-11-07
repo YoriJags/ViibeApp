@@ -44,7 +44,7 @@
   .lbl { color: var(--ink-soft); font-size: 0.9rem; margin-top: 0.35rem; }
   .dir { font-weight: 600; }
   .dir[data-dir="filling"] { color: var(--hotter); }
-  .dir[data-dir="emptying"] { color: var(--warm); }
+  .dir[data-dir="emptying"] { color: #E0558F; }
 
   section h2 { font: 600 1.05rem/1.3 var(--display); margin: 0 0 0.75rem; }
   .card { border-top: 1px solid var(--rule); padding-top: 1.1rem; }
@@ -54,7 +54,10 @@
   .curve span.zero { background: var(--cold-2); }
   .axis { display: flex; justify-content: space-between; color: var(--ink-faint); font-size: 0.8rem; margin-top: 0.4rem; }
 
-  .gate-word { font: 800 1.8rem/1.1 var(--display); text-transform: capitalize; }
+  .gate-word { font: 800 1.8rem/1.1 var(--display); }
+  .phase:empty { display: none; }
+  .notice { background: #3A1566; border-radius: 12px; padding: 0.9rem 1rem; margin: 0; }
+  .notice strong { display: block; margin-bottom: 0.2rem; }
   .gate-word[data-gate="clear"] { color: #7CE3B0; }
   .gate-word[data-gate="slow"] { color: var(--hotter); }
   .gate-word[data-gate="blocked"] { color: var(--hot); }
@@ -77,18 +80,20 @@
 <main id="app">
   <div class="top">
     <span class="mark">VIIBE</span>
-    <span class="updated" id="updated">Loading</span>
+    <span class="updated" id="updated" aria-live="polite">Loading</span>
   </div>
   <div>
-    <h1 id="name">Your event</h1>
+    <h1 id="name">Loading your event</h1>
     <p class="when" id="when"></p>
     <span class="phase" id="phase"></span>
   </div>
 
-  <div class="big" aria-label="Crowd right now">
-    <div><div class="num" id="present">0</div><div class="lbl">in the grounds now</div></div>
-    <div><div class="num" id="arrivals">0</div><div class="lbl">arrived, last 30 min</div></div>
-    <div><div class="num" id="departures">0</div><div class="lbl">left, last 30 min</div></div>
+  <p class="notice" id="notice" role="alert" hidden></p>
+
+  <div class="big" aria-label="Crowd right now" aria-live="polite">
+    <div><div class="num" id="present">&middot;</div><div class="lbl">in the grounds now</div></div>
+    <div><div class="num" id="arrivals">&middot;</div><div class="lbl">arrived, last 30 min</div></div>
+    <div><div class="num" id="departures">&middot;</div><div class="lbl">left, last 30 min</div></div>
   </div>
   <p class="muted"><span class="dir" id="direction"></span></p>
 
@@ -100,14 +105,14 @@
 
   <section class="card">
     <h2>The gate</h2>
-    <div class="gate-word" id="gate">No reading yet</div>
+    <div class="gate-word" id="gate" aria-live="polite">&middot;</div>
     <p class="muted" id="gate-note"></p>
     <p class="muted" id="scans-note" hidden></p>
   </section>
 
   <section class="card">
     <h2>Energy inside</h2>
-    <div class="gate-word" id="energy">No reading yet</div>
+    <div class="gate-word" id="energy">&middot;</div>
     <p class="muted" id="energy-note"></p>
   </section>
 
@@ -127,7 +132,10 @@
   const $ = (id) => document.getElementById(id);
 
   const lagos = (iso, opts) => new Intl.DateTimeFormat('en-NG', Object.assign({ timeZone: 'Africa/Lagos' }, opts)).format(new Date(iso));
-  const PHASE = { upcoming: 'Not started', doors: 'Doors opening', live: 'Live now', ended: 'Finished' };
+  // One gate vocabulary everywhere: the app, this page and what attendees are told.
+  const GATE = { clear: 'Clear', slow: 'Slow', blocked: 'Jammed' };
+  let lastUpdated = null;
+  const PHASE = { upcoming: 'Coming up', doors: 'Doors opening', live: 'Live now', ended: 'Finished' };
   const DIR = {
     filling: 'Filling up', emptying: 'Emptying out', steady: 'Steady',
     quiet: 'Not enough movement yet to say which way it is going.'
@@ -171,15 +179,17 @@
 
     const g = d.gate || {};
     if (g.consensus) {
-      $('gate').textContent = g.consensus;
+      $('gate').textContent = GATE[g.consensus] || g.consensus;
       $('gate').dataset.gate = g.consensus;
       const bd = g.breakdown || {};
       $('gate-note').textContent = 'From ' + g.readings + ' readings in the last ' + g.window_minutes +
-        ' minutes: ' + (bd.clear || 0) + ' clear, ' + (bd.slow || 0) + ' slow, ' + (bd.blocked || 0) + ' blocked.';
+        ' minutes: ' + (bd.clear || 0) + ' clear, ' + (bd.slow || 0) + ' slow, ' + (bd.blocked || 0) + ' jammed.';
     } else {
       $('gate').textContent = 'No reading yet';
       $('gate').dataset.gate = '';
-      $('gate-note').textContent = 'Nobody at the gate has reported in the last 30 minutes.';
+      $('gate-note').textContent = ev.phase === 'upcoming'
+        ? 'Gate readings start when doors open.'
+        : 'Nobody at the gate has reported in the last 30 minutes.';
     }
 
     // Ticket scans from the ticketing partner: counts only, kept apart from the readings.
@@ -203,7 +213,9 @@
     $('told-wrap').hidden = !t;
     if (t) { $('told-head').textContent = t.headline; $('told-detail').textContent = t.detail || ''; }
 
-    $('updated').textContent = 'Updated ' + lagos(d.updated_at, { hour: 'numeric', minute: '2-digit' });
+    lastUpdated = lagos(d.updated_at, { hour: 'numeric', minute: '2-digit' });
+    $('updated').textContent = 'Updated ' + lastUpdated;
+    $('notice').hidden = true;
   }
 
   async function load() {
@@ -214,7 +226,20 @@
       if (!r.ok) throw new Error(String(r.status));
       render(await r.json());
     } catch (e) {
-      $('updated').textContent = "Can't reach VIIBE. Retrying.";
+      // Never let a dropped connection read as an empty event.
+      const n = $('notice');
+      n.hidden = false;
+      if (lastUpdated) {
+        n.innerHTML = '<strong></strong><span></span>';
+        n.querySelector('strong').textContent = "Can't reach VIIBE right now.";
+        n.querySelector('span').textContent = 'These figures are from ' + lastUpdated + '. Retrying every 30 seconds.';
+        $('updated').textContent = 'Last updated ' + lastUpdated;
+      } else {
+        n.innerHTML = '<strong></strong><span></span>';
+        n.querySelector('strong').textContent = "Can't reach VIIBE right now.";
+        n.querySelector('span').textContent = 'Nothing below is a real count until it loads. Retrying every 30 seconds.';
+        $('updated').textContent = 'Not loaded';
+      }
     }
     return true;
   }

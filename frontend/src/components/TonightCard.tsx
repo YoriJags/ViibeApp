@@ -37,7 +37,7 @@ interface TonightData {
 const DEMO: TonightData = {
   available: true,
   is_night_hours: true,
-  headline: "DNA Nightclub is the move — 94% and still climbing",
+  headline: "DNA Nightclub is the move, 94% and still climbing",
   top_pick: {
     venue_id: '1',
     venue_name: 'DNA Nightclub',
@@ -51,7 +51,7 @@ const DEMO: TonightData = {
     { venue_id: '2', venue_name: 'Club Quilox', area: 'Lekki', score: 81 },
     { venue_id: '3', venue_name: 'The Hard Rock', area: 'Ikoyi', score: 66 },
   ],
-  weather_note: 'Dry night — expect peak turnout',
+  weather_note: 'Dry night, expect peak turnout',
 };
 
 interface Props {

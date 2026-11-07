@@ -321,7 +321,7 @@ export const DEMO_DARK_HORSES = [
 
 // ===== DEMO COSMIC VIBE READING =====
 export const DEMO_COSMIC_READING = {
-  reading: "Lagos is charging up and the frequency tonight is in your favour. Trust the pull — the city has something lined up for scouts who move with purpose.",
+  reading: "Lagos is charging up and the frequency tonight is in your favour. Trust the pull, the city has something lined up for scouts who move with purpose.",
   zodiac_sign: null,
   city: 'lagos',
   hot_venue: 'Quilox',
@@ -870,7 +870,7 @@ export const DEMO_ORACLE_PREDICTIONS: Record<string, OraclePrediction> = {
   },
   'demo_venue_escape': {
     venue_id: 'demo_venue_escape', confidence: 92,
-    headline: "Escape is already peaking — go now",
+    headline: "Escape is already peaking, go now",
     peak_window_start: "11:30pm", peak_window_end: "1:30am",
     best_arrival: "Now", current_trajectory: 'peaking',
     signals: [{icon:"🌙", label:"Friday Night", type:"day_of_week"}, {icon:"⚡", label:"Peak Window", type:"activity"}, {icon:"✅", label:"Viibe Certified", type:"certification"}],
@@ -980,7 +980,7 @@ export const DEMO_VIBE_DNA: VibeDNA = {
   user_id: 'demo_user_001',
   dominant_type: 'club',
   night_style: 'night_owl',
-  night_style_label: "Night Owl — you peak after midnight",
+  night_style_label: "Night Owl, you peak after midnight",
   total_ratings_analyzed: 187,
   computed_at: _now,
   affinities: [
@@ -1012,7 +1012,7 @@ export const DEMO_PLANNER_CONVERSATION: PlannerMessage[] = [
   },
   {
     id: 'demo_msg_2', role: 'assistant',
-    content: "Your squad is set for a mad night! I found 2 perfect spots in Lekki right now — both Afrobeats, both accessible. Escape is already heating up and House 70 peaks later if you want to make a night of it.",
+    content: "Your squad is set for a mad night! I found 2 perfect spots in Lekki right now, both Afrobeats, both accessible. Escape is already heating up and House 70 peaks later if you want to make a night of it.",
     venues: [
       { venue_id: 'demo_venue_escape', name: 'Escape Nightclub', area: 'Victoria Island',
         current_vibe_score: 88, energy_level: 'peak', entry_fee: '₦5,000',
@@ -1029,7 +1029,7 @@ export const DEMO_PLANNER_CONVERSATION: PlannerMessage[] = [
   },
   {
     id: 'demo_msg_4', role: 'assistant',
-    content: "Escape's gate is currently slow — scouts are reporting about a 15-minute wait. Get there before 11pm to walk straight in. 52 scouts have checked in tonight so the vibe is confirmed electric. Your squad will love it.",
+    content: "Escape's gate is currently slow, scouts are reporting about a 15-minute wait. Get there before 11pm to walk straight in. 52 scouts have checked in tonight so the vibe is confirmed electric. Your squad will love it.",
     venues: [],
     follow_up_prompts: ["Navigate to Escape", "Book a table at House 70"],
   },
@@ -1056,7 +1056,7 @@ export const DEMO_BLAST_ATTRIBUTION = {
   blasts: [
     {
       blast_id: 'blast_001',
-      message: 'Floor is packed 🔥 Free entry till 1am — DJ Spinall just dropped in',
+      message: 'Floor is packed 🔥 Free entry till 1am, DJ Spinall just dropped in',
       sent_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
       followers_reached: 340,
       visits_2h: 23,
@@ -1154,7 +1154,7 @@ export const DEMO_EVENTS = {
     {
       id: 'demo_event_003',
       venue_id: 'demo_venue_quilox',
-      name: 'Afrobeats Fridays — Vol. 8',
+      name: 'Afrobeats Fridays, Vol. 8',
       event_type: 'DJ Night',
       expected_start: new Date(nextFriday.setHours(22, 0, 0, 0)).toISOString(),
       expected_end: new Date(nextFriday.setHours(4, 0, 0, 0) + 24 * 60 * 60 * 1000).toISOString(),

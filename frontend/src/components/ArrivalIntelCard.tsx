@@ -30,7 +30,7 @@ const DEMO: ArrivalData = {
   venue_name: 'DNA Nightclub',
   peak_hour: '01:00 WAT',
   recommended_arrival: '00:00 WAT',
-  insight: 'Arrive by 00:00 WAT to beat the queue — peak hits around 01:00 WAT.',
+  insight: 'Arrive by 00:00 WAT to beat the queue, peak hits around 01:00 WAT.',
   hourly: [
     { hour_wat: 20, hour_label: '20:00', activity: 2 },
     { hour_wat: 21, hour_label: '21:00', activity: 4 },

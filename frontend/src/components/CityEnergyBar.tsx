@@ -13,14 +13,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { CityEnergyData } from '../store/vibeStore';
+import { ENERGY_COLORS, ENERGY_LABELS, ENERGY_ORDER } from '../theme/energy';
 
-const LABEL_COLORS: Record<string, string> = {
-  PEAK:    '#FF3366',
-  LIT:     '#FF9933',
-  WARMING: '#9B59B6',
-  CHILL:   '#3399FF',
-  QUIET:   '#555E6E',
-};
+const LABEL_COLORS: Record<string, string> = Object.fromEntries(
+  ENERGY_ORDER.map((k) => [ENERGY_LABELS[k], ENERGY_COLORS[k]]),
+);
 
 const TREND_ICON: Record<string, string> = {
   heating_up:   '↑',
@@ -197,7 +194,7 @@ export default function CityEnergyBar({ pulse, onPress }: CityEnergyBarProps) {
                 <Text style={fs.title}>CITY ENERGY</Text>
                 <Text style={[fs.cityChip, { color }]}>{cityName.toUpperCase()}</Text>
               </View>
-              <TouchableOpacity style={fs.closeBtn} onPress={() => setFullscreen(false)}>
+              <TouchableOpacity style={fs.closeBtn} onPress={() => setFullscreen(false)} accessibilityRole="button" accessibilityLabel="Close" hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
                 <Ionicons name="close" size={18} color="#FFF" />
               </TouchableOpacity>
             </View>
@@ -261,11 +258,11 @@ export default function CityEnergyBar({ pulse, onPress }: CityEnergyBarProps) {
                     {pulse.energy_label === 'PEAK'    ? 'Lagos is PEAKING right now' :
                      pulse.energy_label === 'LIT'     ? 'The city is fully lit tonight' :
                      pulse.energy_label === 'WARMING' ? 'The scene is warming up' :
-                     pulse.energy_label === 'CHILL'   ? 'Chill night — select spots active' :
-                     'Quiet right now — early hours'}
+                     pulse.energy_label === 'CHILL'   ? 'Chill night, select spots active' :
+                     'Quiet right now, early hours'}
                   </Text>
                   <Text style={fs.moodDesc}>
-                    {pulse.trend === 'heating_up'   ? 'Scouts are pouring in — energy is climbing fast.' :
+                    {pulse.trend === 'heating_up'   ? 'Scouts are pouring in, energy is climbing fast.' :
                      pulse.trend === 'cooling_down' ? 'Activity slowing. Peak may have passed for tonight.' :
                      'Steady crowd. Consistent energy across the city.'}
                   </Text>

@@ -1618,7 +1618,7 @@ export default function AdminAnalytics() {
                 <Text style={[styles.cardTitle, { color: '#9933FF' }]}>Quest Scheduler</Text>
               </View>
               <Text style={[styles.cardSubtitle, { color: adminColors.textSecondary, marginBottom: 14 }]}>
-                Schedule collective venue boost challenges. Admin only — users see them in Quest Timeline.
+                Schedule collective venue boost challenges. Admin only, users see them in Quest Timeline.
               </Text>
 
               {/* Venue search */}

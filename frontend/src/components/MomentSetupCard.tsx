@@ -47,7 +47,7 @@ const GESTURES: GestureRow[] = [
     icon:    'phone-portrait-outline',
     color:   ACCENT,
     label:   'Shake',
-    sub:     'Sharp wrist flick — works anywhere, eyes-free',
+    sub:     'Sharp wrist flick, works anywhere, eyes-free',
   },
   {
     icon:    'eye-outline',
@@ -59,7 +59,7 @@ const GESTURES: GestureRow[] = [
     icon:    'finger-print-outline',
     color:   GOLD,
     label:   'Back tap',
-    sub:     'Double tap the back of your phone — iOS only',
+    sub:     'Double tap the back of your phone, iOS only',
     iosOnly: true,
   },
 ];
@@ -149,7 +149,7 @@ export default function MomentSetupCard({ forceVisible, onDismiss }: Props) {
             <View style={styles.headerText}>
               <Text style={styles.title}>Feel it. Fire it.</Text>
               <Text style={styles.subtitle}>
-                Three ways to signal a Moment — no screen required.
+                Three ways to signal a Moment, no screen required.
               </Text>
             </View>
           </View>

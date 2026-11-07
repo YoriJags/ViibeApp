@@ -110,7 +110,7 @@ export default function VenueAnalyticsCard({ venueId, authToken }: Props) {
         </View>
         <View style={styles.summaryItem}>
           <Text style={[styles.summaryValue, { color: trend.color }]}>
-            {area_rank.current_rank ? `#${area_rank.current_rank}` : '—'}
+            {area_rank.current_rank ? `#${area_rank.current_rank}` : '-'}
           </Text>
           <Text style={styles.summaryLabel}>Area Rank</Text>
         </View>
@@ -217,7 +217,7 @@ export default function VenueAnalyticsCard({ venueId, authToken }: Props) {
             <Text style={styles.rankText}>
               Ranked{' '}
               <Text style={{ color: '#FF3366', fontWeight: '800' }}>
-                #{area_rank.current_rank ?? '—'}
+                #{area_rank.current_rank ?? '-'}
               </Text>
               {' '}of {area_rank.total_venues} venues in your city
             </Text>

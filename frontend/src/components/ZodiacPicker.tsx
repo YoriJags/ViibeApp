@@ -92,7 +92,7 @@ export default function ZodiacPicker({
           <View>
             <Text style={s.title}>COSMIC SIGN</Text>
             <Text style={s.subtitle}>
-              {isOnboarding ? 'Optional — shapes your vibe reading' : 'Your zodiac personality'}
+              {isOnboarding ? 'Optional, shapes your vibe reading' : 'Your zodiac personality'}
             </Text>
           </View>
           <TouchableOpacity

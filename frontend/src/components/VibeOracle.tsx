@@ -59,10 +59,10 @@ const TRAJECTORY_ICON: Record<string, string> = {
 };
 
 const TRAJECTORY_DESC: Record<string, string> = {
-  rising:  'Viibe is building — energy climbing toward peak',
-  peaking: 'At full power right now — best time to be here',
-  fading:  'Peak has passed — crowd thinning out',
-  quiet:   'Low activity — not the move tonight',
+  rising:  'Viibe is building, energy climbing toward peak',
+  peaking: 'At full power right now, best time to be here',
+  fading:  'Peak has passed, crowd thinning out',
+  quiet:   'Low activity, not the move tonight',
 };
 
 function confidenceColor(c: number) {
@@ -156,7 +156,7 @@ export default function VibeOracle({ venueId, venueName }: VibeOracleProps) {
       setTimeout(() => {
         setPremiumData({
           crowd_forecast: 'Packed by midnight, full by 1am',
-          insider_tip: 'Arrive before 12:30am to skip the VIP queue — energy hits different before it gets rowdy',
+          insider_tip: 'Arrive before 12:30am to skip the VIP queue, energy hits different before it gets rowdy',
           peak_window: '12:30am – 2:30am',
           headline: prediction?.headline ?? '',
           powered_by: 'claude',

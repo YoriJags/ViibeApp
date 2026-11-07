@@ -20,7 +20,7 @@ export default function WeekendCard({ onDismiss, pulseScore, onExplore }: Weeken
   const label    = isFriday ? 'TGIF 🔥' : 'WEEKEND 🎉';
   const headline = isFriday ? "It's Friday. No dulling tonight." : "Saturday night. Lagos is yours.";
   const subline  = isFriday
-    ? 'Weekend starts NOW — find your spot before the queues build up.'
+    ? 'Weekend starts NOW, find your spot before the queues build up.'
     : 'Peak night. The city is at max energy. Go claim your moment.';
 
   return (

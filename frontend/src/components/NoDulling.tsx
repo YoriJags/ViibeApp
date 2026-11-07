@@ -125,7 +125,7 @@ export default function NoDulling({ venueName, venueId, energyLevel, onDrop, onF
           <View style={styles.venueWrap}>
             <Text style={styles.venueName} numberOfLines={1}>{venueName}</Text>
             <Text style={styles.cta}>
-              {dropped ? 'Pulse dropped! 🔥' : 'Drop a pulse — no dulling'}
+              {dropped ? 'Pulse dropped! 🔥' : 'Drop a pulse, no dulling'}
             </Text>
           </View>
 

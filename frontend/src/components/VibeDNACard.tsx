@@ -79,7 +79,7 @@ export default function VibeDNACard({ userId }: VibeDNACardProps) {
   useEffect(() => {
     if (!userId) return;
     if (isDemoMode) {
-      setNarrative({ narrative: "You are a late-night creature who peaks when Amapiano drops. You thrive in VIP energy but aren't precious about it — your scene is VI after midnight, always.", vibe_archetype: 'The Club Connoisseur' });
+      setNarrative({ narrative: "You are a late-night creature who peaks when Amapiano drops. You thrive in VIP energy but aren't precious about it, your scene is VI after midnight, always.", vibe_archetype: 'The Club Connoisseur' });
       return;
     }
     fetch(`${API_URL}/api/users/${userId}/dna-narrative`)

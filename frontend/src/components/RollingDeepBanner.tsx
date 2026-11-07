@@ -178,7 +178,7 @@ export default function RollingDeepBanner({ crewId, currentUserId, isDemoMode, o
           <View style={styles.confirmedRow}>
             <Ionicons name="checkmark-circle" size={14} color={isRolling ? '#00E676' : '#555'} />
             <Text style={[styles.confirmedText, { color: isRolling ? '#00E676' : '#555' }]}>
-              {isRolling ? `You're rolling! +10 clout incoming` : "You're in — waiting on the crew"}
+              {isRolling ? `You're rolling! +10 clout incoming` : "You're in, waiting on the crew"}
             </Text>
           </View>
         )}

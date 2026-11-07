@@ -13,6 +13,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { energyColor, asEnergyState } from '../theme/energy';
 
 const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN || '';
 
@@ -53,17 +54,9 @@ interface Props {
   zoomLevel?: number;
 }
 
-const ENERGY_COLORS: Record<string, string> = {
-  electric: '#FF3366',
-  peak:     '#FF3366',
-  lit:      '#FF8C00',
-  charged:  '#9933FF',
-  warming:  '#6655FF',
-  chill:    '#3399FF',
-  quiet:    '#3A3A4E',
-};
+// Colours come from the one energy palette (src/theme/energy.ts).
 
-const HOT_LEVELS = new Set(['electric', 'peak', 'lit']);
+const HOT_LEVELS = new Set(['peak', 'lit']);
 
 function buildHTML(
   venues: Venue[],
@@ -83,8 +76,8 @@ function buildHTML(
         id: v.id,
         name: v.name,
         score: Math.round(v.current_vibe_score ?? 0),
-        color: ENERGY_COLORS[v.energy_level ?? 'quiet'] ?? '#9933FF',
-        isHot: HOT_LEVELS.has(v.energy_level ?? '') ? 1 : 0,
+        color: energyColor(v.energy_level),
+        isHot: HOT_LEVELS.has(asEnergyState(v.energy_level)) ? 1 : 0,
         demo: isReal(v) ? 0 : 1,
         // Nothing read here yet: a small grey dot, no number, no heat.
         unread: v.energy_source === 'none' || (!isReal(v) && Math.round(v.current_vibe_score ?? 0) === 0) ? 1 : 0,

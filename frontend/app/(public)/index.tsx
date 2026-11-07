@@ -69,6 +69,7 @@ import StreakFireModal from '../../src/components/StreakFireModal';
 import OracleTease from '../../src/components/OracleTease';
 import NarrativeDivider from '../../src/components/NarrativeDivider';
 import analytics, { EVENT } from '../../src/services/analytics';
+import { ENERGY_COLORS } from '../../src/theme/energy';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [CityWelcomeCard, WeekendCard, InsiderFeed extracted to src/components/]
@@ -974,10 +975,12 @@ export default function MapScreen() {
               // The canonical energy states from docs/ENERGY.md. These read
               // "Moderate / Popping / Electric" before, which matched nothing
               // else in the product.
-              { color: '#3399FF', label: 'Chill' },
-              { color: '#9933FF', label: 'Warming' },
-              { color: '#FF9933', label: 'Lit' },
-              { color: '#FF3366', label: 'Peak', animate: true },
+              { color: ENERGY_COLORS.quiet, label: 'Quiet' },
+              { color: ENERGY_COLORS.chill, label: 'Chill' },
+              { color: ENERGY_COLORS.warming, label: 'Warming' },
+              { color: ENERGY_COLORS.charged, label: 'Charged' },
+              { color: ENERGY_COLORS.lit, label: 'Lit' },
+              { color: ENERGY_COLORS.peak, label: 'Peak', animate: true },
             ].map((item) => (
               <View key={item.label} style={styles.legendItem}>
                 <View style={styles.legendDotContainer}>
@@ -1339,9 +1342,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   legendOverlay: {
+    // Top-left, under the map's demo badge. At the bottom it sat under the
+    // translucent tab bar; the right margin clears the zoom buttons.
     position: 'absolute',
-    bottom: 14,
+    top: 40,
     left: 12,
+    maxWidth: '78%',
+    flexWrap: 'wrap',
     flexDirection: 'row',
     backgroundColor: 'rgba(10,10,15,0.80)',
     paddingHorizontal: 10,
@@ -1373,7 +1380,7 @@ const styles = StyleSheet.create({
     borderRadius: 7,
   },
   legendText: {
-    color: '#999',
+    color: '#C7BAD8',
     fontSize: 11,
     fontWeight: '500',
   },

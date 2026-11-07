@@ -19,7 +19,7 @@ interface Props {
 
 const DEMO_ROASTS: Record<string, { review: string; vibe_word: string }> = {
   default: {
-    review: "DNA Nightclub doesn't play — the sound system hits different and the energy is certified electric by midnight. Entry price is what it is, but the vibe you get back is worth every naira.",
+    review: "DNA Nightclub doesn't play, the sound system hits different and the energy is certified electric by midnight. Entry price is what it is, but the vibe you get back is worth every naira.",
     vibe_word: "Unmatched",
   },
 };

@@ -16,33 +16,33 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 // Demo commentary indexed by energy level
 const DEMO_COMMENTS: Record<string, string[]> = {
   peak: [
-    "The crowd don reach maximum. DJ no dey rest, energy dey scatter everywhere — if you no dey here, you go regret am.",
+    "The crowd don reach maximum. DJ no dey rest, energy dey scatter everywhere, if you no dey here, you go regret am.",
     "This place don turn into another dimension tonight. Everyone dey vibe, nobody wan leave. Pull up now before e close.",
-    "Omo, the energy for this place is something else entirely. 🔥 Wall to wall, vibes on levels — this is the one tonight.",
+    "Omo, the energy for this place is something else entirely. 🔥 Wall to wall, vibes on levels, this is the one tonight.",
   ],
   lit: [
-    "E dey build nicely. The dance floor don start to fill, DJ dey test the waters — give am 30 minutes and e go scatter.",
-    "Scene dey warm up proper. Good crowd, right energy — if you move now you'll catch the peak wave.",
+    "E dey build nicely. The dance floor don start to fill, DJ dey test the waters, give am 30 minutes and e go scatter.",
+    "Scene dey warm up proper. Good crowd, right energy, if you move now you'll catch the peak wave.",
     "Things are looking good here. Right people, right energy, right time. Slide through before e full up.",
   ],
   charged: [
-    "The electricity is real tonight. You can feel it — conversations loud, drinks flowing, the DJ just switched gear.",
+    "The electricity is real tonight. You can feel it, conversations loud, drinks flowing, the DJ just switched gear.",
     "Charged and ready to go off. Everyone's tuned in, waiting for the moment to drop. Could be the night's best.",
-    "Something's building here. The energy is at that sweet spot — not peak yet but you can feel the pressure rising.",
+    "Something's building here. The energy is at that sweet spot, not peak yet but you can feel the pressure rising.",
   ],
   warming: [
-    "Still finding its rhythm but the potential is there. Early crowd has good energy — give it time.",
+    "Still finding its rhythm but the potential is there. Early crowd has good energy, give it time.",
     "Lowkey vibes right now. Perfect if you want to ease in before the scene gets loud. Smart move.",
-    "Dey warm up. The right people dey trickle in. Check back in an hour — this could be the surprise of the night.",
+    "Dey warm up. The right people dey trickle in. Check back in an hour, this could be the surprise of the night.",
   ],
   chill: [
     "Calm vibes tonight. Good for conversation, not for turn-up. Know what you're going for before you pull up.",
-    "Low energy right now. The crowd is light but relaxed — ideal for a mellow night out, not a rave.",
+    "Low energy right now. The crowd is light but relaxed, ideal for a mellow night out, not a rave.",
     "The scene dey move slow tonight. If you're looking for something chill and laid back, this could work.",
   ],
   quiet: [
     "Not much happening here right now. Might pick up later but no guarantees tonight.",
-    "The place is quiet. Could be the calm before something or just a slow night — risky move.",
+    "The place is quiet. Could be the calm before something or just a slow night, risky move.",
     "Tonight isn't the night for this venue. Your energy is better used elsewhere.",
   ],
 };

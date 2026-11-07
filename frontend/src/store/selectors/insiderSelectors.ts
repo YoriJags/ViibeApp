@@ -38,7 +38,7 @@ function describeGate(level: Venue['gate_level']): string | null {
   switch (level) {
     case 'clear':   return null; // not worth mentioning
     case 'slow':    return '10–20 min gate delay';
-    case 'blocked': return 'heavy queue — 30+ min wait';
+    case 'blocked': return 'heavy queue, 30+ min wait';
     default:        return null;
   }
 }
@@ -77,7 +77,7 @@ export function getSceneIntelSentence(venue: Venue): string {
   }
 
   return parts.length > 0
-    ? `${venue.name} — ${parts.join('; ')}`
+    ? `${venue.name}, ${parts.join('; ')}`
     : venue.name;
 }
 
@@ -119,7 +119,7 @@ export function getCityEnergyIntel(pulse: CityEnergyData | null): string {
   };
   const trend = trendMap[pulse.trend] ?? '';
 
-  return `${cityName} is ${mood}${trend} — ${pulse.active_scouts} scouts, ${pulse.live_venues} live venues`;
+  return `${cityName} is ${mood}${trend}, ${pulse.active_scouts} scouts, ${pulse.live_venues} live venues`;
 }
 
 // ─── Mode-aware display helper ────────────────────────────────────────────────

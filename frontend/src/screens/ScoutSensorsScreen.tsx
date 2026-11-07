@@ -54,7 +54,7 @@ const SENSORS: SensorMeta[] = [
     key:         'ambientSound',
     label:       'Ambient Sound Level',
     icon:        'mic-outline',
-    what:        'Measures room noise level every 30 seconds. No audio is recorded or stored — only a number.',
+    what:        'Measures room noise level every 30 seconds. No audio is recorded or stored, only a number.',
     dataOutput:  'Room noise floor, peak energy bursts',
     batteryLine: '~0.5–1% per hour. Samples briefly every 30s, sleeps between samples.',
     permission:  'Microphone (required)',

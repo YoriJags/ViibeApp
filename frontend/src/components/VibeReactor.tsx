@@ -1044,7 +1044,7 @@ export default function VibeReactor({
             <Text style={styles.questLabel}>COLLECTIVE QUEST</Text>
             <Text style={styles.questSub}>
               {questState.quest_state === 'cooldown'
-                ? 'Quest complete — next in 30 min'
+                ? 'Quest complete, next in 30 min'
                 : `${questState.unique_scouts} scout${questState.unique_scouts !== 1 ? 's' : ''} · target ${questState.resonance_min}–${questState.resonance_max} BPM`
               }
             </Text>
@@ -1205,7 +1205,7 @@ export default function VibeReactor({
       {/* Stationary nudge */}
       {stationaryNudge && (
         <Text style={styles.stationaryNudge}>
-          Move your body 🕺 — Peak energy needs real motion
+          Move your body 🕺, Peak energy needs real motion
         </Text>
       )}
 

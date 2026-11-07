@@ -34,7 +34,7 @@ export function CityEnergyWidget({ data }: { data: CityEnergyData | null }) {
         style={{ fontSize: 10, color: '#A89B8C', letterSpacing: 0.3 }}
       />
       <TextWidget
-        text={score == null ? '—' : String(score)}
+        text={score == null ? '-' : String(score)}
         style={{ fontSize: 40, fontWeight: 'bold', color: heat, marginTop: 4 }}
       />
       <TextWidget

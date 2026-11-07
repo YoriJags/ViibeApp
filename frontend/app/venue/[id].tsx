@@ -63,6 +63,7 @@ import { useDwellTracker } from '../../src/hooks/useDwellTracker';
 import { useAudioSensor } from '../../src/hooks/useAudioSensor';
 import AmbientOptInModal from '../../src/components/AmbientOptInModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ENERGY_COLORS, ENERGY_LABELS, energyStateFor } from '../../src/theme/energy';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -648,13 +649,8 @@ export default function VenueDetailScreen() {
     });
   };
 
-  const getVibeState = (score: number, capacity: string): string => {
-    if (score >= 85) return 'PEAK';
-    if (score >= 65) return 'LIT';
-    if (score >= 45) return (capacity === 'full' || capacity === 'vibrant') ? 'CHARGED' : 'WARMING';
-    if (score >= 20) return 'CHILL';
-    return 'QUIET';
-  };
+  const getVibeState = (score: number, capacity: string): string =>
+    ENERGY_LABELS[energyStateFor(score, capacity)];
 
   const now = new Date();
   const isVibePlus = !!(
@@ -662,13 +658,8 @@ export default function VenueDetailScreen() {
     (!user?.vibe_plus_expires_at || new Date(user.vibe_plus_expires_at) > now)
   );
 
-const getVibeColor = (score: number, capacity = 'sparse') => {
-    if (score >= 85) return '#FF3366';
-    if (score >= 65) return '#FF9933';
-    if (score >= 45) return (capacity === 'full' || capacity === 'vibrant') ? '#9B59B6' : '#9933FF';
-    if (score >= 20) return '#3399FF';
-    return '#555E6E';
-  };
+const getVibeColor = (score: number, capacity = 'sparse') =>
+    ENERGY_COLORS[energyStateFor(score, capacity)];
 
   const getSnapshotTimeAgo = () => {
     if (!venue?.last_snapshot_time) return 'No recent snapshot';
@@ -741,7 +732,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={64} color="#FF5252" />
           <Text style={styles.errorText}>Venue not found</Text>
-          <TouchableOpacity style={styles.backButtonLarge} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backButtonLarge} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back">
             <Text style={styles.backButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
@@ -796,7 +787,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
 
           {/* Top row: back + snapshot pill + actions */}
           <View style={styles.heroTopRow}>
-            <TouchableOpacity style={styles.heroBackBtn} onPress={() => router.back()}>
+            <TouchableOpacity style={styles.heroBackBtn} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back">
               <Ionicons name="arrow-back" size={20} color="#FFF" />
             </TouchableOpacity>
 
@@ -808,11 +799,11 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
 
             {/* Right-side action buttons */}
             <View style={styles.heroActionsRow}>
-              <TouchableOpacity style={styles.heroActionBtn} onPress={handleShare}>
+              <TouchableOpacity style={styles.heroActionBtn} onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share venue">
                 <Ionicons name="share-social-outline" size={18} color="#FFF" />
               </TouchableOpacity>
               {isAuthenticated && (
-                <TouchableOpacity style={styles.heroActionBtn} onPress={handleToggleLobby}>
+                <TouchableOpacity style={styles.heroActionBtn} onPress={handleToggleLobby} accessibilityRole="button" accessibilityLabel={inLobby ? 'Remove from your lobby' : 'Save to your lobby'}>
                   <Ionicons
                     name={inLobby ? 'bookmark' : 'bookmark-outline'}
                     size={18}
@@ -821,7 +812,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
                 </TouchableOpacity>
               )}
               {isAuthenticated && (
-                <TouchableOpacity style={styles.heroActionBtn} onPress={() => setShowAlertModal(true)}>
+                <TouchableOpacity style={styles.heroActionBtn} onPress={() => setShowAlertModal(true)} accessibilityRole="button" accessibilityLabel="Venue alerts">
                   <Ionicons
                     name={venueAlerts.length > 0 ? 'notifications' : 'notifications-outline'}
                     size={18}
@@ -1118,7 +1109,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
                         </Text>
                         <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>
                           {venue.consensus_label === 'mixed'
-                            ? `${venue.consensus_count} scouts — mixed reads right now`
+                            ? `${venue.consensus_count} scouts, mixed reads right now`
                             : `${venue.consensus_count} scouts agree: ${venue.consensus_label}`
                           }
                         </Text>

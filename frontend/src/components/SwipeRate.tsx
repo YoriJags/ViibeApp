@@ -12,18 +12,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { ENERGY_COLORS, ENERGY_LABELS, ENERGY_ORDER } from '../theme/energy';
 
 const { width: W, height: H } = Dimensions.get('window');
 const SWIPE_THRESHOLD = W * 0.32;
 
-const ENERGY_CONFIG: Record<string, { label: string; color: string }> = {
-  peak:    { label: 'PEAK',    color: '#FF3366' },
-  lit:     { label: 'LIT',     color: '#FF8C00' },
-  charged: { label: 'CHARGED', color: '#9933FF' },
-  warming: { label: 'WARMING', color: '#6655FF' },
-  chill:   { label: 'CHILL',   color: '#3399FF' },
-  quiet:   { label: 'QUIET',   color: '#3A3A4E' },
-};
+const ENERGY_CONFIG: Record<string, { label: string; color: string }> = Object.fromEntries(
+  ENERGY_ORDER.map((k) => [k, { label: ENERGY_LABELS[k], color: ENERGY_COLORS[k] }]),
+);
 
 interface Venue {
   id: string;
@@ -195,7 +191,7 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
             <Text style={styles.headerTitle}>QUICK PICKS</Text>
             <Text style={styles.headerSub}>Swipe right to follow  ·  left to skip</Text>
           </View>
-          <TouchableOpacity style={styles.closeBtn} onPress={dismiss} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity style={styles.closeBtn} onPress={dismiss} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button" accessibilityLabel="Close">
             <Ionicons name="close" size={18} color="#555" />
           </TouchableOpacity>
         </View>
@@ -329,13 +325,13 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
         {/* Action buttons */}
         {!done && venue && (
           <View style={styles.actionRow}>
-            <TouchableOpacity style={[styles.actionBtn, styles.actionSkip]} onPress={swipeSkip} activeOpacity={0.8}>
+            <TouchableOpacity style={[styles.actionBtn, styles.actionSkip]} onPress={swipeSkip} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Skip this one">
               <Ionicons name="close" size={24} color="#444" />
             </TouchableOpacity>
             <View style={styles.countPill}>
               <Text style={styles.countText}>{currentIndex + 1} / {displayVenues.length}</Text>
             </View>
-            <TouchableOpacity style={[styles.actionBtn, styles.actionFire]} onPress={swipeFire} activeOpacity={0.8}>
+            <TouchableOpacity style={[styles.actionBtn, styles.actionFire]} onPress={swipeFire} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Interested, follow it">
               <Ionicons name="flame" size={26} color="#FF3366" />
             </TouchableOpacity>
           </View>
@@ -357,7 +353,7 @@ const styles = StyleSheet.create({
   handle:      { width: 40, height: 4, backgroundColor: '#1C1C2C', borderRadius: 2, alignSelf: 'center', marginTop: 10 },
   header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 6 },
   headerTitle: { fontSize: 11, fontWeight: '900', color: '#EEE', letterSpacing: 2 },
-  headerSub:   { fontSize: 11, color: '#3A3A4E', marginTop: 3 },
+  headerSub:   { fontSize: 11, color: '#A89B8C', marginTop: 3 },
   closeBtn:    { padding: 4 },
   progressRow: { flexDirection: 'row', gap: 6, paddingHorizontal: 20, marginBottom: 14 },
   progressDot: { flex: 1, height: 3, borderRadius: 2, backgroundColor: '#111120' },
@@ -388,7 +384,7 @@ const styles = StyleSheet.create({
   },
   energyPillText: { fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
   venueName:   { fontSize: 30, fontWeight: '900', color: '#FFF', letterSpacing: -0.5, lineHeight: 34, marginBottom: 6 },
-  venueArea:   { fontSize: 13, color: '#444', fontWeight: '500', marginBottom: 18 },
+  venueArea:   { fontSize: 13, color: '#A89B8C', fontWeight: '500', marginBottom: 18 },
   scoreRow:    { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
   scoreTrack:  { flex: 1, height: 3, backgroundColor: '#111120', borderRadius: 2 },
   scoreFill:   { height: 3, borderRadius: 2 },
@@ -399,8 +395,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#0E0E1C', borderRadius: 8,
     paddingHorizontal: 9, paddingVertical: 5,
   },
-  chipText:    { color: '#555', fontSize: 10, fontWeight: '600' },
-  swipeHint:   { textAlign: 'center', color: '#1C1C2C', fontSize: 10, fontWeight: '600', letterSpacing: 1, paddingBottom: 14 },
+  chipText:    { color: '#A89B8C', fontSize: 10, fontWeight: '600' },
+  swipeHint:   { textAlign: 'center', color: '#8E8EA8', fontSize: 10, fontWeight: '600', letterSpacing: 1, paddingBottom: 14 },
   swiperLabel: { position: 'absolute', zIndex: 20, top: 18, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 2, borderRadius: 10 },
   swiperFire:  { right: 18, borderColor: '#FF336666', backgroundColor: '#FF336612', transform: [{ rotate: '10deg' }] },
   swiperSkip:  { left: 18, borderColor: '#44444466', backgroundColor: '#11111222', transform: [{ rotate: '-10deg' }] },
@@ -415,18 +411,18 @@ const styles = StyleSheet.create({
   actionSkip:  { backgroundColor: '#0C0C18', borderColor: '#1A1A28' },
   actionFire:  { backgroundColor: '#FF336614', borderColor: '#FF336640' },
   countPill:   { backgroundColor: '#0D0D1A', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
-  countText:   { color: '#2A2A4A', fontSize: 11, fontWeight: '700' },
+  countText:   { color: '#8E8EA8', fontSize: 11, fontWeight: '700' },
 
   doneBlock:   { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 44, gap: 14 },
   doneEmoji:   { fontSize: 56 },
   doneTitle:   { fontSize: 24, fontWeight: '900', color: '#EEE', textAlign: 'center' },
-  doneSub:     { fontSize: 14, color: '#444', textAlign: 'center', lineHeight: 22 },
+  doneSub:     { fontSize: 14, color: '#A89B8C', textAlign: 'center', lineHeight: 22 },
   doneBtn: {
     marginTop: 10, backgroundColor: '#FF336614', borderWidth: 1,
     borderColor: '#FF336640', borderRadius: 14,
     paddingHorizontal: 36, paddingVertical: 14,
   },
   doneBtnText: { color: '#FF3366', fontSize: 14, fontWeight: '800' },
-  behindName:  { color: '#2A2A3E', fontSize: 18, fontWeight: '800', paddingHorizontal: 22, paddingTop: 22 },
-  behindArea:  { color: '#1C1C2C', fontSize: 12, fontWeight: '600', paddingHorizontal: 22, marginTop: 4 },
+  behindName:  { color: '#8E8EA8', fontSize: 18, fontWeight: '800', paddingHorizontal: 22, paddingTop: 22 },
+  behindArea:  { color: '#8E8EA8', fontSize: 12, fontWeight: '600', paddingHorizontal: 22, marginTop: 4 },
 });

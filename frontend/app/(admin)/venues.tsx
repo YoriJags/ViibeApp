@@ -210,10 +210,10 @@ export default function AdminVenues() {
       if (res.ok) {
         Alert.alert('Saved', 'Platform config updated.');
       } else {
-        Alert.alert('Note', 'Config saved locally — connect DB to persist.');
+        Alert.alert('Note', 'Config saved locally, connect DB to persist.');
       }
     } catch {
-      Alert.alert('Note', 'Config saved locally — connect DB to persist.');
+      Alert.alert('Note', 'Config saved locally, connect DB to persist.');
     } finally {
       setSavingConfig(false);
     }

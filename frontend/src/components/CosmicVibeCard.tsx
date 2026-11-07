@@ -30,7 +30,7 @@ interface CosmicVibeCardProps {
 }
 
 const DEMO_READING: CosmicReading = {
-  reading: "Lagos is charging up and the frequency tonight is in your favour. Trust the pull — the city has something lined up for scouts who move with purpose.",
+  reading: "Lagos is charging up and the frequency tonight is in your favour. Trust the pull, the city has something lined up for scouts who move with purpose.",
   zodiac_sign: null,
   city: 'lagos',
   hot_venue: 'Quilox',

@@ -35,7 +35,7 @@ const steps: Step[] = [
     icon: 'flash',
     iconColor: '#FFD700',
     title: 'Pulse Drops',
-    description: "Amplify your signal to the whole city. Drop a Pulse and scouts earn 2x Clout at your venue — bringing more traffic through your door.",
+    description: "Amplify your signal to the whole city. Drop a Pulse and scouts earn 2x Clout at your venue, bringing more traffic through your door.",
     position: 'middle',
   },
   {

@@ -26,7 +26,7 @@ interface Props {
 
 const DEMO_BRIEF: VibeBrief = {
   headline: 'Tonight in Lagos: DNA Nightclub is taking no prisoners',
-  briefing: "VI is on fire from 11pm — get there early or join the queue with everyone else. Quilox is the backup if DNA fills up.",
+  briefing: "VI is on fire from 11pm, get there early or join the queue with everyone else. Quilox is the backup if DNA fills up.",
   top_pick: 'DNA Nightclub',
   hot_area: 'Victoria Island',
   powered_by: 'claude',

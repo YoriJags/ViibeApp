@@ -45,7 +45,7 @@ const STEPS: TutorialStep[] = [
     id: 'tonight-hero',
     title: 'Where Lagos is alive',
     description:
-      "The map opens on the live energy of the city — pulse score, the venue leading tonight, and how fast the room is heating up.",
+      "The map opens on the live energy of the city, pulse score, the venue leading tonight, and how fast the room is heating up.",
     icon: 'flame',
     targetRoute: '/(public)',
     position: 'center',
@@ -55,7 +55,7 @@ const STEPS: TutorialStep[] = [
     id: 'venue-detail',
     title: 'Read the room',
     description:
-      "Open any venue for its live energy — scout consensus, capacity, the door, and a short forecast of where it's headed.",
+      "Open any venue for its live energy, scout consensus, capacity, the door, and a short forecast of where it's headed.",
     icon: 'pulse',
     targetRoute: '/venue/demo_venue_quilox',
     position: 'center',
@@ -75,7 +75,7 @@ const STEPS: TutorialStep[] = [
     id: 'rate',
     title: 'Call the vibe',
     description:
-      "Three quick questions — energy, crowd, door wait. Your rating updates every scout in the city the moment you submit.",
+      "Three quick questions, energy, crowd, door wait. Your rating updates every scout in the city the moment you submit.",
     icon: 'star',
     targetRoute: '/venue/demo_venue_quilox',
     position: 'center',
@@ -95,7 +95,7 @@ const STEPS: TutorialStep[] = [
     id: 'complete',
     title: "You're all set",
     description:
-      "Explore freely in Demo Mode — all data is simulated. Toggle demo off from the Profile screen when you're ready for the live city.",
+      "Explore freely in Demo Mode, all data is simulated. Toggle demo off from the Profile screen when you're ready for the live city.",
     icon: 'checkmark-circle',
     targetRoute: '/(public)',
     position: 'center',

@@ -375,7 +375,7 @@ export default function IntelScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={s.plannerTitle}>Plan My Scene</Text>
                   <Text style={s.plannerDesc}>
-                    Tell Claude what you're feeling — it picks your venues, timing and route.
+                    Tell Claude what you're feeling, it picks your venues, timing and route.
                   </Text>
                 </View>
               </View>

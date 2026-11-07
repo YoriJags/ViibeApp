@@ -479,7 +479,7 @@ export default function MerchantDashboard() {
             <View style={{ flex: 1 }}>
               <Text style={{ color: '#F4EFE6', fontSize: 16, fontWeight: '700' }}>Project your Big Screen</Text>
               <Text style={{ color: '#A89B8C', fontSize: 12, marginTop: 3 }}>
-                Put your live reactor on the wall — the crowd rallies it toward ELECTRIC.
+                Put your live reactor on the wall, the crowd rallies it toward ELECTRIC.
               </Text>
             </View>
             <Ionicons name="open-outline" size={20} color="#A89B8C" />

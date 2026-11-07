@@ -40,19 +40,19 @@ const ENERGY_COLORS: Record<string, string> = {
 };
 
 const DEMO_INTEL: IntelResult = {
-  crew_read: "Your crew is split — 2 turn-up heads and 1 chill set. You need a venue that runs both vibes.",
+  crew_read: "Your crew is split, 2 turn-up heads and 1 chill set. You need a venue that runs both vibes.",
   ai_powered: true,
   picks: [
     {
       venue_id: '1', venue_name: 'DNA Nightclub', area: 'Victoria Island',
       energy_level: 'peak', vibe_score: 94, match_score: 92,
-      reason: "High energy, good mix of music — the turn-up heads go first, the chill set joins when it's right. Everyone wins.",
+      reason: "High energy, good mix of music, the turn-up heads go first, the chill set joins when it's right. Everyone wins.",
       best_for: 'Full crew',
     },
     {
       venue_id: '2', venue_name: 'Club Quilox', area: 'Lekki Phase 1',
       energy_level: 'lit', vibe_score: 81, match_score: 78,
-      reason: "Buzzing but not overwhelming. Entry is clear, crowd is vibrant — solid for a crew that doesn't want to queue.",
+      reason: "Buzzing but not overwhelming. Entry is clear, crowd is vibrant, solid for a crew that doesn't want to queue.",
       best_for: 'Turn-up heads',
     },
     {

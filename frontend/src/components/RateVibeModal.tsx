@@ -498,7 +498,7 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
       </View>
       <Text style={styles.cooldownTitle}>Cooldown Active</Text>
       <Text style={styles.cooldownSubtitle}>
-        The vibe is fresh — come back soon or skip the wait.
+        The vibe is fresh, come back soon or skip the wait.
       </Text>
       {skipError && (
         <View style={styles.skipErrorPill}>
