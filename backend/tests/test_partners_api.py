@@ -52,10 +52,12 @@ def event_body(start_in=timedelta(minutes=-30), **extra):
 
 
 def approve(client, headers, external_id):
-    eid = next(e["id"] for e in client.get("/api/partner/events", headers=headers).json()
-               if e["external_id"] == external_id)
-    assert client.post(f"/api/admin/partner-events/{eid}/approve").status_code == 200
-    return eid
+    ev = next(e for e in client.get("/api/partner/events", headers=headers).json()
+              if e["external_id"] == external_id)
+    r = client.post(f"/api/admin/partner-events/{ev['id']}/approve",
+                    json={"review_version": ev["review_version"]})
+    assert r.status_code == 200, r.text
+    return ev["id"]
 
 
 def on_map(client):
@@ -211,7 +213,22 @@ def test_revoking_a_partner_unlists_its_events_and_kills_organiser_links(env):
     client.delete(f"/api/admin/partners/{pid}")
     assert on_map(client) == []
     assert asyncio.run(db.event_keys.count_documents({"event_id": eid})) == 0
-    assert client.post(f"/api/admin/partner-events/{eid}/approve").status_code == 409
+    assert client.post(f"/api/admin/partner-events/{eid}/approve",
+                       json={"review_version": 1}).status_code == 409
+
+
+def test_an_approval_only_covers_the_version_the_admin_checked(env):
+    client, _ = env
+    headers, _ = new_partner(client)
+    client.put("/api/partner/events/hf-1", json=event_body(), headers=headers)
+    checked = client.get("/api/admin/partner-events").json()[0]
+    # The partner moves the event while the admin is looking at the old place.
+    client.put("/api/partner/events/hf-1", json={"coordinates": {"lat": 6.5, "lng": 3.3}}, headers=headers)
+    r = client.post(f"/api/admin/partner-events/{checked['id']}/approve",
+                    json={"review_version": checked["review_version"]})
+    assert r.status_code == 409
+    assert on_map(client) == []
+    assert client.post(f"/api/admin/partner-events/{checked['id']}/approve", json={}).status_code == 422
 
 
 def test_markup_in_event_text_is_refused(env):

@@ -91,6 +91,9 @@ def _partner_view(event: dict) -> dict:
     out = public_event(event)
     out["event"] = event_summary(event)
     out["approved"] = bool(event.get("approved"))
+    # Bumped whenever the place or times change. An approval names the version
+    # the admin looked at, so a change made mid-review cannot ride through.
+    out["review_version"] = event.get("review_version", 1)
     return out
 
 
@@ -143,16 +146,27 @@ async def pending_partner_events(user: dict = Depends(require_admin)):
 
 
 @router.post("/admin/partner-events/{event_id}/approve")
-async def approve_partner_event(event_id: str, user: dict = Depends(require_admin)):
+async def approve_partner_event(event_id: str, payload: dict, user: dict = Depends(require_admin)):
+    """
+    Approve the version the admin reviewed: {"review_version": n} from the
+    pending list. If the partner has moved the event since, nothing is approved.
+    """
+    try:
+        version = int(payload.get("review_version"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Send the review_version you checked")
     event = await db.venues.find_one({"id": event_id, "kind": KIND_EVENT, "partner_id": {"$exists": True}})
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     partner = await db.partners.find_one({"id": event["partner_id"], "active": True})
     if not partner:
         raise HTTPException(status_code=409, detail="That partner's key is revoked")
-    await db.venues.update_one({"id": event_id}, {"$set": {
-        "approved": True, "approved_by": user.get("id"), "approved_at": datetime.now(timezone.utc)}})
-    return {"approved": event_id}
+    result = await db.venues.update_one({"id": event_id, "review_version": version}, {"$set": {
+        "approved": True, "approved_by": user.get("id"), "approved_at": datetime.now(timezone.utc),
+        "approved_version": version}})
+    if not result.matched_count:
+        raise HTTPException(status_code=409, detail="The event changed since you checked it. Review it again.")
+    return {"approved": event_id, "review_version": version}
 
 
 # ── Partner ───────────────────────────────────────────────────────────────────
@@ -178,16 +192,19 @@ async def upsert_event(external_id: str, payload: dict, partner: dict = Depends(
             "starts_at", "ends_at", "address", "area", "city", "organiser_name")}
         update["ticket_url"] = fields.get("ticket_url", existing.get("ticket_url"))
         update["updated_at"] = datetime.now(timezone.utc)
-        if any(update[k] != new_event_document(existing)[k] for k in WHERE_AND_WHEN):
+        moved = any(update[k] != new_event_document(existing)[k] for k in WHERE_AND_WHEN)
+        change = {"$set": update}
+        if moved:
             update["approved"] = False
-        await db.venues.update_one({"id": existing["id"]}, {"$set": update})
+            change["$inc"] = {"review_version": 1}
+        await db.venues.update_one({"id": existing["id"]}, change)
         event = await db.venues.find_one({"id": existing["id"]}, {"_id": 0})
         return {"created": False, "event": _partner_view(event)}
 
     doc = new_event_document(fields, created_by=f"partner:{partner['id']}")
     doc.update({"partner_id": partner["id"], "partner_name": partner["name"],
                 "external_id": external_id, "ticket_url": fields.get("ticket_url"),
-                "approved": False})
+                "approved": False, "review_version": 1})
     key = new_organiser_key()
     await db.venues.insert_one(dict(doc))
     await db.event_keys.insert_one({"event_id": doc["id"], "key": key,
