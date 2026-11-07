@@ -1,0 +1,7 @@
+# Test-only dependencies. Production installs requirements.txt alone.
+# mongomock-motor runs the route tests (tests/test_events_api.py) against an
+# in-memory MongoDB, so they need no network and no live database. Without it
+# those tests skip rather than fail.
+-r requirements.txt
+pytest
+mongomock-motor

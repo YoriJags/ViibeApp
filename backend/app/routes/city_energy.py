@@ -164,6 +164,12 @@ async def compute_city_energy(city: str) -> dict:
 
     label = _energy_label(energy_score)
 
+    # Crowd flow across the whole city, from auto check-in: are people heading
+    # out or heading home? Evidence of movement only; it never moves the score.
+    from app.services.crowd_flow import flow_for
+    city_venue_ids = [v["id"] for v in await db.venues.find({"city": city}, {"id": 1, "_id": 0}).to_list(500)]
+    flow = await flow_for(city_venue_ids, 30)
+
     return {
         "city":                city,
         "energy_score":        energy_score,
@@ -172,6 +178,8 @@ async def compute_city_energy(city: str) -> dict:
         # demo engine is running, "none" when nothing is. The app labels demo.
         "energy_source":       city_source,
         "demo_venues":         len(demo_venues),
+        # Arrivals and departures in the last 30 minutes, from auto check-in.
+        "flow":                flow,
         "trend":               trend,
         "active_scouts":       active_scouts,
         "live_venues":         len(active_venues),

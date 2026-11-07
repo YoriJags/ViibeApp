@@ -22,6 +22,8 @@ import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVibeStore } from '../../src/store/vibeStore';
+import WhenToLeaveCard from '../../src/components/WhenToLeaveCard';
+import { sampleArrivalSound } from '../../src/services/arrivalSample';
 import { calculateDistance } from '../../src/utils/geo';
 import RateVibeModal from '../../src/components/RateVibeModal';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
@@ -73,8 +75,18 @@ const CLUB_PLACEHOLDERS = [
 ];
 
 export default function VenueDetailScreen() {
-  const { id, openRateModal } = useLocalSearchParams<{ id: string; openRateModal?: string }>();
+  const { id, openRateModal, arrival } = useLocalSearchParams<{ id: string; openRateModal?: string; arrival?: string }>();
   const router = useRouter();
+
+  // Opened from the arrival prompt: take its one ten-second sound sample.
+  // Only if the scout opted into ambient sound, and only once per opening.
+  const sampledArrival = useRef(false);
+  useEffect(() => {
+    if (arrival !== '1' || !id || sampledArrival.current) return;
+    sampledArrival.current = true;
+    const state = useVibeStore.getState() as any;
+    sampleArrivalSound(String(id), state.sessionToken ?? null, !!state.sensorPrefs?.ambientSound);
+  }, [arrival, id]);
   const vibePersona = useVibeStore(s => s.vibePersona);
 
   const {
@@ -829,6 +841,15 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
             )}
           </View>
         </View>
+
+        {/* ====== WHEN TO LEAVE (ticketed events) ======
+            The ticket holder has already decided to go, so the first thing they
+            need is timing. Door-entry events skip this and show the reading. */}
+        {(venue as any)?.event?.promise === 'timing' && (
+          <ErrorBoundary label="When to leave">
+            <WhenToLeaveCard venueId={venue.id} />
+          </ErrorBoundary>
+        )}
 
         {/* ====== LIVE CHECKIN BANNER ====== */}
         {isWithinGeofence && (

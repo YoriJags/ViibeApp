@@ -229,6 +229,8 @@ export interface CityEnergyData {
   // 'scouts' when built from real readings, 'demo' from the ambient demo engine.
   energy_source?: 'scouts' | 'demo' | 'none';
   demo_venues?: number;
+  // Arrivals and departures in the last 30 minutes, from auto check-in.
+  flow?: { arrivals: number; departures: number; direction: 'filling' | 'emptying' | 'steady' | 'quiet'; window_minutes: number };
   trend: 'heating_up' | 'cooling_down' | 'stable';
   active_scouts: number;
   live_venues: number;

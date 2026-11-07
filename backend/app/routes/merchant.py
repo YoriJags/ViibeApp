@@ -1015,10 +1015,26 @@ def _parse_ts(ts) -> datetime:
     return ts
 
 
+
+async def _require_venue_owner(request: Request, venue_id: str) -> dict:
+    """
+    The same ownership rule every other merchant route uses. The three
+    venue_events routes below were missing it: a signed-out request crashed
+    with a 500 on user["id"], and any signed-in user could create or delete
+    events against any venue.
+    """
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if user.get("merchant_venue_id") != venue_id and not user.get("is_super_admin"):
+        raise HTTPException(status_code=403, detail="You can only manage events for your own venue")
+    return user
+
+
 @router.post("/merchant/venues/{venue_id}/events")
 async def create_event(venue_id: str, body: EventCreate, request: Request):
     """Create a new merchant event and pre-compute the baseline vibe prediction."""
-    user = await get_current_user(request)
+    user = await _require_venue_owner(request, venue_id)
 
     venue = await db.venues.find_one({"id": venue_id}, {"_id": 0, "name": 1})
     if not venue:
@@ -1061,7 +1077,7 @@ async def get_events(venue_id: str, request: Request):
     List recent events for a venue. Computes actual_score for completed events
     by aggregating ratings within the event time window.
     """
-    await get_current_user(request)
+    await _require_venue_owner(request, venue_id)
 
     venue = await db.venues.find_one({"id": venue_id}, {"_id": 0, "name": 1})
     if not venue:
@@ -1111,7 +1127,7 @@ async def get_events(venue_id: str, request: Request):
 @router.delete("/merchant/venues/{venue_id}/events/{event_id}")
 async def delete_event(venue_id: str, event_id: str, request: Request):
     """Cancel / delete a scheduled event."""
-    await get_current_user(request)
+    await _require_venue_owner(request, venue_id)
     result = await db.venue_events.delete_one({"id": event_id, "venue_id": venue_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Event not found")

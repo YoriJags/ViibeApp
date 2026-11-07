@@ -41,6 +41,18 @@ What a reading can back today: energy, how full it is, and how the door is
 moving. It does not know set times or whether a headliner has started, so no
 page or deck should promise that until it does.
 
+**Where this lives in the product.** An event is a venue record with dates
+(`kind: "event"`, a time window, a temporary geofence over the grounds, and
+`entry: ticketed | door`), so readings, auto check-in, the score and the Big
+Screen all work for it unchanged. Ticketed events show **When to leave**
+(`services/leave_timing.py`); door events show the normal reading. Organisers
+get a live gate and crowd screen at `/organiser/{event_id}` through a private
+link.
+
+Not to be confused with **venue events** (`venue_events`): a venue owner
+tagging a night at their own venue, such as a Friday DJ set, to compare it
+against their usual baseline. That is lift measurement, not a public event.
+
 ---
 
 ## The 30 second version

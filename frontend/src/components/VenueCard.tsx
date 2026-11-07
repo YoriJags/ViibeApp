@@ -16,6 +16,8 @@ interface Venue {
   current_vibe_score: number;
   // 'demo' when the score comes only from the ambient demo engine.
   energy_source?: 'scouts' | 'demo' | 'none';
+  // Present on concerts, festivals and raves: a dated event, not a venue.
+  event?: { phase: 'upcoming' | 'doors' | 'live' | 'ended'; entry: 'ticketed' | 'door'; event_type?: string; starts_at?: string | null };
   energy_level: 'quiet' | 'chill' | 'warming' | 'charged' | 'lit' | 'peak';
   capacity_level: 'sparse' | 'vibrant' | 'full';
   gate_level: 'clear' | 'slow' | 'blocked';
@@ -326,6 +328,20 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
             )}
           </ScrollView>
 
+          {/* Event: what it is and when, before anything else */}
+          {venue.event && (
+            <View style={styles.eventRow}>
+              <View style={[styles.eventPill, venue.event.phase === 'live' && styles.eventPillLive]}>
+                <Text style={[styles.eventPillText, venue.event.phase === 'live' && styles.eventPillTextLive]}>
+                  {eventWhen(venue.event)}
+                </Text>
+              </View>
+              <Text style={styles.eventMeta} numberOfLines={1}>
+                {[titleCase(venue.event.event_type), venue.event.entry === 'ticketed' ? 'Ticketed' : 'Door entry'].filter(Boolean).join(', ')}
+              </Text>
+            </View>
+          )}
+
           {/* Sports-broadcast narrative */}
           {venue.venue_narrative && (
             <View style={styles.narrativeRow}>
@@ -404,7 +420,35 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
   );
 };
 
+
+const titleCase = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
+
+/** "Live now", "Doors opening", "Finished", or the start time in Lagos. */
+function eventWhen(e: { phase: string; starts_at?: string | null }): string {
+  if (e.phase === 'live') return 'Live now';
+  if (e.phase === 'doors') return 'Doors opening';
+  if (e.phase === 'ended') return 'Finished';
+  if (!e.starts_at) return 'Coming up';
+  try {
+    return new Intl.DateTimeFormat('en-NG', {
+      weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
+      timeZone: 'Africa/Lagos',
+    }).format(new Date(e.starts_at));
+  } catch {
+    return 'Coming up';
+  }
+}
+
 const styles = StyleSheet.create({
+  eventRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  eventPill: {
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  eventPillLive: { backgroundColor: '#FF5A1F' },
+  eventPillText: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.8)' },
+  eventPillTextLive: { color: '#130A2B' },
+  eventMeta: { fontSize: 12, color: 'rgba(255,255,255,0.55)', flexShrink: 1 },
   cardOuter: {
     marginBottom: 10,
     borderRadius: 20,

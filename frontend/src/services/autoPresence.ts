@@ -44,11 +44,77 @@ const RESYNC_AFTER_MS = 30 * 60 * 1000;
 
 type Venue = {
   id: string;
+  name?: string;
   coordinates?: { lat: number; lng: number } | null;
   geofence_radius_m?: number | null;
+  // Present on events: concerts, festivals and raves with a date.
+  event?: { phase?: string; entry?: string } | null;
 };
 
 let lastSync: { lat: number; lng: number; at: number } | null = null;
+
+// ─── The arrival prompt ──────────────────────────────────────────────────────
+// When the phone notices someone walk into a venue or event, it asks them once
+// how it feels. That is what turns attendees into readings without anyone
+// having to remember to open the app.
+//
+// Guards, all of them about not becoming a nuisance:
+//   - Scheduled ARRIVAL_DELAY_S after the enter, and cancelled if they leave
+//     first, so a walk-past or drive-past never gets asked anything.
+//   - Once per venue per night.
+//   - Never when the scout has set prompts to "off" in their profile.
+
+export const CADENCE_CACHE_KEY = 'viibe_prompt_cadence';
+const NAMES_KEY = 'viibe_watched_names';
+const PROMPTED_PREFIX = 'viibe_arrival_prompted_';
+const ARRIVAL_DELAY_S = 180; // matches the server's walk-past window
+const ONCE_PER_MS = 8 * 60 * 60 * 1000;
+
+const arrivalId = (venueId: string) => `arrival-${venueId}`;
+
+async function scheduleArrivalPrompt(venueId: string): Promise<void> {
+  try {
+    if ((await AsyncStorage.getItem(CADENCE_CACHE_KEY)) === 'off') return;
+
+    const last = Number(await AsyncStorage.getItem(PROMPTED_PREFIX + venueId)) || 0;
+    if (Date.now() - last < ONCE_PER_MS) return;
+
+    const names = JSON.parse((await AsyncStorage.getItem(NAMES_KEY)) || '{}');
+    const info = names[venueId] || {};
+    const ticketed = info.entry === 'ticketed';
+
+    const Notifications = await import('expo-notifications');
+    await Notifications.scheduleNotificationAsync({
+      identifier: arrivalId(venueId),
+      content: {
+        title: info.name || "You're in",
+        // A ticket holder's reading answers the timing question for everyone
+        // still on the way, so that's what we ask them about.
+        body: ticketed
+          ? "You're in. How's the gate and the crowd? One tap tells everyone still on the way."
+          : "You're here. How does it feel? One tap.",
+        data: { type: 'arrival_prompt', venue_id: venueId },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: ARRIVAL_DELAY_S,
+        repeats: false,
+      },
+    });
+    await AsyncStorage.setItem(PROMPTED_PREFIX + venueId, String(Date.now()));
+  } catch {
+    // No notification permission, or scheduling failed. Never block presence on it.
+  }
+}
+
+async function cancelArrivalPrompt(venueId: string): Promise<void> {
+  try {
+    const Notifications = await import('expo-notifications');
+    await Notifications.cancelScheduledNotificationAsync(arrivalId(venueId));
+  } catch {
+    // Nothing scheduled.
+  }
+}
 
 // ─── The task ────────────────────────────────────────────────────────────────
 
@@ -63,8 +129,11 @@ TaskManager.defineTask(AUTO_PRESENCE_TASK, async ({ data, error }) => {
 
   if (eventType === Location.GeofencingEventType.Enter) {
     await report('enter', venueId);
+    await scheduleArrivalPrompt(venueId);
   } else if (eventType === Location.GeofencingEventType.Exit) {
     await report('exit', venueId);
+    // Left before the prompt fired: they were passing, so don't ask.
+    await cancelArrivalPrompt(venueId);
   }
 });
 
@@ -133,6 +202,10 @@ export function nearestRegions(
 ): Location.LocationRegion[] {
   return venues
     .filter((v) => v.id && v.coordinates && Number.isFinite(v.coordinates.lat))
+    // An event's ground is only watched from doors to end. A temporary
+    // geofence must not fire on an empty field the week before, or count the
+    // people who happen to live beside it.
+    .filter((v) => !v.event || v.event.phase === 'doors' || v.event.phase === 'live')
     .map((v) => ({
       v,
       d: metresBetween(lat, lng, v.coordinates!.lat, v.coordinates!.lng),
@@ -224,6 +297,15 @@ export async function syncWatchedVenues(venues: Venue[]): Promise<number> {
 
     const regions = nearestRegions(venues, lat, lng);
     if (!regions.length) return 0;
+
+    // The background task only gets an id when a geofence fires, so keep the
+    // names (and entry type, for events) it needs to word the arrival prompt.
+    const watched = new Set(regions.map((r) => r.identifier));
+    const names: Record<string, { name?: string; entry?: string }> = {};
+    for (const v of venues) {
+      if (watched.has(v.id)) names[v.id] = { name: v.name, entry: v.event?.entry };
+    }
+    try { await AsyncStorage.setItem(NAMES_KEY, JSON.stringify(names)); } catch { /* optional */ }
 
     await Location.startGeofencingAsync(AUTO_PRESENCE_TASK, regions);
     lastSync = { lat, lng, at: now };

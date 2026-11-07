@@ -136,6 +136,10 @@ async def ensure_indexes():
     # check-in documents the TTL index deletes.
     await db.presence_events.create_index([("venue_id", 1), ("at", -1)])
     await db.presence_events.create_index([("user_id", 1), ("at", -1)])
+    # Events: venue documents with kind="event". Organiser keys live apart from
+    # them on purpose, so no endpoint that returns venues can ever leak one.
+    await db.venues.create_index([("kind", 1), ("city", 1), ("starts_at", 1)])
+    await db.event_keys.create_index("event_id", unique=True)
 
     # vibe streaks: per-user unique + leaderboard
     await db.streaks.create_index("user_id", unique=True)

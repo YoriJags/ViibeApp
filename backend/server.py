@@ -52,6 +52,7 @@ from app.routes.waitlist import router as waitlist_router
 from app.routes.reactions import router as reactions_router
 from app.routes.city_energy import router as city_energy_router
 from app.routes.presence import router as presence_router
+from app.routes.events import router as events_router
 from app.routes.venue_live import router as venue_live_router
 from app.routes.coins import router as coins_router
 from app.routes.reward_pools import router as reward_pools_router
@@ -131,6 +132,7 @@ api_router.include_router(subscriptions_router)
 api_router.include_router(reactions_router)
 api_router.include_router(city_energy_router)
 api_router.include_router(presence_router)
+api_router.include_router(events_router)
 api_router.include_router(venue_live_router)
 api_router.include_router(coins_router)
 api_router.include_router(reward_pools_router)
@@ -197,6 +199,24 @@ async def venue_big_screen(venue_id: str):
     if screen_path.exists():
         return _HTMLResponse(content=screen_path.read_text(encoding="utf-8"), status_code=200)
     return _HTMLResponse(content="<h1>Big Screen not found</h1>", status_code=404)
+
+
+# ── Organiser screen: a promoter's live gate and crowd view for their event ──
+# The page itself is public; its data is behind the private key in the link,
+# checked by /api/organiser/events/{id}. See app/routes/events.py.
+@app.get("/organiser/{event_id}", tags=["screen"])
+async def organiser_screen(event_id: str):
+    from pathlib import Path as _Path
+    from fastapi.responses import HTMLResponse as _HTMLResponse
+    page = _Path(__file__).parent / "static" / "organiser.html"
+    if page.exists():
+        return _HTMLResponse(
+            content=page.read_text(encoding="utf-8"),
+            status_code=200,
+            # The private key is in the URL; never send it on as a referrer.
+            headers={"Referrer-Policy": "no-referrer", "X-Robots-Tag": "noindex, nofollow"},
+        )
+    return _HTMLResponse(content="<h1>Organiser screen not found</h1>", status_code=404)
 
 # ===== Middleware =====
 app.add_middleware(RateLimitMiddleware)

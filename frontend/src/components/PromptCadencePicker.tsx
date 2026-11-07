@@ -19,6 +19,16 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CADENCE_CACHE_KEY } from '../services/autoPresence';
+
+// The arrival prompt is scheduled by a background task that cannot wait on the
+// network, so it reads this local copy of the cadence. Kept in step on load
+// and on every successful save, so "off" really does stop the arrival prompt.
+const cacheCadence = (c: string | null) => {
+  if (!c) return;
+  AsyncStorage.setItem(CADENCE_CACHE_KEY, c).catch(() => {});
+};
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -50,6 +60,7 @@ export default function PromptCadencePicker({ getAuthHeaders, accent = '#22d3ee'
         if (cancelled) return;
         setOptions(d.options ?? []);
         setCadence(d.cadence ?? null);
+        cacheCadence(d.cadence ?? null);
       } catch {
         if (!cancelled) setFailed(true);
       }
@@ -70,6 +81,7 @@ export default function PromptCadencePicker({ getAuthHeaders, accent = '#22d3ee'
         body: JSON.stringify({ cadence: key }),
       });
       if (!r.ok) throw new Error('save failed');
+      cacheCadence(key);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
       setCadence(previous);   // never pretend a setting saved when it did not

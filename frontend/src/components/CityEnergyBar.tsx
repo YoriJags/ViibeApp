@@ -83,6 +83,14 @@ export default function CityEnergyBar({ pulse, onPress }: CityEnergyBarProps) {
   const color = LABEL_COLORS[pulse.energy_label] ?? LABEL_COLORS.CHILL;
   // Demo energy is labelled wherever it shows. See backend services/synthetic.py.
   const isDemo = pulse.energy_source === 'demo';
+  const flow = (pulse as any).flow as
+    | { arrivals: number; departures: number; direction: string; window_minutes: number }
+    | undefined;
+  const flowLine = !flow ? null
+    : flow.direction === 'filling' ? `Filling up: ${flow.arrivals} arrived in ${flow.window_minutes} min`
+    : flow.direction === 'emptying' ? `Emptying out: ${flow.departures} left in ${flow.window_minutes} min`
+    : flow.direction === 'steady' ? `Steady: ${flow.arrivals} in, ${flow.departures} out`
+    : null;
   const trendColor = TREND_COLOR[pulse.trend] ?? '#9933FF';
 
   useEffect(() => {
@@ -161,6 +169,9 @@ export default function CityEnergyBar({ pulse, onPress }: CityEnergyBarProps) {
               </Animated.Text>
               <Text style={styles.sub}>{' venues lit'}</Text>
             </View>
+            {/* Crowd flow from auto check-in: heading out or heading home.
+                Shown only when there is enough movement to say which. */}
+            {!!flowLine && <Text style={styles.sub}>{flowLine}</Text>}
           </View>
 
           {/* Right: sparkline + expand hint */}

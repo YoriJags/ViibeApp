@@ -77,16 +77,52 @@ export async function registerForPushNotifications(sessionToken: string): Promis
  * When a user taps an ELECTRIC notification, they're routed to the venue.
  * Returns a cleanup function — call it on unmount.
  */
-export function attachNotificationTapHandler(): () => void {
-  const sub = Notifications.addNotificationResponseReceivedListener(response => {
-    const data = response.notification.request.content.data as Record<string, string> | undefined;
-    if (!data?.venue_id) return;
+// Every push type that should open a venue when tapped. 'electric_alert' is
+// the pre-rename name of 'max_alert', kept for notifications already sent.
+// 'energy_transition' (a room going lit, or cooling off) and 'score_alert'
+// were missing, so tapping them did nothing.
+const VENUE_TYPES = [
+  'max_alert', 'electric_alert', 'energy_transition', 'score_alert',
+  'moment_locked', 'lobby_hot', 'vibe_spike', 'campaign_active', 'crew_checkin',
+];
 
-    // All venue-linked notification types route to the venue screen
-    const venueTypes = ['electric_alert', 'moment_locked', 'lobby_hot', 'vibe_spike'];
-    if (venueTypes.includes(data.type)) {
-      router.push(`/venue/${data.venue_id}`);
-    }
-  });
+let lastHandledId: string | null = null;
+
+function handleResponse(response: Notifications.NotificationResponse): void {
+  // A tap can arrive twice: once through the listener and again through the
+  // cold-start check below. Route it only once.
+  const requestId = response.notification.request.identifier;
+  if (requestId && requestId === lastHandledId) return;
+  lastHandledId = requestId;
+
+  const data = response.notification.request.content.data as Record<string, string> | undefined;
+  if (!data?.venue_id) return;
+
+  // The arrival prompt: open the reading straight away, and let the venue
+  // screen take its one ten-second sound sample (see arrivalSample.ts).
+  if (data.type === 'arrival_prompt') {
+    router.push({
+      pathname: '/venue/[id]',
+      params: { id: data.venue_id, openRateModal: 'true', arrival: '1' },
+    } as any);
+    return;
+  }
+
+  if (VENUE_TYPES.includes(data.type)) {
+    router.push(`/venue/${data.venue_id}`);
+  }
+}
+
+export function attachNotificationTapHandler(): () => void {
+  const sub = Notifications.addNotificationResponseReceivedListener(handleResponse);
+
+  // A tap that launched the app from closed never reaches the listener above,
+  // because it fired before the listener existed. Without this, tapping any
+  // notification on a phone that had closed VIIBE opened the home screen and
+  // nothing else.
+  Notifications.getLastNotificationResponseAsync()
+    .then((response) => { if (response) handleResponse(response); })
+    .catch(() => { /* none pending */ });
+
   return () => sub.remove();
 }
