@@ -93,7 +93,9 @@ def _partner_view(event: dict) -> dict:
     out["approved"] = bool(event.get("approved"))
     # Bumped whenever the place or times change. An approval names the version
     # the admin looked at, so a change made mid-review cannot ride through.
-    out["review_version"] = event.get("review_version", 1)
+    # A record without the field shows 0. The first move makes it 1, which an
+    # approval of 0 can never match.
+    out["review_version"] = event.get("review_version", 0)
     return out
 
 
@@ -161,7 +163,8 @@ async def approve_partner_event(event_id: str, payload: dict, user: dict = Depen
     partner = await db.partners.find_one({"id": event["partner_id"], "active": True})
     if not partner:
         raise HTTPException(status_code=409, detail="That partner's key is revoked")
-    result = await db.venues.update_one({"id": event_id, "review_version": version}, {"$set": {
+    match = {"review_version": {"$exists": False}} if version == 0 else {"review_version": version}
+    result = await db.venues.update_one({"id": event_id, **match}, {"$set": {
         "approved": True, "approved_by": user.get("id"), "approved_at": datetime.now(timezone.utc),
         "approved_version": version}})
     if not result.matched_count:

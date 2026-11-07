@@ -231,6 +231,19 @@ def test_an_approval_only_covers_the_version_the_admin_checked(env):
     assert client.post(f"/api/admin/partner-events/{checked['id']}/approve", json={}).status_code == 422
 
 
+def test_a_record_without_a_version_cannot_be_approved_after_a_move(env):
+    client, db = env
+    headers, _ = new_partner(client)
+    client.put("/api/partner/events/hf-1", json=event_body(), headers=headers)
+    asyncio.run(db.venues.update_one({"external_id": "hf-1"}, {"$unset": {"review_version": ""}}))
+    seen = client.get("/api/admin/partner-events").json()[0]
+    assert seen["review_version"] == 0
+    client.put("/api/partner/events/hf-1", json={"coordinates": {"lat": 6.5, "lng": 3.3}}, headers=headers)
+    r = client.post(f"/api/admin/partner-events/{seen['id']}/approve", json={"review_version": 0})
+    assert r.status_code == 409
+    assert on_map(client) == []
+
+
 def test_markup_in_event_text_is_refused(env):
     client, _ = env
     headers, _ = new_partner(client)
