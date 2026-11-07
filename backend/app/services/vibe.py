@@ -1093,7 +1093,7 @@ async def _check_score_alerts(venue_id: str, aggregate: dict):
 
     if "score_drop" in alert_on and score < threshold:
         should_alert = True
-        alert_reason = f"Vibe score dropped to {score:.0f}% (threshold: {threshold}%)"
+        alert_reason = f"Viibe score dropped to {score:.0f}% (threshold: {threshold}%)"
 
     if "gate_blocked" in alert_on and aggregate.get("gate_level") == "blocked":
         should_alert = True

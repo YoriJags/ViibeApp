@@ -33,7 +33,7 @@ const AI_FEATURES = [
   { icon: 'flash-outline', label: 'Venue Battle', desc: 'Tap-off battles between venues — cast bolts and shape the city ranking' },
   { icon: 'flash', label: 'No rating cooldowns', desc: 'Rate venues back-to-back, build your reputation faster' },
   { icon: 'eye', label: 'Oracle AI Prediction', desc: 'Claude-powered peak time forecast' },
-  { icon: 'newspaper', label: 'Vibe Brief', desc: 'Daily AI city briefing at home' },
+  { icon: 'newspaper', label: 'Viibe Brief', desc: 'Daily AI city briefing at home' },
   { icon: 'chatbubbles', label: 'Roast & Toast', desc: 'Punchy AI venue personality card' },
   { icon: 'git-branch', label: 'DNA Narrative', desc: 'AI-written taste fingerprint story' },
   { icon: 'map', label: 'AI Night Planner', desc: 'Conversational venue planning' },

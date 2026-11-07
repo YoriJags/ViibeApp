@@ -155,7 +155,7 @@ export default function CoinCashoutModal({
           <Text style={styles.title}>
             {step === 'bank_setup' ? 'Add Bank Account' :
              step === 'cashout' ? 'Cash Out Coins' :
-             step === 'success' ? 'Transfer Initiated' : 'Vibe Coins'}
+             step === 'success' ? 'Transfer Initiated' : 'Viibe Coins'}
           </Text>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
             <Text style={styles.closeText}>✕</Text>

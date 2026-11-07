@@ -551,7 +551,7 @@ async def get_user_analytics(request: Request):
 @router.get("/admin/icons")
 async def list_icons(request: Request):
     """List all users with an icon tier."""
-    _require_admin(request)
+    await _require_admin(request)
     icons = await db.users.find(
         {"icon_tier": {"$ne": None}},
         {"_id": 0, "id": 1, "username": 1, "phone": 1, "icon_tier": 1, "icon_label": 1, "icon_granted_at": 1},
@@ -562,7 +562,7 @@ async def list_icons(request: Request):
 @router.put("/admin/users/{user_id}/icon-tier")
 async def set_icon_tier(user_id: str, request: Request):
     """Grant or revoke icon tier for a user. Body: {tier: 'verified'|'icon'|'legend'|null, label: '...'}"""
-    _require_admin(request)
+    await _require_admin(request)
     body = await request.json()
     tier = body.get("tier")  # None to revoke
     label = body.get("label", "")
@@ -588,7 +588,7 @@ async def set_icon_tier(user_id: str, request: Request):
 @router.get("/admin/venues/{venue_id}/icons-spotted")
 async def get_icons_spotted(venue_id: str, request: Request):
     """Icons currently spotted at a venue (last 3 hours)."""
-    _require_admin(request)
+    await _require_admin(request)
     from datetime import datetime, timedelta, timezone
     three_hours_ago = datetime.now(timezone.utc) - timedelta(hours=3)
     spotted = await db.icon_spotted.find(

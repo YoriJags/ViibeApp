@@ -172,7 +172,7 @@ export default function VibeTapCard({ isDemoMode }: Props) {
               <Ionicons name="flash" size={14} color={ACCENT} />
             </View>
             <View>
-              <Text style={styles.sectionLabel}>VIBE TAPS</Text>
+              <Text style={styles.sectionLabel}>VIIBE TAPS</Text>
               <Text style={styles.subtitle}>Your bolt contributions</Text>
             </View>
           </View>
@@ -222,7 +222,7 @@ export default function VibeTapCard({ isDemoMode }: Props) {
             <View style={fs.header}>
               <View style={fs.headerLeft}>
                 <Ionicons name="flash" size={18} color={ACCENT} />
-                <Text style={fs.title}>VIBE TAPS</Text>
+                <Text style={fs.title}>VIIBE TAPS</Text>
                 <Text style={fs.subtitle}>VIIBE CONTRIBUTION</Text>
               </View>
               <TouchableOpacity style={fs.closeBtn} onPress={() => setFullscreen(false)}>

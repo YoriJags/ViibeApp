@@ -408,7 +408,7 @@ export default function MapScreen() {
         const dnaScore = affinity?.score ?? 50;
         const matchPercent = Math.round(dnaScore * 0.4 + (v.current_vibe_score ?? 50) * 0.6);
         const reason = affinity
-          ? `${dnaScore}% affinity for ${v.venue_type}s · Vibe score ${v.current_vibe_score ?? '?'}`
+          ? `${dnaScore}% affinity for ${v.venue_type}s · Viibe score ${v.current_vibe_score ?? '?'}`
           : `Trending in ${v.area || selectedCity}`;
         return { venueName: v.name, venueId: v.id, venueArea: v.area, matchPercent, vibeScore: v.current_vibe_score ?? 50, energyLevel: v.energy_level ?? 'lit', reason };
       })
@@ -734,7 +734,7 @@ export default function MapScreen() {
           </ErrorBoundary>
 
           {/* AI Daily Brief — star feature, full city brief */}
-          <ErrorBoundary label="Vibe Brief">
+          <ErrorBoundary label="Viibe Brief">
             <VibeBriefCard city={selectedCity} isDemoMode={isDemoMode} />
           </ErrorBoundary>
 

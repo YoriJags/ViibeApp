@@ -301,7 +301,7 @@ const VibeSuccessAnimation: React.FC<VibeSuccessAnimationProps> = ({
           </Animated.View>
 
           {/* Title */}
-          <Text style={styles.title}>Vibe Verified!</Text>
+          <Text style={styles.title}>Viibe Verified!</Text>
           
           {/* Venue Name */}
           <Text style={styles.venueName}>{venueName}</Text>

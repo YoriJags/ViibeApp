@@ -33,7 +33,7 @@ interface ScoutEntry {
 
 const DEMO_LEADERBOARD: ScoutEntry[] = [
   { rank: 1, user_id: '1', username: 'nightkingxx', display_name: 'Night King', bolts_tonight: 47, venues_visited: 4, ratings_tonight: 6, score: 220, heat_level: 'on_fire' },
-  { rank: 2, user_id: '2', username: 'vibequeen_', display_name: 'Vibe Queen', bolts_tonight: 38, venues_visited: 3, ratings_tonight: 5, score: 178, heat_level: 'on_fire' },
+  { rank: 2, user_id: '2', username: 'vibequeen_', display_name: 'Viibe Queen', bolts_tonight: 38, venues_visited: 3, ratings_tonight: 5, score: 178, heat_level: 'on_fire' },
   { rank: 3, user_id: '3', username: 'scoutlekki', display_name: 'Scout Lekki', bolts_tonight: 29, venues_visited: 3, ratings_tonight: 4, score: 141, heat_level: 'hot' },
   { rank: 4, user_id: '4', username: 'lagosnights', bolts_tonight: 21, venues_visited: 2, ratings_tonight: 4, score: 108, heat_level: 'hot' },
   { rank: 5, user_id: '5', username: 'vibe_tester', bolts_tonight: 17, venues_visited: 2, ratings_tonight: 3, score: 88, heat_level: 'moving' },

@@ -240,7 +240,7 @@ export default function NightPlannerModal({ visible, onClose, city }: NightPlann
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>ASK VIBE</Text>
+            <Text style={styles.headerTitle}>ASK VIIBE</Text>
             <Text style={styles.headerSparkle}>✨</Text>
           </View>
           <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>

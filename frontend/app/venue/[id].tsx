@@ -125,6 +125,13 @@ export default function VenueDetailScreen() {
   const [venue, setVenue] = useState<any>(null);
   // A scout's live snapshot beats a Google photo, so only fetch when there is none.
   const placePhoto = usePlacePhoto(id, !!venue && !venue.last_snapshot_url);
+  // Where the hero's number comes from. Fails closed: an unlabelled score with
+  // a value counts as demo, an unlabelled zero as no reading.
+  const heroSource: 'scouts' | 'demo' | 'none' =
+    venue?.energy_source === 'scouts' ? 'scouts'
+    : venue?.energy_source === 'demo' ? 'demo'
+    : venue?.energy_source === 'none' ? 'none'
+    : (venue?.current_vibe_score ?? 0) > 0 ? 'demo' : 'none';
   const [ratingStatus, setRatingStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -827,17 +834,28 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
 
           {/* Bottom hero info: name + vibe state label + score badge */}
           <View style={styles.heroBottom}>
-            <Text style={styles.heroVenueName} numberOfLines={2}>{venue.name}</Text>
-            <Text style={[styles.heroVenueState, { color: vibeColor }]}>{vibeStateLabel}</Text>
+            <Text style={[styles.heroVenueName, { paddingRight: 110 }]} numberOfLines={2}>{venue.name}</Text>
+            {/* Only a scouts' reading is the energy. Demo is labelled; no reading says so. */}
+            {heroSource === 'scouts' ? (
+              <Text style={[styles.heroVenueState, { color: vibeColor }]}>{vibeStateLabel}</Text>
+            ) : heroSource === 'demo' ? (
+              <Text style={[styles.heroVenueState, { color: vibeColor }]}>{vibeStateLabel} · DEMO</Text>
+            ) : (
+              <Text style={[styles.heroVenueState, { color: '#A89B8C' }]}>No reading yet</Text>
+            )}
 
             {/* Vibe score badge — bottom-right */}
-            <View style={styles.heroScoreBadge}>
-              <Text style={[styles.heroScoreNumber, { color: vibeColor }]}>
-                {Math.round(venue.current_vibe_score)}
-                <Text style={{ fontSize: 20, fontWeight: '700' }}>%</Text>
-              </Text>
-              <Text style={styles.heroScoreLabel}>VIBE SCORE</Text>
-            </View>
+            {heroSource !== 'none' ? (
+              <View style={styles.heroScoreBadge}>
+                <Text style={[styles.heroScoreNumber, { color: vibeColor }]}>
+                  {Math.round(venue.current_vibe_score)}
+                  <Text style={{ fontSize: 20, fontWeight: '700' }}>%</Text>
+                </Text>
+                <Text style={styles.heroScoreLabel}>
+                  {heroSource === 'scouts' ? 'VIIBE SCORE' : 'DEMO SCORE'}
+                </Text>
+              </View>
+            ) : null}
 
             {/* Certified + Verified badges */}
             {(venue.vibe_certified || venue.is_verified) && (
@@ -924,7 +942,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
                 opacity: pulseAnim.interpolate({ inputRange: [1, 1.3], outputRange: [0.5, 1] }),
               }} />
             </View>
-            <Text style={styles.statLabel}>VIBE</Text>
+            <Text style={styles.statLabel}>VIIBE</Text>
           </TouchableOpacity>
           <View style={styles.statDivider} />
           {/* CROWD — color-coded */}
@@ -1151,7 +1169,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
 
               {/* Vibe Momentum */}
               <View style={styles.contentPad}>
-                <ErrorBoundary label="Vibe Momentum">
+                <ErrorBoundary label="Viibe Momentum">
                   <VibeMomentum
                     venueId={venue.id}
                     isDemoMode={isDemoMode}
@@ -1192,7 +1210,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
           {activeTab === 'intel' && (
             <View style={styles.contentPad}>
               {id && isFeatureEnabled('vibe_oracle') && (
-                <ErrorBoundary label="Vibe Oracle">
+                <ErrorBoundary label="Viibe Oracle">
                   <VibeOracle venueId={id} venueName={venue?.name} />
                 </ErrorBoundary>
               )}
@@ -1440,7 +1458,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
             </TouchableOpacity>
             {showReactor && (
             <View style={styles.reactorWrap}>
-              <ErrorBoundary label="Vibe Reactor">
+              <ErrorBoundary label="Viibe Reactor">
                 <View onLayout={e => { reactorLayoutY.current = e.nativeEvent.layout.y; }}>
                   <VibeReactor
                     venueId={id}
@@ -1554,7 +1572,7 @@ const getVibeColor = (score: number, capacity = 'sparse') => {
                     size={20} color="#FFF"
                   />
                   <Text style={styles.stickyRateText}>
-                    {!user ? 'Sign in' : !isWithinGeofence && !isDemoMode ? 'Get Closer' : ratingStatus?.can_rate || isDemoMode ? 'Rate the Vibe' : 'Limit Reached'}
+                    {!user ? 'Sign in' : !isWithinGeofence && !isDemoMode ? 'Get Closer' : ratingStatus?.can_rate || isDemoMode ? 'Rate the Viibe' : 'Limit Reached'}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>

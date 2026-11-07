@@ -105,7 +105,7 @@ export default function VibeMomentum({ venueId, isDemoMode }: Props) {
       <View style={styles.cell}>
         <View style={styles.cellLabelRow}>
           <View style={[styles.dot, { backgroundColor: fc.dot }]} />
-          <Text style={styles.cellLabel}>VIBE FRESHNESS</Text>
+          <Text style={styles.cellLabel}>VIIBE FRESHNESS</Text>
         </View>
         <Text style={[styles.freshnessText, { color: fc.color }]}>{fc.label}</Text>
         <Text style={styles.cellSub}>

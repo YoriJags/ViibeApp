@@ -215,7 +215,7 @@ export default function TonightHero({
         {vibeScore != null && (
           <View style={s.statBlock}>
             <Text style={[s.statValue, { color: '#FFD700' }]}>{vibeScore}</Text>
-            <Text style={s.statLabel}>Live Vibe</Text>
+            <Text style={s.statLabel}>Live Viibe</Text>
           </View>
         )}
         {vibeScore != null && cloutEarnedTonight != null && <View style={s.statDivider} />}
@@ -244,7 +244,7 @@ export default function TonightHero({
           style={s.ctaGradient}
         >
           <Ionicons name="star" size={16} color="#FFF" />
-          <Text style={s.ctaText}>Rate the Vibe</Text>
+          <Text style={s.ctaText}>Rate the Viibe</Text>
         </LinearGradient>
       </TouchableOpacity>
     </>

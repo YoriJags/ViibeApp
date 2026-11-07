@@ -9,7 +9,7 @@ from app.config import logger
 
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
 SENDGRID_FROM_EMAIL = os.environ.get("SENDGRID_FROM_EMAIL", "noreply@vibezapp.com")
-SENDGRID_FROM_NAME = "Vibez"
+SENDGRID_FROM_NAME = "VIIBE"
 SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send"
 
 # Brand colours used in email templates
@@ -75,7 +75,7 @@ def _base_template(body_html: str) -> str:
         <div style="text-align:center;margin-top:40px;padding-top:24px;
                     border-top:1px solid #1E3A5F;">
           <p style="font-size:12px;color:{_TEXT_MUTED};margin:0;">
-            You're receiving this because you have a Vibez account.
+            You're receiving this because you have a VIIBE account.
           </p>
         </div>
       </div>
@@ -92,7 +92,7 @@ async def send_achievement_email(user_email: str, user_name: str, badge_name: st
     </div>
     <p style="color:#CBD5E1;font-size:16px;line-height:1.6;margin-bottom:8px;">Hey {user_name},</p>
     <p style="color:#CBD5E1;font-size:16px;line-height:1.6;margin-bottom:24px;">
-      You just earned the <strong style="color:{_GOLD};">{badge_name}</strong> badge on Vibez.
+      You just earned the <strong style="color:{_GOLD};">{badge_name}</strong> badge on VIIBE.
     </p>
     <div style="background:{_CARD};border:1px solid {_PINK}40;border-radius:12px;
                 padding:20px;margin-bottom:24px;text-align:center;">
@@ -104,7 +104,7 @@ async def send_achievement_email(user_email: str, user_name: str, badge_name: st
     <div style="text-align:center;">
       <a href="#" style="background:{_PINK};color:#fff;padding:14px 36px;border-radius:8px;
                          text-decoration:none;font-weight:700;font-size:15px;display:inline-block;">
-        Open Vibez
+        Open VIIBE
       </a>
     </div>
     """
@@ -127,7 +127,7 @@ async def send_weekly_scout_digest(
     """Weekly summary email for scouts."""
     body = f"""
     <h2 style="color:{_PINK};font-size:22px;font-weight:900;text-align:center;margin-bottom:8px;">
-      Your Weekly Vibe Report
+      Your Weekly Viibe Report
     </h2>
     <p style="color:{_TEXT_MUTED};font-size:14px;text-align:center;margin-bottom:32px;">
       Here's what you got up to this week, {user_name}
@@ -160,7 +160,7 @@ async def send_weekly_scout_digest(
     return await send_email(
         to_email=user_email,
         to_name=user_name,
-        subject="Your Weekly Vibe Report is here",
+        subject="Your Weekly Viibe Report is here",
         html_content=_base_template(body),
     )
 
@@ -211,6 +211,6 @@ async def send_merchant_weekly_digest(
     return await send_email(
         to_email=merchant_email,
         to_name=venue_name,
-        subject=f"{venue_name}: Your Weekly Vibe Intelligence",
+        subject=f"{venue_name}: Your Weekly Viibe Intelligence",
         html_content=_base_template(body),
     )

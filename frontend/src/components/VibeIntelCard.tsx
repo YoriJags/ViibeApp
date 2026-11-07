@@ -73,7 +73,7 @@ export default function VibeIntelCard({ venueId, getAuthHeaders }: VibeIntelCard
       >
         <View style={styles.headerLeft}>
           <Ionicons name="analytics" size={20} color={colors.gold} />
-          <Text style={styles.headerTitle}>Vibe Intelligence</Text>
+          <Text style={styles.headerTitle}>Viibe Intelligence</Text>
         </View>
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
@@ -161,7 +161,7 @@ export default function VibeIntelCard({ venueId, getAuthHeaders }: VibeIntelCard
               {/* Vibe Killers */}
               {data.vibe_killers.length > 0 && (
                 <View style={styles.killersSection}>
-                  <Text style={[styles.chartLabel, { color: '#FF5252' }]}>Vibe Killers</Text>
+                  <Text style={[styles.chartLabel, { color: '#FF5252' }]}>Viibe Killers</Text>
                   {data.vibe_killers.map((killer: any, i: number) => (
                     <View key={i} style={styles.killerItem}>
                       <Ionicons name="warning" size={14} color="#FF5252" />

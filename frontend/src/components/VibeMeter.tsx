@@ -148,7 +148,7 @@ export const VibeMeter: React.FC<VibeMeterProps> = ({
 
       {/* Label */}
       {showLabel && (
-        <Text style={sizeStyles.label}>Vibe Score</Text>
+        <Text style={sizeStyles.label}>Viibe Score</Text>
       )}
 
       {/* Velocity Indicator */}

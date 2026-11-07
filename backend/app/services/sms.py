@@ -60,20 +60,20 @@ async def send_otp(phone: str, otp: str) -> bool:
     """Send a one-time password for phone verification."""
     return await send_sms(
         phone,
-        f"Your Vibez OTP is: {otp}. Valid for 10 minutes. Do not share this code.",
+        f"Your VIIBE OTP is: {otp}. Valid for 10 minutes. Do not share this code.",
     )
 
 
 async def send_merchant_sms_alert(phone: str, venue_name: str, message: str) -> bool:
     """Send a critical operational alert to a merchant."""
-    return await send_sms(phone, f"[Vibez] {venue_name}: {message}")
+    return await send_sms(phone, f"[VIIBE] {venue_name}: {message}")
 
 
 async def send_scout_achievement_sms(phone: str, badge_name: str) -> bool:
     """Notify a scout of a new badge via SMS."""
     return await send_sms(
         phone,
-        f"Vibez: You just unlocked the '{badge_name}' badge! Check the app to see your new rank.",
+        f"VIIBE: You just unlocked the '{badge_name}' badge! Check the app to see your new rank.",
     )
 
 
@@ -81,5 +81,5 @@ async def send_vibe_spike_sms(phone: str, venue_name: str, vibe_label: str) -> b
     """Alert a scout that a venue matching their DNA just spiked."""
     return await send_sms(
         phone,
-        f"Vibez: {venue_name} just went {vibe_label}! Your kind of vibe is live right now.",
+        f"VIIBE: {venue_name} just went {vibe_label}! Your kind of viibe is live right now.",
     )

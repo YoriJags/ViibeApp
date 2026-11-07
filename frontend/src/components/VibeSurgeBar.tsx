@@ -202,7 +202,7 @@ export default function VibeSurgeBar({ venueId, venueName, isDemoMode, onElectri
           {/* Center: label + bar */}
           <View style={styles.centerBlock}>
             <View style={styles.labelRow}>
-              <Text style={styles.sectionLabel}>VIBE CHARGE</Text>
+              <Text style={styles.sectionLabel}>VIIBE CHARGE</Text>
               <Animated.Text style={[styles.levelText, { color, opacity: isMaxed ? glowAnim : 1 }]}>
                 {surge.level_label}
               </Animated.Text>

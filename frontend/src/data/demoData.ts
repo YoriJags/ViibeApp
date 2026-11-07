@@ -11,7 +11,7 @@ export const DEMO_USER = {
   username: 'VibeDemo',
   phone: '+2348000000000',
   email: 'demo@vibeapp.ng',
-  name: 'Vibe Demo',
+  name: 'Viibe Demo',
   picture: null,
   auth_provider: 'local' as const,
   clout_points: 4250,
@@ -873,7 +873,7 @@ export const DEMO_ORACLE_PREDICTIONS: Record<string, OraclePrediction> = {
     headline: "Escape is already peaking — go now",
     peak_window_start: "11:30pm", peak_window_end: "1:30am",
     best_arrival: "Now", current_trajectory: 'peaking',
-    signals: [{icon:"🌙", label:"Friday Night", type:"day_of_week"}, {icon:"⚡", label:"Peak Window", type:"activity"}, {icon:"✅", label:"Vibe Certified", type:"certification"}],
+    signals: [{icon:"🌙", label:"Friday Night", type:"day_of_week"}, {icon:"⚡", label:"Peak Window", type:"activity"}, {icon:"✅", label:"Viibe Certified", type:"certification"}],
     generated_at: _now,
   },
   'demo_venue_house70': {

@@ -277,7 +277,7 @@ function IndexHeader({
         <View style={idxSt.liveRow}>
           <Animated.View style={[idxSt.liveDot, { opacity: dotAnim }]} />
           <Text style={idxSt.liveText}>LIVE</Text>
-          <Text style={idxSt.exchange}>VIBE EXCHANGE</Text>
+          <Text style={idxSt.exchange}>VIIBE EXCHANGE</Text>
           {isWeekend && (
             <View style={idxSt.weekendChip}>
               <Text style={idxSt.weekendChipText}>🎉 {weekendTag}</Text>
@@ -436,7 +436,7 @@ export default function VibeMarket({ venues, cityName, cityScore = 50, cityLabel
             />
           ))}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>VIBE EXCHANGE · RANKINGS RESET 6AM · DATA LIVE</Text>
+            <Text style={styles.footerText}>VIIBE EXCHANGE · RANKINGS RESET 6AM · DATA LIVE</Text>
             <Text style={styles.footerText}>◈</Text>
           </View>
         </View>
@@ -450,7 +450,7 @@ export default function VibeMarket({ venues, cityName, cityScore = 50, cityLabel
             <View style={fs.header}>
               <View style={fs.headerLeft}>
                 <Ionicons name="bar-chart" size={18} color="#00E676" />
-                <Text style={fs.title}>VIBE EXCHANGE</Text>
+                <Text style={fs.title}>VIIBE EXCHANGE</Text>
                 <Text style={fs.cityChip}>{cityName.toUpperCase()}</Text>
               </View>
               <TouchableOpacity style={fs.closeBtn} onPress={() => setFullscreen(false)}>
@@ -507,7 +507,7 @@ export default function VibeMarket({ venues, cityName, cityScore = 50, cityLabel
               </View>
 
               <View style={fs.footer}>
-                <Text style={fs.footerText}>VIBE EXCHANGE · RANKINGS RESET 6AM · DATA LIVE · ◈</Text>
+                <Text style={fs.footerText}>VIIBE EXCHANGE · RANKINGS RESET 6AM · DATA LIVE · ◈</Text>
               </View>
             </ScrollView>
           </View>

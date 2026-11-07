@@ -16,7 +16,7 @@ router = APIRouter(tags=["feature_flags"])
 # key → { label, description, category, requires_ai_key }
 FLAG_META: Dict[str, dict] = {
     # AI Features (require ANTHROPIC_API_KEY)
-    "vibe_brief":       {"label": "Vibe Brief",       "desc": "Daily AI city briefing on home screen",         "category": "AI Features",    "ai": True},
+    "vibe_brief":       {"label": "Viibe Brief",       "desc": "Daily AI city briefing on home screen",         "category": "AI Features",    "ai": True},
     "roast_toast":      {"label": "Roast & Toast",     "desc": "Punchy AI venue review on venue detail",        "category": "AI Features",    "ai": True},
     "dna_narrative":    {"label": "DNA Narrative",     "desc": "AI personality narrative in Vibe DNA card",     "category": "AI Features",    "ai": True},
     "ai_advisor":       {"label": "AI Advisor",        "desc": "Smart action items in merchant dashboard",      "category": "AI Features",    "ai": True},
@@ -24,9 +24,9 @@ FLAG_META: Dict[str, dict] = {
     "night_planner":    {"label": "Night Planner",     "desc": "Conversational AI venue planning chat",         "category": "AI Features",    "ai": True},
     "oracle_premium":   {"label": "Oracle Premium",    "desc": "Claude AI peak-time prediction (premium tier)", "category": "AI Features",    "ai": True},
     # Core Features (rule-based)
-    "vibe_oracle":      {"label": "Vibe Oracle",       "desc": "Heuristic peak-time forecast on venue detail",  "category": "Core Features",  "ai": False},
-    "vibe_dna":         {"label": "Vibe DNA",          "desc": "Affinity bars + taste fingerprint on profile",  "category": "Core Features",  "ai": False},
-    "vibe_match":       {"label": "Vibe Match",        "desc": "Dynamic vibe match score on venue cards",       "category": "Core Features",  "ai": False},
+    "vibe_oracle":      {"label": "Viibe Oracle",       "desc": "Heuristic peak-time forecast on venue detail",  "category": "Core Features",  "ai": False},
+    "vibe_dna":         {"label": "Viibe DNA",          "desc": "Affinity bars + taste fingerprint on profile",  "category": "Core Features",  "ai": False},
+    "vibe_match":       {"label": "Viibe Match",        "desc": "Dynamic vibe match score on venue cards",       "category": "Core Features",  "ai": False},
     "top_scouts":       {"label": "Top Scouts",        "desc": "Top scout leaderboard on venue detail",         "category": "Core Features",  "ai": False},
     "crew_radar":     {"label": "Crew Radar",      "desc": "Find nearby scouts by persona",                 "category": "Core Features",  "ai": False},
     # Engagement Features

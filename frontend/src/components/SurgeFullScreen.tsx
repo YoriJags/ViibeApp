@@ -509,7 +509,7 @@ export default function SurgeFullScreen({
 
         {/* Header */}
         <View style={s.header}>
-          <Text style={s.headerLabel}>VIBE CHARGE</Text>
+          <Text style={s.headerLabel}>VIIBE CHARGE</Text>
           <Text style={s.headerVenue} numberOfLines={1}>{venueName}</Text>
           {surge.is_squad_surge && (
             <View style={s.squadBadge}>

@@ -124,7 +124,7 @@ export default function ScoutSensorsScreen({ navigation }: any) {
         <View style={styles.alwaysOnCard}>
           <View style={styles.alwaysOnLeft}>
             <Ionicons name="radio-button-on-outline" size={18} color="#22c55e" />
-            <Text style={styles.alwaysOnLabel}>Tap Rhythm + Vibe Rating</Text>
+            <Text style={styles.alwaysOnLabel}>Tap Rhythm + Viibe Rating</Text>
           </View>
           <Text style={styles.alwaysOnSub}>Always on · No battery cost · No permissions</Text>
         </View>

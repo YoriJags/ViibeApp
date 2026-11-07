@@ -86,6 +86,8 @@ function buildHTML(
         color: ENERGY_COLORS[v.energy_level ?? 'quiet'] ?? '#9933FF',
         isHot: HOT_LEVELS.has(v.energy_level ?? '') ? 1 : 0,
         demo: isReal(v) ? 0 : 1,
+        // Nothing read here yet: a small grey dot, no number, no heat.
+        unread: v.energy_source === 'none' || (!isReal(v) && Math.round(v.current_vibe_score ?? 0) === 0) ? 1 : 0,
       },
     })),
   };
@@ -216,6 +218,7 @@ function buildHTML(
         type: 'heatmap',
         source: 'venues',
         maxzoom: 16,
+        filter: ['==', ['get', 'unread'], 0],
         paint: {
           // Presence registers at all, intensity is left to the colour ramp
           // below: a quiet night reads as a dim ember haze, never white hot.
@@ -255,6 +258,7 @@ function buildHTML(
         id: 'venue-glow',
         type: 'circle',
         source: 'venues',
+        filter: ['==', ['get', 'unread'], 0],
         paint: {
           'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 17, 15, 34],
           'circle-color': ['get', 'color'],
@@ -269,11 +273,14 @@ function buildHTML(
         type: 'circle',
         source: 'venues',
         paint: {
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 10, 15, 20],
-          'circle-color': ['get', 'color'],
-          'circle-opacity': 0.95,
+          // Unread: small grey dot. Demo: faded with a grey ring. Real: full colour.
+          'circle-radius': ['case', ['==', ['get', 'unread'], 1],
+            ['interpolate', ['linear'], ['zoom'], 10, 4, 15, 7],
+            ['interpolate', ['linear'], ['zoom'], 10, 10, 15, 20]],
+          'circle-color': ['case', ['==', ['get', 'unread'], 1], '#3A3A4E', ['get', 'color']],
+          'circle-opacity': ['case', ['==', ['get', 'demo'], 1], 0.45, 0.95],
           'circle-stroke-width': 2,
-          'circle-stroke-color': '#FFFFFF',
+          'circle-stroke-color': ['case', ['==', ['get', 'demo'], 1], '#A89B8C', '#FFFFFF'],
           'circle-stroke-opacity': 0.6,
         },
       });
@@ -284,7 +291,8 @@ function buildHTML(
         type: 'symbol',
         source: 'venues',
         layout: {
-          'text-field': ['concat', ['to-string', ['get', 'score']], '%'],
+          'text-field': ['case', ['==', ['get', 'unread'], 1], '',
+            ['concat', ['to-string', ['get', 'score']], '%']],
           'text-size': ['interpolate', ['linear'], ['zoom'], 10, 9, 15, 11],
           'text-font': ['DIN Offc Pro Bold', 'Arial Unicode MS Bold'],
           'text-anchor': 'center',
@@ -292,8 +300,8 @@ function buildHTML(
         },
         paint: {
           'text-color': '#FFFFFF',
-          'text-halo-color': 'rgba(0,0,0,0.5)',
-          'text-halo-width': 0.8,
+          'text-halo-color': 'rgba(0,0,0,0.75)',
+          'text-halo-width': 1.4,
         },
       });
 
@@ -355,7 +363,7 @@ function buildHTML(
           .setLngLat(lngLat)
           .setHTML(
             '<div class="popup-name">' + esc(props.name) + '</div>' +
-            '<div class="popup-score" style="color:' + props.color + '">' + props.score + '% VIBE' +
+            '<div class="popup-score" style="color:' + props.color + '">' + props.score + '% VIIBE' +
               (props.demo ? ' <span style="color:#A89B8C">DEMO</span>' : '') + '</div>'
           )
           .addTo(map);
@@ -479,7 +487,7 @@ export default function VibeMap({
     if (demo === 0) return null;
     return demo === scored.length
       ? 'Demo heat. No live readings yet.'
-      : 'Some heat is demo. Tap a venue to see which.';
+      : 'Some heat is demo. Faded pins are demo.';
   }, [venues]);
 
   const handleMessage = (event: any) => {

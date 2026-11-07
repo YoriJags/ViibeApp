@@ -304,7 +304,7 @@ export default function GlobalVibePill() {
 
   const boltColor = dangerZone ? '#FF3B30' : cityChargeActive ? '#FFD60A' : surge.level_color;
   const labelColor = dangerZone ? '#FF3B30' : cityChargeActive ? '#FFD60A' : '#EEEEF5';
-  const labelText  = dangerZone ? 'ENERGY LOW' : cityChargeActive ? 'CITY ON FIRE' : 'VIBE CHARGE';
+  const labelText  = dangerZone ? 'ENERGY LOW' : cityChargeActive ? 'CITY ON FIRE' : 'VIIBE CHARGE';
 
   const expansionStyle = useAnimatedStyle(() => ({
     opacity:   expandProg.value,

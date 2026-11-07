@@ -180,7 +180,7 @@ export default function RateScreen() {
       // Delay the alert to let the animation play
       setTimeout(() => {
         Alert.alert(
-          isCorrection ? 'Vibe Updated! 🎉' : 'Vibe Rated! 🔥',
+          isCorrection ? 'Viibe Updated! 🎉' : 'Viibe Rated! 🔥',
           `Score: ${Math.round(result.venue_vibe_score)}. ${result.remaining_ratings > 0 ? 'You have 1 correction left.' : ''}\n\n+5 Clout points earned! Your vibe check is helping the streets! 💯`,
           [
             {
@@ -244,7 +244,7 @@ export default function RateScreen() {
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>
-            {isCorrection ? 'Update Vibe' : 'Rate the Vibe'}
+            {isCorrection ? 'Update Viibe' : 'Rate the Viibe'}
           </Text>
           <Text style={styles.headerSubtitle}>{venue.name}</Text>
         </View>
@@ -407,7 +407,7 @@ export default function RateScreen() {
             <>
               <Ionicons name="checkmark-circle" size={24} color="#FFF" />
               <Text style={styles.submitButtonText}>
-                {isCorrection ? 'Update Vibe' : 'Submit Rating'}
+                {isCorrection ? 'Update Viibe' : 'Submit Rating'}
               </Text>
             </>
           )}

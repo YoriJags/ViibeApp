@@ -59,7 +59,7 @@ const TRAJECTORY_ICON: Record<string, string> = {
 };
 
 const TRAJECTORY_DESC: Record<string, string> = {
-  rising:  'Vibe is building — energy climbing toward peak',
+  rising:  'Viibe is building — energy climbing toward peak',
   peaking: 'At full power right now — best time to be here',
   fading:  'Peak has passed — crowd thinning out',
   quiet:   'Low activity — not the move tonight',
@@ -259,7 +259,7 @@ export default function VibeOracle({ venueId, venueName }: VibeOracleProps) {
             <View style={styles.headerRow}>
               <View style={styles.labelRow}>
                 <Ionicons name="eye" size={13} color="#FFD700" />
-                <Text style={styles.oracleLabel}>VIBE ORACLE</Text>
+                <Text style={styles.oracleLabel}>VIIBE ORACLE</Text>
               </View>
               <View style={styles.headerRight}>
                 <View style={[styles.confidenceBadge, { borderColor: cColor + '60', backgroundColor: cColor + '18' }]}>
@@ -311,7 +311,7 @@ export default function VibeOracle({ venueId, venueName }: VibeOracleProps) {
             <View style={fs.header}>
               <View style={fs.headerLeft}>
                 <Ionicons name="eye" size={18} color="#FFD700" />
-                <Text style={fs.title}>VIBE ORACLE</Text>
+                <Text style={fs.title}>VIIBE ORACLE</Text>
                 {venueName && <Text style={fs.venueChip}>{venueName.toUpperCase()}</Text>}
               </View>
               <TouchableOpacity style={fs.closeBtn} onPress={() => setFullscreen(false)}>

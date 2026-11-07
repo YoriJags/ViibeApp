@@ -193,7 +193,7 @@ export default function VibeIntelCarousel({
       <View style={styles.header}>
         <View style={styles.labelRow}>
           <Ionicons name="sparkles" size={14} color={colors.primary} />
-          <Text style={styles.label}>VIBE INTEL</Text>
+          <Text style={styles.label}>VIIBE INTEL</Text>
         </View>
         <View style={styles.dotsRow}>
           {insights.map((_, i) => (
@@ -240,7 +240,7 @@ export default function VibeIntelCarousel({
         <View style={styles.stripDivider} />
         <View style={styles.stripItem}>
           <Text style={styles.stripValue}>{cityEnergy.avg}</Text>
-          <Text style={styles.stripLabel}>Avg Vibe</Text>
+          <Text style={styles.stripLabel}>Avg Viibe</Text>
         </View>
       </View>
     </View>

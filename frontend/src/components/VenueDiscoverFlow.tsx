@@ -143,7 +143,7 @@ function VenueCardBody({ venue }: { venue: Venue }) {
           real || (venue.energy_source === 'demo' && score > 0) ? (
             <View style={styles.scoreRow}>
               <Text style={[styles.scoreNum, { color: scoreColor }]}>{score}</Text>
-              <Text style={styles.scoreLabel}>{real ? 'VIBE' : 'VIBE · DEMO'}</Text>
+              <Text style={styles.scoreLabel}>{real ? 'VIIBE' : 'VIIBE · DEMO'}</Text>
             </View>
           ) : (
             <Text style={styles.noReading}>No reading yet</Text>

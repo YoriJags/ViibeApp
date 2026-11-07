@@ -149,7 +149,7 @@ export default function NightMoodSelector({ visible, onSelect, onSkip }: NightMo
                 <Ionicons name="moon" size={18} color="#9933FF" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.title}>Set Your Vibe Intent</Text>
+                <Text style={styles.title}>Set Your Viibe Intent</Text>
                 <Text style={styles.subtitle}>This shapes how we read your bolts tonight</Text>
               </View>
             </View>

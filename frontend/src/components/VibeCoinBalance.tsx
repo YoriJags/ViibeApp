@@ -128,7 +128,7 @@ export default function VibeCoinBalance({ authToken, venueId }: Props) {
       <View style={styles.headerRow}>
         <View style={styles.labelRow}>
           <Text style={styles.coinIcon}>⟡</Text>
-          <Text style={styles.label}>VIBE COINS</Text>
+          <Text style={styles.label}>VIIBE COINS</Text>
           {isVibePlus && (
             <View style={styles.vipBadge}>
               <Text style={styles.vipText}>2x EARN</Text>

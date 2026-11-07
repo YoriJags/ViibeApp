@@ -354,7 +354,7 @@ export default function MerchantDashboard() {
         spotlight_48h: { price: 10000, duration_hours: 48, name: '48-Hour Spotlight' },
       };
       const t = tiers[tier];
-      Alert.alert('Demo Mode', `${t.name} simulated. Your venue would appear at the top of Vibe Exchange for ${t.duration_hours} hours.`);
+      Alert.alert('Demo Mode', `${t.name} simulated. Your venue would appear at the top of Viibe Exchange for ${t.duration_hours} hours.`);
       return;
     }
     if (!user?.merchant_venue_id) return;
@@ -543,7 +543,7 @@ export default function MerchantDashboard() {
 
         {/* ====== VIBE SENTIMENT ====== */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💬 Vibe Sentiment</Text>
+          <Text style={styles.sectionTitle}>💬 Viibe Sentiment</Text>
           <Text style={styles.sectionSubtitle}>{sentiment?.total_checks_24h || 0} checks in last 24h</Text>
           
           <View style={styles.sentimentGrid}>
@@ -879,7 +879,7 @@ export default function MerchantDashboard() {
 
         {/* ====== VIBE EXCHANGE SPOTLIGHT ====== */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>⭐ Vibe Exchange Spotlight</Text>
+          <Text style={styles.sectionTitle}>⭐ Viibe Exchange Spotlight</Text>
           <Text style={styles.sectionSubtitle}>Pin your venue at the top of the leaderboard</Text>
 
           {spotlightStatus?.is_active ? (
@@ -891,7 +891,7 @@ export default function MerchantDashboard() {
                 <Ionicons name="star" size={22} color="#FFD700" />
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFD700' }}>SPOTLIGHT ACTIVE</Text>
-                  <Text style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Your venue is pinned at #1 on Vibe Exchange</Text>
+                  <Text style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Your venue is pinned at #1 on Viibe Exchange</Text>
                 </View>
               </View>
               {spotlightStatus.time_remaining && (
@@ -961,7 +961,7 @@ export default function MerchantDashboard() {
 
         {/* ====== VIBE INTELLIGENCE ====== */}
         {user?.merchant_venue_id && (
-          <ErrorBoundary label="Vibe Intelligence">
+          <ErrorBoundary label="Viibe Intelligence">
             <View style={styles.section}>
               <VibeIntelCard venueId={user.merchant_venue_id} getAuthHeaders={getAuthHeaders} />
             </View>

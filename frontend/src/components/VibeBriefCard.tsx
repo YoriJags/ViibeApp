@@ -122,7 +122,7 @@ export default function VibeBriefCard({ city, isDemoMode }: Props) {
         {!isVibePlus() && !expanded && (
           <View style={styles.lockChip}>
             <Ionicons name="lock-closed" size={10} color="#FFD700" />
-            <Text style={styles.lockChipText}>VIBE+</Text>
+            <Text style={styles.lockChipText}>VIIBE+</Text>
           </View>
         )}
       </LinearGradient>

@@ -119,7 +119,7 @@ export default function AvatarBuilder({
 
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Choose Your Vibe</Text>
+            <Text style={styles.title}>Choose Your Viibe</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color={colors.text.muted} />
             </TouchableOpacity>
@@ -181,7 +181,7 @@ export default function AvatarBuilder({
             </View>
 
             {/* Color picker */}
-            <Text style={styles.sectionLabel}>VIBE COLOR</Text>
+            <Text style={styles.sectionLabel}>VIIBE COLOR</Text>
             <View style={styles.colorGrid}>
               {COLOR_OPTIONS.map((option) => {
                 const isSelected = selectedColor === option.color;

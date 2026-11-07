@@ -98,7 +98,7 @@ export default function VibeDNACard({ userId }: VibeDNACardProps) {
   if (vibeDNA.insufficient_data) return (
     <View style={styles.emptyCard}>
       <Text style={styles.emptyIcon}>🧬</Text>
-      <Text style={styles.emptyTitle}>Your Vibe DNA is loading</Text>
+      <Text style={styles.emptyTitle}>Your Viibe DNA is loading</Text>
       <Text style={styles.emptySubtitle}>Rate 3+ venues and we'll map your taste fingerprint</Text>
     </View>
   );
@@ -153,7 +153,7 @@ export default function VibeDNACard({ userId }: VibeDNACardProps) {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.dnaIcon}>🧬</Text>
-            <Text style={styles.title}>VIBE DNA</Text>
+            <Text style={styles.title}>VIIBE DNA</Text>
           </View>
           <View style={styles.headerRight}>
             <Text style={styles.headerSub}>Your taste fingerprint</Text>
@@ -220,7 +220,7 @@ export default function VibeDNACard({ userId }: VibeDNACardProps) {
             <View style={fs.header}>
               <View style={styles.headerLeft}>
                 <Text style={{ fontSize: 20 }}>🧬</Text>
-                <Text style={fs.title}>VIBE DNA</Text>
+                <Text style={fs.title}>VIIBE DNA</Text>
               </View>
               <TouchableOpacity style={fs.closeBtn} onPress={() => setFullscreen(false)}>
                 <Ionicons name="close" size={18} color="#FFF" />

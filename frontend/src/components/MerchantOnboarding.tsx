@@ -27,7 +27,7 @@ const steps: Step[] = [
   {
     icon: 'pulse',
     iconColor: '#FF3366',
-    title: 'Your Vibe Score',
+    title: 'Your Viibe Score',
     description: "This is your venue's energy right now, measured by real scouts on the ground. The higher it goes, the more visible you become on the city map.",
     position: 'top',
   },

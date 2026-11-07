@@ -137,7 +137,7 @@ const VENUE_DIMENSION: Record<string, VenueDimConfig> = {
   festival:    { label: '🎛️  THE SET',         options: DJ_OPTIONS              },
   block_party: { label: '💃  THE CROWD',       options: MOVEMENT_OPTIONS        },
   concert:     { label: '🎤  CROWD RESPONSE',  options: CROWD_RESPONSE_OPTIONS  },
-  event:       { label: '🎯  THE VIBE',        options: CROWD_RESPONSE_OPTIONS  },
+  event:       { label: '🎯  THE VIIBE',        options: CROWD_RESPONSE_OPTIONS  },
   bar:         { label: '🎵  ATMOSPHERE',      options: BAR_ATMOSPHERE_OPTIONS  },
   lounge:      { label: '✨  SERVICE',         options: LOUNGE_SERVICE_OPTIONS  },
   church:      { label: '🙏  WORSHIP',         options: WORSHIP_OPTIONS         },
@@ -567,7 +567,7 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
             </View>
 
             {/* Header */}
-            <Text style={styles.title}>Rate the Vibe</Text>
+            <Text style={styles.title}>Rate the Viibe</Text>
             <View style={styles.subtitleRow}>
               <Text style={styles.venueName} numberOfLines={1}>{venueName}</Text>
               <View style={[
@@ -708,7 +708,7 @@ const RateVibeModal: React.FC<RateVibeModalProps> = ({
                           ) : (
                             <>
                               <Text style={styles.submitEmoji}>✦</Text>
-                              <Text style={styles.submitText}>Drop the Vibe</Text>
+                              <Text style={styles.submitText}>Drop the Viibe</Text>
                             </>
                           )}
                         </LinearGradient>

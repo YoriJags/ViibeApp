@@ -60,7 +60,7 @@ export default function VenueRoastCard({ venueId, venueName, isDemoMode }: Props
           {!isVibePlus() && (
             <TouchableOpacity style={styles.lockChip} onPress={() => setShowVibePlus(true)}>
               <Ionicons name="lock-closed" size={10} color="#FFD700" />
-              <Text style={styles.lockChipText}>VIBE+</Text>
+              <Text style={styles.lockChipText}>VIIBE+</Text>
             </TouchableOpacity>
           )}
         </View>

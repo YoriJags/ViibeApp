@@ -29,7 +29,7 @@ const LEVEL_TAGLINES: Record<string, string> = {
   // Legacy
   rising:      'Your radar is live.\nThe scene is watching.',
   scene_maker: 'You set the scene.\nThey follow.',
-  vibe_god:    'MAXIMUM VIBE.\nYou are the scene.',
+  vibe_god:    'MAXIMUM VIIBE.\nYou are the scene.',
 };
 
 interface Props {

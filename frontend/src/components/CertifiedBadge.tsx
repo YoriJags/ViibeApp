@@ -26,7 +26,7 @@ export default function CertifiedBadge({ compact = false, score }: CertifiedBadg
         <Ionicons name="shield-checkmark" size={18} color="#FFD700" />
       </View>
       <View>
-        <Text style={styles.label}>Vibe Certified</Text>
+        <Text style={styles.label}>Viibe Certified</Text>
         {score ? (
           <Text style={styles.score}>{score}% avg</Text>
         ) : null}

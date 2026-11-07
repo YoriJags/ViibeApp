@@ -410,7 +410,7 @@ export default function IntelScreen() {
         {/* ── VIBE DNA ── */}
         <View style={s.section}>
           <SectionLabel
-            label="YOUR VIBE DNA"
+            label="YOUR VIIBE DNA"
             sub="Derived from your rating history"
           />
           <ErrorBoundary label="VibeDNA">

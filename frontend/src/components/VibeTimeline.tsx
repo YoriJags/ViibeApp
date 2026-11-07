@@ -93,7 +93,7 @@ function DetailPanel({ point, fs = false }: { point: TimelinePoint; fs?: boolean
   return (
     <View style={[styles.details, fs && styles.detailsFs]}>
       <View style={styles.detailRow}>
-        <Text style={styles.detailLabel}>Vibe Score</Text>
+        <Text style={styles.detailLabel}>Viibe Score</Text>
         <Text style={[styles.detailValue, { color }]}>{Math.round(point.avg_vibe_score)}%</Text>
       </View>
       <View style={styles.detailRow}>

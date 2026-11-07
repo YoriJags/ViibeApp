@@ -164,7 +164,7 @@ export default function DailyPulseCard({ stats, onPress }: DailyPulseCardProps) 
               <View style={[styles.statDivider, { backgroundColor: accentColor + '40' }]} />
               <View style={styles.stat}>
                 <Text style={styles.statValue}>{Math.round(stats.averageVibe)}</Text>
-                <Text style={styles.statLabel}>Avg Vibe</Text>
+                <Text style={styles.statLabel}>Avg Viibe</Text>
               </View>
             </View>
           </View>

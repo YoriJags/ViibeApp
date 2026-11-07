@@ -121,7 +121,7 @@ export default function RootLayout() {
             </Stack>
             <DemoTutorial />
             {/* GlobalVibePill — geofence HUD (top bar, inside venue) */}
-            <ErrorBoundary label="Vibe Pill">
+            <ErrorBoundary label="Viibe Pill">
               <GlobalVibePill />
             </ErrorBoundary>
           </View>

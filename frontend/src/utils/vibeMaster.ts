@@ -285,7 +285,7 @@ export const CLOUT_REWARD_MESSAGES = [
   "Clout secured! +5 added! Your opinion dey matter! ⭐",
   "+5 Clout in the bag! The nightlife needs scouts like you! 🔍",
   "Boom! +5 Clout! Thanks for keeping it real! 💯",
-  "+5 Clout credited! You're now officially a Vibe Contributor! 🏆",
+  "+5 Clout credited! You're now officially a Viibe Contributor! 🏆",
 ];
 
 export const getCloutRewardMessage = (): string => {

@@ -108,7 +108,7 @@ export default function VibeMatch({
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statValue}>{vibeScore}%</Text>
-              <Text style={styles.statLabel}>Vibe</Text>
+              <Text style={styles.statLabel}>Viibe</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>

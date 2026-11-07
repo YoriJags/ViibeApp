@@ -40,8 +40,8 @@ const { width: W } = Dimensions.get('window');
 const SCOUT_STATUS_CONFIG: Record<string, { level: string; label: string; color: string; perks: string[] }> = {
   newbie:  { level: 'shadow',      label: 'Shadow',      color: '#666666', perks: [] },
   regular: { level: 'rising',      label: 'Rising',      color: '#9933FF', perks: ['Clout multiplier +1.2x', 'Crew eligible', 'Trending feed access'] },
-  scout:   { level: 'scene_maker', label: 'Scene Maker', color: '#FF3366', perks: ['Vibe Oracle predictions', 'Clout multiplier +1.5x', 'Scout radar visible'] },
-  elite:   { level: 'vibe_god',    label: 'Vibe God',    color: '#FFD700', perks: ['VIBE GOD status', 'Elite 2x clout multiplier', 'All Viibe+ perks free'] },
+  scout:   { level: 'scene_maker', label: 'Scene Maker', color: '#FF3366', perks: ['Viibe Oracle predictions', 'Clout multiplier +1.5x', 'Scout radar visible'] },
+  elite:   { level: 'vibe_god',    label: 'Viibe God',    color: '#FFD700', perks: ['VIIBE GOD status', 'Elite 2x clout multiplier', 'All Viibe+ perks free'] },
 };
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -945,7 +945,7 @@ export default function ProfileScreen() {
                 {[
                   { val: debrief.stats.spots_visited, lbl: 'Spots Hit', icon: 'location', color: '#FF3366' },
                   { val: debrief.stats.ratings_dropped, lbl: 'Ratings', icon: 'star', color: '#FFD700' },
-                  { val: debrief.stats.avg_vibe_given > 0 ? debrief.stats.avg_vibe_given : '—', lbl: 'Avg Vibe', icon: 'pulse', color: '#9933FF' },
+                  { val: debrief.stats.avg_vibe_given > 0 ? debrief.stats.avg_vibe_given : '—', lbl: 'Avg Viibe', icon: 'pulse', color: '#9933FF' },
                 ].map((s, i) => (
                   <View key={i} style={styles.nightModalStat}>
                     <Ionicons name={s.icon as any} size={20} color={s.color} />
