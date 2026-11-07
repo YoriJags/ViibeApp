@@ -123,14 +123,15 @@ export default function ScoutOfTheNight({ visible, onClose, isDemoMode, city }: 
       const res = await fetch(`${API_URL}/api/leaderboard/tonight${params}`, {
         headers: getAuthHeaders(),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setScouts(data.scouts ?? []);
-      } else {
-        setScouts(DEMO_LEADERBOARD); // fallback to demo
-      }
+      // Never fall back to the demo leaderboard: those are invented people,
+      // and in real mode they read as tonight's actual scouts. No data, no popup.
+      const data = res.ok ? await res.json() : null;
+      const list = data?.scouts ?? [];
+      setScouts(list);
+      if (list.length === 0) onClose();
     } catch {
-      setScouts(DEMO_LEADERBOARD);
+      setScouts([]);
+      onClose();
     }
     setLoading(false);
   };

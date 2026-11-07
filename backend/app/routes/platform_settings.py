@@ -4,7 +4,8 @@ Admin-editable numeric/string settings (prices, limits) stored in MongoDB.
 Complements feature_flags.py (which handles boolean toggles).
 """
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+from app.services.auth import require_admin
 from pydantic import BaseModel
 from typing import Dict, Any
 
@@ -91,7 +92,7 @@ class SettingsUpdate(BaseModel):
 
 
 @router.put("/admin/platform-settings")
-async def update_platform_settings(body: SettingsUpdate, request: Request):
+async def update_platform_settings(body: SettingsUpdate, request: Request, admin: dict = Depends(require_admin)):
     """Admin-only — update one or more platform settings."""
     unknown = [k for k in body.settings if k not in SETTINGS_META]
     if unknown:

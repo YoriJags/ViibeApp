@@ -14,6 +14,7 @@ Rules:
 A pulse counts toward "readings tonight" on City Energy. It is not an energy
 reading and does not move a venue's score.
 """
+import math
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -46,6 +47,8 @@ async def quick_pulse(payload: dict, user: dict = Depends(require_auth)):
         lat, lng = float(payload["lat"]), float(payload["lng"])
     except (KeyError, TypeError, ValueError):
         raise HTTPException(status_code=422, detail="Your location is needed to pulse a venue")
+    if not (math.isfinite(lat) and math.isfinite(lng) and -90 <= lat <= 90 and -180 <= lng <= 180):
+        raise HTTPException(status_code=422, detail="Your location is needed to pulse a venue")
 
     venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
     if not venue:
@@ -53,7 +56,10 @@ async def quick_pulse(payload: dict, user: dict = Depends(require_auth)):
 
     radius = _radius_for(venue)
     c = venue.get("coordinates") or {}
-    if calculate_distance(lat, lng, c.get("lat", 0), c.get("lng", 0)) > radius:
+    if c.get("lat") is None or c.get("lng") is None:
+        raise HTTPException(status_code=409, detail="This venue has no location set")
+    # Written as "not within" so a NaN distance can never count as inside.
+    if not (calculate_distance(lat, lng, c["lat"], c["lng"]) <= radius):
         raise HTTPException(status_code=400, detail=f"You need to be within {int(radius)} m of the venue")
 
     now = datetime.now(timezone.utc)

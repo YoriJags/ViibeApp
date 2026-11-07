@@ -3,7 +3,7 @@ Vibe App - Pulse Drop Routes (Public)
 Public-facing pulse drop endpoints: tiers, purchase, nearby drops.
 """
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.config import db, sio, PULSE_DROP_TIERS
 from app.models import PulseDrop, PulseDropCreate, PlatformRevenue, MerchantWallet, WalletTransaction
@@ -20,8 +20,11 @@ async def get_pulse_drop_tiers():
 
 
 @router.post("/pulse-drops/purchase")
-async def purchase_pulse_drop(drop_data: PulseDropCreate):
+async def purchase_pulse_drop(drop_data: PulseDropCreate, request: Request):
     """Purchase pulse drop using wallet balance (instant credit to treasury)."""
+    # It debits the venue's wallet, so only that venue's owner may do it.
+    from app.routes.merchant import _require_venue_owner
+    await _require_venue_owner(request, drop_data.venue_id)
     venue = await db.venues.find_one({"id": drop_data.venue_id})
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")

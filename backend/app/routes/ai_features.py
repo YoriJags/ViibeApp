@@ -362,15 +362,20 @@ async def get_venue_ai_pulse(venue_id: str, request: Request):
     Cached 15 minutes per venue (energy changes invalidate via energy_level key).
     POST body: { venue_name, energy_level, vibe_score, capacity_level }
     """
-    try:
-        body = await request.json()
-    except Exception:
-        body = {}
+    # The venue's state comes from our own record, never from the request:
+    # this used to trust a client-sent energy level, so anyone could make a
+    # venue's shared commentary claim it was PEAK. And no commentary at all
+    # unless the reading is from scouts in the room.
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    if venue.get("energy_source") != "scouts":
+        return {"comment": None, "ai_powered": False, "reason": "no_live_reading"}
 
-    venue_name     = body.get("venue_name", "the venue")
-    energy_level   = body.get("energy_level", "warming")
-    vibe_score     = body.get("vibe_score", 50)
-    capacity_level = body.get("capacity_level", "vibrant")
+    venue_name     = venue.get("name", "the venue")
+    energy_level   = (venue.get("vibe_state") or venue.get("energy_level") or "warming").lower()
+    vibe_score     = round(venue.get("current_vibe_score") or 0)
+    capacity_level = venue.get("capacity_level", "vibrant")
 
     # Cache key includes energy_level so commentary refreshes when vibe changes
     cache_key = f"ai_pulse_{venue_id}_{energy_level}"

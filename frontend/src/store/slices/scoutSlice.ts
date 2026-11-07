@@ -74,7 +74,7 @@ export const createScoutSlice: StateCreator<
     try {
       const response = await fetch(`${API_URL}/api/ratings/sync`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: get().getAuthHeaders(),
         body: JSON.stringify({ ratings: pendingRatings.map((r) => ({ ...r, user_id: user.id, offline_id: r.id })) }),
       });
       if (response.ok) {

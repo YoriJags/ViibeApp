@@ -598,7 +598,8 @@ async def get_icons_spotted(venue_id: str, request: Request):
     return {"spotted": spotted}
 
 @router.get("/admin/freshness")
-async def get_freshness(days: int = 14):
+async def get_freshness(request: Request, days: int = 14):
+    await _require_admin(request)
     """
     The freshness scoreboard: median reading age, coverage, and how often a
     scout re-reports during one visit. Real users and demo scouts are reported
@@ -609,7 +610,8 @@ async def get_freshness(days: int = 14):
 
 
 @router.get("/admin/merchant-reports")
-async def list_merchant_reports(limit: int = 20):
+async def list_merchant_reports(request: Request, limit: int = 20):
+    await _require_admin(request)
     """
     Recent merchant reports and what happened to each. A report that could not
     be sent is parked with its reason rather than dropped, so this is also the
@@ -623,7 +625,8 @@ async def list_merchant_reports(limit: int = 20):
 
 
 @router.post("/admin/merchant-reports/run")
-async def run_merchant_reports_now():
+async def run_merchant_reports_now(request: Request):
+    await _require_admin(request)
     """Build and attempt delivery immediately, without waiting for Monday."""
     from app.services.merchant_report import run_weekly_reports
     return await run_weekly_reports()

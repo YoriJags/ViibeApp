@@ -15,7 +15,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from app.config import db
-from app.services.auth import require_auth
+from app.services.auth import require_auth, require_admin
 
 router = APIRouter(tags=["battles"])
 
@@ -110,8 +110,8 @@ async def tap_battle(battle_id: str, side: str, user: dict = Depends(require_aut
 
 
 @router.post("/battles")
-async def create_battle(body: dict):
-    """Create a new battle (admin / cron only — no auth guard for simplicity)."""
+async def create_battle(body: dict, admin: dict = Depends(require_admin)):
+    """Create a new battle. Admin only: it had no guard, so anyone could start one."""
     venue_a_id = body.get("venue_a_id")
     venue_b_id = body.get("venue_b_id")
     if not venue_a_id or not venue_b_id:

@@ -746,7 +746,8 @@ async def get_spotlight_status(venue_id: str, request: Request):
 # ===== Venue Analytics (Intelligence Layer) =====
 
 @router.get("/merchant/venues/{venue_id}/analytics")
-async def get_venue_analytics(venue_id: str):
+async def get_venue_analytics(venue_id: str, request: Request):
+    await _require_venue_owner(request, venue_id)
     """
     30-day venue intelligence: vibe history, peak hours, slow nights, area rank trend.
     This is the core data product — what venues pay for.

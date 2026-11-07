@@ -138,6 +138,8 @@ async def event_timing(event_id: str):
     returns promise "worth" so the app shows the reading instead.
     """
     event = await _event_or_404(event_id)
+    if not is_listed(event):
+        raise HTTPException(status_code=404, detail="Event not found")
     if promise_for(event) != "timing":
         return {"promise": "worth", "advice": None}
     return {"promise": "timing", **(await _timing_for(event))}

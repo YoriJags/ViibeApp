@@ -26,6 +26,7 @@ from app.services.presence import (
 )
 from app.services.realtime import emit_checkin_update
 from app.services.vibe import calculate_distance
+from app.services.events import is_event, is_watchable
 
 router = APIRouter(tags=["presence"])
 
@@ -75,6 +76,12 @@ async def presence_enter(event: PresenceEvent, user: dict = Depends(require_auth
     venue = await db.venues.find_one({"id": event.venue_id})
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
+    # An event's grounds only count while it is on (doors to end) and, for a
+    # ticketing partner's event, once VIIBE has approved it. Outside that, the
+    # field is just a field and nobody arriving there is at the event.
+    if is_event(venue) and not is_watchable(venue):
+        await _log(user["id"], event.venue_id, "enter", {"action": "ignored", "reason": "event_not_on"})
+        return {"action": "ignored", "reason": "event_not_on"}
 
     distance = None
     if event.lat is not None and event.lng is not None and venue.get("coordinates"):
@@ -144,6 +151,9 @@ async def presence_exit(event: PresenceEvent, user: dict = Depends(require_auth)
     await _log(user["id"], event.venue_id, "exit", {
         "action": "closed",
         "source": active.get("source", "manual"),
+        # Only a verified visit counts as a departure in crowd flow; otherwise
+        # an account could enter with no position and leave to fake an exodus.
+        "verified": bool(active.get("verified", active.get("source", "manual") == "manual")),
         **visit,
     })
     count = await _broadcast_count(event.venue_id)

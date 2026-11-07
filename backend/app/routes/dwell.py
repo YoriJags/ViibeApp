@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from app.config import db
 from app.services.auth import require_auth
 from app.services.decay_ingest import ingest_dwell
+from app.services.timeutil import as_utc
 
 router = APIRouter(tags=["dwell"])
 
@@ -45,7 +46,7 @@ async def dwell_ping(data: DwellPing, user: dict = Depends(require_auth)):
     ingest_dwell(venue_id=data.venue_id, scout_id=user_id)
 
     if session:
-        duration_minutes = round((now - session["entered_at"]).total_seconds() / 60)
+        duration_minutes = round((now - (as_utc(session["entered_at"]) or now)).total_seconds() / 60)
         await db.dwell_sessions.update_one(
             {"_id": session["_id"]},
             {"$set": {

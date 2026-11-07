@@ -11,6 +11,7 @@ from app.config import db, CITIES
 from app.services.promotion import compute_promotion
 from app.services.signal_density import compute_signal_density
 from app.services.events import event_summary, is_event, is_listed
+from app.services.timeutil import as_utc
 
 router = APIRouter(tags=["venues"])
 
@@ -52,10 +53,8 @@ async def _update_venue_scores(venue_id: str) -> None:
     if not venue:
         return
     # Rate-limit: don't recompute if updated < 1 hour ago
-    last = venue.get("updated_scores_at")
+    last = as_utc(venue.get("updated_scores_at"))
     if last:
-        if isinstance(last, str):
-            last = datetime.fromisoformat(last.replace("Z", "+00:00"))
         if (datetime.now(timezone.utc) - last).total_seconds() < 3600:
             return
 
@@ -222,6 +221,8 @@ async def get_venue(venue_id: str, authorization: str = Header(default="")):
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
     if is_event(venue):
+        if not is_listed(venue):
+            raise HTTPException(status_code=404, detail="Venue not found")
         venue["event"] = event_summary(venue)
         for k in ("starts_at", "ends_at", "created_at"):
             if isinstance(venue.get(k), datetime):

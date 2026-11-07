@@ -166,9 +166,11 @@ export const createVenueSlice: StateCreator<
     }
 
     try {
+      // The rating route needs the session; without this header every real
+      // rating was refused with 401.
       const response = await fetch(`${API_URL}/api/ratings`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: get().getAuthHeaders(),
         body: JSON.stringify({ user_id: user.id, venue_id: venueId, energy, capacity, gate, coordinates, photo_base64: photoBase64, staked: !!staked }),
       });
       const data = await response.json();
@@ -193,10 +195,17 @@ export const createVenueSlice: StateCreator<
       }
       return { can_rate: true, ratings_count: 0, cooldown_remaining_seconds: 0 };
     }
+    // The server enforces the limit on submit, so if this check cannot be
+    // read the button stays usable rather than claiming "Limit Reached".
+    const open = { can_rate: true, ratings_count: 0, cooldown_remaining_seconds: 0 };
     try {
-      const response = await fetch(`${API_URL}/api/ratings/status/${user.id}/${venueId}`);
-      return await response.json();
-    } catch { return { can_rate: true, ratings_count: 0, cooldown_remaining_seconds: 0 }; }
+      const response = await fetch(`${API_URL}/api/ratings/user/${user.id}/venue/${venueId}`, {
+        headers: get().getAuthHeaders(),
+      });
+      if (!response.ok) return open;
+      const data = await response.json();
+      return typeof data?.can_rate === 'boolean' ? { cooldown_remaining_seconds: 0, ...data } : open;
+    } catch { return open; }
   },
 
   recordDirectionClick: async (venueId) => {

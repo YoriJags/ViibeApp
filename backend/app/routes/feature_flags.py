@@ -4,7 +4,8 @@ Central control tower for toggling platform features on/off.
 Admin can enable/disable any feature without a code deployment.
 """
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+from app.services.auth import require_admin
 from pydantic import BaseModel
 from typing import Dict
 
@@ -86,7 +87,7 @@ class FlagUpdate(BaseModel):
 
 
 @router.put("/admin/feature-flags")
-async def update_feature_flags(body: FlagUpdate, request: Request):
+async def update_feature_flags(body: FlagUpdate, request: Request, admin: dict = Depends(require_admin)):
     """Admin-only — update one or more feature flags."""
     # Validate keys
     unknown = [k for k in body.flags if k not in FLAG_META]

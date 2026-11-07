@@ -21,6 +21,14 @@ class PushTokenUpdate(PydanticBase):
 
 router = APIRouter(tags=["users"])
 
+# What anyone may see about another user. A whitelist: the old blacklist
+# leaked push tokens, payment references and admin flags.
+PUBLIC_USER_FIELDS = (
+    "id", "username", "name", "picture", "call_name", "clout_points", "scout_status",
+    "rating_accuracy_score", "total_ratings", "home_city", "icon_tier", "icon_label",
+    "reactor_skin", "zodiac_sign", "music_preferences", "created_at",
+)
+
 
 @router.post("/users/login")
 async def login_user(login_data: UserLogin):
@@ -44,11 +52,11 @@ async def create_user(user_data: UserCreate):
     if existing_username:
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    # Check if phone already exists - return that user instead (login flow)
-    existing_phone = await db.users.find_one({"phone": user_data.phone}, {"_id": 0})
-    if existing_phone:
-        session_token = await create_session_token(existing_phone["id"])
-        return {**existing_phone, "session_token": session_token}
+    # A phone that already has an account gets no session and no record here.
+    # This used to return the existing account (admin flags, email, push token)
+    # with a fresh session to anyone who typed the number.
+    if await db.users.find_one({"phone": user_data.phone}, {"_id": 1}):
+        raise HTTPException(status_code=409, detail="This number already has an account. Log in instead.")
 
     user = User(**user_data.dict())
     await db.users.insert_one(user.dict())
@@ -61,10 +69,7 @@ async def create_user(user_data: UserCreate):
 @router.get("/users/{user_id}")
 async def get_user(user_id: str):
     """Get a user by ID. Sensitive fields (phone, email) are excluded."""
-    user = await db.users.find_one(
-        {"id": user_id},
-        {"_id": 0, "phone": 0, "email": 0, "session_token": 0},
-    )
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, **{k: 1 for k in PUBLIC_USER_FIELDS}})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user

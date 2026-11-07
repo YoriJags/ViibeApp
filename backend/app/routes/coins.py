@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from app.config import db
 from app.services.auth import require_auth
 from app.services.payments import (
+from app.services.timeutil import as_utc
     resolve_bank_account,
     create_transfer_recipient,
     initiate_transfer,
@@ -91,10 +92,8 @@ async def get_coin_balance(user: dict = Depends(require_auth)):
     user_id = user["id"]
     wallet = await db.vibe_coins.find_one({"user_id": user_id}, {"_id": 0})
 
-    is_vibe_plus = (
-        user.get("is_vibe_plus")
-        and user.get("vibe_plus_expires_at", "") > datetime.now(timezone.utc).isoformat()
-    )
+    _exp = as_utc(user.get("vibe_plus_expires_at"))
+    is_vibe_plus = bool(user.get("is_vibe_plus")) and _exp is not None and _exp > datetime.now(timezone.utc)
     cashout_rate = CASHOUT_RATE_VIBE_PLUS if is_vibe_plus else CASHOUT_RATE_FREE
 
     txns = await db.coin_transactions.find(
@@ -351,10 +350,8 @@ async def request_cashout(body: CashoutBody, user: dict = Depends(require_auth))
         raise HTTPException(status_code=400, detail="Insufficient coin balance")
 
     # ── Compute naira ─────────────────────────────────────────────────────────
-    is_vibe_plus = (
-        user.get("is_vibe_plus")
-        and user.get("vibe_plus_expires_at", "") > now.isoformat()
-    )
+    _exp = as_utc(user.get("vibe_plus_expires_at"))
+    is_vibe_plus = bool(user.get("is_vibe_plus")) and _exp is not None and _exp > now
     rate_kobo = CASHOUT_RATE_VIBE_PLUS if is_vibe_plus else CASHOUT_RATE_FREE
     gross_naira_kobo = int((body.coins / 100) * rate_kobo)
     platform_cut_kobo = int(gross_naira_kobo * CASHOUT_PLATFORM_CUT)

@@ -288,9 +288,18 @@ export default function VenueDetailScreen() {
     return () => clearInterval(interval);
   }, [checkinEnteredAt]);
 
+  // The inside-the-venue check needs the venue's coordinates, so it runs once
+  // the venue has loaded. Run alongside the load, it always saw no venue and
+  // concluded "outside": the arrival prompt never opened the rating and the
+  // dwell tracker never started. Leaving the screen clears the "inside" state.
+  useEffect(() => {
+    if (!venue?.id) return;
+    checkUserLocation();
+    return () => setVenueGeofence(null, null, null, false);
+  }, [venue?.id]);
+
   useEffect(() => {
     loadVenueData();
-    checkUserLocation();
     if (id) {
       setInLobby(isInLobby(id));
       fetchStories(id);
@@ -590,9 +599,14 @@ export default function VenueDetailScreen() {
         );
         cloutEarned = result.clout_earned || 15;
       } else {
+        // A reading needs a real position. Sending 0,0 in its place claimed a
+        // location the phone never had.
+        if (!userLocation) {
+          throw new Error('Turn on location to rate. A reading has to come from inside the venue.');
+        }
         const response = await fetch(`${API_URL}/api/ratings`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: useVibeStore.getState().getAuthHeaders(),
           body: JSON.stringify({
             user_id: user.id,
             venue_id: venue.id,
@@ -601,7 +615,7 @@ export default function VenueDetailScreen() {
             gate: data.gate,
             venue_specific: data.venueSpecific,
             photo_base64: data.photoBase64,
-            coordinates: { lat: userLocation?.lat || 0, lng: userLocation?.lng || 0 },
+            coordinates: { lat: userLocation.lat, lng: userLocation.lng },
             staked: !!data.staked,
           }),
         });

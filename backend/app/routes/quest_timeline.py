@@ -19,7 +19,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app.config import db
-from app.services.auth import require_auth
+from app.services.auth import require_auth, require_admin
 
 router = APIRouter(tags=["quest_timeline"])
 
@@ -187,7 +187,7 @@ async def activate_quest(quest_id: str, user: dict = Depends(require_auth)):
 
 
 @router.post("/quest-timeline/{quest_id}/complete")
-async def complete_quest(quest_id: str, body: dict = {}):
+async def complete_quest(quest_id: str, body: dict = {}, admin: dict = Depends(require_admin)):
     """
     Mark a quest as completed/failed and apply ranking boost.
     Called by the collective-quest polling logic or manually.

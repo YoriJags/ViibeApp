@@ -33,7 +33,8 @@ def arrival_filter(since: datetime, venue_ids: list[str] | None = None) -> dict:
 
 
 def departure_filter(since: datetime, venue_ids: list[str] | None = None) -> dict:
-    f = {"kind": "exit", "action": "closed", "pass_through": False, "at": {"$gte": since}}
+    f = {"kind": "exit", "action": "closed", "pass_through": False, "verified": True,
+         "at": {"$gte": since}}
     if venue_ids is not None:
         f["venue_id"] = {"$in": venue_ids}
     return f

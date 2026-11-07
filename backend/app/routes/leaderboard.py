@@ -5,7 +5,7 @@ Optimized with MongoDB aggregation pipelines to avoid N+1 queries.
 """
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.config import db, PULSE_DROP_TIERS
 
@@ -215,10 +215,16 @@ async def get_top_scouts(city: str, limit: int = 5):
 
 
 @router.get("/scout/{user_id}/profile")
-async def get_scout_profile(user_id: str):
+async def get_scout_profile(user_id: str, request: Request):
     """
     Get scout mini-profile. Uses $lookup for venues instead of N+1 queries.
+
+    The list of venues rated in the last 24 hours, with "x mins ago", is a
+    live trail of where a person is. Only that person sees it.
     """
+    from app.services.auth import get_current_user
+    viewer = await get_current_user(request)
+    is_self = bool(viewer and (viewer.get("id") == user_id or viewer.get("is_super_admin")))
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="Scout not found")
@@ -298,13 +304,13 @@ async def get_scout_profile(user_id: str):
             "tier": tier,
             "tier_color": tier_color,
         },
-        "activity_heatmap": activity_heatmap,
+        "activity_heatmap": activity_heatmap if is_self else [],
         "stats": {
             "checks_24h": len(recent_with_venues),
             "checks_7d": week_ratings,
             "unique_venues_7d": len(unique_venues_week),
         },
-        "last_seen": activity_heatmap[0] if activity_heatmap else None,
+        "last_seen": (activity_heatmap[0] if activity_heatmap else None) if is_self else None,
     }
 
 

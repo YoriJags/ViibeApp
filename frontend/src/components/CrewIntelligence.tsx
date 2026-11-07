@@ -116,10 +116,11 @@ export default function CrewIntelligence({ visible, onClose, crewName, memberPer
         const data = await res.json();
         setIntel(data);
       } else {
-        setIntel(DEMO_INTEL); // fallback
+        // Demo intel is made up; in real mode show the retry state instead.
+        setIntel(null);
       }
     } catch {
-      setIntel(DEMO_INTEL);
+      setIntel(null);
     }
     setLoading(false);
   };

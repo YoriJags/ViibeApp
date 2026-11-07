@@ -24,6 +24,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '../theme';
+import { useVibeStore } from '../store/vibeStore';
 
 interface PulseDropTier {
   name: string;
@@ -116,7 +117,7 @@ export const PulseDropSelector: React.FC<PulseDropSelectorProps> = ({
     try {
       const response = await fetch(`${API_URL}/api/pulse-drops/purchase`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: useVibeStore.getState().getAuthHeaders(),
         body: JSON.stringify({
           venue_id: venueId,
           tier: selectedTier,

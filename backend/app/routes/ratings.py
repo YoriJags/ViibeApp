@@ -30,6 +30,7 @@ BURST_HOLD_MINUTES = 15    # how long provisional ratings are held
 from app.services.realtime import broadcast_venue_update, broadcast_leaderboard, broadcast_city_energy
 from app.services.streaks import update_streak
 from app.services.vibe import save_vibe_snapshot, generate_venue_narrative, check_and_emit_surge_alert
+from app.services.timeutil import as_utc
 
 router = APIRouter(tags=["ratings"])
 
@@ -104,7 +105,7 @@ async def create_rating(rating_data: RatingCreate, user: dict = Depends(require_
     user_doc = await db.users.find_one({"id": rating_data.user_id})
     is_vibe_plus = user_doc and user_doc.get("is_vibe_plus") and (
         not user_doc.get("vibe_plus_expires_at")
-        or user_doc["vibe_plus_expires_at"] > now
+        or (as_utc(user_doc["vibe_plus_expires_at"]) or now) > now
     )
     if not is_vibe_plus and existing_ratings:
         last_rating_time = existing_ratings[0].get("timestamp", now)

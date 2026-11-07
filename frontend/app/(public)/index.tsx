@@ -307,10 +307,12 @@ export default function MapScreen() {
         const location = await Location.getCurrentPositionAsync({});
         setUserLocation({ lat: location.coords.latitude, lng: location.coords.longitude });
       } catch {
-        setUserLocation({ lat: 6.4281, lng: 3.4219 });
+        // No fix: stay unknown. A made-up point placed people "near" venues
+        // they were not at, and the quick pulse then sent it as theirs.
+        setUserLocation(null);
       }
     } else {
-      setUserLocation({ lat: 6.4281, lng: 3.4219 });
+      setUserLocation(null);
     }
     // Venue fetch handled by the selectedCity useEffect above
   };

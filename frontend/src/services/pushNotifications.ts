@@ -86,14 +86,28 @@ const VENUE_TYPES = [
   'moment_locked', 'lobby_hot', 'vibe_spike', 'campaign_active', 'crew_checkin',
 ];
 
-let lastHandledId: string | null = null;
+let lastHandledKey: string | null = null;
+
+/**
+ * Navigate, retrying until the router is mounted. A tap that launches the app
+ * arrives during the splash, before any navigator exists, and router.push
+ * throws then; without the retry that tap was lost.
+ */
+function pushWhenReady(target: any, attempt = 0): void {
+  try {
+    router.push(target);
+  } catch {
+    if (attempt < 40) setTimeout(() => pushWhenReady(target, attempt + 1), 250);
+  }
+}
 
 function handleResponse(response: Notifications.NotificationResponse): void {
   // A tap can arrive twice: once through the listener and again through the
-  // cold-start check below. Route it only once.
-  const requestId = response.notification.request.identifier;
-  if (requestId && requestId === lastHandledId) return;
-  lastHandledId = requestId;
+  // cold-start check below. Route it only once. Arrival prompts reuse their
+  // identifier per venue, so the delivery time is part of the key.
+  const key = `${response.notification.request.identifier}@${response.notification.date}`;
+  if (key === lastHandledKey) return;
+  lastHandledKey = key;
 
   const data = response.notification.request.content.data as Record<string, string> | undefined;
   if (!data?.venue_id) return;
@@ -101,7 +115,7 @@ function handleResponse(response: Notifications.NotificationResponse): void {
   // The arrival prompt: open the reading straight away, and let the venue
   // screen take its one ten-second sound sample (see arrivalSample.ts).
   if (data.type === 'arrival_prompt') {
-    router.push({
+    pushWhenReady({
       pathname: '/venue/[id]',
       params: { id: data.venue_id, openRateModal: 'true', arrival: '1' },
     } as any);
@@ -109,7 +123,7 @@ function handleResponse(response: Notifications.NotificationResponse): void {
   }
 
   if (VENUE_TYPES.includes(data.type)) {
-    router.push(`/venue/${data.venue_id}`);
+    pushWhenReady(`/venue/${data.venue_id}`);
   }
 }
 
