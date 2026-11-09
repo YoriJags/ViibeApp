@@ -7,8 +7,15 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
       "ios": {
         "simulator": false
+      },
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://vibeapp-production-1835.up.railway.app"
       }
     },
     "preview": {
