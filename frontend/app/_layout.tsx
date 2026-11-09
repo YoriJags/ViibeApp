@@ -5,6 +5,9 @@ import { View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from 'expo-font';
+import { Unbounded_600SemiBold, Unbounded_700Bold } from '@expo-google-fonts/unbounded';
+import { Archivo_400Regular, Archivo_500Medium, Archivo_600SemiBold } from '@expo-google-fonts/archivo';
 import { useVibeStore } from '../src/store/vibeStore';
 import OnboardingFlow from '../src/components/OnboardingFlow';
 import AppTutorial from '../src/components/AppTutorial';
@@ -25,6 +28,13 @@ initPostHog();
 function AppInitializer({ children }: { children: React.ReactNode }) {
   const { hasHydrated, fetchCities, connectSocket, hasSeenOnboarding, completeOnboarding, fetchFeatureFlags, hasSeenAppTutorial, completeAppTutorial, sessionToken } = useVibeStore();
   const [isReady, setIsReady] = useState(false);
+  // Brand fonts (src/theme/tokens.ts): Unbounded for titles and numbers,
+  // Archivo for text. The splash stays up until they load, so no screen ever
+  // flashes in the system font first. A load error falls back silently.
+  const [fontsLoaded, fontError] = useFonts({
+    Unbounded_600SemiBold, Unbounded_700Bold,
+    Archivo_400Regular, Archivo_500Medium, Archivo_600SemiBold,
+  });
   const [showSplash, setShowSplash] = useState(true);
   const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
 
@@ -76,7 +86,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   if (showSplash) {
     return (
       <SplashAnimation
-        isReady={isReady}
+        isReady={isReady && (fontsLoaded || !!fontError)}
         onAnimationComplete={handleSplashComplete}
       />
     );

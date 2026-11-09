@@ -92,7 +92,8 @@
         {
           "microphonePermission": "VIIBE reads how loud a room is and how fast the music beats. No audio is recorded or stored."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

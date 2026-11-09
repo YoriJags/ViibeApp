@@ -6,18 +6,23 @@
  * Six states, lowest to highest: QUIET, CHILL, WARMING, CHARGED, LIT, PEAK.
  * CHARGED is WARMING's score in a room that is already full.
  */
+import { energy as tokenEnergy } from './tokens';
+
 export type EnergyState = 'quiet' | 'chill' | 'warming' | 'charged' | 'lit' | 'peak';
 
 export const ENERGY_ORDER: EnergyState[] = ['quiet', 'chill', 'warming', 'charged', 'lit', 'peak'];
 
+// Ironbow, the scale a thermal camera uses: the same brand as the landing site
+// and the organiser page (founder decision, 9 Nov 2026). These are the "ink"
+// values from tokens.ts, so every state reads as text (AA on dark surfaces);
+// tokens.energy[state].fill is the deeper version for large fills.
 export const ENERGY_COLORS: Record<EnergyState, string> = {
-  peak:    '#FF3366',
-  lit:     '#FF8C00',
-  charged: '#9933FF',
-  warming: '#6655FF',
-  chill:   '#3399FF',
-  // Light enough to read as text on the dark backgrounds (about 3.9:1 on #0E0E1A).
-  quiet:   '#6B7080',
+  peak:    tokenEnergy.peak.ink,
+  lit:     tokenEnergy.lit.ink,
+  charged: tokenEnergy.charged.ink,
+  warming: tokenEnergy.warming.ink,
+  chill:   tokenEnergy.chill.ink,
+  quiet:   tokenEnergy.quiet.ink,
 };
 
 export const ENERGY_LABELS: Record<EnergyState, string> = {
