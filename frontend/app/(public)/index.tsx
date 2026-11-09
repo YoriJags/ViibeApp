@@ -557,9 +557,12 @@ export default function MapScreen() {
             <Text style={styles.cityNameLarge}>
               {CITIES.find(c => c.code === selectedCity)?.name ?? 'Lagos'}
             </Text>
-            <View style={styles.liveChip}>
-              <Text style={styles.liveChipText}>● LIVE</Text>
-            </View>
+            {/* LIVE only when real scouts are reading the city right now. */}
+            {!isDemoMode && cityEnergy?.energy_source === 'scouts' && (
+              <View style={styles.liveChip}>
+                <Text style={styles.liveChipText}>● LIVE</Text>
+              </View>
+            )}
           </View>
           <Animated.View style={{ transform: [{ rotate: chevronSpin }] }}>
             <Ionicons name="chevron-down" size={13} color="rgba(255,255,255,0.4)" />

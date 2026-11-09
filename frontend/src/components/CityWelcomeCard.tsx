@@ -71,12 +71,12 @@ export default function CityWelcomeCard({ cityEnergy, cityName, onPlannerPress, 
 
         <View style={styles.statsRow}>
           <View style={styles.stat}>
-            <Text style={[styles.statNum, { color }]}>{liveSpots > 0 ? liveSpots : '10+'}</Text>
+            <Text style={[styles.statNum, { color }]}>{liveSpots}</Text>
             <Text style={styles.statLabel}>spots live</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
-            <Text style={[styles.statNum, { color }]}>{scouts > 0 ? scouts : '200+'}</Text>
+            <Text style={[styles.statNum, { color }]}>{scouts}</Text>
             <Text style={styles.statLabel}>scouts out</Text>
           </View>
           <View style={styles.statDivider} />
