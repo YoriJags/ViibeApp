@@ -26,7 +26,6 @@ import CrewActivity from '../../src/components/CrewActivity';
 import CrewBattle from '../../src/components/CrewBattle';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
 import { OwnBatteryIndicator } from '../../src/components/BatteryIndicator';
-import CrewIntelligence from '../../src/components/CrewIntelligence';
 import RollingDeepBanner from '../../src/components/RollingDeepBanner';
 
 export default function CrewScreen() {
@@ -338,21 +337,6 @@ export default function CrewScreen() {
           />
         </ErrorBoundary>
 
-        {/* AI Crew Intel button */}
-        <TouchableOpacity
-          style={styles.intelBtn}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowCrewIntel(true); }}
-          activeOpacity={0.8}
-        >
-          <LinearGradient colors={['#1A0A2E', '#120A24']} style={styles.intelBtnGrad}>
-            <Ionicons name="sparkles" size={16} color="#9933FF" />
-            <View style={styles.intelBtnText}>
-              <Text style={styles.intelBtnTitle}>CREW INTEL</Text>
-              <Text style={styles.intelBtnSub}>AI picks for your squad tonight</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={14} color="#9933FF" />
-          </LinearGradient>
-        </TouchableOpacity>
 
         {/* Night Confirmed — squad readiness */}
         <View style={styles.section}>
@@ -566,13 +550,6 @@ export default function CrewScreen() {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      <CrewIntelligence
-        visible={showCrewIntel}
-        onClose={() => setShowCrewIntel(false)}
-        crewName={crew.name}
-        memberPersonas={(crew.member_details ?? []).map((m: any) => m.persona ?? 'turn_up')}
-        isDemoMode={isDemoMode}
-      />
     </SafeAreaView>
   );
 }

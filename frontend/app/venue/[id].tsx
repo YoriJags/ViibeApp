@@ -38,8 +38,6 @@ import CampaignBadge from '../../src/components/CampaignBadge';
 import CheckInCelebration from '../../src/components/CheckInCelebration';
 import CertifiedBadge from '../../src/components/CertifiedBadge';
 import TopScoutsCard from '../../src/components/TopScoutsCard';
-import VibeOracle from '../../src/components/VibeOracle';
-import VenueRoastCard from '../../src/components/VenueRoastCard';
 import VibePlusModal from '../../src/components/VibePlusModal';
 import VenueAlertModal, { VenueAlert } from '../../src/components/VenueAlertModal';
 import EnergyMeter from '../../src/components/EnergyMeter';
@@ -57,7 +55,6 @@ import EmojiPulse from '../../src/components/EmojiPulse';
 import VenueInsiderPanel from '../../src/components/VenueInsiderPanel';
 import ScoutPressureChip from '../../src/components/ScoutPressureChip';
 import VibeMomentum from '../../src/components/VibeMomentum';
-import NarrativeDivider from '../../src/components/NarrativeDivider';
 import analytics, { EVENT } from '../../src/services/analytics';
 import { useDwellTracker } from '../../src/hooks/useDwellTracker';
 import { useAudioSensor } from '../../src/hooks/useAudioSensor';
@@ -991,7 +988,6 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
           </Text>
         </View>
 
-        <NarrativeDivider mode="breath" topGap={2} botGap={2} />
 
         {/* ====== TAB BAR ====== */}
         <View style={styles.tabBar}>
@@ -1148,7 +1144,7 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
                         borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
                         borderLeftWidth: 3, borderLeftColor: vibeColor,
                       }}>
-                        <Text style={{ fontSize: 9, fontWeight: '900', color: vibeColor, letterSpacing: 1.5, marginTop: 1 }}>LIVE</Text>
+                        <Text style={{ fontSize: 9, fontWeight: '900', color: vibeColor, letterSpacing: 1.5, marginTop: 1 }}>LAST 20 MIN</Text>
                         <Text style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '600', lineHeight: 17 }}>
                           {venue.venue_narrative}
                         </Text>
@@ -1214,17 +1210,6 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
           {/* INTEL TAB */}
           {activeTab === 'intel' && (
             <View style={styles.contentPad}>
-              {id && isFeatureEnabled('vibe_oracle') && (
-                <ErrorBoundary label="Viibe Oracle">
-                  <VibeOracle venueId={id} venueName={venue?.name} />
-                </ErrorBoundary>
-              )}
-              {id && venue && isFeatureEnabled('roast_toast') && (
-                <ErrorBoundary label="AI Take">
-                  <VenueRoastCard venueId={id} venueName={venue.name} isDemoMode={isDemoMode} />
-                </ErrorBoundary>
-              )}
-              <NarrativeDivider mode="scene" label="CROWD INTEL" color="#3399FF" topGap={4} botGap={4} />
               {id && (
                 <ErrorBoundary label="Arrival Intel">
                   <ArrivalIntelCard venueId={id} isDemoMode={isDemoMode} />
@@ -1235,7 +1220,6 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
                   <CrowdCompositionBar venueId={id} isDemoMode={isDemoMode} />
                 </ErrorBoundary>
               )}
-              <NarrativeDivider mode="scene" label="TIMELINE" color="#9B59B6" topGap={4} botGap={4} />
               {venueTimeline.length > 0 && (
                 <ErrorBoundary label="Timeline">
                   <VibeTimeline timeline={venueTimeline} peakHour={timelinePeakHour} />

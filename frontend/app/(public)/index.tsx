@@ -28,9 +28,8 @@ import RatePromptFAB from '../../src/components/RatePromptFAB';
 import VenueCategoryFilter, { VenueCategory } from '../../src/components/VenueCategoryFilter';
 import ElectricTransition from '../../src/components/ElectricTransition';
 import TonightHero from '../../src/components/TonightHero';
+import ActivityTicker from '../../src/components/ActivityTicker';
 import { DEMO_ACTIVITY_FEED, DEMO_TONIGHT, DEMO_VIBE_MATCH, DEMO_VENUES } from '../../src/data/demoData';
-import VibeMatch from '../../src/components/VibeMatch';
-import NightPlannerModal from '../../src/components/NightPlannerModal';
 import VibePlusModal from '../../src/components/VibePlusModal';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
 import { useAutoPresenceSync } from '../../src/hooks/useAutoPresenceSync';
@@ -39,7 +38,6 @@ import { VibeMarketVenue } from '../../src/components/VibeMarket';
 import NoDulling from '../../src/components/NoDulling';
 import CityEnergyBar from '../../src/components/CityEnergyBar';
 import TopThreeStrip from '../../src/components/TopThreeStrip';
-import ActivityTicker from '../../src/components/ActivityTicker';
 import { getNightPhase } from '../../src/store/vibeStore';
 import { calculateDistance } from '../../src/utils/geo';
 import LivePushFeed from '../../src/components/LivePushFeed';
@@ -56,8 +54,6 @@ import SurgeAlertBanner from '../../src/components/SurgeAlertBanner';
 import AfterHours from '../../src/components/AfterHours';
 import SwipeRate from '../../src/components/SwipeRate';
 import ScoutOfTheNight from '../../src/components/ScoutOfTheNight';
-import VibeBriefCard from '../../src/components/VibeBriefCard';
-import AIScoutBriefing from '../../src/components/AIScoutBriefing';
 import VenueBattle from '../../src/components/VenueBattle';
 import HeatMapCard from '../../src/components/HeatMapCard';
 import SceneMoodSelector, { SceneMood } from '../../src/components/SceneMoodSelector';
@@ -66,8 +62,6 @@ import VenueDiscoverFlow from '../../src/components/VenueDiscoverFlow';
 import NightArcStrip from '../../src/components/NightArcStrip';
 import FeatureStoryStrip from '../../src/components/FeatureStoryStrip';
 import StreakFireModal from '../../src/components/StreakFireModal';
-import OracleTease from '../../src/components/OracleTease';
-import NarrativeDivider from '../../src/components/NarrativeDivider';
 import analytics, { EVENT } from '../../src/services/analytics';
 import { ENERGY_COLORS } from '../../src/theme/energy';
 
@@ -587,15 +581,6 @@ export default function MapScreen() {
               {userMode === 'insider' ? '🔭' : '📡'}
             </Text>
           </TouchableOpacity>
-          {isFeatureEnabled('night_planner_btn') && (
-            <TouchableOpacity
-              style={styles.plannerButton}
-              onPress={() => isVibePlus() ? setShowPlanner(true) : setShowVibePlus(true)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="sparkles" size={20} color="#FFD700" />
-            </TouchableOpacity>
-          )}
         </View>
       </View>
 
@@ -721,32 +706,15 @@ export default function MapScreen() {
             />
           </ErrorBoundary>
 
-          {/* Live activity ribbon — the scene is alive */}
-          <ActivityTicker items={DEMO_ACTIVITY_FEED} />
-
-          <NarrativeDivider mode="chapter" label="TONIGHT" color="#FF3366" topGap={6} botGap={6} />
-
-          {/* ═══════════════════════════════════════════════════
-               ACT II — WHAT'S HAPPENING
-               City intelligence. What's alive right now.
-          ═══════════════════════════════════════════════════ */}
-
-          {/* AI Scout Briefing — personalised Claude message */}
-          <ErrorBoundary label="Scout Briefing">
-            <AIScoutBriefing city={selectedCity} isDemoMode={isDemoMode} />
-          </ErrorBoundary>
-
-          {/* AI Daily Brief — star feature, full city brief */}
-          <ErrorBoundary label="Viibe Brief">
-            <VibeBriefCard city={selectedCity} isDemoMode={isDemoMode} />
-          </ErrorBoundary>
+          {/* Live activity ribbon. Sample items, so demo mode only: shown to
+              real users it claimed activity that never happened. */}
+          {isDemoMode && <ActivityTicker items={DEMO_ACTIVITY_FEED} />}
 
           {/* Tonight's Hero — adaptive journey card */}
           {isNewUser ? (
             <CityWelcomeCard
               cityEnergy={cityEnergy}
               cityName={cityName}
-              onPlannerPress={() => setShowPlanner(true)}
               callName={user?.call_name}
             />
           ) : (
@@ -791,7 +759,7 @@ export default function MapScreen() {
               venuesVisitedCount={isDemoMode ? 3 : 0}
               totalCloutEarned={isDemoMode ? 120 : 0}
               newBadgesCount={isDemoMode ? 1 : 0}
-              bestMomentText="Quilox hit 87% while you were there"
+              bestMomentText={isDemoMode ? 'Quilox hit 87% while you were there' : undefined}
             />
           )}
 
@@ -804,14 +772,6 @@ export default function MapScreen() {
             />
           )}
 
-          {/* Oracle Tease — prediction hook */}
-          <ErrorBoundary label="Oracle Tease">
-            <OracleTease
-              venues={isDemoMode ? (require('../../src/data/demoData').DEMO_VENUES as any[]) : venues}
-              onVenuePress={(id) => router.push(`/venue/${id}`)}
-              isDemoMode={isDemoMode}
-            />
-          </ErrorBoundary>
 
           {/* City Energy + Live Push */}
           {cityEnergy && (
@@ -858,7 +818,6 @@ export default function MapScreen() {
             />
           </ErrorBoundary>
 
-          <NarrativeDivider mode="chapter" label="YOUR MOVE" color="#FF9933" topGap={6} botGap={6} />
 
           {/* ═══════════════════════════════════════════════════
                ACT III — MAKE YOUR MOVE
@@ -935,18 +894,6 @@ export default function MapScreen() {
                   } : undefined}
                 />
               </Animated.View>
-              {/* VibeMatch injected inline after 2nd card — feels editorial, not blocky */}
-              {index === 1 && vibeMatchVenue && (
-                <VibeMatch
-                  venueName={vibeMatchVenue.venueName}
-                  venueArea={vibeMatchVenue.venueArea}
-                  matchPercent={vibeMatchVenue.matchPercent}
-                  vibeScore={vibeMatchVenue.vibeScore}
-                  energyLevel={vibeMatchVenue.energyLevel}
-                  reason={vibeMatchVenue.reason}
-                  onPress={() => router.push(`/venue/${vibeMatchVenue.venueId}`)}
-                />
-              )}
             </React.Fragment>
           ))}
 
@@ -1061,19 +1008,11 @@ export default function MapScreen() {
 
       <FloorSwitcher currentFloor="public" />
 
-      {/* Ask Vibe Modal */}
-      <ErrorBoundary label="Night Planner">
-        <NightPlannerModal
-          visible={showPlanner}
-          onClose={() => setShowPlanner(false)}
-          city={selectedCity}
-        />
-      </ErrorBoundary>
 
       <VibePlusModal
         visible={showVibePlus}
         onClose={() => setShowVibePlus(false)}
-        onSuccess={() => { setShowVibePlus(false); setShowPlanner(true); }}
+        onSuccess={() => setShowVibePlus(false)}
       />
 
       {/* Venue Spotlight — full-screen theater mode */}

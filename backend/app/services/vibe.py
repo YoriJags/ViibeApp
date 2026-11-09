@@ -949,43 +949,27 @@ async def generate_venue_narrative(venue_id: str, current_score: float) -> tuple
         sort=[("timestamp", -1)],
     )
 
+    # Plain statements of what the readings show. No hype, no emoji, and no
+    # claims the data cannot back ("fastest climb tonight", "peak incoming",
+    # "this is the moment" were all unverified or predictions).
     if snap is None:
-        # No history yet — venue just woke up or data gap
+        # No reading from 20 minutes ago to compare against.
         if current_score >= 70:
-            return "Already buzzing. Doors haven't been open long.", None
-        return "Just waking up. Check back in 20.", None
+            return "Already busy. No earlier reading to compare yet.", None
+        return "Early. No earlier reading to compare yet.", None
 
     delta = current_score - snap["vibe_score"]
+    pts = abs(round(delta))
 
-    # ── Climbing ─────────────────────────────────────────────────────────
-    if delta > 15:
-        return f"Up {delta:.0f} pts in 20 mins 🔥 Fastest climb tonight.", delta
-    if delta > 10:
-        return f"Warming fast — up {delta:.0f} pts. 🔥 Peak incoming.", delta
     if delta > 5:
-        return f"Building. Up {delta:.0f} pts and still climbing.", delta
-
-    # ── At peak / holding ─────────────────────────────────────────────────
-    if current_score >= 85 and abs(delta) <= 5:
-        return "At PEAK. Energy is holding. This is the moment.", delta
-
-    # ── Stable mid-range ─────────────────────────────────────────────────
-    if current_score >= 60 and abs(delta) <= 5:
-        return "Holding steady. Waiting for the crowd to commit.", delta
-    if 40 <= current_score < 60 and abs(delta) <= 5:
-        return "Building energy. Night is still early.", delta
-
-    # ── Dropping ─────────────────────────────────────────────────────────
-    if delta < -10:
-        return f"Down {abs(delta):.0f} pts. Just passed PEAK — ride it while it lasts.", delta
+        return f"Up {pts} points in the last 20 minutes.", delta
     if delta < -5:
-        return "Winding down. Moving to the after-party?", delta
-
-    # ── Quiet ────────────────────────────────────────────────────────────
-    if current_score < 40:
-        return "Quiet tonight. Could flip at any moment.", delta
-
-    return "Holding. Scouts are watching.", delta
+        return f"Down {pts} points in the last 20 minutes.", delta
+    if current_score >= 85:
+        return "At peak, holding for the last 20 minutes.", delta
+    if current_score >= 40:
+        return "Steady for the last 20 minutes.", delta
+    return "Quiet, and steady for the last 20 minutes.", delta
 
 
 async def check_and_emit_surge_alert(venue_id: str, venue_name: str, city: str, current_score: float):

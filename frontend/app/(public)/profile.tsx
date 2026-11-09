@@ -29,8 +29,6 @@ import AvatarDisplay from '../../src/components/AvatarDisplay';
 import AchievementBadge, { Badge } from '../../src/components/AchievementBadge';
 import CrewCard from '../../src/components/CrewCard';
 import HeatLevelUp from '../../src/components/HeatLevelUp';
-import ZodiacPicker from '../../src/components/ZodiacPicker';
-import NarrativeDivider from '../../src/components/NarrativeDivider';
 import analytics, { EVENT } from '../../src/services/analytics';
 import { getZodiacSign } from '../../src/config/zodiac';
 import { DEMO_BADGES, DEMO_CREW } from '../../src/data/demoData';
@@ -143,8 +141,7 @@ export default function ProfileScreen() {
 
     const success = await createUser(username.trim(), phone.trim());
     if (success) {
-      // Go to optional zodiac step before landing on profile
-      setAuthMode('zodiac');
+      setAuthMode('welcome');
     } else {
       Alert.alert('Error', 'Username might already exist. Try another.');
     }
@@ -424,19 +421,6 @@ export default function ProfileScreen() {
     );
   }
 
-  // Zodiac onboarding step — shown after account creation
-  if (authMode === 'zodiac') {
-    return (
-      <ZodiacPicker
-        visible={true}
-        isOnboarding={true}
-        onSelect={handleZodiacSelect}
-        onSkip={() => setAuthMode('welcome')}
-        onClose={() => setAuthMode('welcome')}
-      />
-    );
-  }
-
   // User Profile Screen
   return (
     <SafeAreaView style={styles.container}>
@@ -518,30 +502,6 @@ export default function ProfileScreen() {
             {user?.scout_status?.toUpperCase()} SCOUT
           </Text>
 
-          {/* Zodiac badge */}
-          {user?.zodiac_sign ? (() => {
-            const z = getZodiacSign(user.zodiac_sign);
-            return z ? (
-              <TouchableOpacity
-                style={[styles.zodiacBadge, { borderColor: z.elementColor + '40' }]}
-                onPress={() => setShowZodiacPicker(true)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.zodiacSymbol}>{z.symbol}</Text>
-                <Text style={[styles.zodiacName, { color: z.elementColor }]}>{z.name.toUpperCase()}</Text>
-                <Ionicons name="pencil" size={9} color="#333" style={{ marginLeft: 2 }} />
-              </TouchableOpacity>
-            ) : null;
-          })() : (
-            <TouchableOpacity
-              style={styles.zodiacAdd}
-              onPress={() => setShowZodiacPicker(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.zodiacAddText}>✦ Add cosmic sign</Text>
-            </TouchableOpacity>
-          )}
-
           {/* Vibe+ badge or upgrade CTA */}
           {isVibePlus() ? (
             <View style={styles.vibePlusBadge}>
@@ -556,7 +516,6 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        <NarrativeDivider mode="chapter" label="YOUR NUMBERS" color="#FF3366" topGap={8} botGap={4} />
 
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
@@ -742,7 +701,6 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        <NarrativeDivider mode="chapter" label="YOUR SCENE" color="#9933FF" topGap={8} botGap={4} />
 
         {/* Scout Progress */}
         <View style={styles.progressCard}>
@@ -814,7 +772,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <NarrativeDivider mode="chapter" label="YOUR SIGNATURE" color="#FFD700" topGap={8} botGap={4} />
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -830,15 +787,6 @@ export default function ProfileScreen() {
         visible={showVibePlus}
         onClose={() => setShowVibePlus(false)}
         onSuccess={() => setShowVibePlus(false)}
-      />
-
-      <ZodiacPicker
-        visible={showZodiacPicker}
-        currentSign={user?.zodiac_sign}
-        isOnboarding={false}
-        onSelect={handleZodiacChange}
-        onSkip={handleZodiacClear}
-        onClose={() => setShowZodiacPicker(false)}
       />
 
       {/* ── Call Name Edit Modal ── */}

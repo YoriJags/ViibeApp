@@ -17,7 +17,7 @@ interface CityWelcomeProps {
     live_venues: number;
   } | null;
   cityName: string;
-  onPlannerPress: () => void;
+  onPlannerPress?: () => void;
   callName?: string;
 }
 
@@ -88,14 +88,6 @@ export default function CityWelcomeCard({ cityEnergy, cityName, onPlannerPress, 
 
         <View style={styles.ctaRow}>
           <Text style={styles.ctaHint}>↓ Tonight's top spots below</Text>
-          <TouchableOpacity
-            style={[styles.plannerBtn, { borderColor: color + '50' }]}
-            onPress={onPlannerPress}
-            activeOpacity={0.75}
-          >
-            <Ionicons name="sparkles" size={12} color={color} />
-            <Text style={[styles.plannerBtnText, { color }]}>Plan my scene</Text>
-          </TouchableOpacity>
         </View>
       </LinearGradient>
     </View>

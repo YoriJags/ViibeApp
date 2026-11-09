@@ -24,11 +24,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useVibeStore } from '../../src/store/vibeStore';
-import VibeDNACard from '../../src/components/VibeDNACard';
-import CosmicVibeCard from '../../src/components/CosmicVibeCard';
-import NarrativeDivider from '../../src/components/NarrativeDivider';
 import analytics, { EVENT } from '../../src/services/analytics';
-import NightPlannerModal from '../../src/components/NightPlannerModal';
 import VibePlusModal from '../../src/components/VibePlusModal';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
 import {
@@ -300,25 +296,11 @@ export default function IntelScreen() {
           <Text style={s.headerTitle}>INTEL</Text>
           <Text style={s.headerSub}>Scene intelligence · {city.toUpperCase()}</Text>
         </View>
-        <LinearGradient colors={['#7B2FBE', '#9B59B6']} style={s.headerBadge}>
-          <Ionicons name="sparkles" size={11} color="#FFF" />
-          <Text style={s.headerBadgeText}>POWERED BY CLAUDE</Text>
-        </LinearGradient>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
 
-        {/* ── COSMIC VIBE READING — logged in or demo mode ── */}
-        {(user?.id || isDemoMode) && (
-          <CosmicVibeCard
-            apiUrl={API_URL}
-            authHeaders={getAuthHeaders()}
-            zodiacSign={user?.zodiac_sign}
-            isDemoMode={isDemoMode}
-          />
-        )}
 
-        <NarrativeDivider mode="chapter" label="THE CITY" color="#3399FF" topGap={4} botGap={4} />
 
         {/* ── CITY ZONES ── */}
         <View style={s.section}>
@@ -350,49 +332,6 @@ export default function IntelScreen() {
           </ErrorBoundary>
         </View>
 
-        <NarrativeDivider mode="chapter" label="MAKE YOUR MOVE" color="#9B59B6" topGap={4} botGap={4} />
-
-        {/* ── SCENE PLANNER ── */}
-        <View style={s.section}>
-          <SectionLabel label="SCENE PLANNER" />
-          <TouchableOpacity
-            activeOpacity={0.82}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              analytics.track(EVENT.INTEL_SECTION_VIEWED, { section: 'scene_planner' });
-              isVibePlus() ? setShowPlanner(true) : setShowVibePlus(true);
-            }}
-          >
-            <LinearGradient
-              colors={['#1A0A2E', '#110A22', '#0E0818']}
-              style={s.plannerCard}
-            >
-              <View style={s.plannerGlow} />
-              <View style={s.plannerTop}>
-                <LinearGradient colors={['#9B59B6', '#7B2FBE']} style={s.plannerIcon}>
-                  <Ionicons name="sparkles" size={22} color="#FFF" />
-                </LinearGradient>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.plannerTitle}>Plan My Scene</Text>
-                  <Text style={s.plannerDesc}>
-                    Tell Claude what you're feeling, it picks your venues, timing and route.
-                  </Text>
-                </View>
-              </View>
-              <View style={s.plannerExamples}>
-                {['"Something low-key but upscale"', '"Best club energy after midnight"'].map(ex => (
-                  <View key={ex} style={s.exampleChip}>
-                    <Text style={s.exampleText}>{ex}</Text>
-                  </View>
-                ))}
-              </View>
-              <View style={s.plannerCta}>
-                <Text style={s.plannerCtaText}>Start Planning</Text>
-                <Ionicons name="arrow-forward" size={14} color="#9B59B6" />
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
 
         {/* ── SCOUT LEADERBOARD ── */}
         <View style={s.section}>
@@ -405,18 +344,6 @@ export default function IntelScreen() {
           </ErrorBoundary>
         </View>
 
-        <NarrativeDivider mode="chapter" label="YOUR DNA" color="#FF3366" topGap={4} botGap={4} />
-
-        {/* ── VIBE DNA ── */}
-        <View style={s.section}>
-          <SectionLabel
-            label="YOUR VIIBE DNA"
-            sub="Derived from your rating history"
-          />
-          <ErrorBoundary label="VibeDNA">
-            <VibeDNACard userId={user?.id ?? ''} />
-          </ErrorBoundary>
-        </View>
 
         {/* ── SCENE MODE ── */}
         <View style={s.section}>
@@ -447,13 +374,10 @@ export default function IntelScreen() {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      <ErrorBoundary label="Scene Planner">
-        <NightPlannerModal visible={showPlanner} onClose={() => setShowPlanner(false)} city={city} />
-      </ErrorBoundary>
       <VibePlusModal
         visible={showVibePlus}
         onClose={() => setShowVibePlus(false)}
-        onSuccess={() => { setShowVibePlus(false); setShowPlanner(true); }}
+        onSuccess={() => setShowVibePlus(false)}
       />
     </SafeAreaView>
   );
