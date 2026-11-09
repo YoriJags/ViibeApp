@@ -267,9 +267,12 @@ function buildHTML(
         source: 'venues',
         paint: {
           // Unread: small grey dot. Demo: faded with a grey ring. Real: full colour.
-          'circle-radius': ['case', ['==', ['get', 'unread'], 1],
-            ['interpolate', ['linear'], ['zoom'], 10, 4, 15, 7],
-            ['interpolate', ['linear'], ['zoom'], 10, 10, 15, 20]],
+          // Mapbox only allows "zoom" at the top of an interpolate, so the
+          // unread/read choice goes inside each zoom stop, not around them.
+          // Nesting it the other way rejected the layer and broke the map.
+          'circle-radius': ['interpolate', ['linear'], ['zoom'],
+            10, ['case', ['==', ['get', 'unread'], 1], 4, 10],
+            15, ['case', ['==', ['get', 'unread'], 1], 7, 20]],
           'circle-color': ['case', ['==', ['get', 'unread'], 1], '#3A3A4E', ['get', 'color']],
           'circle-opacity': ['case', ['==', ['get', 'demo'], 1], 0.45, 0.95],
           'circle-stroke-width': 2,
