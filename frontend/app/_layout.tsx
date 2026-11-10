@@ -14,7 +14,6 @@ import AppTutorial from '../src/components/AppTutorial';
 import SplashAnimation from '../src/components/SplashAnimation';
 import DemoTutorial from '../src/components/DemoTutorial';
 import ErrorBoundary from '../src/components/ErrorBoundary';
-import GlobalVibePill from '../src/components/GlobalVibePill';
 import { initPostHog } from '../src/services/posthog';
 import { registerForPushNotifications, attachNotificationTapHandler } from '../src/services/pushNotifications';
 
@@ -133,10 +132,9 @@ export default function RootLayout() {
               <Stack.Screen name="rate/[id]" options={{ headerShown: false }} />
             </Stack>
             <DemoTutorial />
-            {/* GlobalVibePill — geofence HUD (top bar, inside venue) */}
-            <ErrorBoundary label="Viibe Pill">
-              <GlobalVibePill />
-            </ErrorBoundary>
+            {/* The floating "Viibe charge" HUD is retired: it covered every
+                screen's header. Being inside a venue now shows as the
+                "You're inside" bar on the map and the venue's own button. */}
           </View>
         </AppInitializer>
       </SafeAreaProvider>

@@ -12,6 +12,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { card, color, energy, space, type } from '../theme/tokens';
 
 const API_URL =
   process.env.EXPO_PUBLIC_BACKEND_URL || 'https://vibeapp-production-1835.up.railway.app';
@@ -26,17 +27,17 @@ type Timing = {
   flow?: { arrivals_30m: number; departures_30m: number; direction?: string };
 };
 
-// Colour carries the state, so a glance from across a dark room is enough.
+// The advice is the content; colour only marks urgency, in the token palette.
 const ADVICE_COLOR: Record<string, string> = {
-  go_now: '#7CE3B0',
-  go_soon: '#FFBE3B',
-  no_rush: '#9AA7FF',
-  filling: '#FFBE3B',
-  wait: '#FF5A1F',
-  winding_down: '#B3216B',
-  no_data: '#8E7FA6',
-  upcoming: '#8E7FA6',
-  ended: '#8E7FA6',
+  go_now: color.success,
+  go_soon: energy.peak.ink,
+  no_rush: color.ink,
+  filling: energy.peak.ink,
+  wait: energy.lit.ink,
+  winding_down: energy.warming.ink,
+  no_data: color.inkSoft,
+  upcoming: color.inkSoft,
+  ended: color.inkSoft,
 };
 
 const GATE_WORD: Record<string, string> = { clear: 'Clear', slow: 'Slow', blocked: 'Jammed' };
@@ -67,13 +68,13 @@ export default function WhenToLeaveCard({ venueId }: Props) {
 
   if (!t || t.promise !== 'timing' || !t.headline) return null;
 
-  const color = ADVICE_COLOR[t.advice ?? 'no_data'] ?? ADVICE_COLOR.no_data;
+  const tint = ADVICE_COLOR[t.advice ?? 'no_data'] ?? ADVICE_COLOR.no_data;
   const flow = t.flow;
 
   return (
-    <View style={[styles.card, { borderColor: color + '55' }]} accessibilityRole="summary">
+    <View style={styles.card} accessibilityRole="summary">
       <Text style={styles.label}>When to leave</Text>
-      <Text style={[styles.headline, { color }]}>{t.headline}</Text>
+      <Text style={[styles.headline, { color: tint }]}>{t.headline}</Text>
       {!!t.detail && <Text style={styles.detail}>{t.detail}</Text>}
 
       <View style={styles.row}>
@@ -97,20 +98,12 @@ export default function WhenToLeaveCard({ venueId }: Props) {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    gap: 6,
-    backgroundColor: 'rgba(27,16,56,0.6)',
-    marginHorizontal: 16,
-    marginVertical: 8,
-  },
-  label: { fontSize: 13, color: 'rgba(255,255,255,0.55)', fontWeight: '600' },
-  headline: { fontSize: 20, fontWeight: '800', lineHeight: 26 },
-  detail: { fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 20 },
-  row: { flexDirection: 'row', gap: 20, marginTop: 8, flexWrap: 'wrap' },
+  card: { ...card, gap: space.xxs, marginHorizontal: space.md, marginTop: space.md },
+  label: { ...type.labelStrong, color: color.inkSoft },
+  headline: { ...type.title },
+  detail: { ...type.label, color: color.inkSoft },
+  row: { flexDirection: 'row', gap: space.lg, marginTop: space.xs, flexWrap: 'wrap' },
   stat: { minWidth: 0 },
-  statValue: { fontSize: 15, fontWeight: '700', color: '#FFF5DE' },
-  statLabel: { fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
+  statValue: { ...type.bodyStrong, color: color.ink },
+  statLabel: { ...type.caption, color: color.inkSoft, marginTop: 2 },
 });

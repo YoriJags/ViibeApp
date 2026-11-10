@@ -21,6 +21,9 @@ import VibeMap from '../../src/components/VibeMap';
 import { MockMap } from '../../src/components/MockMap';
 import VenueDiscoverFlow from '../../src/components/VenueDiscoverFlow';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
+import AutoPresenceToggle from '../../src/components/AutoPresenceToggle';
+import { useAutoPresenceSync } from '../../src/hooks/useAutoPresenceSync';
+import { isAutoPresenceEnabled, syncWatchedVenues } from '../../src/services/autoPresence';
 import {
   Button, Chip, DemoPill, Divider, EnergyDot, EventRow, InviteCard, readingOf, SectionHeader,
   VenueLike, VenueRow,
@@ -53,8 +56,21 @@ export default function HomeScreen() {
   const params = useLocalSearchParams<{ highlightVenue?: string }>();
   const {
     venues, fetchVenues, selectedCity, setSelectedCity, isDemoMode, fetchCityEnergy,
-    pickVenue, followVenue, isInsideVenue, activeVenueId, activeVenueName,
+    pickVenue, followVenue, isInsideVenue, activeVenueId, activeVenueName, user,
   } = useVibeStore();
+
+  // Auto check-in: keep the phone watching the venues nearest to you. This
+  // was dropped in the home redesign by mistake, which silently stopped
+  // geofences from ever being registered.
+  useAutoPresenceSync(isDemoMode ? [] : (venues as any[]));
+  const [autoOn, setAutoOn] = useState<boolean | null>(null);
+  const [showAuto, setShowAuto] = useState(false);
+  useEffect(() => { isAutoPresenceEnabled().then(setAutoOn).catch(() => setAutoOn(false)); }, [showAuto]);
+  const closeAuto = async () => {
+    setShowAuto(false);
+    // Switched on just now: point the geofences at nearby venues straight away.
+    if (await isAutoPresenceEnabled().catch(() => false)) syncWatchedVenues(venues as any[]).catch(() => {});
+  };
 
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [filter, setFilter] = useState('all');
@@ -133,7 +149,9 @@ export default function HomeScreen() {
     : `${hot.length || read.length} ${(hot.length || read.length) === 1 ? 'place' : 'places'} ${hot.length ? 'reading lit or higher' : 'with a reading'}${freshest != null ? `, updated ${freshest < 1 ? 'just now' : `${Math.round(freshest)} min ago`}` : ''}`;
 
   const openVenue = (id: string) => router.push(`/venue/${id}`);
-  const insideName = activeVenueName || list.find((v) => v.id === activeVenueId)?.name;
+  const demoInside = isDemoMode ? read[0] : undefined;
+  const insideId = isDemoMode ? demoInside?.id : (isInsideVenue ? activeVenueId : null);
+  const insideName = isDemoMode ? demoInside?.name : (activeVenueName || list.find((v) => v.id === activeVenueId)?.name);
 
   return (
     <View style={s.root}>
@@ -159,12 +177,12 @@ export default function HomeScreen() {
       </View>
 
       {/* You're inside */}
-      {isInsideVenue && activeVenueId && insideName ? (
+      {insideId && insideName ? (
         <Animated.View style={[s.insideBar, { transform: [{ translateY: Animated.subtract(y, 72) }] }]}>
-          <EnergyDot state={readingOf(list.find((v) => v.id === activeVenueId) ?? { id: '', name: '' }, isDemoMode).state} />
+          <EnergyDot state={readingOf(list.find((v) => v.id === insideId) ?? { id: '', name: '' }, isDemoMode).state} />
           <Text style={s.insideText} numberOfLines={1}>You're inside {insideName}</Text>
           <Button label="Take a reading" style={s.insideBtn}
-            onPress={() => router.push({ pathname: '/venue/[id]', params: { id: activeVenueId, openRateModal: 'true' } } as any)} />
+            onPress={() => router.push({ pathname: '/venue/[id]', params: { id: insideId, openRateModal: 'true' } } as any)} />
         </Animated.View>
       ) : null}
 
@@ -220,6 +238,12 @@ export default function HomeScreen() {
               action="See venues" onAction={() => setFilter('all')} />
           )}
 
+          {!isDemoMode && user && autoOn === false && (
+            <InviteCard title="Check in automatically"
+              body="Your phone notices when you walk into a venue, so readings and prompts come to you. You choose, and you can turn it off any time."
+              action="Turn on" onAction={() => setShowAuto(true)} />
+          )}
+
           {!f.events && (
             <InviteCard title="Follow places to hear when they heat up"
               body="Swipe through what is near you and keep the ones you like."
@@ -241,6 +265,16 @@ export default function HomeScreen() {
             ))}
           </View>
         </Pressable>
+      </Modal>
+
+      {/* Auto check-in explainer: the permission is sensitive, so it is explained first */}
+      <Modal visible={showAuto} transparent animationType="slide" onRequestClose={closeAuto}>
+        <Pressable style={s.scrim} onPress={closeAuto} accessibilityLabel="Close" />
+        <View style={[sheet, s.autoSheet, { paddingBottom: insets.bottom + space.md }]}>
+          <View style={sheetHandle} />
+          <AutoPresenceToggle />
+          <Button label="Done" variant="secondary" onPress={closeAuto} style={{ marginTop: space.md }} />
+        </View>
       </Modal>
 
       {/* Follow places: the one swipe deck, opened on request, never on launch */}
@@ -272,6 +306,7 @@ const s = StyleSheet.create({
   summary: { ...type.label, color: color.inkSoft, paddingHorizontal: space.md, marginTop: space.xxs },
   chips: { gap: space.xs, paddingHorizontal: space.md, paddingVertical: space.sm },
   scrim: { flex: 1, backgroundColor: color.scrim },
+  autoSheet: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.md },
   cityMenu: {
     marginHorizontal: space.md, backgroundColor: color.surface, borderRadius: radius.md,
     borderWidth: 1, borderColor: color.line, paddingVertical: space.xxs,
