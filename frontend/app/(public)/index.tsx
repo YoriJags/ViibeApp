@@ -161,7 +161,7 @@ export default function HomeScreen() {
           {Platform.OS === 'web' ? (
             <MockMap venues={list as any} userLocation={userLocation} onVenuePress={(v: any) => openVenue(v.id)} highlightedVenueId={highlighted} />
           ) : (
-            <VibeMap venues={list as any} userLocation={userLocation} onVenuePress={(v: any) => openVenue(v.id)} highlightedVenueId={highlighted} />
+            <VibeMap venues={list as any} userLocation={userLocation} onVenuePress={(v: any) => openVenue(v.id)} highlightedVenueId={highlighted} demoMode={isDemoMode} />
           )}
         </ErrorBoundary>
       </View>

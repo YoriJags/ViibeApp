@@ -13,7 +13,8 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { energyColor, asEnergyState } from '../theme/energy';
+import { asEnergyState } from '../theme/energy';
+import { energy as tokenEnergy } from '../theme/tokens';
 
 const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN || '';
 
@@ -52,6 +53,8 @@ interface Props {
   highlightedVenueId?: string | null;
   center?: { lat: number; lng: number };
   zoomLevel?: number;
+  /** Demo mode: sample readings show at full strength (the Demo pill marks them). */
+  demoMode?: boolean;
 }
 
 // Colours come from the one energy palette (src/theme/energy.ts).
@@ -65,6 +68,7 @@ function buildHTML(
   userLocation: { lat: number; lng: number } | null,
   zoomLevel: number,
   token: string,
+  demoMode = false,
 ): string {
   const venueGeoJSON = {
     type: 'FeatureCollection',
@@ -76,11 +80,14 @@ function buildHTML(
         id: v.id,
         name: v.name,
         score: Math.round(v.current_vibe_score ?? 0),
-        color: energyColor(v.energy_level),
+        color: tokenEnergy[asEnergyState(v.energy_level)].fill,
+        ink: tokenEnergy[asEnergyState(v.energy_level)].ink,
+        label: tokenEnergy[asEnergyState(v.energy_level)].label,
         isHot: HOT_LEVELS.has(asEnergyState(v.energy_level)) ? 1 : 0,
-        demo: isReal(v) ? 0 : 1,
-        // Nothing read here yet: a small grey dot, no number, no heat.
-        unread: v.energy_source === 'none' || (!isReal(v) && Math.round(v.current_vibe_score ?? 0) === 0) ? 1 : 0,
+        // Real mode only: a demo-labelled score is faded so it never passes for real.
+        demo: isReal(v) || demoMode ? 0 : 1,
+        // Nothing read here yet: a hollow ring, no number, no heat.
+        unread: v.energy_source === 'none' || Math.round(v.current_vibe_score ?? 0) === 0 ? 1 : 0,
       },
     })),
   };
@@ -253,10 +260,10 @@ function buildHTML(
         source: 'venues',
         filter: ['==', ['get', 'unread'], 0],
         paint: {
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 17, 15, 34],
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 22, 15, 46],
           'circle-color': ['get', 'color'],
-          'circle-opacity': 0.42,
-          'circle-blur': 0.6,
+          'circle-opacity': ['case', ['==', ['get', 'demo'], 1], 0.22, 0.5],
+          'circle-blur': 0.9,
         },
       });
 
@@ -271,33 +278,13 @@ function buildHTML(
           // unread/read choice goes inside each zoom stop, not around them.
           // Nesting it the other way rejected the layer and broke the map.
           'circle-radius': ['interpolate', ['linear'], ['zoom'],
-            10, ['case', ['==', ['get', 'unread'], 1], 4, 10],
-            15, ['case', ['==', ['get', 'unread'], 1], 7, 20]],
-          'circle-color': ['case', ['==', ['get', 'unread'], 1], '#3A3A4E', ['get', 'color']],
-          'circle-opacity': ['case', ['==', ['get', 'demo'], 1], 0.45, 0.95],
-          'circle-stroke-width': 2,
-          'circle-stroke-color': ['case', ['==', ['get', 'demo'], 1], '#A89B8C', '#FFFFFF'],
-          'circle-stroke-opacity': 0.6,
-        },
-      });
-
-      // 4. Score label inside pin
-      map.addLayer({
-        id: 'venue-score',
-        type: 'symbol',
-        source: 'venues',
-        layout: {
-          'text-field': ['case', ['==', ['get', 'unread'], 1], '',
-            ['concat', ['to-string', ['get', 'score']], '%']],
-          'text-size': ['interpolate', ['linear'], ['zoom'], 10, 9, 15, 11],
-          'text-font': ['DIN Offc Pro Bold', 'Arial Unicode MS Bold'],
-          'text-anchor': 'center',
-          'text-allow-overlap': true,
-        },
-        paint: {
-          'text-color': '#FFFFFF',
-          'text-halo-color': 'rgba(0,0,0,0.75)',
-          'text-halo-width': 1.4,
+            10, ['case', ['==', ['get', 'unread'], 1], 4, 6],
+            15, ['case', ['==', ['get', 'unread'], 1], 6, 9]],
+          'circle-color': ['case', ['==', ['get', 'unread'], 1], '#130A2B', ['get', 'color']],
+          'circle-opacity': ['case', ['==', ['get', 'demo'], 1], 0.5, 1],
+          'circle-stroke-width': ['case', ['==', ['get', 'unread'], 1], 1.5, 1],
+          'circle-stroke-color': ['case', ['==', ['get', 'unread'], 1], '#8E7FA6', '#FFF5DE'],
+          'circle-stroke-opacity': ['case', ['==', ['get', 'unread'], 1], 1, 0.35],
         },
       });
 
@@ -359,7 +346,7 @@ function buildHTML(
           .setLngLat(lngLat)
           .setHTML(
             '<div class="popup-name">' + esc(props.name) + '</div>' +
-            '<div class="popup-score" style="color:' + props.color + '">' + props.score + '% VIIBE' +
+            '<div class="popup-score" style="color:' + props.ink + '">' + (props.unread ? 'No reading yet' : (props.label + ' ' + props.score)) +
               (props.demo ? ' <span style="color:#A89B8C">DEMO</span>' : '') + '</div>'
           )
           .addTo(map);
@@ -464,13 +451,14 @@ export default function VibeMap({
   crewPins = [],
   center,
   zoomLevel = 13,
+  demoMode = false,
 }: Props) {
   const mapCenter = center ?? userLocation ?? { lat: 6.4316, lng: 3.4223 };
 
   const html = useMemo(
-    () => buildHTML(venues, crewPins, mapCenter, userLocation, zoomLevel, MAPBOX_TOKEN),
+    () => buildHTML(venues, crewPins, mapCenter, userLocation, zoomLevel, MAPBOX_TOKEN, demoMode),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [venues, crewPins, userLocation?.lat, userLocation?.lng, zoomLevel],
+    [venues, crewPins, userLocation?.lat, userLocation?.lng, zoomLevel, demoMode],
   );
 
   const [mapError, setMapError] = useState<string | null>(null);
@@ -478,13 +466,14 @@ export default function VibeMap({
   // The heat layer glows from every scored venue. While those scores are demo
   // values, the map must say so, or it looks warmer than the city really is.
   const demoNote = useMemo(() => {
+    if (demoMode) return null; // the Demo pill already says so
     const scored = venues.filter((v) => (v.current_vibe_score ?? 0) > 0);
     const demo = scored.filter((v) => !isReal(v)).length;
     if (demo === 0) return null;
     return demo === scored.length
       ? 'Demo heat. No live readings yet.'
       : 'Some heat is demo. Faded pins are demo.';
-  }, [venues]);
+  }, [venues, demoMode]);
 
   const handleMessage = (event: any) => {
     try {
