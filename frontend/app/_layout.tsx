@@ -10,9 +10,7 @@ import { Unbounded_600SemiBold, Unbounded_700Bold } from '@expo-google-fonts/unb
 import { Archivo_400Regular, Archivo_500Medium, Archivo_600SemiBold } from '@expo-google-fonts/archivo';
 import { useVibeStore } from '../src/store/vibeStore';
 import OnboardingFlow from '../src/components/OnboardingFlow';
-import AppTutorial from '../src/components/AppTutorial';
 import SplashAnimation from '../src/components/SplashAnimation';
-import DemoTutorial from '../src/components/DemoTutorial';
 import ErrorBoundary from '../src/components/ErrorBoundary';
 import { initPostHog } from '../src/services/posthog';
 import { registerForPushNotifications, attachNotificationTapHandler } from '../src/services/pushNotifications';
@@ -97,9 +95,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   }
 
   // How-to tutorial — shown once after onboarding (and for existing users on next launch)
-  if (!hasSeenAppTutorial) {
-    return <AppTutorial visible onComplete={completeAppTutorial} />;
-  }
+  // The separate app tutorial is retired: onboarding is one flow now.
 
   return <>{children}</>;
 }
@@ -131,7 +127,6 @@ export default function RootLayout() {
               <Stack.Screen name="venue/[id]" options={{ headerShown: false }} />
               <Stack.Screen name="rate/[id]" options={{ headerShown: false }} />
             </Stack>
-            <DemoTutorial />
             {/* The floating "Viibe charge" HUD is retired: it covered every
                 screen's header. Being inside a venue now shows as the
                 "You're inside" bar on the map and the venue's own button. */}
