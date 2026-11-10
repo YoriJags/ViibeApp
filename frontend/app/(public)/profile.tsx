@@ -1,1606 +1,248 @@
-import React, { useEffect, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  Alert,
-  Modal,
-  Platform,
-  Dimensions,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+/**
+ * You (design spec, Nov 2026).
+ * Signed out: one welcome, phone log in or sign up, or look around (demo).
+ * Signed in: identity, one stat row, then settings rows: auto check-in, prompt
+ * rhythm, crew, your name, the venue dashboard for merchants (replaces the
+ * floating floor switcher), exit demo, sign out.
+ * Retired: cosmic sign, the three coloured header icons, the boxed dividers,
+ * the night debrief, passport and after-party overlays, heat level-up ceremony.
+ */
+import React, { useEffect, useState } from 'react';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useVibeStore } from '../../src/store/vibeStore';
-import VibePlusModal from '../../src/components/VibePlusModal';
-import ScoutHeatCard from '../../src/components/ScoutHeatCard';
-import PromptCadencePicker from '../../src/components/PromptCadencePicker';
-import AutoPresenceToggle from '../../src/components/AutoPresenceToggle';
-import VibeTapCard from '../../src/components/VibeTapCard';
-import VibePassport from '../../src/components/VibePassport';
-import AfterHours from '../../src/components/AfterHours';
-import AvatarBuilder from '../../src/components/AvatarBuilder';
 import AvatarDisplay from '../../src/components/AvatarDisplay';
-import AchievementBadge, { Badge } from '../../src/components/AchievementBadge';
-import CrewCard from '../../src/components/CrewCard';
-import HeatLevelUp from '../../src/components/HeatLevelUp';
-import analytics, { EVENT } from '../../src/services/analytics';
-import { getZodiacSign } from '../../src/config/zodiac';
-import { DEMO_BADGES, DEMO_CREW } from '../../src/data/demoData';
+import AvatarBuilder from '../../src/components/AvatarBuilder';
+import AutoPresenceToggle from '../../src/components/AutoPresenceToggle';
+import PromptCadencePicker from '../../src/components/PromptCadencePicker';
+import { Button, DemoPill } from '../../src/components/ui';
+import { card, color, icon, listRow, radius, sheet, sheetHandle, size, space, type } from '../../src/theme/tokens';
 
-const { width: W } = Dimensions.get('window');
+const STATUS: Record<string, string> = { newbie: 'New scout', regular: 'Regular', scout: 'Scout', elite: 'Elite scout' };
 
-const SCOUT_STATUS_CONFIG: Record<string, { level: string; label: string; color: string; perks: string[] }> = {
-  newbie:  { level: 'shadow',      label: 'Shadow',      color: '#666666', perks: [] },
-  regular: { level: 'rising',      label: 'Rising',      color: '#9933FF', perks: ['Clout multiplier +1.2x', 'Crew eligible', 'Trending feed access'] },
-  scout:   { level: 'scene_maker', label: 'Scene Maker', color: '#FF3366', perks: ['Viibe Oracle predictions', 'Clout multiplier +1.5x', 'Scout radar visible'] },
-  elite:   { level: 'vibe_god',    label: 'Viibe God',    color: '#FFD700', perks: ['VIIBE GOD status', 'Elite 2x clout multiplier', 'All Viibe+ perks free'] },
-};
-
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
-
-function computeBadges(user: any): Badge[] {
-  const ratings = user?.total_ratings ?? 0;
-  const clout   = user?.clout_points  ?? 0;
-  return [
-    { id: 'b_first',    emoji: '🔥', name: 'Trailblazer',  description: 'Drop your first rating',    unlocked: ratings >= 1,  tier: 'silver',  progress: ratings >= 1 ? 1 : 0 },
-    { id: 'b_10rate',   emoji: '⭐', name: 'Scene Reader',  description: 'Rate 10 venues',            unlocked: ratings >= 10, tier: 'gold',    progress: Math.min(ratings / 10, 1) },
-    { id: 'b_50rate',   emoji: '🎯', name: 'Centurion',    description: 'Rate 50 venues',            unlocked: ratings >= 50, tier: 'gold',    progress: Math.min(ratings / 50, 1) },
-    { id: 'b_clout',    emoji: '⚡', name: 'Clout Lord',   description: 'Earn 100 clout points',     unlocked: clout >= 100,  tier: 'bronze',  progress: Math.min(clout / 100, 1) },
-    { id: 'b_elite',    emoji: '💎', name: 'Elite Scout',  description: 'Reach Elite status',        unlocked: user?.scout_status === 'elite', tier: 'diamond' },
-    { id: 'b_squad',    emoji: '🤝', name: 'Squad Up',     description: 'Join or create a crew',     unlocked: !!user?.crew_id, tier: 'bronze' },
-  ];
-}
-
-const DEMO_DEBRIEF = {
-  debrief: "You hit 3 spots tonight and kept the energy electric the whole way through, that's certified scout behaviour right there.",
-  night_title: "Electric VI Run",
-  stats: { spots_visited: 3, ratings_dropped: 3, avg_vibe_given: 87 },
-};
-
-const profileCallNameStyles = StyleSheet.create({
-  row:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  placeholder:  { fontSize: 14, color: '#555', fontWeight: '500', fontStyle: 'italic' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
-  modalCard:    { width: '100%', backgroundColor: '#0E0E1A', borderRadius: 20, borderWidth: 1, borderColor: '#9933FF44', padding: 24, gap: 8 },
-  modalTitle:   { fontSize: 18, fontWeight: '900', color: '#FFF', letterSpacing: -0.3 },
-  modalSub:     { fontSize: 12, color: '#555', lineHeight: 17, marginBottom: 8 },
-  modalInput:   { backgroundColor: '#111118', borderRadius: 14, borderWidth: 1.5, borderColor: '#9933FF55', paddingHorizontal: 18, paddingVertical: 16, fontSize: 18, fontWeight: '700', color: '#FFF', textAlign: 'center', letterSpacing: 0.3 },
-  charCount:    { fontSize: 11, color: '#555', textAlign: 'right' },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  cancelBtn:    { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#333', alignItems: 'center' },
-  cancelText:   { fontSize: 14, fontWeight: '700', color: '#555' },
-  saveBtn:      { flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: '#9933FF', alignItems: 'center' },
-  saveText:     { fontSize: 14, fontWeight: '800', color: '#FFF', letterSpacing: 0.3 },
-});
-
-export default function ProfileScreen() {
-  const router = useRouter();
-  const { user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode, isFeatureEnabled, isVibePlus, avatarConfig, updateAvatar, crew, fetchCrew, replayAppTutorial, updateCallName } = useVibeStore();
-  const [authMode, setAuthMode] = useState<'welcome' | 'login' | 'signup' | 'zodiac'>('welcome');
-  const [username, setUsername] = useState('');
-  const [phone, setPhone] = useState('');
-  const [debrief, setDebrief] = useState<{ debrief: string; night_title?: string; stats?: any } | null>(null);
-  const [authLoading, setAuthLoading] = useState(false);
-  const [showVibePlus, setShowVibePlus] = useState(false);
-  const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
-  const [showPassport, setShowPassport] = useState(false);
-  const [showAfterParty, setShowAfterParty] = useState(false);
-  const [showZodiacPicker, setShowZodiacPicker] = useState(false);
-  const [showHeatLevelUp, setShowHeatLevelUp] = useState(false);
-  const [showNightSummary, setShowNightSummary] = useState(false);
-  const [showCallNameEdit, setShowCallNameEdit] = useState(false);
-  const [callNameDraft, setCallNameDraft] = useState('');
-  const [savingCallName, setSavingCallName] = useState(false);
-  const prevScoutStatus = useRef<string | null>(null);
-
-  useEffect(() => {
-    // Check for existing session
-    fetchAuthUser().then((authUser) => {
-      if (!authUser) {
-        fetchUser();
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    if (user?.id && !isDemoMode) fetchCrew();
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (isDemoMode) { setDebrief(DEMO_DEBRIEF); return; }
-    if (!user?.id) return;
-    fetch(`${API_URL}/api/users/${user.id}/night-debrief`)
-      .then(r => r.json())
-      .then(d => { if (d.debrief) setDebrief(d); })
-      .catch(() => {});
-  }, [user?.id, isDemoMode]);
-
-  // Detect scout_status upgrade → fire HeatLevelUp ceremony
-  useEffect(() => {
-    const status = user?.scout_status;
-    if (!status) return;
-    const prev = prevScoutStatus.current;
-    const ORDER = ['newbie', 'regular', 'scout', 'elite'];
-    if (prev && ORDER.indexOf(status) > ORDER.indexOf(prev)) {
-      setShowHeatLevelUp(true);
-    }
-    prevScoutStatus.current = status;
-  }, [user?.scout_status]);
-
-  const handleLocalSignup = async () => {
-    if (!username.trim() || !phone.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    const success = await createUser(username.trim(), phone.trim());
-    if (success) {
-      setAuthMode('welcome');
-    } else {
-      Alert.alert('Error', 'Username might already exist. Try another.');
-    }
-  };
-
-  const handleZodiacSelect = async (signKey: string) => {
-    try {
-      await fetch(`${API_URL}/api/users/me/zodiac`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...useVibeStore.getState().getAuthHeaders() },
-        body: JSON.stringify({ sign: signKey }),
-      });
-      useVibeStore.setState(s => ({
-        user: s.user ? { ...s.user, zodiac_sign: signKey } : s.user,
-      }));
-      analytics.track(EVENT.ZODIAC_SET, { sign: signKey, context: 'onboarding' });
-    } catch {
-      // Non-critical — sign just won't be set
-    } finally {
-      setAuthMode('welcome');
-    }
-  };
-
-  const handleZodiacChange = async (signKey: string) => {
-    try {
-      await fetch(`${API_URL}/api/users/me/zodiac`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...useVibeStore.getState().getAuthHeaders() },
-        body: JSON.stringify({ sign: signKey }),
-      });
-      useVibeStore.setState(s => ({
-        user: s.user ? { ...s.user, zodiac_sign: signKey } : s.user,
-      }));
-      analytics.track(EVENT.ZODIAC_SET, { sign: signKey, context: 'profile_edit' });
-    } catch {
-      Alert.alert('Error', 'Could not save sign.');
-    } finally {
-      setShowZodiacPicker(false);
-    }
-  };
-
-  const handleZodiacClear = async () => {
-    try {
-      await fetch(`${API_URL}/api/users/me/zodiac`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...useVibeStore.getState().getAuthHeaders() },
-        body: JSON.stringify({ sign: null }),
-      });
-      useVibeStore.setState(s => ({
-        user: s.user ? { ...s.user, zodiac_sign: undefined } : s.user,
-      }));
-    } catch {}
-    setShowZodiacPicker(false);
-  };
-
-  const handleLogin = async () => {
-    if (!phone.trim()) {
-      Alert.alert('Error', 'Please enter your phone number');
-      return;
-    }
-
-    const result = await loginUser(phone.trim());
-    if (result.success) {
-      setAuthMode('welcome');
-    } else {
-      Alert.alert('Login Failed', result.error || 'User not found. Please sign up first.');
-    }
-  };
-
-  const handleLogout = async () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: () => logout() }
-      ]
-    );
-  };
-
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'elite': return '#FFD700';
-      case 'scout': return '#E91E63';
-      case 'regular': return '#2196F3';
-      default: return '#666';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'elite': return 'shield-checkmark';
-      case 'scout': return 'eye';
-      case 'regular': return 'person';
-      default: return 'person-outline';
-    }
-  };
-
-  if ((loading || authLoading) && !user) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FF3366" />
-          <Text style={styles.loadingText}>Loading...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Welcome / Sign-in Screen
-  if (!user && authMode === 'welcome') {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.welcomeContainer}>
-          <View style={styles.logoContainer}>
-            <Text style={styles.logo}>VIIBE</Text>
-          </View>
-          <Text style={styles.welcomeTitle}>Welcome to Viibe</Text>
-          <Text style={styles.welcomeSubtitle}>
-            Nigeria's live scene intelligence
-          </Text>
-
-          {/* Login with Phone */}
-          <TouchableOpacity
-            style={styles.localButton}
-            onPress={() => setAuthMode('login')}
-          >
-            <Ionicons name="log-in-outline" size={20} color="#FF3366" />
-            <Text style={styles.localButtonText}>Login with Phone</Text>
-          </TouchableOpacity>
-
-          {/* Sign up with Phone */}
-          <TouchableOpacity
-            style={[styles.localButton, { marginTop: 12, backgroundColor: 'transparent', borderColor: '#333' }]}
-            onPress={() => setAuthMode('signup')}
-          >
-            <Ionicons name="person-add-outline" size={20} color="#888" />
-            <Text style={[styles.localButtonText, { color: '#888' }]}>Create New Account</Text>
-          </TouchableOpacity>
-
-          {/* Demo Mode */}
-          <TouchableOpacity
-            style={styles.demoButton}
-            onPress={toggleDemoMode}
-          >
-            <Ionicons name="sparkles" size={16} color="#888" />
-            <Text style={styles.demoButtonText}>Try Demo Mode</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.termsText}>
-            By signing in, you agree to our Terms & Privacy Policy
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Login Form
-  if (authMode === 'login' && !user) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.signupContainer}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => { setAuthMode('welcome'); setPhone(''); }}
-          >
-            <Ionicons name="arrow-back" size={24} color="#FFF" />
-          </TouchableOpacity>
-
-          <Text style={styles.signupTitle}>Login</Text>
-          <Text style={styles.signupSubtitle}>
-            Enter your phone number to continue
-          </Text>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Phone Number</Text>
-            <TextInput
-              style={styles.input}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="+2341234567890"
-              placeholderTextColor="#666"
-              keyboardType="phone-pad"
-              autoFocus
-            />
-          </View>
-
-          <TouchableOpacity
-            style={styles.signupButton}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text style={styles.signupButtonText}>Login</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={{ marginTop: 20, alignItems: 'center' }}
-            onPress={() => { setAuthMode('signup'); setPhone(''); }}
-          >
-            <Text style={{ color: '#888' }}>
-              Don't have an account? <Text style={{ color: '#FF3366' }}>Sign up</Text>
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  // Local Signup Form
-  if (authMode === 'signup' && !user) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.signupContainer}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => { setAuthMode('welcome'); setUsername(''); setPhone(''); }}
-          >
-            <Ionicons name="arrow-back" size={24} color="#FFF" />
-          </TouchableOpacity>
-
-          <Text style={styles.signupTitle}>Create Profile</Text>
-          <Text style={styles.signupSubtitle}>
-            Join Nigeria's live scene
-          </Text>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Username</Text>
-            <TextInput
-              style={styles.input}
-              value={username}
-              onChangeText={setUsername}
-              placeholder="Enter username"
-              placeholderTextColor="#666"
-              autoCapitalize="none"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Phone Number</Text>
-            <TextInput
-              style={styles.input}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="+234..."
-              placeholderTextColor="#666"
-              keyboardType="phone-pad"
-            />
-          </View>
-
-          <TouchableOpacity
-            style={styles.signupButton}
-            onPress={handleLocalSignup}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text style={styles.signupButtonText}>Create Profile</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={{ marginTop: 20, alignItems: 'center' }}
-            onPress={() => { setAuthMode('login'); setUsername(''); setPhone(''); }}
-          >
-            <Text style={{ color: '#888' }}>
-              Already have an account? <Text style={{ color: '#FF3366' }}>Login</Text>
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  // User Profile Screen
+function Row({ icon: name, label, value, onPress, danger }: {
+  icon: keyof typeof Ionicons.glyphMap; label: string; value?: string; onPress: () => void; danger?: boolean;
+}) {
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header — outside ScrollView so buttons always respond */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <TouchableOpacity
-            onPress={() => setShowAfterParty(true)}
-            activeOpacity={0.7}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="moon-outline" size={22} color="#9933FF" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowPassport(true)}
-            activeOpacity={0.7}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="id-card-outline" size={24} color="#6655FF" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleLogout}
-            activeOpacity={0.7}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="log-out-outline" size={24} color="#FF3366" />
-          </TouchableOpacity>
-        </View>
-      </View>
-      <ScrollView style={styles.scrollView}>
-
-        {/* User Card */}
-        <View style={styles.userCard}>
-          <View style={{ position: 'relative', marginBottom: 12 }}>
-            <TouchableOpacity onPress={() => setShowAvatarBuilder(true)} activeOpacity={0.8}>
-              <AvatarDisplay
-                config={avatarConfig}
-                username={user?.username || ''}
-                size={80}
-                showBorder={!!avatarConfig}
-                borderColor={avatarConfig?.bgColor}
-              />
-            </TouchableOpacity>
-            {/* Edit hint */}
-            <View style={styles.editAvatarBadge}>
-              <Ionicons name="pencil" size={9} color="#FFF" />
-            </View>
-            {/* Scout status badge */}
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(user?.scout_status || 'newbie') }]}>
-              <Ionicons name={getStatusIcon(user?.scout_status || 'newbie') as any} size={12} color="#FFF" />
-            </View>
-          </View>
-          <TouchableOpacity
-            onPress={() => { setCallNameDraft(user?.call_name ?? ''); setShowCallNameEdit(true); }}
-            activeOpacity={0.75}
-            style={profileCallNameStyles.row}
-          >
-            <Text style={user?.call_name ? styles.userName : profileCallNameStyles.placeholder}>
-              {user?.call_name ?? 'Set your name in the scene'}
-            </Text>
-            <Ionicons name="pencil-outline" size={14} color="#555" style={{ marginLeft: 6, marginTop: 2 }} />
-          </TouchableOpacity>
-          <Text style={[styles.userEmail, { marginTop: 2 }]}>@{user?.username}</Text>
-          {user?.email && (
-            <Text style={styles.userEmail}>{user.email}</Text>
-          )}
-          <View style={styles.authBadge}>
-            <Ionicons 
-              name={user?.auth_provider === 'google' ? 'logo-google' : 'phone-portrait'} 
-              size={12} 
-              color="#888" 
-            />
-            <Text style={styles.authText}>
-              {user?.auth_provider === 'google' ? 'Google' : 'Phone'} Account
-            </Text>
-          </View>
-          <Text style={styles.userStatus}>
-            {user?.scout_status?.toUpperCase()} SCOUT
-          </Text>
-
-          {/* Vibe+ badge or upgrade CTA */}
-          {isVibePlus() ? (
-            <View style={styles.vibePlusBadge}>
-              <Ionicons name="star" size={11} color="#FFD700" />
-              <Text style={styles.vibePlusBadgeText}>VIIBE+</Text>
-            </View>
-          ) : (
-            <TouchableOpacity style={styles.vibePlusUpgrade} onPress={() => setShowVibePlus(true)} activeOpacity={0.8}>
-              <Ionicons name="lock-open-outline" size={13} color="#FFD700" />
-              <Text style={styles.vibePlusUpgradeText}>✦ Upgrade to Viibe+ for ₦1,500/mo</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-
-        {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Ionicons name="flame" size={28} color="#FF3366" />
-            <Text style={styles.statValue}>{user?.clout_points || 0}</Text>
-            <Text style={styles.statLabel}>Clout Points</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Ionicons name="star" size={28} color="#FFD700" />
-            <Text style={styles.statValue}>{user?.total_ratings || 0}</Text>
-            <Text style={styles.statLabel}>Ratings</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Ionicons name="analytics" size={28} color="#4CAF50" />
-            <Text style={styles.statValue}>
-              {Math.round(user?.rating_accuracy_score || 0)}%
-            </Text>
-            <Text style={styles.statLabel}>Accuracy</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Ionicons name="ribbon" size={28} color="#9C27B0" />
-            <Text style={styles.statValue}>{user?.scout_status || 'newbie'}</Text>
-            <Text style={styles.statLabel}>Status</Text>
-          </View>
-        </View>
-
-        {/* Tonight's Heat */}
-        <ScoutHeatCard isDemoMode={isDemoMode} />
-
-        {/* Auto check-in: the phone notices when you walk into a venue */}
-        {!isDemoMode && <AutoPresenceToggle />}
-
-        {/* How often VIIBE asks while you are inside a venue */}
-        {!isDemoMode && (
-          <PromptCadencePicker
-            getAuthHeaders={() => useVibeStore.getState().getAuthHeaders()}
-          />
-        )}
-
-        {/* Vibe Tap History */}
-        <VibeTapCard isDemoMode={isDemoMode} />
-
-        {/* Achievements */}
-        <AchievementBadge badges={isDemoMode ? DEMO_BADGES : computeBadges(user)} />
-
-        {/* Crew */}
-        {(isDemoMode ? DEMO_CREW : crew) && (
-          <View style={styles.crewSection}>
-            <Text style={styles.crewSectionLabel}>YOUR CREW</Text>
-            <CrewCard
-              name={isDemoMode ? DEMO_CREW.name : (crew as any).name}
-              members={isDemoMode ? DEMO_CREW.member_details : ((crew as any).member_details || [])}
-              inviteCode={isDemoMode ? DEMO_CREW.invite_code : ((crew as any).invite_code || '')}
-              isCaptain={isDemoMode ? DEMO_CREW.is_captain : ((crew as any).is_captain || false)}
-              onPress={() => router.push('/(public)/crew' as any)}
-            />
-          </View>
-        )}
-
-        {/* Night Summary card — always visible, locks behind Viibe+ */}
-        {(isDemoMode || isFeatureEnabled('night_debrief')) && (
-          isVibePlus() || isDemoMode ? (
-            debrief ? (
-              <TouchableOpacity
-                style={styles.nightSummaryCard}
-                onPress={() => setShowNightSummary(true)}
-                activeOpacity={0.85}
-              >
-                <LinearGradient colors={['#1A0F00', '#1A0A00']} style={styles.nightSummaryInner}>
-                  <View style={styles.nightSummaryHeader}>
-                    <View style={styles.nightSummaryLeft}>
-                      <View style={styles.nightSummaryDot} />
-                      <Text style={styles.nightSummaryLabel}>NIGHT DEBRIEF</Text>
-                    </View>
-                    {debrief.night_title && (
-                      <Text style={styles.nightSummaryTitle}>{debrief.night_title}</Text>
-                    )}
-                  </View>
-                  {debrief.stats && (
-                    <View style={styles.nightSummaryStats}>
-                      <View style={styles.nightSummaryStat}>
-                        <Text style={styles.nightSummaryStatVal}>{debrief.stats.spots_visited}</Text>
-                        <Text style={styles.nightSummaryStatLbl}>spots</Text>
-                      </View>
-                      <View style={styles.nightSummaryStat}>
-                        <Text style={styles.nightSummaryStatVal}>{debrief.stats.ratings_dropped}</Text>
-                        <Text style={styles.nightSummaryStatLbl}>ratings</Text>
-                      </View>
-                      {debrief.stats.avg_vibe_given > 0 && (
-                        <View style={styles.nightSummaryStat}>
-                          <Text style={styles.nightSummaryStatVal}>{debrief.stats.avg_vibe_given}</Text>
-                          <Text style={styles.nightSummaryStatLbl}>avg vibe</Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
-                  <View style={styles.nightSummaryFooter}>
-                    <Text style={styles.nightSummaryPreview} numberOfLines={1}>{debrief.debrief}</Text>
-                    <Ionicons name="chevron-forward" size={14} color="#FF9933" />
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            ) : null
-          ) : (
-            <TouchableOpacity
-              style={styles.debriefLocked}
-              onPress={() => setShowVibePlus(true)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.debriefLockedLeft}>
-                <Text style={styles.debriefLockedLabel}>NIGHT DEBRIEF</Text>
-                <Text style={styles.debriefLockedDesc}>Your AI recap of the night: what you hit, how the energy held up, and your scout read.</Text>
-              </View>
-              <View style={styles.debriefLockedRight}>
-                <Ionicons name="lock-closed" size={18} color="#FFD700" />
-                <Text style={styles.debriefLockedChip}>VIIBE+</Text>
-              </View>
-            </TouchableOpacity>
-          )
-        )}
-
-        {/* Replay app tutorial */}
-        <TouchableOpacity
-          style={styles.replayTutorialBtn}
-          onPress={replayAppTutorial}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="book-outline" size={14} color="#3399FF" />
-          <Text style={styles.replayTutorialText}>How to Use VIIBE</Text>
-        </TouchableOpacity>
-
-        {/* Demo: trigger HeatLevelUp ceremony */}
-        {isDemoMode && (
-          <TouchableOpacity
-            style={styles.demoTriggerBtn}
-            onPress={() => setShowHeatLevelUp(true)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="flash" size={14} color="#9933FF" />
-            <Text style={styles.demoTriggerText}>Demo: Trigger Heat Level Up</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Dashboard Access Section - Only show if user has permissions */}
-        {(user?.is_merchant || user?.is_super_admin) && (
-          <View style={styles.dashboardSection}>
-            <Text style={styles.sectionTitle}>Switch Floor</Text>
-            
-            {/* Merchant Floor - Only for merchants */}
-            {user?.is_merchant && (
-              <TouchableOpacity
-                style={styles.dashboardCard}
-                onPress={() => router.replace('/(merchant)')}
-              >
-                <View style={[styles.dashboardIcon, { backgroundColor: '#D4AF3720' }]}>
-                  <Ionicons name="storefront" size={24} color="#D4AF37" />
-                </View>
-                <View style={styles.dashboardContent}>
-                  <Text style={styles.dashboardTitle}>Merchant Floor</Text>
-                  <Text style={styles.dashboardDesc}>Business dashboard, wallet, and Pulse Drop controls</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#666" />
-              </TouchableOpacity>
-            )}
-
-            {/* Admin Floor - Only for super admins */}
-            {user?.is_super_admin && (
-              <TouchableOpacity
-                style={styles.dashboardCard}
-                onPress={() => router.replace('/(admin)')}
-              >
-                <View style={[styles.dashboardIcon, { backgroundColor: '#4169E120' }]}>
-                  <Ionicons name="shield-checkmark" size={24} color="#4169E1" />
-                </View>
-                <View style={styles.dashboardContent}>
-                  <Text style={styles.dashboardTitle}>Admin Floor</Text>
-                  <Text style={styles.dashboardDesc}>Global treasury, venue management, system logs</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#666" />
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
-
-        {/* Scout Progress */}
-        <View style={styles.progressCard}>
-          <Text style={styles.progressTitle}>Scout Progress</Text>
-          <View style={styles.progressLevels}>
-            {['newbie', 'regular', 'scout', 'elite'].map((level, index) => (
-              <View key={level} style={styles.progressLevel}>
-                <View
-                  style={[
-                    styles.progressDot,
-                    {
-                      backgroundColor:
-                        ['newbie', 'regular', 'scout', 'elite'].indexOf(
-                          user?.scout_status || 'newbie'
-                        ) >= index
-                          ? getStatusColor(level)
-                          : '#333',
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={getStatusIcon(level) as any}
-                    size={16}
-                    color="#FFF"
-                  />
-                </View>
-                <Text style={styles.progressLevelText}>{level}</Text>
-              </View>
-            ))}
-          </View>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${Math.min(
-                    (['newbie', 'regular', 'scout', 'elite'].indexOf(
-                      user?.scout_status || 'newbie'
-                    ) +
-                      1) *
-                      25,
-                    100
-                  )}%`,
-                },
-              ]}
-            />
-          </View>
-        </View>
-
-        {/* Info Cards */}
-        <View style={styles.infoSection}>
-          <View style={styles.infoCard}>
-            <Ionicons name="information-circle" size={24} color="#2196F3" />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoTitle}>How to level up</Text>
-              <Text style={styles.infoText}>
-                Rate venues accurately to earn Clout and become a Scout!
-              </Text>
-            </View>
-          </View>
-          <View style={styles.infoCard}>
-            <Ionicons name="shield-checkmark" size={24} color="#4CAF50" />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoTitle}>Scout Benefits</Text>
-              <Text style={styles.infoText}>
-                Scouts get Fast Lane passes for priority entry at venues.
-              </Text>
-            </View>
-          </View>
-        </View>
-
-
-        <View style={{ height: 100 }} />
-      </ScrollView>
-
-      <AvatarBuilder
-        visible={showAvatarBuilder}
-        onClose={() => setShowAvatarBuilder(false)}
-        onSave={(config) => updateAvatar(config)}
-        initialConfig={avatarConfig}
-      />
-
-      <VibePlusModal
-        visible={showVibePlus}
-        onClose={() => setShowVibePlus(false)}
-        onSuccess={() => setShowVibePlus(false)}
-      />
-
-      {/* ── Call Name Edit Modal ── */}
-      <Modal visible={showCallNameEdit} transparent animationType="fade" onRequestClose={() => setShowCallNameEdit(false)}>
-        <View style={profileCallNameStyles.modalOverlay}>
-          <View style={profileCallNameStyles.modalCard}>
-            <Text style={profileCallNameStyles.modalTitle}>Your name in the scene</Text>
-            <Text style={profileCallNameStyles.modalSub}>Shown on your passport, leaderboard, and surge feed.</Text>
-            <TextInput
-              style={profileCallNameStyles.modalInput}
-              placeholder="e.g. The Don, Yori, King Push"
-              placeholderTextColor="#444"
-              value={callNameDraft}
-              onChangeText={t => setCallNameDraft(t.slice(0, 30))}
-              autoFocus
-              returnKeyType="done"
-              selectionColor="#9933FF"
-              onSubmitEditing={async () => {
-                setSavingCallName(true);
-                await updateCallName(callNameDraft.trim() || null);
-                setSavingCallName(false);
-                setShowCallNameEdit(false);
-              }}
-            />
-            {callNameDraft.length > 0 && (
-              <Text style={profileCallNameStyles.charCount}>{callNameDraft.length}/30</Text>
-            )}
-            <View style={profileCallNameStyles.modalActions}>
-              <TouchableOpacity
-                style={profileCallNameStyles.cancelBtn}
-                onPress={() => setShowCallNameEdit(false)}
-                activeOpacity={0.75}
-              >
-                <Text style={profileCallNameStyles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={profileCallNameStyles.saveBtn}
-                activeOpacity={0.8}
-                disabled={savingCallName}
-                onPress={async () => {
-                  setSavingCallName(true);
-                  await updateCallName(callNameDraft.trim() || null);
-                  setSavingCallName(false);
-                  setShowCallNameEdit(false);
-                }}
-              >
-                <Text style={profileCallNameStyles.saveText}>
-                  {savingCallName ? 'Saving…' : 'Save'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      <VibePassport
-        visible={showPassport}
-        onClose={() => setShowPassport(false)}
-        isDemoMode={isDemoMode}
-      />
-
-      <AfterHours
-        visible={showAfterParty}
-        onClose={() => setShowAfterParty(false)}
-        isDemoMode={isDemoMode}
-      />
-
-      {/* Heat Level Up ceremony */}
-      <HeatLevelUp
-        visible={showHeatLevelUp}
-        newLevel={SCOUT_STATUS_CONFIG[user?.scout_status ?? 'newbie']?.level ?? 'rising'}
-        newLabel={SCOUT_STATUS_CONFIG[user?.scout_status ?? 'newbie']?.label ?? 'Rising'}
-        color={SCOUT_STATUS_CONFIG[user?.scout_status ?? 'newbie']?.color ?? '#9933FF'}
-        perks={SCOUT_STATUS_CONFIG[user?.scout_status ?? 'newbie']?.perks ?? []}
-        onDismiss={() => setShowHeatLevelUp(false)}
-      />
-
-      {/* Night Summary full-screen modal */}
-      <Modal
-        visible={showNightSummary}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowNightSummary(false)}
-        statusBarTranslucent
-      >
-        <View style={styles.nightModalRoot}>
-          <LinearGradient colors={['#0A0600', '#0A0A0F']} style={styles.nightModalBg}>
-            {/* Header */}
-            <View style={styles.nightModalHeader}>
-              <View>
-                <Text style={styles.nightModalLabel}>NIGHT DEBRIEF</Text>
-                {debrief?.night_title && (
-                  <Text style={styles.nightModalNightTitle}>{debrief.night_title}</Text>
-                )}
-              </View>
-              <TouchableOpacity onPress={() => setShowNightSummary(false)} activeOpacity={0.8}>
-                <Ionicons name="close" size={22} color="#888" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Stats row */}
-            {debrief?.stats && (
-              <View style={styles.nightModalStats}>
-                {[
-                  { val: debrief.stats.spots_visited, lbl: 'Spots Hit', icon: 'location', color: '#FF3366' },
-                  { val: debrief.stats.ratings_dropped, lbl: 'Ratings', icon: 'star', color: '#FFD700' },
-                  { val: debrief.stats.avg_vibe_given > 0 ? debrief.stats.avg_vibe_given : '-', lbl: 'Avg Viibe', icon: 'pulse', color: '#9933FF' },
-                ].map((s, i) => (
-                  <View key={i} style={styles.nightModalStat}>
-                    <Ionicons name={s.icon as any} size={20} color={s.color} />
-                    <Text style={[styles.nightModalStatVal, { color: s.color }]}>{s.val}</Text>
-                    <Text style={styles.nightModalStatLbl}>{s.lbl}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {/* Divider */}
-            <View style={styles.nightModalDivider} />
-
-            {/* Debrief text */}
-            <ScrollView style={styles.nightModalScroll} showsVerticalScrollIndicator={false}>
-              <Text style={styles.nightModalDebrief}>{debrief?.debrief}</Text>
-              <View style={{ height: 60 }} />
-            </ScrollView>
-          </LinearGradient>
-        </View>
-      </Modal>
-    </SafeAreaView>
+    <Pressable onPress={onPress} style={({ pressed }) => [listRow, { minHeight: 56 }, pressed && { backgroundColor: color.raised }]} accessibilityRole="button">
+      <Ionicons name={name} size={icon.md} color={danger ? color.danger : color.inkSoft} />
+      <Text style={[s.rowLabel, danger && { color: color.danger }]}>{label}</Text>
+      {!!value && <Text style={s.rowValue} numberOfLines={1}>{value}</Text>}
+      {!danger && <Ionicons name="chevron-forward" size={icon.sm} color={color.inkFaint} />}
+    </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0A0A0F',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: '#888',
-    marginTop: 12,
-  },
-  welcomeContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  logoContainer: {
-    marginBottom: 24,
-  },
-  logo: {
-    fontSize: 64,
-    fontWeight: '900',
-    color: '#FF3366',
-    letterSpacing: 8,
-  },
-  welcomeTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#FFF',
-    marginBottom: 8,
-  },
-  welcomeSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 40,
-    textAlign: 'center',
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#4285F4',
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 30,
-    gap: 12,
-    width: '100%',
-    justifyContent: 'center',
-  },
-  googleButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-    width: '100%',
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#333',
-  },
-  dividerText: {
-    color: '#666',
-    marginHorizontal: 16,
-    fontSize: 14,
-  },
-  localButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 30,
-    gap: 12,
-    width: '100%',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FF3366',
-  },
-  localButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FF3366',
-  },
-  demoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 24,
-    paddingVertical: 10,
-  },
-  demoButtonText: {
-    fontSize: 14,
-    color: '#888',
-  },
-  termsText: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  signupContainer: {
-    padding: 24,
-  },
-  backButton: {
-    marginBottom: 24,
-  },
-  signupTitle: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#FFF',
-    marginBottom: 8,
-  },
-  signupSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 32,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#888',
-    marginBottom: 8,
-  },
+export default function YouScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const {
+    user, fetchUser, fetchAuthUser, createUser, loginUser, logout, loading, toggleDemoMode, isDemoMode,
+    avatarConfig, updateAvatar, crew, fetchCrew, updateCallName,
+  } = useVibeStore();
+  const [mode, setMode] = useState<'welcome' | 'login' | 'signup'>('welcome');
+  const [username, setUsername] = useState('');
+  const [phone, setPhone] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [showAvatar, setShowAvatar] = useState(false);
+  const [showName, setShowName] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+
+  useEffect(() => { fetchAuthUser().then((u) => { if (!u) fetchUser(); }); }, []);
+  useEffect(() => { if (user?.id && !isDemoMode) fetchCrew(); }, [user?.id]);
+
+  const doLogin = async () => {
+    if (!phone.trim()) return;
+    setBusy(true);
+    const r = await loginUser(phone.trim());
+    setBusy(false);
+    if (r.success) setMode('welcome');
+    else Alert.alert('Could not log in', r.error || 'No account with that number. Create one instead.');
+  };
+  const doSignup = async () => {
+    if (!username.trim() || !phone.trim()) return;
+    setBusy(true);
+    const ok = await createUser(username.trim(), phone.trim());
+    setBusy(false);
+    if (ok) setMode('welcome');
+    else Alert.alert('Could not create the account', 'That name may be taken, or the number already has an account. Try logging in.');
+  };
+  const signOut = () => Alert.alert('Sign out', 'Sign out of VIIBE on this phone?', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Sign out', style: 'destructive', onPress: () => logout() },
+  ]);
+  const saveName = async () => {
+    const ok = await updateCallName(nameDraft.trim() || null);
+    if (ok) setShowName(false);
+    else Alert.alert('Name not saved', 'Try again in a moment.');
+  };
+
+  // ── Signed out ──
+  if (!user) {
+    return (
+      <View style={[s.root, { paddingTop: insets.top, paddingBottom: insets.bottom + 96 }]}>
+        <View style={s.authBody}>
+          <Text style={s.mark}>VIIBE</Text>
+          {mode === 'welcome' && (
+            <>
+              <Text style={s.headline}>Sign in to take readings and follow places.</Text>
+              <Button label="Log in with phone" onPress={() => setMode('login')} style={s.authBtn} />
+              <Button label="Create an account" variant="secondary" onPress={() => setMode('signup')} style={{ marginTop: space.sm }} />
+              <Pressable onPress={toggleDemoMode} style={s.textBtn} accessibilityRole="button">
+                <Text style={s.textBtnText}>Look around first</Text>
+              </Pressable>
+              <Text style={s.fine}>By continuing you agree to the Terms and Privacy Policy.</Text>
+            </>
+          )}
+          {mode !== 'welcome' && (
+            <>
+              <Text style={s.headline}>{mode === 'login' ? 'Welcome back' : 'Create your account'}</Text>
+              {mode === 'signup' && (
+                <TextInput value={username} onChangeText={setUsername} placeholder="Username" placeholderTextColor={color.inkFaint}
+                  autoCapitalize="none" style={s.input} />
+              )}
+              <TextInput value={phone} onChangeText={setPhone} placeholder="Phone number" placeholderTextColor={color.inkFaint}
+                keyboardType="phone-pad" style={s.input} />
+              <Button label={busy || loading ? 'Please wait' : mode === 'login' ? 'Log in' : 'Create account'}
+                disabled={busy || (mode === 'signup' ? !username.trim() || !phone.trim() : !phone.trim())}
+                onPress={mode === 'login' ? doLogin : doSignup} style={s.authBtn} />
+              <Pressable onPress={() => setMode('welcome')} style={s.textBtn} accessibilityRole="button">
+                <Text style={s.textBtnText}>Back</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  // ── Signed in ──
+  const name = user.call_name || user.username;
+  return (
+    <View style={s.root}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 120 + insets.bottom }} showsVerticalScrollIndicator={false}>
+        <View style={s.topBar}>
+          <Text style={s.title}>You</Text>
+          {isDemoMode && <DemoPill />}
+        </View>
+
+        <View style={s.identity}>
+          <Pressable onPress={() => setShowAvatar(true)} accessibilityRole="button" accessibilityLabel="Change avatar">
+            <AvatarDisplay config={avatarConfig} username={user.username || ''} size={64} />
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={s.name} numberOfLines={1}>{name}</Text>
+            <Text style={s.handle}>@{user.username}</Text>
+          </View>
+          <View style={s.chip}><Text style={s.chipText}>{STATUS[user.scout_status] || 'Scout'}</Text></View>
+        </View>
+
+        <View style={[card, s.block, s.stats]}>
+          {[
+            { label: 'Readings', value: String(user.total_ratings ?? 0) },
+            { label: 'Accuracy', value: user.rating_accuracy_score ? `${Math.round(user.rating_accuracy_score)}%` : 'New' },
+            { label: 'Clout', value: String(user.clout_points ?? 0) },
+          ].map((x, i) => (
+            <View key={x.label} style={[s.stat, i > 0 && s.statLine]}>
+              <Text style={s.statValue}>{x.value}</Text>
+              <Text style={s.caption}>{x.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {!isDemoMode && (
+          <View style={s.block}>
+            <AutoPresenceToggle />
+          </View>
+        )}
+        {!isDemoMode && (
+          <View style={s.block}>
+            <PromptCadencePicker getAuthHeaders={() => useVibeStore.getState().getAuthHeaders()} />
+          </View>
+        )}
+
+        <View style={[card, s.block, s.rows]}>
+          <Row icon="people-outline" label="Crew" value={crew?.name || 'None yet'} onPress={() => router.push('/(public)/crew' as any)} />
+          <View style={s.line} />
+          <Row icon="create-outline" label="Your name" value={user.call_name || 'Add'} onPress={() => { setNameDraft(user.call_name || ''); setShowName(true); }} />
+          {user.is_merchant && (
+            <>
+              <View style={s.line} />
+              <Row icon="storefront-outline" label="Venue dashboard" onPress={() => router.push('/(merchant)' as any)} />
+            </>
+          )}
+          {user.is_super_admin && (
+            <>
+              <View style={s.line} />
+              <Row icon="shield-outline" label="Admin" onPress={() => router.push('/(admin)' as any)} />
+            </>
+          )}
+          {isDemoMode && (
+            <>
+              <View style={s.line} />
+              <Row icon="exit-outline" label="Leave demo" onPress={toggleDemoMode} />
+            </>
+          )}
+        </View>
+
+        {!isDemoMode && (
+          <View style={[card, s.block, s.rows]}>
+            <Row icon="log-out-outline" label="Sign out" onPress={signOut} danger />
+          </View>
+        )}
+      </ScrollView>
+
+      <AvatarBuilder visible={showAvatar} onClose={() => setShowAvatar(false)} initialConfig={avatarConfig}
+        onSave={(cfg) => { updateAvatar(cfg as any); setShowAvatar(false); }} />
+
+      <Modal visible={showName} transparent animationType="slide" onRequestClose={() => setShowName(false)}>
+        <Pressable style={s.scrim} onPress={() => setShowName(false)} accessibilityLabel="Close" />
+        <View style={[sheet, s.sheet, { paddingBottom: insets.bottom + space.md }]}>
+          <View style={sheetHandle} />
+          <Text style={s.sheetTitle}>Your name</Text>
+          <Text style={s.caption}>Shown to your crew and on readings you make public.</Text>
+          <TextInput value={nameDraft} onChangeText={setNameDraft} maxLength={30} placeholder="Name" placeholderTextColor={color.inkFaint}
+            style={s.input} autoFocus />
+          <Button label="Save" onPress={saveName} style={{ marginTop: space.md }} />
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: color.bg },
+  topBar: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.md, minHeight: size.topBar },
+  title: { ...type.headline, color: color.ink },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.md, marginTop: space.sm },
+  name: { ...type.title, color: color.ink },
+  handle: { ...type.label, color: color.inkSoft, marginTop: 2 },
+  chip: { height: 28, paddingHorizontal: space.sm, borderRadius: radius.pill, backgroundColor: color.raised, justifyContent: 'center' },
+  chipText: { ...type.captionStrong, color: color.inkSoft },
+  block: { marginHorizontal: space.md, marginTop: space.md },
+  stats: { flexDirection: 'row', paddingHorizontal: 0 },
+  stat: { flex: 1, alignItems: 'center' },
+  statLine: { borderLeftWidth: 1, borderLeftColor: color.line },
+  statValue: { ...type.title, color: color.ink },
+  caption: { ...type.caption, color: color.inkSoft, marginTop: 2 },
+  rows: { paddingHorizontal: 0, paddingVertical: space.xxs },
+  rowLabel: { ...type.body, color: color.ink, flex: 1 },
+  rowValue: { ...type.label, color: color.inkSoft, maxWidth: '45%' },
+  line: { height: 1, backgroundColor: color.line, marginLeft: space.md + icon.md + space.sm },
+  authBody: { flex: 1, justifyContent: 'center', paddingHorizontal: space.md },
+  mark: { ...type.title, color: color.ink, letterSpacing: 2, marginBottom: space.lg },
+  headline: { ...type.headline, color: color.ink },
+  authBtn: { marginTop: space.lg },
+  textBtn: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: space.sm },
+  textBtnText: { ...type.labelStrong, color: color.inkSoft },
+  fine: { ...type.caption, color: color.inkFaint, textAlign: 'center', marginTop: space.md },
   input: {
-    backgroundColor: '#151520',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#FFF',
-    borderWidth: 1,
-    borderColor: '#252530',
-  },
-  signupButton: {
-    backgroundColor: '#FF3366',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  signupButtonText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFF',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#FFF',
-  },
-  userCard: {
-    alignItems: 'center',
-    backgroundColor: '#151520',
-    marginHorizontal: 16,
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 20,
-  },
-  editAvatarBadge: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#252535',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#0A0A0F',
-  },
-  statusBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#151520',
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFF',
-  },
-  userEmail: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 4,
-  },
-  authBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#252530',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  authText: {
-    fontSize: 12,
-    color: '#888',
-  },
-  userStatus: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FF3366',
-    marginTop: 8,
-    letterSpacing: 2,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 12,
-    marginBottom: 20,
-  },
-  statCard: {
-    width: '50%',
-    padding: 8,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#FFF',
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-  },
-  fastPassSection: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFF',
-    marginBottom: 12,
-  },
-  fastPassCard: {
-    backgroundColor: '#151520',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#FFD70040',
-  },
-  fastPassHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  fastPassVenue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-  qrContainer: {
-    alignItems: 'center',
-    backgroundColor: '#0A0A0F',
-    borderRadius: 12,
-    padding: 16,
-  },
-  qrCode: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FF3366',
-    marginTop: 8,
-    letterSpacing: 2,
-  },
-  fastLaneCard: {
-    backgroundColor: '#151520',
-    marginHorizontal: 16,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#FFD70040',
-  },
-  fastLaneHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  fastLaneTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFD700',
-  },
-  fastLaneDesc: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 16,
-  },
-  qrPlaceholder: {
-    alignItems: 'center',
-    backgroundColor: '#0A0A0F',
-    borderRadius: 16,
-    padding: 24,
-  },
-  qrText: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 12,
-  },
-  progressCard: {
-    backgroundColor: '#151520',
-    marginHorizontal: 16,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
-  },
-  progressTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFF',
-    marginBottom: 20,
-  },
-  progressLevels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  progressLevel: {
-    alignItems: 'center',
-  },
-  progressDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  progressLevelText: {
-    fontSize: 10,
-    color: '#666',
-    textTransform: 'capitalize',
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: '#252530',
-    borderRadius: 3,
-    marginTop: 8,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#FF3366',
-    borderRadius: 3,
-  },
-  infoSection: {
-    paddingHorizontal: 16,
-  },
-  infoCard: {
-    flexDirection: 'row',
-    backgroundColor: '#151520',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
-    marginBottom: 4,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#888',
-    lineHeight: 20,
-  },
-  dashboardSection: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-  },
-  dashboardCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#151520',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-  },
-  dashboardIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  dashboardContent: {
-    flex: 1,
-  },
-  dashboardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFF',
-    marginBottom: 4,
-  },
-  dashboardDesc: {
-    fontSize: 13,
-    color: '#888',
-  },
-  zodiacBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginTop: 8,
-    borderWidth: 0.5,
-  },
-  zodiacSymbol: {
-    fontSize: 13,
-  },
-  zodiacName: {
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-  },
-  zodiacAdd: {
-    marginTop: 8,
-    paddingVertical: 3,
-  },
-  zodiacAddText: {
-    fontSize: 11,
-    color: '#333',
-    letterSpacing: 0.5,
-  },
-  vibePlusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(255,215,0,0.12)',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.3)',
-  },
-  vibePlusBadgeText: {
-    color: '#FFD700',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 1.2,
-  },
-  vibePlusUpgrade: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,215,0,0.07)',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.22)',
-  },
-  vibePlusUpgradeText: {
-    color: '#FFD700',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  // Night Summary card
-  nightSummaryCard: { marginHorizontal: 16, marginBottom: 16 },
-  nightSummaryInner: {
-    borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,153,51,0.25)',
-    padding: 16, gap: 10,
-  },
-  nightSummaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  nightSummaryLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  nightSummaryDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF9933' },
-  nightSummaryLabel: { color: '#FF9933', fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
-  nightSummaryTitle: { color: '#FF9933', fontSize: 12, fontWeight: '700' },
-  nightSummaryStats: { flexDirection: 'row', gap: 20 },
-  nightSummaryStat: { alignItems: 'center', gap: 2 },
-  nightSummaryStatVal: { color: '#FFF', fontSize: 22, fontWeight: '900' },
-  nightSummaryStatLbl: { color: '#666', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 },
-  nightSummaryFooter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  nightSummaryPreview: { flex: 1, color: '#666', fontSize: 12, fontStyle: 'italic' },
-  // Replay tutorial
-  replayTutorialBtn: {
-    marginHorizontal: 16, marginBottom: 10,
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#3399FF11', borderRadius: 10, borderWidth: 1,
-    borderColor: '#3399FF33', paddingHorizontal: 14, paddingVertical: 10,
-  },
-  replayTutorialText: { color: '#3399FF', fontSize: 12, fontWeight: '600' },
-  // Demo trigger
-  demoTriggerBtn: {
-    marginHorizontal: 16, marginBottom: 16,
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#9933FF11', borderRadius: 10, borderWidth: 1,
-    borderColor: '#9933FF33', paddingHorizontal: 14, paddingVertical: 10,
-  },
-  demoTriggerText: { color: '#9933FF', fontSize: 12, fontWeight: '600' },
-
-  // ── Reactor Skin section ──────────────────────────────────────────────────
-  skinSection: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-    backgroundColor: '#0E0E1C',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.07)',
-  },
-  skinSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  skinSectionTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#555',
-    letterSpacing: 2,
-  },
-  skinSectionSub: {
-    fontSize: 12,
-    color: '#333',
-    marginTop: 3,
-  },
-  skinChangeBtn: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.12)',
-  },
-  skinChangeBtnText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#888',
-    letterSpacing: 1.5,
-  },
-  skinPreviewCard: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  skinPaletteRow: {
-    flexDirection: 'row',
-    height: 10,
-  },
-  skinPaletteBlock: {
-    flex: 1,
-  },
-  skinPreviewInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  skinDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  skinPreviewName: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 2,
-  },
-  skinPreviewHex: {
-    fontSize: 10,
-    color: '#555',
-    letterSpacing: 1,
-    marginLeft: 4,
-  },
-  // Night Summary modal
-  nightModalRoot: { flex: 1 },
-  nightModalBg: { flex: 1, paddingTop: 60, paddingHorizontal: 20 },
-  nightModalHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
-    marginBottom: 28,
-  },
-  nightModalLabel: { color: '#FF9933', fontSize: 10, fontWeight: '800', letterSpacing: 2, marginBottom: 4 },
-  nightModalNightTitle: { color: '#FFF', fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
-  nightModalStats: {
-    flexDirection: 'row', justifyContent: 'space-around',
-    backgroundColor: '#111108', borderRadius: 16,
-    borderWidth: 1, borderColor: '#FF993322', padding: 20, marginBottom: 20,
-  },
-  nightModalStat: { alignItems: 'center', gap: 6 },
-  nightModalStatVal: { fontSize: 32, fontWeight: '900' },
-  nightModalStatLbl: { color: '#555', fontSize: 10, fontWeight: '600', letterSpacing: 0.5 },
-  nightModalDivider: { height: 1, backgroundColor: '#1A1A1A', marginBottom: 20 },
-  nightModalScroll: { flex: 1 },
-  nightModalDebrief: { color: '#CCC', fontSize: 16, lineHeight: 26, fontStyle: 'italic' },
-
-  debriefLocked: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: 'rgba(255,153,51,0.05)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,153,51,0.15)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  debriefLockedLeft: {
-    flex: 1,
-    gap: 6,
-  },
-  debriefLockedLabel: {
-    color: '#FF9933',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  debriefLockedDesc: {
-    color: 'rgba(238,238,238,0.45)',
-    fontSize: 12,
-    lineHeight: 18,
-    fontStyle: 'italic',
-  },
-  debriefLockedRight: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  debriefLockedChip: {
-    color: '#FFD700',
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.8,
-  },
-  crewSection: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-  },
-  crewSectionLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#3A3A4E',
-    letterSpacing: 2,
-    marginBottom: 8,
-  },
+    ...type.body, color: color.ink, backgroundColor: color.raised, borderRadius: radius.sm,
+    paddingHorizontal: space.md, height: 52, marginTop: space.md,
+  },
+  scrim: { flex: 1, backgroundColor: color.scrim },
+  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.md },
+  sheetTitle: { ...type.title, color: color.ink, marginTop: space.xs },
 });
-

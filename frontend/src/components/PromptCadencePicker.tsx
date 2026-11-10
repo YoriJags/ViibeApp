@@ -21,6 +21,7 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CADENCE_CACHE_KEY } from '../services/autoPresence';
+import { card, color, radius, space, type } from '../theme/tokens';
 
 // The arrival prompt is scheduled by a background task that cannot wait on the
 // network, so it reads this local copy of the cadence. Kept in step on load
@@ -44,7 +45,7 @@ interface Props {
   accent?: string;
 }
 
-export default function PromptCadencePicker({ getAuthHeaders, accent = '#22d3ee' }: Props) {
+export default function PromptCadencePicker({ getAuthHeaders, accent = color.ink }: Props) {
   const [options, setOptions] = useState<Option[]>([]);
   const [cadence, setCadence] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
@@ -124,13 +125,13 @@ export default function PromptCadencePicker({ getAuthHeaders, accent = '#22d3ee'
             key={o.key}
             activeOpacity={0.85}
             onPress={() => choose(o.key)}
-            style={[styles.row, active && { borderColor: accent, backgroundColor: accent + '14' }]}
+            style={[styles.row, active && { borderColor: color.lineStrong, backgroundColor: color.raised }]}
           >
-            <View style={[styles.radio, active && { borderColor: accent, backgroundColor: accent }]}>
+            <View style={[styles.radio, active && { borderColor: color.ink, backgroundColor: color.ink }]}>
               {active && <Ionicons name="checkmark" size={12} color="#0b0b14" />}
             </View>
             <View style={styles.textWrap}>
-              <Text style={[styles.label, active && { color: accent }]}>{o.label}</Text>
+              <Text style={styles.label}>{o.label}</Text>
               <Text style={styles.description}>{o.sub}</Text>
             </View>
             {saving === o.key && <ActivityIndicator size="small" color={accent} />}
@@ -146,54 +147,20 @@ export default function PromptCadencePicker({ getAuthHeaders, accent = '#22d3ee'
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 8, paddingVertical: 4 },
-  loading: { alignItems: 'center', paddingVertical: 24 },
-  title: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: 'rgba(255,255,255,0.9)',
-    letterSpacing: 0.2,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.4)',
-    marginBottom: 6,
-    lineHeight: 17,
-  },
+  container: { ...card, gap: space.xs },
+  loading: { alignItems: 'center', paddingVertical: space.lg },
+  title: { ...type.bodyStrong, color: color.ink },
+  subtitle: { ...type.label, color: color.inkSoft, marginBottom: space.xxs },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 56,
+    paddingHorizontal: space.sm, borderRadius: radius.sm, borderWidth: 1, borderColor: 'transparent',
   },
   radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: color.inkFaint,
+    alignItems: 'center', justifyContent: 'center',
   },
   textWrap: { flex: 1 },
-  label: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.85)',
-  },
-  description: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.4)',
-    marginTop: 2,
-  },
-  errorText: {
-    fontSize: 12,
-    color: '#ff6b6b',
-    marginTop: 4,
-  },
+  label: { ...type.bodyStrong, color: color.ink },
+  description: { ...type.caption, color: color.inkSoft, marginTop: 2 },
+  errorText: { ...type.label, color: color.danger, marginTop: space.xxs },
 });
