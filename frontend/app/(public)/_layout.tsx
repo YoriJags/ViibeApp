@@ -16,10 +16,9 @@ const { colors } = publicTheme;
 
 const TABS = [
   { name: 'index',    label: 'Map',      icon: 'compass-outline' as const,      iconFocused: 'compass' as const },
-  { name: 'trending', label: 'Tonight',  icon: 'flame-outline' as const,         iconFocused: 'flame' as const },
+  { name: 'trending', label: 'Tonight',  icon: 'calendar-outline' as const,      iconFocused: 'calendar' as const },
   { name: 'crew',     label: 'Crew',     icon: 'people-outline' as const,        iconFocused: 'people' as const },
-  { name: 'intel',    label: 'Intel',    icon: 'sparkles-outline' as const,      iconFocused: 'sparkles' as const },
-  { name: 'profile',  label: 'Profile',  icon: 'person-outline' as const,        iconFocused: 'person' as const },
+  { name: 'profile',  label: 'You',      icon: 'person-outline' as const,        iconFocused: 'person' as const },
 ];
 export default function PublicLayout() {
   return (
@@ -39,7 +38,6 @@ export default function PublicLayout() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="trending" />
       <Tabs.Screen name="crew" />
-      <Tabs.Screen name="intel" />
       <Tabs.Screen name="profile" />
       {/* Lobby kept as a push screen, not a tab — accessible from Profile */}
       <Tabs.Screen name="lobby" options={{ href: null }} />

@@ -1,1477 +1,176 @@
 /**
- * PUBLIC FLOOR - Trending Leaderboard
- * Premium Top 3 Podium with Neon Pink/Gold accents
- * Top Scouts with Mini-Profile Modal
- * Map integration via 'Pull Up' button
+ * Tonight: the events home (design spec, Nov 2026).
+ * Tonight / This week > events by day > hottest right now > by area.
+ * Replaces "Trending": the stock ticker, the "exchange" board with % gains,
+ * the podium and the Intel carousel. "By area" absorbs Intel's City Zones,
+ * built from the selected city's own venues (the old zones feed listed an
+ * Abuja district under Lagos).
  */
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  TouchableOpacity,
-  ActivityIndicator,
-  Image,
-  Modal,
-  Dimensions,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { publicTheme, spacing, borderRadius, typography } from '../../src/theme/floors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useVibeStore } from '../../src/store/vibeStore';
-import EnergyMeter, { getEnergyLevel } from '../../src/components/EnergyMeter';
-import VibeIntelCarousel from '../../src/components/VibeIntelCarousel';
-import EnergyLevelGuide from '../../src/components/EnergyLevelGuide';
-import VibeMarket, { VibeMarketVenue } from '../../src/components/VibeMarket';
-import { neonGlow } from '../../src/theme';
+import VenueDiscoverFlow from '../../src/components/VenueDiscoverFlow';
+import {
+  DemoPill, Divider, EnergyDot, EventRow, InviteCard, readingOf, SectionHeader, VenueLike, VenueRow,
+} from '../../src/components/ui';
+import { color, energy, EnergyState, listRow, radius, size, space, type } from '../../src/theme/tokens';
+import { ENERGY_ORDER } from '../../src/theme/energy';
 
-const { colors } = publicTheme;
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+const CITY_NAMES: Record<string, string> = { lagos: 'Lagos', abuja: 'Abuja', port_harcourt: 'Port Harcourt', ibadan: 'Ibadan' };
 
-interface TrendingVenue {
-  venue: {
-    id: string;
-    name: string;
-    area: string;
-    current_vibe_score: number;
-    coordinates: { lat: number; lng: number };
-    spotlight_until?: string;
-  };
-  rank: number;
-  trending_score: number;
-  energy_percent: number;
-  check_in_velocity: number;
-  scout_count: number;
-  trend: 'up' | 'down' | 'stable';
-  last_rating: string | null;
+function lagosDay(iso?: string | null): { key: string; label: string } {
+  if (!iso) return { key: 'zz', label: 'Date to be announced' };
+  const d = new Date(iso);
+  const fmt = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-NG', { timeZone: 'Africa/Lagos', ...o }).format(d);
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Lagos' }).format(new Date());
+  const key = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Lagos' }).format(d);
+  const label = key === today ? 'Today' : `${fmt({ weekday: 'long' })}, ${fmt({ day: 'numeric', month: 'short' })}`;
+  return { key, label };
 }
 
-interface TopScout {
-  rank: number;
-  user_id: string;
-  username: string;
-  avatar: string | null;
-  check_count: number;
-  venues_visited: number;
-  tier: string;
-  ring_color: string;
-  is_elite: boolean;
-  clout_points: number;
-}
-
-interface ScoutProfile {
-  user: {
-    id: string;
-    username: string;
-    avatar: string | null;
-    clout_points: number;
-    scout_status: string;
-    total_ratings: number;
-    tier: string;
-    tier_color: string;
-  };
-  activity_heatmap: Array<{
-    venue_id: string;
-    venue_name: string;
-    venue_area: string;
-    vibe_score: number;
-    energy: string;
-    time_ago: string;
-  }>;
-  stats: {
-    checks_24h: number;
-    checks_7d: number;
-    unique_venues_7d: number;
-  };
-  last_seen: {
-    venue_name: string;
-    time_ago: string;
-  } | null;
-}
-
-interface TrendingData {
-  city: string;
-  venues: TrendingVenue[];
-  sponsored?: TrendingVenue[];  // Separate sponsored section
-  last_updated: string;
-}
-
-interface ScoutsData {
-  city: string;
-  scouts: TopScout[];
-  last_updated: string;
-}
-
-export default function TrendingScreen() {
+export default function TonightScreen() {
   const router = useRouter();
-  const { selectedCity, setSelectedCity, isDemoMode, cityEnergy } = useVibeStore();
-  const [trendingData, setTrendingData] = useState<TrendingData | null>(null);
-  const [scoutsData, setScoutsData] = useState<ScoutsData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [selectedScout, setSelectedScout] = useState<TopScout | null>(null);
-  const [scoutProfile, setScoutProfile] = useState<ScoutProfile | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(false);
-  
+  const insets = useSafeAreaInsets();
+  const { venues, fetchVenues, selectedCity, isDemoMode, pickVenue } = useVibeStore();
+  const [range, setRange] = useState<'tonight' | 'week'>('tonight');
+  const [showDeck, setShowDeck] = useState(false);
 
-  const fetchData = async () => {
-    // Demo mode: use local mock data
-    if (isDemoMode) {
-      const { DEMO_TRENDING, DEMO_TOP_SCOUTS } = require('../../src/data/demoData');
-      setTrendingData(DEMO_TRENDING);
-      setScoutsData(DEMO_TOP_SCOUTS);
-      setLoading(false);
-      return;
+  useEffect(() => { if (!isDemoMode && !venues.length) fetchVenues(selectedCity); }, [selectedCity, isDemoMode]);
+
+  const list: VenueLike[] = useMemo(
+    () => (isDemoMode ? (require('../../src/data/demoData').DEMO_VENUES as VenueLike[]) : (venues as VenueLike[])),
+    [isDemoMode, venues],
+  );
+  const cityName = CITY_NAMES[selectedCity] ?? 'Lagos';
+  const openVenue = (id: string) => router.push(`/venue/${id}`);
+
+  // Events grouped by Lagos day.
+  const groups = useMemo(() => {
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Lagos' }).format(new Date());
+    const evs = list
+      .filter((v) => v.event && v.event.phase !== 'ended')
+      .filter((v) => range === 'week' || v.event!.phase === 'live' || v.event!.phase === 'doors' || lagosDay(v.event!.starts_at).key === today)
+      .sort((a, b) => String(a.event?.starts_at ?? '').localeCompare(String(b.event?.starts_at ?? '')));
+    const map = new Map<string, { label: string; items: VenueLike[] }>();
+    for (const e of evs) {
+      const d = lagosDay(e.event!.starts_at);
+      if (!map.has(d.key)) map.set(d.key, { label: d.label, items: [] });
+      map.get(d.key)!.items.push(e);
     }
+    return [...map.values()];
+  }, [list, range]);
 
-    try {
-      const [trendingRes, scoutsRes] = await Promise.all([
-        fetch(`${API_URL}/api/trending/${selectedCity}`),
-        fetch(`${API_URL}/api/top-scouts/${selectedCity}`)
-      ]);
+  const hottest = useMemo(() => list
+    .filter((v) => !v.event && readingOf(v, isDemoMode).has)
+    .sort((a, b) => (b.current_vibe_score ?? 0) - (a.current_vibe_score ?? 0))
+    .slice(0, 5), [list, isDemoMode]);
 
-      if (trendingRes.ok) {
-        const data = await trendingRes.json();
-        setTrendingData(data);
-      }
-
-      if (scoutsRes.ok) {
-        const data = await scoutsRes.json();
-        setScoutsData(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch trending data:', error);
-    } finally {
-      setLoading(false);
+  const areas = useMemo(() => {
+    const map = new Map<string, { count: number; best: EnergyState | null }>();
+    for (const v of list) {
+      if (!v.area || v.event) continue;
+      const r = readingOf(v, isDemoMode);
+      const cur = map.get(v.area) ?? { count: 0, best: null };
+      cur.count += 1;
+      if (r.has && (!cur.best || ENERGY_ORDER.indexOf(r.state!) > ENERGY_ORDER.indexOf(cur.best))) cur.best = r.state!;
+      map.set(v.area, cur);
     }
-  };
-
-  const fetchScoutProfile = async (userId: string) => {
-    setLoadingProfile(true);
-
-    // Demo mode: use mock scout profile
-    if (isDemoMode) {
-      const { DEMO_SCOUT_PROFILE, DEMO_TOP_SCOUTS } = require('../../src/data/demoData');
-      const scout = DEMO_TOP_SCOUTS.scouts.find((s: any) => s.user_id === userId);
-      if (scout) {
-        setScoutProfile({
-          ...DEMO_SCOUT_PROFILE,
-          user: {
-            ...DEMO_SCOUT_PROFILE.user,
-            id: scout.user_id,
-            username: scout.username,
-            clout_points: scout.clout_points,
-            tier: scout.tier,
-            tier_color: scout.ring_color,
-          },
-        });
-      }
-      setLoadingProfile(false);
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_URL}/api/scout/${userId}/profile`);
-      if (response.ok) {
-        const data = await response.json();
-        setScoutProfile(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch scout profile:', error);
-    } finally {
-      setLoadingProfile(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [selectedCity, isDemoMode]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await fetchData();
-    setRefreshing(false);
-  }, [selectedCity, isDemoMode]);
-
-  const handleScoutPress = async (scout: TopScout) => {
-    setSelectedScout(scout);
-    await fetchScoutProfile(scout.user_id);
-  };
-
-  const handlePullUp = (venue: TrendingVenue['venue']) => {
-    router.push({
-      pathname: '/',
-      params: {
-        highlightVenue: venue.id,
-        centerLat: venue.coordinates.lat.toString(),
-        centerLng: venue.coordinates.lng.toString(),
-        autoOpen: 'true',
-      }
-    });
-  };
-
-  const getTimeAgo = (isoString: string) => {
-    const now = new Date();
-    const then = new Date(isoString);
-    const diffMs = now.getTime() - then.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    return `${Math.floor(diffHours / 24)} day${diffHours >= 48 ? 's' : ''} ago`;
-  };
-
-  const getTrendIcon = (trend: string) => {
-    switch (trend) {
-      case 'up':
-        return <Ionicons name="trending-up" size={16} color={colors.status.success} />;
-      case 'down':
-        return <Ionicons name="trending-down" size={16} color={colors.status.error} />;
-      default:
-        return <Ionicons name="remove" size={16} color={colors.text.muted} />;
-    }
-  };
-
-  const getEnergyColor = (percent: number) => {
-    if (percent >= 80) return colors.vibe.electric;
-    if (percent >= 60) return colors.vibe.popping;
-    if (percent >= 40) return colors.vibe.moderate;
-    return colors.vibe.chill;
-  };
-
-  const venues = trendingData?.venues || [];
-  const scouts = scoutsData?.scouts || [];
-
-  const isWeekend = useMemo(() => {
-    const day = new Date().getDay();
-    return day === 5 || day === 6;
-  }, []);
-
-  // Map TrendingVenue[] → VibeMarketVenue[] for the leaderboard
-  const vibeMarketVenues = useMemo((): VibeMarketVenue[] => {
-    return venues.map((item) => ({
-      id: item.venue.id,
-      name: item.venue.name,
-      area: item.venue.area,
-      current_vibe_score: item.venue.current_vibe_score ?? item.energy_percent,
-      vibe_velocity:
-        item.trend === 'up'   ? 'heating_up'   :
-        item.trend === 'down' ? 'cooling_down'  :
-        'stable',
-      signal_count: item.scout_count,
-      is_featured: !!(item.venue.spotlight_until && new Date(item.venue.spotlight_until) > new Date()),
-    }));
-  }, [venues]);
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading trending spots...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+    const rank = (b: EnergyState | null) => (b ? ENERGY_ORDER.indexOf(b) : -1);
+    return [...map.entries()].sort((a, b) => rank(b[1].best) - rank(a[1].best) || b[1].count - a[1].count);
+  }, [list, isDemoMode]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
-        }
-        showsVerticalScrollIndicator={false}
-        bounces={true}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.headerTitle}>Trending</Text>
-            <Text style={styles.cityName}>
-              {selectedCity.charAt(0).toUpperCase() + selectedCity.slice(1)} 🔥
-            </Text>
-          </View>
-          <View style={styles.liveIndicator}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>LIVE</Text>
-          </View>
+    <View style={s.root}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 120 + insets.bottom }} showsVerticalScrollIndicator={false}>
+        <View style={s.topBar}>
+          <Text style={s.title}>Tonight</Text>
+          {isDemoMode && <DemoPill />}
+        </View>
+        <Text style={s.sub}>{cityName}</Text>
+
+        <View style={s.segment}>
+          {(['tonight', 'week'] as const).map((k) => (
+            <Pressable key={k} onPress={() => setRange(k)} style={[s.segItem, range === k && s.segOn]}
+              accessibilityRole="tab" accessibilityState={{ selected: range === k }}>
+              <Text style={[s.segText, range === k && s.segTextOn]}>{k === 'tonight' ? 'Tonight' : 'This week'}</Text>
+            </Pressable>
+          ))}
         </View>
 
-        {/* Last Updated */}
-        {trendingData?.last_updated && (
-          <View style={styles.lastUpdated}>
-            <Ionicons name="time-outline" size={14} color={colors.text.muted} />
-            <Text style={styles.lastUpdatedText}>
-              Updated {getTimeAgo(trendingData.last_updated)}
-            </Text>
-          </View>
-        )}
-
-        {/* ====== VIBE INTEL CAROUSEL ====== */}
-        <VibeIntelCarousel venues={venues} city={selectedCity} isWeekend={isWeekend} />
-
-        {/* ====== ENERGY LEVEL GUIDE ====== */}
-        <EnergyLevelGuide />
-
-        {/* ====== VIBE EXCHANGE LEADERBOARD ====== */}
-        {vibeMarketVenues.length > 0 && (
-          <View style={styles.marketSection}>
-            <VibeMarket
-              venues={vibeMarketVenues}
-              cityName={selectedCity.charAt(0).toUpperCase() + selectedCity.slice(1)}
-              cityScore={cityEnergy?.energy_score ?? 50}
-              cityLabel={cityEnergy?.energy_label ?? 'BUZZING'}
-              onVenuePress={(id) => router.push(`/venue/${id}`)}
-            />
-          </View>
-        )}
-
-        {/* ====== SPONSORED SECTION (Pulse Drop Venues) ====== */}
-        {trendingData?.sponsored && trendingData.sponsored.length > 0 && (
-          <View style={styles.sponsoredSection}>
-            <View style={styles.sponsoredHeader}>
-              <Ionicons name="flash" size={16} color="#FFD700" />
-              <Text style={styles.sponsoredTitle}>Sponsored</Text>
-              <Text style={styles.sponsoredSubtitle}>2x Clout for check-ins!</Text>
-            </View>
-            {trendingData.sponsored.map((item) => (
-              <TouchableOpacity 
-                key={item.venue.id}
-                style={styles.sponsoredItem}
-                onPress={() => handlePullUp(item.venue)}
-                activeOpacity={0.8}
-              >
-                {/* Gold Border */}
-                <View style={styles.sponsoredGoldBorder} />
-                
-                {/* PULSE Badge */}
-                <View style={styles.sponsoredPulseBadge}>
-                  <Ionicons name="flash" size={10} color="#FFD700" />
-                  <Text style={styles.sponsoredPulseText}>PULSE</Text>
-                </View>
-
-                {/* Venue Info */}
-                <View style={styles.sponsoredVenueInfo}>
-                  <Text style={styles.sponsoredVenueName}>{item.venue.name}</Text>
-                  <Text style={styles.sponsoredVenueArea}>{item.venue.area}</Text>
-                </View>
-
-                {/* Energy Score */}
-                <View style={styles.sponsoredScoreContainer}>
-                  <Text style={[
-                    styles.sponsoredEnergyLabel,
-                    { color: getEnergyLevel(item.energy_percent).accent }
-                  ]}>
-                    {getEnergyLevel(item.energy_percent).label}
-                  </Text>
-                  <Text style={[
-                    styles.sponsoredScore,
-                    { color: getEnergyLevel(item.energy_percent).accent }
-                  ]}>
-                    {item.energy_percent}%
-                  </Text>
-                </View>
-
-                {/* Rate Button (Gold) */}
-                <TouchableOpacity
-                  style={styles.rateChip}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    router.push(`/venue/${item.venue.id}?openRateModal=true`);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <LinearGradient
-                    colors={['#FFD700', '#FFA500']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.rateChipGradient}
-                  >
-                    <Ionicons name="star" size={12} color="#0A0A0F" />
-                    <Text style={[styles.rateChipText, { color: '#0A0A0F' }]}>RATE</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </TouchableOpacity>
+        {groups.length ? groups.map((g) => (
+          <View key={g.label}>
+            <SectionHeader title={g.label} />
+            {g.items.map((e, i) => (
+              <React.Fragment key={e.id}>
+                {i > 0 && <Divider />}
+                <EventRow venue={e} isDemo={isDemoMode} onPress={() => openVenue(e.id)} />
+              </React.Fragment>
             ))}
           </View>
+        )) : (
+          <InviteCard
+            title={range === 'tonight' ? 'No events listed for tonight' : 'No events listed this week'}
+            body="Concerts, festivals and raves show here a week before they start."
+            action={range === 'tonight' ? 'See this week' : 'Follow places'}
+            onAction={() => (range === 'tonight' ? setRange('week') : setShowDeck(true))} />
         )}
 
+        <SectionHeader title="Hottest right now" />
+        {hottest.length ? hottest.map((v, i) => (
+          <React.Fragment key={v.id}>
+            {i > 0 && <Divider />}
+            <VenueRow venue={v} isDemo={isDemoMode} onPress={() => openVenue(v.id)} />
+          </React.Fragment>
+        )) : (
+          <InviteCard title="Nothing reading lit yet tonight" body="Follow places and we will tell you when they heat up."
+            action="Follow places" onAction={() => setShowDeck(true)} />
+        )}
 
-        {/* ====== TOP SCOUTS SECTION ====== */}
-        <View style={styles.scoutsSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🔥 Top Scouts Tonight</Text>
-            <Text style={styles.scoutsSubtitle}>Most verified vibe checks in 24h</Text>
-          </View>
-          
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.scoutsScroll}
-          >
-            {scouts.map((scout) => (
-              <TouchableOpacity 
-                key={scout.user_id}
-                style={styles.scoutCard}
-                onPress={() => handleScoutPress(scout)}
-                activeOpacity={0.8}
-              >
-                {/* Rank Badge */}
-                {scout.rank <= 3 && (
-                  <View style={[
-                    styles.scoutRankBadge,
-                    scout.rank === 1 && { backgroundColor: '#FFD700' },
-                    scout.rank === 2 && { backgroundColor: '#C0C0C0' },
-                    scout.rank === 3 && { backgroundColor: '#CD7F32' },
-                  ]}>
-                    <Text style={styles.scoutRankText}>{scout.rank}</Text>
+        {areas.length > 0 && (
+          <>
+            <SectionHeader title="By area" />
+            {areas.map(([area, a], i) => (
+              <React.Fragment key={area}>
+                {i > 0 && <Divider />}
+                <View style={listRow}>
+                  <View style={s.thumb}><EnergyDot state={a.best} /></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.rowTitle}>{area}</Text>
+                    <Text style={s.rowMeta}>{a.count} {a.count === 1 ? 'venue' : 'venues'}</Text>
                   </View>
-                )}
-                
-                {/* Avatar with Ring */}
-                <View style={[styles.avatarContainer, { borderColor: scout.ring_color }]}>
-                  {scout.avatar ? (
-                    <Image source={{ uri: scout.avatar }} style={styles.avatar} />
-                  ) : (
-                    <View style={[styles.avatarPlaceholder, { backgroundColor: scout.ring_color + '40' }]}>
-                      <Text style={styles.avatarInitial}>
-                        {(scout.username ?? '?').charAt(0).toUpperCase()}
-                      </Text>
-                    </View>
-                  )}
-                  {scout.is_elite && (
-                    <View style={styles.eliteBadge}>
-                      <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
-                    </View>
-                  )}
+                  <Text style={[s.rowMeta, a.best ? { color: energy[a.best].ink } : null]}>
+                    {a.best ? `Up to ${energy[a.best].label.toLowerCase()}` : 'No readings'}
+                  </Text>
                 </View>
-
-                {/* Scout Info */}
-                <Text style={styles.scoutName} numberOfLines={1}>
-                  {scout.username}
-                </Text>
-                <View style={styles.scoutStats}>
-                  <Ionicons name="flame" size={12} color={colors.gold} />
-                  <Text style={styles.checkCount}>{scout.check_count} Checks</Text>
-                </View>
-                <Text style={[styles.scoutTier, { color: scout.ring_color }]}>
-                  {scout.tier.toUpperCase()}
-                </Text>
-              </TouchableOpacity>
+              </React.Fragment>
             ))}
-
-            {scouts.length === 0 && (
-              <View style={styles.noScoutsCard}>
-                <Ionicons name="search" size={40} color={colors.text.muted} />
-                <Text style={styles.noScoutsText}>No scouts yet tonight</Text>
-                <Text style={styles.noScoutsSubtext}>Be the first to check in!</Text>
-              </View>
-            )}
-          </ScrollView>
-        </View>
-
-        <View style={{ height: 120 }} />
+          </>
+        )}
       </ScrollView>
 
-      {/* ====== SCOUT MINI-PROFILE MODAL ====== */}
-      <Modal
-        visible={selectedScout !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => {
-          setSelectedScout(null);
-          setScoutProfile(null);
-        }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            {/* Close Button */}
-            <TouchableOpacity 
-              style={styles.modalCloseButton}
-              onPress={() => {
-                setSelectedScout(null);
-                setScoutProfile(null);
-              }}
-            >
-              <Ionicons name="close" size={24} color={colors.text.primary} />
-            </TouchableOpacity>
-
-            {loadingProfile ? (
-              <View style={styles.modalLoading}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={styles.modalLoadingText}>Loading scout profile...</Text>
-              </View>
-            ) : scoutProfile ? (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Profile Header */}
-                <View style={styles.profileHeader}>
-                  <View style={[
-                    styles.profileAvatarContainer,
-                    { borderColor: scoutProfile.user.tier_color }
-                  ]}>
-                    {scoutProfile.user.avatar ? (
-                      <Image 
-                        source={{ uri: scoutProfile.user.avatar }} 
-                        style={styles.profileAvatar} 
-                      />
-                    ) : (
-                      <View style={[
-                        styles.profileAvatarPlaceholder,
-                        { backgroundColor: scoutProfile.user.tier_color + '40' }
-                      ]}>
-                        <Text style={styles.profileAvatarInitial}>
-                          {scoutProfile.user.username.charAt(0).toUpperCase()}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  
-                  <Text style={styles.profileUsername}>{scoutProfile.user.username}</Text>
-                  <View style={[
-                    styles.profileTierBadge,
-                    { backgroundColor: scoutProfile.user.tier_color + '30' }
-                  ]}>
-                    <Text style={[styles.profileTierText, { color: scoutProfile.user.tier_color }]}>
-                      {scoutProfile.user.tier.toUpperCase()} SCOUT
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Total Clout */}
-                <View style={styles.cloutSection}>
-                  <LinearGradient
-                    colors={['#FFD700', '#FF8C00']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.cloutCard}
-                  >
-                    <Ionicons name="flash" size={28} color="#0A0A0F" />
-                    <View style={styles.cloutInfo}>
-                      <Text style={styles.cloutLabel}>Total Clout</Text>
-                      <Text style={styles.cloutValue}>{scoutProfile.user.clout_points}</Text>
-                    </View>
-                  </LinearGradient>
-                </View>
-
-                {/* Stats Row */}
-                <View style={styles.statsRow}>
-                  <View style={styles.statBox}>
-                    <Text style={styles.statNumber}>{scoutProfile.stats.checks_24h}</Text>
-                    <Text style={styles.statLabel}>Checks (24h)</Text>
-                  </View>
-                  <View style={styles.statBox}>
-                    <Text style={styles.statNumber}>{scoutProfile.stats.checks_7d}</Text>
-                    <Text style={styles.statLabel}>Checks (7d)</Text>
-                  </View>
-                  <View style={styles.statBox}>
-                    <Text style={styles.statNumber}>{scoutProfile.stats.unique_venues_7d}</Text>
-                    <Text style={styles.statLabel}>Venues</Text>
-                  </View>
-                </View>
-
-                {/* Activity Heatmap */}
-                <View style={styles.activitySection}>
-                  <Text style={styles.activityTitle}>🗺️ Activity Heatmap</Text>
-                  {scoutProfile.last_seen && (
-                    <View style={styles.lastSeenCard}>
-                      <Ionicons name="location" size={16} color={colors.primary} />
-                      <Text style={styles.lastSeenText}>
-                        Last seen at <Text style={styles.lastSeenVenue}>{scoutProfile.last_seen.venue_name}</Text>
-                        {' '}{scoutProfile.last_seen.time_ago}
-                      </Text>
-                    </View>
-                  )}
-                  
-                  {scoutProfile.activity_heatmap.length > 0 ? (
-                    scoutProfile.activity_heatmap.slice(0, 5).map((activity, index) => (
-                      <View key={index} style={styles.activityItem}>
-                        <View style={styles.activityDot}>
-                          <View style={[
-                            styles.activityDotInner,
-                            { backgroundColor: getEnergyColor(activity.vibe_score) }
-                          ]} />
-                        </View>
-                        <View style={styles.activityInfo}>
-                          <Text style={styles.activityVenue}>{activity.venue_name}</Text>
-                          <Text style={styles.activityArea}>{activity.venue_area}</Text>
-                        </View>
-                        <View style={styles.activityTime}>
-                          <Text style={styles.activityTimeText}>{activity.time_ago}</Text>
-                          <Text style={styles.activityEnergy}>
-                            {(activity.energy ?? 'unknown').charAt(0).toUpperCase() + (activity.energy ?? 'unknown').slice(1)}
-                          </Text>
-                        </View>
-                      </View>
-                    ))
-                  ) : (
-                    <View style={styles.noActivityCard}>
-                      <Ionicons name="map-outline" size={32} color={colors.text.muted} />
-                      <Text style={styles.noActivityText}>No recent activity</Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* Follow Scout Button (Placeholder) */}
-                <TouchableOpacity style={styles.followButton} activeOpacity={0.8}>
-                  <LinearGradient
-                    colors={[colors.primary, '#FF6B35']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.followButtonGradient}
-                  >
-                    <Ionicons name="person-add" size={20} color="#FFF" />
-                    <Text style={styles.followButtonText}>Follow Scout</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-                
-                <Text style={styles.followHint}>Coming soon: Get alerts when they check in!</Text>
-              </ScrollView>
-            ) : (
-              <View style={styles.modalError}>
-                <Ionicons name="alert-circle" size={48} color={colors.status.error} />
-                <Text style={styles.modalErrorText}>Could not load profile</Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
+      {showDeck && (
+        <VenueDiscoverFlow venues={list as any} onFire={(v: any) => { pickVenue(v); }} onComplete={() => setShowDeck(false)} />
+      )}
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.dark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: spacing.xxxl,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    color: colors.text.secondary,
-    fontSize: typography.fontSize.md,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  headerTitle: {
-    fontSize: typography.fontSize.xxxl,
-    fontWeight: typography.fontWeight.black,
-    color: colors.primary,
-  },
-  cityName: {
-    fontSize: typography.fontSize.lg,
-    color: colors.text.secondary,
-    marginTop: spacing.xs,
-  },
-  liveIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.status.success + '20',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    gap: spacing.xs,
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.status.success,
-  },
-  liveText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.status.success,
-    letterSpacing: 1,
-  },
-  lastUpdated: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    gap: spacing.xs,
-  },
-  lastUpdatedText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.muted,
-  },
-
-  sectionHeader: {
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-  },
-  sectionSubtitle: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.muted,
-    marginTop: spacing.xs,
-  },
-
-  // ====== VIBE MARKET SECTION ======
-  marketSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-
-  // ====== PREMIUM PODIUM STYLES (kept for reference, no longer rendered) ======
-  podiumSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  podiumContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    height: 220,
-    paddingHorizontal: spacing.sm,
-  },
-  podiumItem: {
-    flex: 1,
-    alignItems: 'center',
-    marginHorizontal: spacing.xs,
-  },
-  goldPodiumItem: {
-    marginTop: -40,
-  },
-  
-  // Crown
-  crownContainer: {
-    position: 'absolute',
-    top: -15,
-    zIndex: 10,
-  },
-  crownEmoji: {
-    fontSize: 28,
-  },
-  
-  // HOT Badge
-  hotBadge: {
-    position: 'absolute',
-    top: 15,
-    zIndex: 5,
-  },
-  hotBadgeGradient: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-  },
-  hotBadgeText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: '#FFF',
-  },
-  
-  // Badges
-  goldBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#FFD700',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: -26,
-    zIndex: 3,
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  silverBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#C0C0C0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: -20,
-    zIndex: 3,
-  },
-  bronzeBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#CD7F32',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: -20,
-    zIndex: 3,
-  },
-  podiumRank: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: '#FFF',
-  },
-  
-  // Bars
-  podiumBar: {
-    width: '100%',
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    padding: spacing.md,
-    paddingTop: spacing.xxl,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  goldBar: {
-    height: 160,
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  silverBar: {
-    height: 130,
-    backgroundColor: colors.background.card,
-    borderWidth: 2,
-    borderColor: '#C0C0C080',
-    borderBottomWidth: 0,
-  },
-  bronzeBar: {
-    height: 110,
-    backgroundColor: colors.background.card,
-    borderWidth: 2,
-    borderColor: '#CD7F3280',
-    borderBottomWidth: 0,
-  },
-  
-  // Sparkles
-  sparkleContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  sparkle: {
-    position: 'absolute',
-    fontSize: 14,
-    left: '40%',
-    top: '30%',
-  },
-  
-  // Gold Venue Styling
-  goldVenueName: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: '#0A0A0F',
-    textAlign: 'center',
-    marginBottom: spacing.xs,
-  },
-  goldArea: {
-    fontSize: typography.fontSize.xs,
-    color: '#0A0A0F80',
-    marginBottom: spacing.md,
-  },
-  goldScoreContainer: {
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  goldScoreLabel: {
-    fontSize: 10,
-    fontWeight: typography.fontWeight.semibold,
-    color: '#0A0A0F80',
-    letterSpacing: 1,
-  },
-  goldScore: {
-    fontSize: typography.fontSize.xxl,
-    fontWeight: typography.fontWeight.black,
-    color: '#0A0A0F',
-  },
-  velocityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    gap: spacing.xs,
-  },
-  velocityText: {
-    fontSize: typography.fontSize.xs,
-    color: '#FFD700',
-    fontWeight: typography.fontWeight.semibold,
-  },
-  
-  // Silver/Bronze Venue Styling
-  podiumVenueName: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    textAlign: 'center',
-    marginBottom: spacing.xs,
-  },
-  podiumArea: {
-    fontSize: 10,
-    color: colors.text.muted,
-    marginBottom: spacing.md,
-  },
-  podiumScoreContainer: {
-    alignItems: 'center',
-  },
-  podiumScoreLabel: {
-    fontSize: 9,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.muted,
-    letterSpacing: 1,
-  },
-  podiumScore: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.black,
-  },
-
-  // ====== LIST STYLES ======
-  listSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  rankContainer: {
-    width: 50,
-    alignItems: 'center',
-  },
-  rankNumber: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-  },
-  venueInfo: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  venueName: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-  },
-  venueArea: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.muted,
-    marginTop: spacing.xs,
-  },
-  energyContainer: {
-    width: 90,
-    justifyContent: 'center',
-  },
-
-  // ====== RATE CHIP ======
-  rateChip: {
-    marginLeft: spacing.sm,
-  },
-  rateChipGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    gap: 3,
-  },
-  rateChipText: {
-    fontSize: 10,
-    fontWeight: typography.fontWeight.bold,
-    color: '#FFF',
-    letterSpacing: 0.5,
-  },
-
-  // ====== PODIUM METER ======
-  podiumMeterWrap: {
-    width: '100%',
-    marginBottom: spacing.xs,
-  },
-
-  // ====== SCOUTS STYLES ======
-  scoutsSection: {
-    paddingLeft: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  scoutsSubtitle: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.muted,
-    marginTop: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  scoutsScroll: {
-    paddingRight: spacing.lg,
-  },
-  scoutCard: {
-    width: 100,
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    alignItems: 'center',
-    marginRight: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    position: 'relative',
-  },
-  scoutRankBadge: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.background.dark,
-  },
-  scoutRankText: {
-    fontSize: 12,
-    fontWeight: typography.fontWeight.bold,
-    color: '#0A0A0F',
-  },
-  avatarContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-  },
-  avatarPlaceholder: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarInitial: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-  },
-  eliteBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    backgroundColor: colors.background.dark,
-    borderRadius: 10,
-  },
-  scoutName: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-    textAlign: 'center',
-  },
-  scoutStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-    gap: spacing.xs,
-  },
-  checkCount: {
-    fontSize: typography.fontSize.xs,
-    color: colors.gold,
-    fontWeight: typography.fontWeight.semibold,
-  },
-  scoutTier: {
-    fontSize: 9,
-    marginTop: spacing.xs,
-    letterSpacing: 1,
-    fontWeight: typography.fontWeight.bold,
-  },
-  // cloutBadge moved to profile modal only
-  noScoutsCard: {
-    width: SCREEN_WIDTH - 64,
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  noScoutsText: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-    marginTop: spacing.md,
-  },
-  noScoutsSubtext: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.muted,
-    marginTop: spacing.xs,
-  },
-
-  // ====== MODAL STYLES ======
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.background.card,
-    borderTopLeftRadius: borderRadius.xxl,
-    borderTopRightRadius: borderRadius.xxl,
-    paddingTop: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxxl,
-    maxHeight: '85%',
-  },
-  modalCloseButton: {
-    position: 'absolute',
-    top: spacing.lg,
-    right: spacing.lg,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.background.input,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  modalLoading: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxxl,
-  },
-  modalLoadingText: {
-    marginTop: spacing.md,
-    color: colors.text.secondary,
-    fontSize: typography.fontSize.md,
-  },
-  modalError: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxxl,
-  },
-  modalErrorText: {
-    marginTop: spacing.md,
-    color: colors.text.secondary,
-    fontSize: typography.fontSize.md,
-  },
-
-  // Profile Header
-  profileHeader: {
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  profileAvatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  profileAvatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-  },
-  profileAvatarPlaceholder: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileAvatarInitial: {
-    fontSize: 36,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-  },
-  profileUsername: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  profileTierBadge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-  },
-  profileTierText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    letterSpacing: 1,
-  },
-
-  // Clout Section
-  cloutSection: {
-    marginBottom: spacing.xl,
-  },
-  cloutCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-    gap: spacing.md,
-  },
-  cloutInfo: {
-    flex: 1,
-  },
-  cloutLabel: {
-    fontSize: typography.fontSize.sm,
-    color: '#0A0A0F80',
-    fontWeight: typography.fontWeight.semibold,
-  },
-  cloutValue: {
-    fontSize: typography.fontSize.xxl,
-    fontWeight: typography.fontWeight.black,
-    color: '#0A0A0F',
-  },
-
-  // Stats Row
-  statsRow: {
-    flexDirection: 'row',
-    marginBottom: spacing.xl,
-    gap: spacing.md,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: colors.background.input,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-  },
-  statLabel: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.muted,
-    marginTop: spacing.xs,
-  },
-
-  // Activity Section
-  activitySection: {
-    marginBottom: spacing.xl,
-  },
-  activityTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  lastSeenCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary + '20',
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  lastSeenText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    flex: 1,
-  },
-  lastSeenVenue: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.semibold,
-  },
-  activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background.input,
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.sm,
-  },
-  activityDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.background.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  activityDotInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  activityInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  activityVenue: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-  },
-  activityArea: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.muted,
-  },
-  activityTime: {
-    alignItems: 'flex-end',
-  },
-  activityTimeText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.muted,
-  },
-  activityEnergy: {
-    fontSize: 10,
-    color: colors.text.secondary,
-    marginTop: 2,
-  },
-  noActivityCard: {
-    backgroundColor: colors.background.input,
-    padding: spacing.xl,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
-  },
-  noActivityText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.muted,
-    marginTop: spacing.sm,
-  },
-
-  // Follow Button
-  followButton: {
-    marginBottom: spacing.sm,
-  },
-  followButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.lg,
-    gap: spacing.sm,
-  },
-  followButtonText: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: '#FFF',
-  },
-  followHint: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.muted,
-    textAlign: 'center',
-  },
-
-  // ====== SPONSORED SECTION STYLES ======
-  sponsoredSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  sponsoredHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  sponsoredTitle: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: '#FFD700',
-  },
-  sponsoredSubtitle: {
-    fontSize: typography.fontSize.xs,
-    color: '#4CAF50',
-    fontWeight: typography.fontWeight.semibold,
-  },
-  sponsoredItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A1815',
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    borderWidth: 2,
-    borderColor: '#FFD70050',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  sponsoredGoldBorder: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-    backgroundColor: '#FFD700',
-  },
-  sponsoredPulseBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFD70020',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1,
-    borderColor: '#FFD70040',
-    marginRight: spacing.md,
-    gap: 4,
-  },
-  sponsoredPulseText: {
-    fontSize: 9,
-    fontWeight: typography.fontWeight.black,
-    color: '#FFD700',
-    letterSpacing: 1,
-  },
-  sponsoredVenueInfo: {
-    flex: 1,
-  },
-  sponsoredVenueName: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-  },
-  sponsoredVenueArea: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.muted,
-    marginTop: 2,
-  },
-  sponsoredScoreContainer: {
-    alignItems: 'flex-end',
-    marginRight: spacing.md,
-  },
-  sponsoredEnergyLabel: {
-    fontSize: 10,
-    fontWeight: typography.fontWeight.semibold,
-  },
-  sponsoredScore: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.black,
-  },
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: color.bg },
+  topBar: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.md, minHeight: size.topBar },
+  title: { ...type.headline, color: color.ink },
+  sub: { ...type.label, color: color.inkSoft, paddingHorizontal: space.md },
+  segment: {
+    flexDirection: 'row', backgroundColor: color.raised, borderRadius: radius.pill, padding: 4, gap: 4,
+    marginHorizontal: space.md, marginTop: space.md,
+  },
+  segItem: { flex: 1, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  segOn: { backgroundColor: color.accent },
+  segText: { ...type.labelStrong, color: color.inkSoft },
+  segTextOn: { color: color.inkOnAccent },
+  thumb: { width: size.thumb, height: size.thumb, borderRadius: radius.sm, backgroundColor: color.raised, alignItems: 'center', justifyContent: 'center' },
+  rowTitle: { ...type.bodyStrong, color: color.ink },
+  rowMeta: { ...type.caption, color: color.inkSoft, marginTop: 2 },
 });
