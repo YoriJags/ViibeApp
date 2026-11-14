@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useVibeStore } from '../../src/store/vibeStore';
 import { MockMap } from '../../src/components/MockMap';
 import VibeMap from '../../src/components/VibeMap';
+import { useCityGrid } from '../../src/hooks/useCityGrid';
 import { VenueCard } from '../../src/components/VenueCard';
 import CloutReward from '../../src/components/CloutReward';
 import { SkeletonLoader } from '../../src/components/SkeletonLoader';
@@ -91,6 +92,9 @@ export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ highlightVenue?: string; centerLat?: string; centerLng?: string; showRatedGlow?: string; autoOpen?: string }>();
   const { venues, fetchVenues, loading, error, connectSocket, selectedCity, setSelectedCity, lastRatedVenueId, setLastRatedVenueId, isDemoMode, activeCheckin, crew, vibePersona, vibeDNA, cityEnergy, fetchCityEnergy, dropQuickPulse, pickVenue, demoPulsedVenues, isFeatureEnabled, isVibePlus, user, userMode, setUserMode, tabBarHidden, setTabBarHidden, sceneMood, sceneMoodSetAt, setSceneMood, isInsideVenue, activeVenueId, activeVenueName } = useVibeStore();
+  // The city grid for the map's hex layer. Real mode only: in demo the map
+  // folds the sample venues itself.
+  const cityGrid = useCityGrid(selectedCity, !isDemoMode);
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   // Auto presence: keep the phone watching the venues nearest to the scout.
   // Does nothing unless they opted in on their profile.
@@ -919,6 +923,7 @@ export default function MapScreen() {
                 onVenuePress={(venue) => router.push(`/venue/${venue.id}`)}
                 highlightedVenueId={highlightedVenueId}
                 demoMode={isDemoMode}
+                cells={cityGrid}
               />
             )}
           </ErrorBoundary>

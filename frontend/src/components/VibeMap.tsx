@@ -10,11 +10,12 @@
  *  - Crew emoji pins with battery-aware color
  *  - User location dot
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { asEnergyState } from '../theme/energy';
 import { energy as tokenEnergy } from '../theme/tokens';
+import type { CityGrid } from '../hooks/useCityGrid';
 
 const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN || '';
 
@@ -69,6 +70,9 @@ interface Props {
   zoomLevel?: number;
   /** Demo mode: sample readings show at full strength (the Demo pill marks them). */
   demoMode?: boolean;
+  /** The city grid from the server (useCityGrid). Absent in demo mode, where
+   *  the map folds the sample venues into cells itself. */
+  cells?: CityGrid | null;
 }
 
 // Colours come from the one energy palette (src/theme/energy.ts).
@@ -83,6 +87,7 @@ function buildHTML(
   zoomLevel: number,
   token: string,
   demoMode = false,
+  cells: CityGrid | null = null,
 ): string {
   const venueGeoJSON = {
     type: 'FeatureCollection',
@@ -105,6 +110,8 @@ function buildHTML(
         // The honest map: a real reading that failed a trust gate draws faded.
         faint: isReal(v) && isFaint(v) ? 1 : 0,
         why: isReal(v) && isFaint(v) ? faintReason(v) : '',
+        // Heat this venue adds to the haze: an unconfirmed reading adds little.
+        heat: Math.round((v.current_vibe_score ?? 0) * (isReal(v) && isFaint(v) ? 0.4 : 1)),
       },
     })),
   };
@@ -132,6 +139,7 @@ function buildHTML(
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"><\/script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+  ${demoMode ? '<script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js" integrity="sha384-nKUDlg+fT0U/eEt4KWP9n034kLe/eVj6k7CVjbu6qfRhJdEyinlGajS9+9AU+UZ5" crossorigin="anonymous"><' + '/script>' : ''}
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; background: #0A0A0F; overflow: hidden; }
@@ -218,6 +226,14 @@ function buildHTML(
     var venues = ${scriptJSON(venueGeoJSON)};
     var crew   = ${scriptJSON(crewGeoJSON)};
 
+    // City grid. Real mode: cells arrive from the server, already judged by
+    // the trust rules. Demo mode: the sample venues are folded into cells
+    // here, so the demo shows the finished map (the Demo pill marks it).
+    var cellsByRes = ${scriptJSON(cells)};
+    var demoFold = ${demoMode ? 'true' : 'false'};
+    var refreshCells = function () {};
+    window.setCells = function (byRes) { cellsByRes = byRes; refreshCells(); };
+
     map.on('error', function (e) {
       reportMapError('mapbox', (e && e.error && e.error.message) || 'map error');
     });
@@ -239,7 +255,7 @@ function buildHTML(
         paint: {
           // Presence registers at all, intensity is left to the colour ramp
           // below: a quiet night reads as a dim ember haze, never white hot.
-          'heatmap-weight': ['interpolate', ['linear'], ['get', 'score'], 0, 0.05, 20, 0.28, 45, 0.52, 70, 0.78, 100, 1],
+          'heatmap-weight': ['interpolate', ['linear'], ['get', 'heat'], 0, 0.05, 20, 0.28, 45, 0.52, 70, 0.78, 100, 1],
           'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 9, 1.1, 13, 1.9, 16, 2.6],
           'heatmap-color': [
             'interpolate', ['linear'], ['heatmap-density'],
@@ -254,6 +270,69 @@ function buildHTML(
           // fade the field away once pins carry the detail
           'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.85, 14.5, 0.25, 16, 0]
         },
+      });
+
+      // 0b. City grid — hex cells under the pins. Solid where the reading is
+      //     trusted, faint where it is not. Unread cells are not drawn: not
+      //     knowing is shown by the hollow pins, never by a quiet-looking cell.
+      function resForZoom(z) { return z < 11 ? 7 : (z < 13 ? 8 : 9); }
+      function demoCells(res) {
+        if (typeof h3 === 'undefined') return [];
+        var by = {};
+        venues.features.forEach(function (f) {
+          if (f.properties.unread) return;
+          var c = f.geometry.coordinates;
+          var id = h3.latLngToCell(c[1], c[0], res);
+          (by[id] = by[id] || []).push(f.properties.score);
+        });
+        return Object.keys(by).map(function (id) {
+          var scores = by[id];
+          return {
+            cell: id, boundary: h3.cellToBoundary(id, true), venues: scores.length,
+            score: scores.reduce(function (a, b) { return a + b; }, 0) / scores.length,
+            solid: true, source: 'demo'
+          };
+        });
+      }
+      function cellGeoJSON() {
+        var res = resForZoom(map.getZoom());
+        var list = cellsByRes ? (cellsByRes[res] || []) : (demoFold ? demoCells(res) : []);
+        return {
+          type: 'FeatureCollection',
+          features: list
+            .filter(function (c) { return c.score != null && (c.source === 'scouts' || demoFold); })
+            .map(function (c) {
+              return {
+                type: 'Feature',
+                geometry: { type: 'Polygon', coordinates: [c.boundary] },
+                properties: {
+                  cell: c.cell, score: Math.round(c.score), venues: c.venues,
+                  solid: (c.solid || c.source === 'demo') ? 1 : 0,
+                  demo: c.source === 'demo' ? 1 : 0
+                }
+              };
+            })
+        };
+      }
+      var cellColor = ['interpolate', ['linear'], ['get', 'score'],
+        0, '#3A1566', 40, '#B3216B', 65, '#FF5A1F', 85, '#FFBE3B', 100, '#FFF5DE'];
+      map.addSource('cells', { type: 'geojson', data: cellGeoJSON() });
+      map.addLayer({
+        id: 'cell-fill', type: 'fill', source: 'cells',
+        paint: { 'fill-color': cellColor, 'fill-opacity': ['case', ['==', ['get', 'solid'], 1], 0.22, 0.07] },
+      });
+      map.addLayer({
+        id: 'cell-line', type: 'line', source: 'cells',
+        paint: { 'line-color': cellColor, 'line-width': 1.2, 'line-opacity': ['case', ['==', ['get', 'solid'], 1], 0.6, 0.28] },
+      });
+      var cellRes = resForZoom(map.getZoom());
+      refreshCells = function () {
+        var src = map.getSource('cells');
+        if (src) src.setData(cellGeoJSON());
+      };
+      map.on('zoomend', function () {
+        var r = resForZoom(map.getZoom());
+        if (r !== cellRes) { cellRes = r; refreshCells(); }
       });
 
       // 1. Outer pulse ring — animates for hot (electric/peak/lit) venues
@@ -388,6 +467,22 @@ function buildHTML(
         popup.remove();
       });
 
+      // Tapping a cell (not a pin) says what the area reads and how far to trust it.
+      map.on('click', 'cell-fill', function (e) {
+        if (map.queryRenderedFeatures(e.point, { layers: ['venue-circle'] }).length) return;
+        var p = e.features[0].properties;
+        var trust = p.demo ? 'DEMO' : (p.solid ? 'confirmed' : 'not confirmed yet');
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(
+            '<div class="popup-name">Area energy ' + p.score + '</div>' +
+            '<div style="color:#A89B8C;font-size:11px;margin-top:2px">' +
+              p.venues + (p.venues === 1 ? ' venue' : ' venues') + ', ' + trust + '</div>'
+          )
+          .addTo(map);
+        setTimeout(function () { popup.remove(); }, 2600);
+      });
+
       // ── Crew pins ──────────────────────────────────────────────────────
       if (crew.features.length > 0) {
         map.addSource('crew', { type: 'geojson', data: crew });
@@ -470,14 +565,27 @@ export default function VibeMap({
   center,
   zoomLevel = 13,
   demoMode = false,
+  cells = null,
 }: Props) {
   const mapCenter = center ?? userLocation ?? { lat: 6.4316, lng: 3.4223 };
+  const webRef = useRef<WebView>(null);
+  // The page is built with whatever grid is known at that moment; later grids
+  // are pushed into the live map, so a refresh never reloads the page and
+  // throws away where the person had panned to.
+  const cellsRef = useRef(cells);
+  cellsRef.current = cells;
 
   const html = useMemo(
-    () => buildHTML(venues, crewPins, mapCenter, userLocation, zoomLevel, MAPBOX_TOKEN, demoMode),
+    () => buildHTML(venues, crewPins, mapCenter, userLocation, zoomLevel, MAPBOX_TOKEN, demoMode, cellsRef.current),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [venues, crewPins, userLocation?.lat, userLocation?.lng, zoomLevel, demoMode],
   );
+
+  useEffect(() => {
+    webRef.current?.injectJavaScript(
+      `window.setCells && window.setCells(${scriptJSON(cells)}); true;`,
+    );
+  }, [cells]);
 
   const [mapError, setMapError] = useState<string | null>(null);
 
@@ -533,6 +641,7 @@ export default function VibeMap({
         </View>
       ) : null}
       <WebView
+        ref={webRef}
         // baseUrl gives the inline HTML a real https origin. Without it, Android
         // WebView serves the page from a null origin and Mapbox GL JS's tile/style
         // requests to api.mapbox.com are blocked → blank dark map. (iOS is lenient,

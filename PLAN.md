@@ -183,12 +183,14 @@ The thing investors see. Mapbox-based, confidence-aware rendering.
 
 - [ ] `npx expo install @rnmapbox/maps`
 - [ ] New screen `app/grid.tsx`
-- [ ] Hex tile renderer fed by `/api/grid/vpixels`
-- [ ] Confidence-aware opacity (translucent when uncertain, saturated when trusted)
+- [x] Hex tile renderer fed by `/api/grid/vpixels`
+- [x] Confidence-aware opacity (translucent when uncertain, saturated when trusted)
 - [ ] Tap-cell drill-down → venue list inside that hex
 - [ ] Live updates via socket (cell delta events, not full reload)
 - [ ] "Breath" animation — cells gently pulse at their layer-blended BPM
 - [ ] Demo-video-ready: looks honest *and* alive
+
+*Shipped 14 Nov 2026 on the existing map (`VibeMap.tsx`, Mapbox GL in a WebView), not a new `@rnmapbox` screen: hex cells sit under the pins, switch resolution with zoom, and refresh every minute without reloading the page (`useCityGrid`). Tapping a cell shows the area reading and its trust; the venue-list drill-down, socket deltas and the breath animation are still to do. Demo mode folds the sample venues into cells on the device.*
 
 ## Phase 6 — Highest Energy Route (deferred, post-data)
 
