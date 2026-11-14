@@ -145,9 +145,11 @@ def env(monkeypatch):
     import app.config
     import app.routes.grid as grid_route
     import app.routes.public_api as public_api
-    for mod in (app.config, grid_route, public_api):
+    import app.services.api_access as api_access
+    for mod in (app.config, grid_route, public_api, api_access):
         monkeypatch.setattr(mod, "db", db, raising=False)
     grid_route._cache.clear()
+    api_access._minute.clear()
 
     now = datetime.now(timezone.utc)
     asyncio.run(db.api_keys.insert_one({"key": "k1", "active": True}))

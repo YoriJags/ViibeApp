@@ -49,19 +49,27 @@ def bucket_of(ts: datetime) -> datetime:
     return ts.replace(minute=ts.minute - ts.minute % BUCKET_MINUTES, second=0, microsecond=0)
 
 
+def _most_common(values: list) -> Optional[str]:
+    return max(set(values), key=values.count) if values else None
+
+
 def rows_from_cells(cells: Iterable[dict], resolution: int, bucket: datetime,
-                    city_of: dict[str, str]) -> list[dict]:
+                    city_of: dict[str, str], area_of: Optional[dict[str, str]] = None) -> list[dict]:
     """History rows for one fold of the grid. Real cells only."""
+    area_of = area_of or {}
     rows = []
     for c in cells:
         if c.get("source") != SOURCE_SCOUTS or c.get("score") is None:
             continue
-        cities = [city_of[v] for v in c.get("venue_ids", []) if city_of.get(v)]
+        ids = c.get("venue_ids", [])
         rows.append({
             "cell": c["cell"],
             "res": resolution,
             "bucket": bucket,
-            "city": max(set(cities), key=cities.count) if cities else None,
+            "city": _most_common([city_of[v] for v in ids if city_of.get(v)]),
+            # The neighbourhood most of the cell's venues call home, so a report
+            # can say "Victoria Island" instead of a cell id.
+            "area": _most_common([area_of[v] for v in ids if area_of.get(v)]),
             "score": c["score"],
             "confidence": c.get("confidence"),
             "solid": bool(c.get("solid")),
@@ -172,6 +180,88 @@ def typical_curve(rows: Iterable[dict], min_nights: int = MIN_NIGHTS) -> dict:
     }
 
 
+def weekly_report(this_week: Iterable[dict], last_week: Iterable[dict]) -> dict:
+    """
+    "Where the scene heated up this week", from one resolution of history.
+
+    Built only from trusted readings. A cell's level for a week is the mean of
+    its nightly peaks, so one freak night does not define it. A cell is said to
+    have heated up only if it has at least two nights in BOTH weeks; otherwise
+    the comparison would be between a pattern and an accident.
+    """
+    import h3
+
+    def per_cell(rows):
+        cells: dict[str, dict] = {}
+        for r in rows:
+            if not r.get("solid"):
+                continue
+            c = cells.setdefault(r["cell"], {"nights": {}, "area": r.get("area"), "hot_buckets": 0})
+            night = night_of(_as_utc(r["bucket"]))
+            c["nights"][night] = max(c["nights"].get(night, 0.0), float(r["score"]))
+            if r["score"] >= 50:
+                c["hot_buckets"] += 1
+            c["area"] = c["area"] or r.get("area")
+        return cells
+
+    def level(c):
+        return sum(c["nights"].values()) / len(c["nights"])
+
+    def describe(cell, c, **extra):
+        lat, lng = h3.cell_to_latlng(cell)
+        return {
+            "cell": cell,
+            "area": c["area"],
+            "center": {"lat": round(lat, 5), "lng": round(lng, 5)},
+            "nights": len(c["nights"]),
+            "mean_nightly_peak": round(level(c), 1),
+            "best_night_peak": round(max(c["nights"].values()), 1),
+            "minutes_at_50_plus": c["hot_buckets"] * BUCKET_MINUTES,
+            **extra,
+        }
+
+    this_week = list(this_week)
+    now_cells, before_cells = per_cell(this_week), per_cell(last_week)
+    trusted = [r for r in this_week if r.get("solid")]
+
+    hottest = sorted(now_cells, key=lambda k: -level(now_cells[k]))[:5]
+    risers = []
+    for cell, c in now_cells.items():
+        b = before_cells.get(cell)
+        if b and len(c["nights"]) >= 2 and len(b["nights"]) >= 2:
+            change = level(c) - level(b)
+            if change > 0:
+                risers.append((change, cell))
+    risers.sort(reverse=True)
+
+    by_night: dict = {}
+    by_hour: dict[int, list[float]] = {}
+    for r in trusted:
+        ts = _as_utc(r["bucket"])
+        night = night_of(ts)
+        by_night[night] = max(by_night.get(night, 0.0), float(r["score"]))
+        by_hour.setdefault(lagos_hour(ts), []).append(float(r["score"]))
+    busiest = max(by_night, key=by_night.get) if by_night else None
+    peak_hour = max(by_hour, key=lambda h: sum(by_hour[h]) / len(by_hour[h])) if by_hour else None
+
+    return {
+        "enough": bool(trusted),
+        "coverage": {
+            "trusted_readings": len(trusted),
+            "cells": len(now_cells),
+            "nights": len(by_night),
+        },
+        "hottest": [describe(k, now_cells[k]) for k in hottest],
+        "heated_up": [
+            describe(cell, now_cells[cell], change=round(change, 1),
+                     last_week_mean_nightly_peak=round(level(before_cells[cell]), 1))
+            for change, cell in risers[:5]
+        ],
+        "busiest_night": {"date": busiest.isoformat(), "peak": round(by_night[busiest], 1)} if busiest else None,
+        "peak_hour_lagos": peak_hour,
+    }
+
+
 # ── Recorder ─────────────────────────────────────────────────────────────────
 
 def recording_enabled() -> bool:
@@ -201,11 +291,12 @@ async def record_grid(now: Optional[datetime] = None) -> int:
         if reading is not None:
             presence[v["id"]] = reading
     city_of = {v["id"]: v.get("city") for v in venues if v.get("id")}
+    area_of = {v["id"]: v.get("area") for v in venues if v.get("id")}
 
     bucket = bucket_of(now)
     written = 0
     for res in RESOLUTIONS:
-        for row in rows_from_cells(build_grid(venues, res, now, presence), res, bucket, city_of):
+        for row in rows_from_cells(build_grid(venues, res, now, presence), res, bucket, city_of, area_of):
             # One upsert per cell: a city is a few hundred cells at most, and a
             # second pass in the same bucket replaces the row, never doubles it.
             await db.grid_history.update_one(
@@ -269,3 +360,18 @@ async def same_weekday_rows(cell: str, now: Optional[datetime] = None) -> list[d
         r for r in rows
         if (n := night_of(_as_utc(r["bucket"]))) != tonight and n.weekday() == tonight.weekday()
     ]
+
+
+async def week_rows(city: str, resolution: int, end: datetime) -> tuple[list[dict], list[dict]]:
+    """History for the seven days up to `end`, and for the seven before that."""
+    from app.config import db
+
+    end = _as_utc(end)
+    mid, start = end - timedelta(days=7), end - timedelta(days=14)
+
+    async def span(a, b):
+        return await db.grid_history.find(
+            {"city": city.lower(), "res": resolution, "bucket": {"$gte": a, "$lt": b}}, {"_id": 0}
+        ).to_list(50000)
+
+    return await span(mid, end), await span(start, mid)

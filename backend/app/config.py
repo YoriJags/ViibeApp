@@ -207,6 +207,10 @@ async def ensure_indexes():
     # api_keys: external partner key lookups (public read API)
     await db.api_keys.create_index("key", unique=True)
     await db.api_keys.create_index([("active", 1)])
+    # intelligence API keys (hashed) and their daily usage (services/api_access.py)
+    await db.intel_keys.create_index("key_hash", unique=True)
+    await db.intel_keys.create_index("id", unique=True)
+    await db.api_usage.create_index([("key_id", 1), ("day", 1)], unique=True)
 
     # NDPR compliance collections
     await db.consent_records.create_index("user_id", unique=True)

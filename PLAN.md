@@ -206,9 +206,9 @@ Don't build until P5 has been live with real Lagos data ≥30 days. Routing on s
 The dark intelligence layer. Don't build until P5 is live ≥30 days.
 
 - [x] Cell history behind an API key *(shipped 14 Nov 2026 as `GET /api/grid/history?cell=`, with `GET /api/grid/night` for how a night built and `GET /api/grid/forecast` for a cell's usual night; `services/grid_history.py` records the grid every ten minutes, real readings only, and a forecast stays silent until three past nights back an hour)*
-- [ ] API keys, rate limits, usage billing
+- [x] API keys, rate limits, usage metering *(shipped 14 Nov 2026: `services/api_access.py`; hashed keys, three tiers of per-minute and per-day limits, requests counted per key per day; admin routes and `scripts/issue_api_key.py`; invoicing from the counts is still manual)*
 - [ ] First customer prospect: Lagos State tourism, EkoAtlantic developers, Heineken scene marketing
-- [ ] Sample reports for sales: "Where the scene heated up this week"
+- [x] Sample reports for sales: "Where the scene heated up this week" *(`GET /api/v1/reports/weekly`; empty until real readings exist; buyer docs in `docs/INTELLIGENCE_API.md`)*
 - [ ] Pricing model: $5k / $25k / $50k tiers
 
 ## Phase 8 — The Lekki Corridor (parallel track, non-code, business-critical)

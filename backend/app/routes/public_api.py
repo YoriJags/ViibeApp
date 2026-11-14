@@ -9,20 +9,17 @@ Design principles:
   - API key required via X-API-Key header
   - Read-only — no mutations exposed
 
-To issue an API key:
-  db.api_keys.insert_one({
-      "key": "<uuid>",
-      "partner": "<partner name>",
-      "created_at": datetime.utcnow(),
-      "active": True,
-      "scopes": ["venues:read", "scores:read", "history:read"],
-  })
+To issue an API key (shown once, stored only as a hash):
+  railway run python scripts/issue_api_key.py "Buyer name" starter path-to-write-key
+or POST /api/admin/api-keys as an admin. See services/api_access.py and
+docs/INTELLIGENCE_API.md.
 """
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Header, Query
 from app.config import db
 from app.services.synthetic import SOURCE_SCOUTS, for_machines
 from app.services.reading_confidence import attach_confidence
+from app.services import api_access, grid_history
 
 router = APIRouter(prefix="/v1", tags=["public-api-v1"])
 
@@ -30,13 +27,8 @@ router = APIRouter(prefix="/v1", tags=["public-api-v1"])
 # ── API Key authentication dependency ─────────────────────────────────────────
 
 async def _require_api_key(x_api_key: str = Header(...)):
-    """Validate X-API-Key header against the api_keys collection."""
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="X-API-Key header required")
-    key_doc = await db.api_keys.find_one({"key": x_api_key, "active": True})
-    if not key_doc:
-        raise HTTPException(status_code=403, detail="Invalid or inactive API key")
-    return key_doc
+    """Authenticate the key, apply its tier's limits and count the request."""
+    return await api_access.check(x_api_key)
 
 
 def _clean_venue(v: dict) -> dict:
@@ -251,3 +243,43 @@ async def get_city_energy(
         ],
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+
+
+@router.get("/usage")
+async def get_my_usage(days: int = Query(30, ge=1, le=366), x_api_key: str = Header(...)):
+    """What this key has used: its tier, its limits and requests per day."""
+    key = await _require_api_key(x_api_key)
+    tier = key.get("tier") or api_access.DEFAULT_TIER
+    return {
+        "api_version": "v1",
+        "name": key.get("name"),
+        "tier": tier,
+        "limits": api_access.TIERS.get(tier, api_access.TIERS[api_access.DEFAULT_TIER]),
+        **(await api_access.usage(key["id"], days)),
+    }
+
+
+@router.get("/reports/weekly")
+async def get_weekly_report(
+    city: str = Query("lagos", max_length=60),
+    x_api_key: str = Header(...),
+):
+    """
+    Where the scene heated up this week: the hottest districts, the ones that
+    rose against last week, the busiest night and the hour the city peaks.
+    Built from trusted readings only; says so plainly when there are none.
+    """
+    await _require_api_key(x_api_key)
+    now = datetime.now(timezone.utc)
+    this_week, last_week = await grid_history.week_rows(city, 8, now)
+    report = grid_history.weekly_report(this_week, last_week)
+    body = {
+        "api_version": "v1",
+        "city": city.lower(),
+        "week_ending": now.isoformat(),
+        "resolution": 8,
+        **report,
+    }
+    if not report["enough"]:
+        body["note"] = "No trusted readings in this city in the past seven days."
+    return body
