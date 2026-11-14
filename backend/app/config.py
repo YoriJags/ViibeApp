@@ -89,6 +89,9 @@ async def ensure_indexes():
     await db.venues.create_index([("city", 1), ("current_vibe_score", -1)])
     await db.venues.create_index([("city", 1), ("area", 1)])
     await db.venues.create_index("id", unique=True)
+    # grid history: one row per cell per ten-minute bucket (services/grid_history.py)
+    await db.grid_history.create_index([("cell", 1), ("bucket", 1)], unique=True)
+    await db.grid_history.create_index([("city", 1), ("res", 1), ("bucket", 1)])
     # the city grid reads venues by bounding box (routes/grid.py)
     await db.venues.create_index([("coordinates.lat", 1), ("coordinates.lng", 1)])
 

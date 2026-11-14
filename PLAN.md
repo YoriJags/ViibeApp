@@ -205,7 +205,7 @@ Don't build until P5 has been live with real Lagos data ≥30 days. Routing on s
 
 The dark intelligence layer. Don't build until P5 is live ≥30 days.
 
-- [ ] `GET /v1/pulse/api/cells/{geo_hash}/history` — paywalled
+- [x] Cell history behind an API key *(shipped 14 Nov 2026 as `GET /api/grid/history?cell=`, with `GET /api/grid/night` for how a night built and `GET /api/grid/forecast` for a cell's usual night; `services/grid_history.py` records the grid every ten minutes, real readings only, and a forecast stays silent until three past nights back an hour)*
 - [ ] API keys, rate limits, usage billing
 - [ ] First customer prospect: Lagos State tourism, EkoAtlantic developers, Heineken scene marketing
 - [ ] Sample reports for sales: "Where the scene heated up this week"
