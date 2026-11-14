@@ -10,3 +10,4 @@ python-dotenv==1.0.1
 httpx==0.28.1
 starlette==0.41.3
 anthropic>=0.40.0
+h3>=4.1,<5

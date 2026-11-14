@@ -168,12 +168,14 @@ The trust rules. Without these the GIS lies.
 
 The query surface. Cached, indexed, fast.
 
-- [ ] `GET /api/grid/vpixels?bbox=&zoom=` — returns hex cells with `{energy, confidence, layer_breakdown, decay_state}`
-- [ ] H3 hex indexing (Uber's H3 lib) for cell IDs — clean zoom hierarchy
-- [ ] 5s response cache (Redis) keyed on bbox+zoom
-- [ ] Compound index `(geo_hash, timestamp)` on `vibe_pulses`
-- [ ] Tag scale-gate: `# TODO(scale-gate-A): swap to TimescaleDB + PostGIS at Series A`
+- [x] `GET /api/grid/vpixels?bbox=&zoom=` — returns hex cells with `{energy, confidence, layer_breakdown, decay_state}`
+- [x] H3 hex indexing (Uber's H3 lib) for cell IDs — clean zoom hierarchy
+- [x] 5s response cache keyed on bbox+zoom *(in memory; Redis when there is more than one replica)*
+- [ ] Compound index `(geo_hash, timestamp)` on `vibe_pulses` *(not needed yet: the grid folds venues, read by a `coordinates` index; this returns when raw pulses carry a cell id for history)*
+- [x] Tag scale-gate: `# TODO(scale-gate-A): swap to TimescaleDB + PostGIS at Series A`
 - [ ] Load test: 1k req/s sustained, p95 <80ms
+
+*Shipped 14 Nov 2026: `services/grid.py` + `routes/grid.py`. Cells are confidence-weighted, never blend real with demo, and report "none" rather than quiet when unread. 1,000 venues fold in under half a second in tests; the 1k req/s load test is still to run.*
 
 ## Phase 5 — Frontend GIS Map (the visible layer)
 

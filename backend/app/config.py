@@ -89,6 +89,8 @@ async def ensure_indexes():
     await db.venues.create_index([("city", 1), ("current_vibe_score", -1)])
     await db.venues.create_index([("city", 1), ("area", 1)])
     await db.venues.create_index("id", unique=True)
+    # the city grid reads venues by bounding box (routes/grid.py)
+    await db.venues.create_index([("coordinates.lat", 1), ("coordinates.lng", 1)])
 
     # users: login/signup lookups + leaderboard sorting
     await db.users.create_index("id", unique=True)

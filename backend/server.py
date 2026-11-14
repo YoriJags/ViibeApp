@@ -70,6 +70,7 @@ from app.routes.dna import router as dna_router
 from app.routes.battles import router as battles_router
 from app.routes.crew_battles import router as crew_battles_router
 from app.routes.heat_map import router as heat_map_router
+from app.routes.grid import router as grid_router
 from app.routes.after_party import router as after_party_router
 from app.routes.resonance import router as resonance_router
 from app.routes.emoji_pulse import router as emoji_pulse_router
@@ -152,6 +153,7 @@ api_router.include_router(dna_router)
 api_router.include_router(battles_router)
 api_router.include_router(crew_battles_router)
 api_router.include_router(heat_map_router)
+api_router.include_router(grid_router)
 api_router.include_router(after_party_router)
 api_router.include_router(resonance_router)
 api_router.include_router(emoji_pulse_router)
