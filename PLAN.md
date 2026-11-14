@@ -155,12 +155,14 @@ Wire each layer into existing app events. No new client work — uses signals al
 
 The trust rules. Without these the GIS lies.
 
-- [ ] Rule: `L1 high && L2 collapsing` → trust L2, discount L1 (kills home-tap fraud)
-- [ ] Rule: `<2 distinct scouts in 60s` → confidence < 0.5, render translucent
-- [ ] Rule: zero presence heartbeats in 90s → L2 collapses regardless of L1
-- [ ] Confidence score `[0..1]` exposed per cell
-- [ ] "Honest map" rule encoded: cell only renders saturated if all 3 gates pass
-- [ ] Replay test: 100 simulated venues including adversarial cases
+- [x] Rule: `L1 high && L2 collapsing` → trust L2, discount L1 (kills home-tap fraud)
+- [x] Rule: `<2 distinct scouts in 60s` → confidence < 0.5, render translucent
+- [x] Rule: zero presence heartbeats in 90s → L2 collapses regardless of L1
+- [x] Confidence score `[0..1]` exposed per cell
+- [x] "Honest map" rule encoded: cell only renders saturated if all 3 gates pass
+- [x] Replay test: 100 simulated venues including adversarial cases
+
+*Shipped 14 Nov 2026: `services/reading_confidence.py` turns the stored evidence plus the clock into a 0 to 1 score on every venue payload and both partner feeds; the map draws a reading faded below 0.5. The cell is the venue until the hex grid (Phase 4).*
 
 ## Phase 4 — V-Pixel API (what the GIS reads)
 

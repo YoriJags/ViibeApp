@@ -22,6 +22,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Header, Query
 from app.config import db
 from app.services.synthetic import SOURCE_SCOUTS, for_machines
+from app.services.reading_confidence import attach_confidence
 
 router = APIRouter(prefix="/v1", tags=["public-api-v1"])
 
@@ -44,7 +45,7 @@ def _clean_venue(v: dict) -> dict:
     Demo-driven venues report no reading (see services/synthetic.py): this is
     the licensed feed, and a demo score in it would be a false record.
     """
-    v = for_machines(v)
+    v = attach_confidence(dict(for_machines(v)))
     return {
         "id":              v.get("id"),
         "name":            v.get("name"),
@@ -58,6 +59,10 @@ def _clean_venue(v: dict) -> dict:
         "capacity_level":  v.get("capacity_level"),
         "gate_level":      v.get("gate_level"),
         "vibe_velocity":   v.get("vibe_velocity"),
+        # How far to trust the reading right now, 0 to 1, and any failed gates.
+        # See services/reading_confidence.py.
+        "confidence":       v.get("confidence"),
+        "confidence_gates": v.get("confidence_gates"),
         "score_confidence": v.get("score_confidence"),
         "energy_source":   v.get("energy_source") or SOURCE_SCOUTS,
         "active_scouts":   v.get("active_scouts"),

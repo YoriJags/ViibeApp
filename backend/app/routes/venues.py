@@ -10,6 +10,7 @@ from fastapi import APIRouter, Header
 from app.config import db, CITIES
 from app.services.promotion import compute_promotion
 from app.services.signal_density import compute_signal_density
+from app.services.reading_confidence import attach_confidence
 from app.services.events import event_summary, is_event, is_listed
 from app.services.timeutil import as_utc
 
@@ -189,6 +190,7 @@ async def get_venues(city: Optional[str] = None):
     for venue in venues:
         venue["ratings_last_30m"] = spike_data.get(venue.get("id"), 0)
         venue["signal_density"] = compute_signal_density(venue)
+        attach_confidence(venue, now)
         venue["pulse"] = venue["signal_density"]  # deprecated alias, remove once clients ship
         venue["promotion"] = compute_promotion(venue)
         is_open = compute_is_open_now(venue)
@@ -238,6 +240,7 @@ async def get_venue(venue_id: str, authorization: str = Header(default="")):
     asyncio.create_task(_update_venue_scores(venue_id))
 
     venue["signal_density"] = compute_signal_density(venue)
+    attach_confidence(venue)
     venue["pulse"] = venue["signal_density"]  # deprecated alias, remove once clients ship
     venue["promotion"] = compute_promotion(venue)
     is_open = compute_is_open_now(venue)

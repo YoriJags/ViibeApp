@@ -27,6 +27,7 @@ from pydantic import BaseModel
 from app.config import db, logger
 from app.services.synthetic import SOURCE_NONE, SOURCE_SCOUTS, has_real_reading
 from app.services.auth import get_current_user
+from app.services.reading_confidence import attach_confidence
 
 router = APIRouter(prefix="/v1/agent", tags=["Agent API"])
 
@@ -102,6 +103,7 @@ def _serialize_venue(v: dict) -> dict:
             "note":           "No live reading from scouts yet.",
         }
     score = v.get("current_vibe_score") or v.get("vibe_score") or 0
+    v = attach_confidence(dict(v))
     return {
         "id":             v.get("id"),
         "name":           v.get("name"),
@@ -120,6 +122,8 @@ def _serialize_venue(v: dict) -> dict:
         "consensus_label": v.get("consensus_label"),    # "electric" | "chill" | "mixed" | "insufficient"
         "consensus_rate":  v.get("consensus_rate"),     # 0.0–1.0 agreement score
         "avg_dwell_mins":  v.get("avg_dwell_minutes"),  # how long scouts are staying
+        "confidence":       v.get("confidence"),        # 0.0–1.0, trust in the reading right now
+        "confidence_gates": v.get("confidence_gates"),  # failed trust gates, e.g. "single_scout", "stale"
         "score_confidence": v.get("score_confidence"),  # "high" | "medium" | "low"
         "last_updated":   v.get("last_activity_at") or v.get("updated_at"),
     }
@@ -157,6 +161,8 @@ async def get_live_venues(
         {
             "_id": 0, "id": 1, "name": 1, "category": 1, "city": 1,
             "neighbourhood": 1, "current_vibe_score": 1, "vibe_score": 1, "energy_source": 1,
+            "last_rated_at": 1, "consensus_count": 1, "consensus_rate": 1, "consensus_label": 1,
+            "vibe_velocity": 1, "avg_dwell_minutes": 1,
             "active_scouts": 1, "is_surging": 1, "peak_time": 1,
             "music_genre": 1, "capacity_signal": 1, "last_activity_at": 1,
             "updated_at": 1,
@@ -195,6 +201,8 @@ async def get_venue_snapshot(
         {
             "_id": 0, "id": 1, "name": 1, "category": 1, "city": 1,
             "neighbourhood": 1, "current_vibe_score": 1, "vibe_score": 1, "energy_source": 1,
+            "last_rated_at": 1, "consensus_count": 1, "consensus_rate": 1, "consensus_label": 1,
+            "vibe_velocity": 1, "avg_dwell_minutes": 1,
             "active_scouts": 1, "is_surging": 1, "peak_time": 1,
             "music_genre": 1, "capacity_signal": 1, "last_activity_at": 1,
             "updated_at": 1, "address": 1, "description": 1,

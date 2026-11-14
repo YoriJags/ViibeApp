@@ -799,11 +799,12 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         most_recent = max(timestamps, key=lambda t: t if isinstance(t, datetime) else datetime.fromisoformat(str(t).replace("Z", "+00:00")))
         oldest = min(timestamps, key=lambda t: t if isinstance(t, datetime) else datetime.fromisoformat(str(t).replace("Z", "+00:00")))
         last_rated_mins_ago = round(_minutes_since(most_recent, now))
+        last_rated_at = _parse_datetime(most_recent)
         submission_window_start = oldest if isinstance(oldest, datetime) else datetime.fromisoformat(str(oldest).replace("Z", "+00:00"))
     else:
         last_rated_mins_ago = None
+        last_rated_at = None
         submission_window_start = None
-    score_confidence = "high" if active_scouts >= 5 else "medium" if active_scouts >= 2 else "low"
 
     result = {
         "current_vibe_score": round(avg_score, 1),
@@ -830,7 +831,6 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         # Transparency
         "active_scouts":      active_scouts,
         "last_rated_mins_ago": last_rated_mins_ago,
-        "score_confidence":   score_confidence,
         # ── Audit trail — every score carries provenance ──────────────
         "sample_size":              len(ratings),
         "total_weight":             round(live["total_weight"], 3),
@@ -856,9 +856,19 @@ async def calculate_venue_aggregate(venue_id: str) -> dict:
         # ── AI-03: Energy Decay — timestamp of last scout rating ──────────────
         # Used by frontend to visually degrade score if no new ratings arrive.
         # Score considered "stale" after 45 min, "expired" after 90 min.
-        "last_rated_at": now if ratings else None,
+        # The time of the newest reading itself. This was "now", so recomputing
+        # an aggregate (an admin edit, a promotion) made an old reading look new.
+        "last_rated_at": last_rated_at,
         "score_age_minutes": last_rated_mins_ago,
     }
+
+    # Confidence as of this moment, for the socket update and the snapshot.
+    # Served payloads recompute it on read, because trust decays with the clock.
+    from app.services.decay_ingest import read_venue_energy
+    from app.services.reading_confidence import reading_confidence
+    result.update(reading_confidence(
+        {**result, "id": venue_id}, now, read_venue_energy(venue_id, now.timestamp())
+    ))
 
     from app.routes.alerts import check_venue_alerts
     await check_venue_alerts(venue_id, avg_score)

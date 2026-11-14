@@ -27,7 +27,21 @@ interface Venue {
   // Where the score came from. Anything other than "scouts" is not a real
   // reading, so the map says so (fails closed: a missing label counts as demo).
   energy_source?: 'scouts' | 'demo' | 'none';
+  // Trust in the reading right now, 0 to 1 (backend services/reading_confidence.py).
+  // Below 0.5 a gate failed, so the pin draws faded. Null or absent: not judged.
+  confidence?: number | null;
+  confidence_gates?: string[];
 }
+
+const SOLID_AT = 0.5;
+const isFaint = (v: Venue) => typeof v.confidence === 'number' && v.confidence < SOLID_AT;
+// Why a reading is not yet trusted, in the popup's words.
+const faintReason = (v: Venue): string => {
+  const g = v.confidence_gates ?? [];
+  if (g.includes('single_scout')) return 'one scout so far';
+  if (g.includes('stale')) return 'not refreshed lately';
+  return 'not confirmed yet';
+};
 
 const isReal = (v: Venue) => v.energy_source === 'scouts';
 
@@ -88,6 +102,9 @@ function buildHTML(
         demo: isReal(v) || demoMode ? 0 : 1,
         // Nothing read here yet: a hollow ring, no number, no heat.
         unread: v.energy_source === 'none' || Math.round(v.current_vibe_score ?? 0) === 0 ? 1 : 0,
+        // The honest map: a real reading that failed a trust gate draws faded.
+        faint: isReal(v) && isFaint(v) ? 1 : 0,
+        why: isReal(v) && isFaint(v) ? faintReason(v) : '',
       },
     })),
   };
@@ -262,7 +279,7 @@ function buildHTML(
         paint: {
           'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 22, 15, 46],
           'circle-color': ['get', 'color'],
-          'circle-opacity': ['case', ['==', ['get', 'demo'], 1], 0.22, 0.5],
+          'circle-opacity': ['case', ['==', ['get', 'demo'], 1], 0.22, ['==', ['get', 'faint'], 1], 0.15, 0.5],
           'circle-blur': 0.9,
         },
       });
@@ -281,7 +298,7 @@ function buildHTML(
             10, ['case', ['==', ['get', 'unread'], 1], 4, 6],
             15, ['case', ['==', ['get', 'unread'], 1], 6, 9]],
           'circle-color': ['case', ['==', ['get', 'unread'], 1], '#130A2B', ['get', 'color']],
-          'circle-opacity': ['case', ['==', ['get', 'demo'], 1], 0.5, 1],
+          'circle-opacity': ['case', ['==', ['get', 'demo'], 1], 0.5, ['==', ['get', 'faint'], 1], 0.45, 1],
           'circle-stroke-width': ['case', ['==', ['get', 'unread'], 1], 1.5, 1],
           'circle-stroke-color': ['case', ['==', ['get', 'unread'], 1], '#8E7FA6', '#FFF5DE'],
           'circle-stroke-opacity': ['case', ['==', ['get', 'unread'], 1], 1, 0.35],
@@ -347,7 +364,8 @@ function buildHTML(
           .setHTML(
             '<div class="popup-name">' + esc(props.name) + '</div>' +
             '<div class="popup-score" style="color:' + props.ink + '">' + (props.unread ? 'No reading yet' : (props.label + ' ' + props.score)) +
-              (props.demo ? ' <span style="color:#A89B8C">DEMO</span>' : '') + '</div>'
+              (props.demo ? ' <span style="color:#A89B8C">DEMO</span>' : '') + '</div>' +
+            (props.why ? '<div style="color:#A89B8C;font-size:11px;margin-top:2px">' + esc(props.why) + '</div>' : '')
           )
           .addTo(map);
       }

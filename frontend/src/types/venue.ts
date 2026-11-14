@@ -69,6 +69,9 @@ export interface Venue {
   active_scouts?: number;
   last_rated_mins_ago?: number | null;
   score_confidence?: 'high' | 'medium' | 'low';
+  // Trust in the reading right now, 0 to 1; below 0.5 a trust gate failed.
+  confidence?: number | null;
+  confidence_gates?: string[];
 
   // Dwell
   long_dwell_count?: number;
