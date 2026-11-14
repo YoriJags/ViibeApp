@@ -115,7 +115,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (isDemoMode) { setDebrief(DEMO_DEBRIEF); return; }
     if (!user?.id) return;
-    fetch(`${API_URL}/api/users/${user.id}/night-debrief`)
+    fetch(`${API_URL}/api/users/${user.id}/night-debrief`, { headers: useVibeStore.getState().getAuthHeaders() })
       .then(r => r.json())
       .then(d => { if (d.debrief) setDebrief(d); })
       .catch(() => {});

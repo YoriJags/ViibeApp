@@ -648,8 +648,11 @@ async def get_scout_briefing(request: Request):
 
 
 @router.get("/users/{user_id}/night-debrief")
-async def get_night_debrief(user_id: str):
+async def get_night_debrief(user_id: str, user: dict = Depends(require_auth)):
     """AI personalised night recap from last 12 hours — cached 2 hours."""
+    # The recap names the places a person went tonight, so only they may read it.
+    if user["id"] != user_id:
+        raise HTTPException(status_code=403, detail="Not your debrief")
     cache_key = f"night_debrief_{user_id}"
     cached = await _get_cache(cache_key, ttl_seconds=2 * 3600)
     if cached:
