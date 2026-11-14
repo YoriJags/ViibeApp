@@ -5,13 +5,13 @@ import { View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
-import { useFonts } from 'expo-font';
-import { Unbounded_600SemiBold, Unbounded_700Bold } from '@expo-google-fonts/unbounded';
-import { Archivo_400Regular, Archivo_500Medium, Archivo_600SemiBold } from '@expo-google-fonts/archivo';
 import { useVibeStore } from '../src/store/vibeStore';
 import OnboardingFlow from '../src/components/OnboardingFlow';
+import AppTutorial from '../src/components/AppTutorial';
 import SplashAnimation from '../src/components/SplashAnimation';
+import DemoTutorial from '../src/components/DemoTutorial';
 import ErrorBoundary from '../src/components/ErrorBoundary';
+import GlobalVibePill from '../src/components/GlobalVibePill';
 import { initPostHog } from '../src/services/posthog';
 import { registerForPushNotifications, attachNotificationTapHandler } from '../src/services/pushNotifications';
 
@@ -25,13 +25,6 @@ initPostHog();
 function AppInitializer({ children }: { children: React.ReactNode }) {
   const { hasHydrated, fetchCities, connectSocket, hasSeenOnboarding, completeOnboarding, fetchFeatureFlags, hasSeenAppTutorial, completeAppTutorial, sessionToken } = useVibeStore();
   const [isReady, setIsReady] = useState(false);
-  // Brand fonts (src/theme/tokens.ts): Unbounded for titles and numbers,
-  // Archivo for text. The splash stays up until they load, so no screen ever
-  // flashes in the system font first. A load error falls back silently.
-  const [fontsLoaded, fontError] = useFonts({
-    Unbounded_600SemiBold, Unbounded_700Bold,
-    Archivo_400Regular, Archivo_500Medium, Archivo_600SemiBold,
-  });
   const [showSplash, setShowSplash] = useState(true);
   const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
 
@@ -83,7 +76,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   if (showSplash) {
     return (
       <SplashAnimation
-        isReady={isReady && (fontsLoaded || !!fontError)}
+        isReady={isReady}
         onAnimationComplete={handleSplashComplete}
       />
     );
@@ -95,7 +88,9 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   }
 
   // How-to tutorial — shown once after onboarding (and for existing users on next launch)
-  // The separate app tutorial is retired: onboarding is one flow now.
+  if (!hasSeenAppTutorial) {
+    return <AppTutorial visible onComplete={completeAppTutorial} />;
+  }
 
   return <>{children}</>;
 }
@@ -127,9 +122,11 @@ export default function RootLayout() {
               <Stack.Screen name="venue/[id]" options={{ headerShown: false }} />
               <Stack.Screen name="rate/[id]" options={{ headerShown: false }} />
             </Stack>
-            {/* The floating "Viibe charge" HUD is retired: it covered every
-                screen's header. Being inside a venue now shows as the
-                "You're inside" bar on the map and the venue's own button. */}
+            <DemoTutorial />
+            {/* GlobalVibePill — geofence HUD (top bar, inside venue) */}
+            <ErrorBoundary label="Viibe Pill">
+              <GlobalVibePill />
+            </ErrorBoundary>
           </View>
         </AppInitializer>
       </SafeAreaProvider>

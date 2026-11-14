@@ -25,7 +25,6 @@ import {
   syncWatchedVenues,
 } from '../services/autoPresence';
 import { useVibeStore } from '../store/vibeStore';
-import { card, color, radius, space, type } from '../theme/tokens';
 
 const PROMISES = [
   'Only arriving at and leaving venues on the map. Never where you go in between.',
@@ -38,7 +37,7 @@ interface Props {
   accent?: string;
 }
 
-export default function AutoPresenceToggle({ accent = color.ink }: Props) {
+export default function AutoPresenceToggle({ accent = '#22d3ee' }: Props) {
   const venues = useVibeStore((s) => s.venues);
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
@@ -98,8 +97,8 @@ export default function AutoPresenceToggle({ accent = color.ink }: Props) {
           <Switch
             value={enabled}
             onValueChange={toggle}
-            trackColor={{ false: color.raised, true: color.accentPressed }}
-            thumbColor={color.ink}
+            trackColor={{ false: '#333', true: accent + '66' }}
+            thumbColor={enabled ? accent : '#777'}
           />
         )}
       </View>
@@ -107,7 +106,7 @@ export default function AutoPresenceToggle({ accent = color.ink }: Props) {
       <View style={styles.promises}>
         {PROMISES.map((p) => (
           <View key={p} style={styles.promiseRow}>
-            <View style={styles.dot} />
+            <Text style={[styles.dot, { color: accent }]}>{'●'}</Text>
             <Text style={styles.promiseText}>{p}</Text>
           </View>
         ))}
@@ -124,18 +123,29 @@ export default function AutoPresenceToggle({ accent = color.ink }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { ...card, gap: space.sm },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
-  title: { ...type.bodyStrong, color: color.ink },
-  subtitle: { ...type.label, color: color.inkSoft, marginTop: space.xxs },
-  promises: { gap: space.xs },
-  promiseRow: { flexDirection: 'row', gap: space.xs, alignItems: 'flex-start' },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: color.inkFaint, marginTop: 7 },
-  promiseText: { ...type.label, color: color.inkSoft, flex: 1 },
-  problem: { ...type.label, color: color.danger },
-  settingsBtn: {
-    alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center',
-    paddingHorizontal: space.md, borderRadius: radius.pill, borderWidth: 1.5, borderColor: color.lineStrong,
+  container: {
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
   },
-  settingsText: { ...type.labelStrong, color: color.ink },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  title: { fontSize: 15, fontWeight: '800', color: 'rgba(255,255,255,0.9)' },
+  subtitle: { fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4, lineHeight: 17 },
+  promises: { gap: 6 },
+  promiseRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
+  dot: { fontSize: 7, marginTop: 5 },
+  promiseText: { flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 17 },
+  problem: { fontSize: 12, color: '#ff8a8a', lineHeight: 17 },
+  settingsBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  settingsText: { fontSize: 13, fontWeight: '700' },
 });
