@@ -27,6 +27,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import Header, HTTPException
+from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 
 from app.config import db
 
@@ -101,8 +103,17 @@ async def _adopt_legacy(raw: str) -> Optional[dict]:
         "created_by": "migrated from api_keys",
         "created_at": legacy.get("created_at") or datetime.now(timezone.utc),
     }
-    await db.intel_keys.insert_one(dict(doc))
-    await db.api_keys.update_one({"_id": legacy["_id"]}, {"$set": {"active": False, "migrated": True}})
+    try:
+        await db.intel_keys.insert_one(dict(doc))
+    except DuplicateKeyError:
+        # Two first requests raced; the other one adopted it. Use that record.
+        return await db.intel_keys.find_one({"key_hash": doc["key_hash"], "active": True}, {"_id": 0})
+    # The plain-text copy is removed, not just switched off, so the database
+    # no longer holds a usable key anywhere.
+    await db.api_keys.update_one(
+        {"_id": legacy["_id"]},
+        {"$set": {"active": False, "migrated": True, "intel_key_id": doc["id"]}, "$unset": {"key": ""}},
+    )
     return doc
 
 
@@ -139,13 +150,17 @@ async def check(raw: Optional[str]) -> dict:
         raise HTTPException(status_code=429, detail="Rate limit reached for this minute",
                             headers={"Retry-After": str(wait)})
 
+    # Count first, then check, in one atomic step: every request gets its own
+    # number, so a burst of parallel requests cannot all slip under the limit.
+    # A refused request is taken back off the count, so it is never billed.
     day = _day()
-    used = await db.api_usage.find_one({"key_id": doc["id"], "day": day}, {"_id": 0, "count": 1})
-    if used and used.get("count", 0) >= limits["per_day"]:
-        raise HTTPException(status_code=429, detail="Daily request limit reached for this key")
-    await db.api_usage.update_one(
-        {"key_id": doc["id"], "day": day}, {"$inc": {"count": 1}}, upsert=True
+    used = await db.api_usage.find_one_and_update(
+        {"key_id": doc["id"], "day": day}, {"$inc": {"count": 1}},
+        upsert=True, return_document=ReturnDocument.AFTER,
     )
+    if used and used.get("count", 0) > limits["per_day"]:
+        await db.api_usage.update_one({"key_id": doc["id"], "day": day}, {"$inc": {"count": -1}})
+        raise HTTPException(status_code=429, detail="Daily request limit reached for this key")
     return doc
 
 

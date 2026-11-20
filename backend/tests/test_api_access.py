@@ -117,6 +117,22 @@ def test_the_daily_limit_holds(db, monkeypatch):
     assert e.value.status_code == 429 and "Daily" in e.value.detail
 
 
+def test_a_burst_cannot_slip_past_the_daily_limit(db, monkeypatch):
+    monkeypatch.setitem(api_access.TIERS, "starter", {"per_minute": 1000, "per_day": 5})
+    issued = issue()
+
+    async def burst():
+        results = await asyncio.gather(
+            *[api_access.check(issued["api_key"]) for _ in range(12)], return_exceptions=True
+        )
+        return results
+
+    results = run(burst())
+    assert sum(1 for r in results if not isinstance(r, Exception)) == 5
+    assert all(r.status_code == 429 for r in results if isinstance(r, Exception))
+    assert run(api_access.usage(issued["key"]["id"]))["total"] == 5
+
+
 def test_one_keys_traffic_does_not_spend_anothers(db, monkeypatch):
     monkeypatch.setitem(api_access.TIERS, "starter", {"per_minute": 1, "per_day": 1000})
     a, b = issue("A"), issue("B")
@@ -131,8 +147,9 @@ def test_a_legacy_plain_key_is_adopted_as_a_hash_on_first_use(db):
     run(db.api_keys.insert_one({"key": "old-plain-key", "partner": "Eko Atlantic", "active": True}))
     doc = run(api_access.check("old-plain-key"))
     assert doc["name"] == "Eko Atlantic" and doc["tier"] == "starter"
-    legacy = run(db.api_keys.find_one({"key": "old-plain-key"}))
+    legacy = run(db.api_keys.find_one({"partner": "Eko Atlantic"}))
     assert legacy["active"] is False and legacy["migrated"] is True
+    assert "key" not in legacy and legacy["intel_key_id"] == doc["id"]
     # It keeps working, now through the hashed record, and is not adopted twice.
     assert run(api_access.check("old-plain-key"))["id"] == doc["id"]
     assert run(db.intel_keys.count_documents({})) == 1
