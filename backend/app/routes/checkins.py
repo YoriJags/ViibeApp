@@ -105,6 +105,10 @@ async def ghost_checkin(data: GhostCheckin, user: dict = Depends(require_auth)):
         }
         await db.checkins.insert_one(checkin_doc)
 
+    # A fresh check-in: forget any cached "not inside" so the next live tap counts.
+    from app.services.tap_gate import forget
+    forget(user["id"], data.venue_id)
+
     # Award clout
     await db.users.update_one(
         {"id": user["id"]},

@@ -126,6 +126,8 @@ async def presence_enter(event: PresenceEvent, user: dict = Depends(require_auth
     else:
         await db.checkins.insert_one(new_auto_checkin(user, venue, now, verified=verified))
 
+    from app.services.tap_gate import forget
+    forget(user["id"], event.venue_id)
     count = await _broadcast_count(event.venue_id)
     return {"action": action, "present_now": count}
 

@@ -45,6 +45,8 @@ export interface SocketSlice {
   setTabBarHidden: (hidden: boolean) => void;
   connectSocket: () => void;
   disconnectSocket: () => void;
+  /** Tell the server who this socket belongs to. Live taps only count for a signed-in session. */
+  authenticateSocket: () => void;
   registerPushToken: (token: string) => Promise<void>;
   updateAlertPrefs: (prefs: Partial<AlertPrefs>) => Promise<void>;
   fetchAlertPrefs: () => Promise<void>;
@@ -93,7 +95,13 @@ export const createSocketSlice: StateCreator<
     const { socket, selectedCity } = get();
     if (socket?.connected) return;
 
-    const newSocket = io(API_URL, { transports: ['websocket', 'polling'], autoConnect: true });
+    // The session goes with the socket so the server knows who taps. A function,
+    // so every reconnect sends the token current at that moment.
+    const newSocket = io(API_URL, {
+      transports: ['websocket', 'polling'],
+      autoConnect: true,
+      auth: (cb: (data: object) => void) => cb({ token: get().sessionToken ?? null }),
+    });
 
     newSocket.on('connect', () => {
       // Read the city now, not when the socket was made: after switching city
@@ -154,6 +162,11 @@ export const createSocketSlice: StateCreator<
   disconnectSocket: () => {
     const { socket } = get();
     if (socket) { socket.disconnect(); set({ socket: null }); }
+  },
+
+  authenticateSocket: () => {
+    const { socket, sessionToken } = get();
+    if (socket?.connected) socket.emit('authenticate', { token: sessionToken ?? null });
   },
 
   registerPushToken: async (token) => {

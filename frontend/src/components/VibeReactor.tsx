@@ -513,6 +513,9 @@ export default function VibeReactor({
   const [comboCount,      setComboCount]       = useState(0);
   const [questState,      setQuestState]       = useState<QuestState | null>(null);
   const [dangerZone,      setDangerZone]       = useState(false);
+  // The server counts live taps only from a signed-in person checked in here.
+  // When it refuses, say so instead of letting taps vanish silently.
+  const [tapRefused,      setTapRefused]       = useState<null | 'not_signed_in' | 'not_inside'>(null);
   const [questSucceeded,  setQuestSucceeded]   = useState(false);
   const [stationaryNudge, setStationaryNudge]  = useState(false);
 
@@ -720,8 +723,13 @@ export default function VibeReactor({
     socket.on('global_charge_depletion', onDepletion);
     socket.on('venue_update',            onVenueUpd);
     socket.on('moment_locked',           onMomentLocked);
+    const onTapRefused = (d: { venue_id: string; reason: 'not_signed_in' | 'not_inside' }) => {
+      if (d.venue_id === venueId) setTapRefused(d.reason);
+    };
+    socket.on('tap_refused',             onTapRefused);
 
     return () => {
+      socket.off('tap_refused',             onTapRefused);
       socket.off('surge_update',            onSurge);
       socket.off('kinetics_update',         onKinetics);
       socket.off('quest_succeeded',         onQuestDone);
@@ -964,7 +972,11 @@ export default function VibeReactor({
         { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ coordinates }) },
         {
           onOptimistic: () => setLocalTapCount(c => c + 1),
-          onSuccess:    (data) => setSurge(data),
+          onSuccess:    (data) => {
+            setSurge(data);
+            // The server placed this tap inside the venue, so live taps count from here on.
+            if ((data as SurgeState & { is_present?: boolean }).is_present) setTapRefused(null);
+          },
           onFailure:    (status) => {
             if (status === 429) {
               setCooldown(true);
@@ -1200,6 +1212,15 @@ export default function VibeReactor({
         <Animated.View style={dangerTextStyle}>
           <Text style={styles.dangerText}>⚠ Energy dropping. Tap to hold it.</Text>
         </Animated.View>
+      )}
+
+      {/* The server did not count these taps */}
+      {tapRefused && !isDemoMode && (
+        <Text style={styles.stationaryNudge}>
+          {tapRefused === 'not_signed_in'
+            ? 'Sign in to make your taps count.'
+            : 'Check in here to make your taps count.'}
+        </Text>
       )}
 
       {/* Stationary nudge */}

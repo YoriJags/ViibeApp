@@ -9,6 +9,7 @@ from datetime import datetime, timezone, timedelta
 
 from app.config import sio, db, logger
 from app.services.decay_ingest import ingest_pulse
+from app.services import tap_gate
 
 connected_clients = set()
 
@@ -81,8 +82,13 @@ def _calc_bpm(timestamps: list) -> float:
 # ===== Socket.IO Event Handlers =====
 
 @sio.event
-async def connect(sid, environ):
+async def connect(sid, environ, auth=None):
     connected_clients.add(sid)
+    # A signed-in app sends its session token here, or later via `authenticate`.
+    token = auth.get("token") if isinstance(auth, dict) else None
+    user_id = await tap_gate.user_id_for_token(token)
+    if user_id:
+        await sio.save_session(sid, {"user_id": user_id})
     logger.info(f"Client connected: {sid}, Total: {len(connected_clients)}")
     await sio.emit(
         "connection_status",
@@ -94,7 +100,45 @@ async def connect(sid, environ):
 @sio.event
 async def disconnect(sid):
     connected_clients.discard(sid)
+    _refusal_told.pop(sid, None)
     logger.info(f"Client disconnected: {sid}, Total: {len(connected_clients)}")
+
+
+@sio.event
+async def authenticate(sid, data):
+    """
+    Tie this socket to a session (after sign-in, or on reconnect). An empty or
+    unknown token signs the socket out. Taps are only ever credited to the
+    session's user, never to an id the phone names.
+    """
+    token = data.get("token") if isinstance(data, dict) else None
+    user_id = await tap_gate.user_id_for_token(token)
+    await sio.save_session(sid, {"user_id": user_id} if user_id else {})
+    await sio.emit("authenticated", {"signed_in": bool(user_id)}, to=sid)
+
+
+# sid -> monotonic time we last told it a tap did not count
+_refusal_told: dict[str, float] = {}
+
+
+async def _tapper(sid, venue_id) -> str | None:
+    """The signed-in user behind this socket, if they are inside this venue."""
+    import time as _time
+
+    session = await sio.get_session(sid) or {}
+    user_id = session.get("user_id")
+    if user_id and await tap_gate.is_inside(user_id, venue_id):
+        return user_id
+    now = _time.monotonic()
+    if now - _refusal_told.get(sid, 0.0) > 30:
+        if len(_refusal_told) > 50_000:
+            _refusal_told.clear()
+        _refusal_told[sid] = now
+        await sio.emit("tap_refused", {
+            "venue_id": venue_id,
+            "reason": "not_signed_in" if not user_id else "not_inside",
+        }, to=sid)
+    return None
 
 
 @sio.event
@@ -126,10 +170,12 @@ async def tap_velocity(sid, data):
     detects resonance (128 BPM ±5, ≥3 scouts), and fires quest_succeeded.
     """
     venue_id = data.get("venue_id")
-    user_id = data.get("user_id")
     intensity = data.get("intensity", "chill")
-
-    if not venue_id or not user_id:
+    if not venue_id:
+        return
+    # Who is tapping comes from the session, and they must be inside.
+    user_id = await _tapper(sid, venue_id)
+    if not user_id:
         return
 
     state = _venue_kinetics[venue_id]
@@ -232,10 +278,14 @@ async def vibe_pulse(sid, data):
     Oracle (calculate_venue_aggregate) for momentum persistence scoring.
     """
     venue_id  = data.get("venue_id")
-    user_id   = data.get("user_id")
     intensity = data.get("intensity", "soft")
 
     if not venue_id:
+        return
+    # Who is tapping comes from the session, and they must be inside. The
+    # phone's own user_id is ignored: it used to be taken on trust.
+    user_id = await _tapper(sid, venue_id)
+    if not user_id:
         return
 
     # Phase 2 — feed the Energy Decay Engine (L1 active layer). In-memory,

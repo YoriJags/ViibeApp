@@ -205,6 +205,9 @@ async def drop_bolt(
         "venue_id": venue_id, "user_id": user_id, "ts": now,
         "multiplier": multiplier, "present": is_present,
     })
+    if is_present:
+        from app.services.tap_gate import forget
+        forget(user_id, venue_id)
     surge = await _compute_surge(venue_id)
     meta = await db.venue_surge_meta.find_one({"venue_id": venue_id}) or {}
     prev_level = LEGACY_LEVEL_IDS.get(meta.get("last_level", "empty"), meta.get("last_level", "empty"))

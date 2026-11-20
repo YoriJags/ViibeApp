@@ -66,6 +66,8 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   // ever got a push token and no alert could reach anyone.
   useEffect(() => {
     if (sessionToken) registerForPushNotifications(sessionToken);
+    // Signing in or out re-tells the live socket who it belongs to.
+    useVibeStore.getState().authenticateSocket();
   }, [sessionToken]);
 
   const handleSplashComplete = useCallback(() => {
