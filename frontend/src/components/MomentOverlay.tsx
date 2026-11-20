@@ -445,10 +445,10 @@ export default function MomentOverlay({
               /* ── MOMENT LOCKED ── */
               <>
                 <Text style={[styles.eyebrow, { color: subColor }]}>
-                  MOMENT
+                  THE ROOM WENT
                 </Text>
 
-                <GlitchLabel text="LOCKED" color={accentColor} size={54} />
+                <GlitchLabel text="VIIBE" color={accentColor} size={54} />
 
                 <View style={[styles.divider, { backgroundColor: vibeColor + '60' }]} />
 
@@ -459,7 +459,7 @@ export default function MomentOverlay({
                     color={vibeColor === '#FFFFFF' ? '#FFD700' : '#FFFFFF'}
                   />
                   <Text style={[styles.countLabel, { color: subColor }]}>
-                    SCOUTS FELT THIS
+                    FELT IT AT ONCE
                   </Text>
                 </Animated.View>
 

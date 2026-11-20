@@ -627,6 +627,7 @@ export default function VibeReactor({
     venueId,
     isInsideGeofence: isEligible,
     enabled: true,
+    location: userLocation,
     onMomentFired: handleMomentFired,
   });
   const { post: retryPost, pending: tapping }   = useRetryFetch();

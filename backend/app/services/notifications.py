@@ -202,7 +202,7 @@ async def notify_moment_locked(venue_id: str, venue_name: str, participant_count
     checkin_ids = {
         e["user_id"]
         async for e in db.checkins.find(
-            {"venue_id": venue_id, "timestamp": {"$gte": cutoff}},
+            {"venue_id": venue_id, "created_at": {"$gte": cutoff}},
             {"user_id": 1},
         )
     }
@@ -223,14 +223,14 @@ async def notify_moment_locked(venue_id: str, venue_name: str, participant_count
 
         # Vary the copy slightly so it doesn't feel templated
         body = (
-            f"Something just happened at {venue_name}."
+            f"Something just went off at {venue_name}."
             if participant_count < 10
-            else f"{participant_count} scouts felt it simultaneously at {venue_name}."
+            else f"{participant_count} people felt it at once at {venue_name}."
         )
 
         success = await send_push_notification(
             user_id=user_id,
-            title="⚡ MOMENT LOCKED",
+            title=f"Viibe at {venue_name}",
             body=body,
             data={
                 "type":              "moment_locked",

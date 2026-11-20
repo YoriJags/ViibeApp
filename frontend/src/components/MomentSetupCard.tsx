@@ -149,7 +149,7 @@ export default function MomentSetupCard({ forceVisible, onDismiss }: Props) {
             <View style={styles.headerText}>
               <Text style={styles.title}>Feel it. Fire it.</Text>
               <Text style={styles.subtitle}>
-                Three ways to signal a Moment, no screen required.
+                Three ways to send a Viibe, no screen required.
               </Text>
             </View>
           </View>
@@ -189,7 +189,7 @@ export default function MomentSetupCard({ forceVisible, onDismiss }: Props) {
           <View style={styles.infoRow}>
             <Ionicons name="people-outline" size={14} color="rgba(255,255,255,0.35)" />
             <Text style={styles.infoText}>
-              When 5+ scouts feel it at the same time, a <Text style={{ color: ACCENT }}>Moment Locks</Text> and the whole venue erupts.
+              When 5 or more people in the room feel it at the same time, the room goes <Text style={{ color: ACCENT }}>Viibe</Text> and the whole city sees it.
             </Text>
           </View>
 

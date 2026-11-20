@@ -51,8 +51,8 @@ export async function registerForPushNotifications(sessionToken: string): Promis
       lightColor:       '#FF3366',
     });
     await Notifications.setNotificationChannelAsync('moments', {
-      name:             'Moments',
-      description:      'When a Moment Locks at a venue near you',
+      name:             'Viibes',
+      description:      'When a room you know goes off',
       importance:       Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 80, 80, 180, 80, 400],
       lightColor:       '#6655FF',

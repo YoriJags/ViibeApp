@@ -308,7 +308,7 @@ const MemoryCardView = React.forwardRef<View, { data: CardData }>(
         {/* ── Lock timeline chips ── */}
         {locks.length > 0 && (
           <View style={styles.locksSection}>
-            <Text style={styles.locksSectionLabel}>MOMENT LOCKS</Text>
+            <Text style={styles.locksSectionLabel}>VIIBES</Text>
             <View style={styles.lockChips}>
               {locks.slice(0, 4).map((l, i) => {
                 const t = new Date(l.locked_at);
@@ -360,7 +360,7 @@ function EmptyState({ color }: { color: string }) {
   return (
     <View style={styles.emptyState}>
       <Ionicons name="radio-button-off-outline" size={36} color={color + '55'} />
-      <Text style={styles.emptyTitle}>No Moments Yet</Text>
+      <Text style={styles.emptyTitle}>No Viibes Yet</Text>
       <Text style={styles.emptyBody}>
         Shake your phone, raise to face, or back tap to fire your first signal.
       </Text>
@@ -446,7 +446,7 @@ export default function MomentMemoryCard({
       if (canShare) {
         await Sharing.shareAsync(uri, {
           mimeType:    'image/png',
-          dialogTitle: 'Share your Moment Memory',
+          dialogTitle: 'Share your night',
           UTI:         'public.png',
         });
       }
@@ -523,7 +523,7 @@ export default function MomentMemoryCard({
           {/* Header row */}
           <View style={styles.headerRow}>
             <View>
-              <Text style={styles.sheetTitle}>MOMENT MEMORY</Text>
+              <Text style={styles.sheetTitle}>YOUR NIGHT</Text>
               <Text style={styles.sheetSub}>Your energy arc from tonight</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>

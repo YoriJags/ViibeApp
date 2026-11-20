@@ -59,12 +59,16 @@ export interface MomentTriggerEvent {
     accel_y: number;
     accel_z: number;
   };
+  /** Where the phone is, so the server can check it is inside the room. */
+  latitude?: number;
+  longitude?: number;
 }
 
 interface Props {
   venueId: string;
   isInsideGeofence: boolean;
   enabled: boolean;
+  location?: { lat: number; lng: number } | null;
   onMomentFired: (event: MomentTriggerEvent) => void;
 }
 
@@ -72,6 +76,7 @@ export function useMomentTrigger({
   venueId,
   isInsideGeofence,
   enabled,
+  location,
   onMomentFired,
 }: Props) {
   const sessionToken = useVibeStore(s => s.sessionToken);
@@ -115,6 +120,7 @@ export function useMomentTrigger({
         accel_y: Math.round(y * 100) / 100,
         accel_z: Math.round(z * 100) / 100,
       },
+      ...(location ? { latitude: location.lat, longitude: location.lng } : {}),
     };
 
     onMomentFired(event);
@@ -130,7 +136,7 @@ export function useMomentTrigger({
         body: JSON.stringify(event),
       }).catch(() => {});
     }
-  }, [venueId, sessionToken, onMomentFired]);
+  }, [venueId, sessionToken, location, onMomentFired]);
 
   // ─── Accelerometer listener ────────────────────────────────────────────────
 

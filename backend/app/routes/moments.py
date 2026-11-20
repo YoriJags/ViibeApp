@@ -107,6 +107,22 @@ class MomentPayload(BaseModel):
     timestamp:        int              # unix ms from client
     venue_id:         str
     sensor_snapshot:  SensorSnapshot
+    latitude:         Optional[float] = Field(default=None, ge=-90, le=90)
+    longitude:        Optional[float] = Field(default=None, ge=-180, le=180)
+
+
+def _inside_by_position(venue: dict, payload: "MomentPayload") -> bool:
+    """The same geofence a live tap's bolt is held to, for someone who has not
+    checked in or tapped yet but is standing in the room."""
+    if payload.latitude is None or payload.longitude is None or not venue.get("coordinates"):
+        return False
+    from app.models import Coordinates
+    from app.services.vibe import is_within_geofence
+    return is_within_geofence(
+        Coordinates(lat=payload.latitude, lng=payload.longitude),
+        Coordinates(**venue["coordinates"]),
+        radius_m=venue.get("geofence_radius_m", 100),
+    )
 
 
 # ─── In-memory correlation window ─────────────────────────────────────────────
@@ -137,6 +153,12 @@ async def record_moment(
     venue = await db.venues.find_one({"id": venue_id})
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
+
+    # Only someone inside the room can say it went off. The phone's own
+    # geofence check was the only gate before; the same rule as live taps.
+    from app.services.tap_gate import is_inside
+    if not (await is_inside(user_id, venue_id) or _inside_by_position(venue, payload)):
+        raise HTTPException(status_code=403, detail="Check in here to make it count.")
 
     # Persist the moment signal
     doc = {
