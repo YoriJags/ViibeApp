@@ -13,6 +13,7 @@ History, which is the licensed product, needs an API key (X-API-Key):
   GET /grid/history?cell=<h3>&hours=24     one cell over time
   GET /grid/night?city=lagos&date=2026-11-13&zoom=12   how a night built
   GET /grid/forecast?cell=<h3>             the cell's usual night, and its peak hour
+  GET /grid/flows?city=lagos&zoom=12&date=  which areas feed which (crowd moves)
 
 See services/grid_history.py.
 """
@@ -187,3 +188,64 @@ async def get_cell_forecast(
             f"and an hour needs {curve['min_nights']} to be reported."
         )
     return body
+
+
+@router.get("/grid/flows")
+async def get_flows(
+    city: str = Query(..., max_length=60),
+    zoom: float = Query(default=12, ge=0, le=22),
+    night: Optional[date] = Query(default=None, alias="date", description="YYYY-MM-DD; default is the last four weeks"),
+    _key: dict = Depends(_require_api_key),
+):
+    """
+    Which areas feed which: people moving from one cell to another on the same
+    night, from verified auto check-in. A route is reported only when at least
+    five different people made it. With a date, that night only; without, the
+    last four weeks.
+    """
+    from datetime import timedelta
+
+    from app.services import crowd_moves
+    from app.services.grid import cell_for
+
+    venues = await db.venues.find(
+        {"city": city.lower()}, {"_id": 0, "id": 1, "coordinates": 1, "area": 1}
+    ).to_list(MAX_VENUES)
+    resolution = resolution_for_zoom(zoom)
+    cell_of, area_of = {}, {}
+    for v in venues:
+        c = v.get("coordinates") or {}
+        try:
+            cell_of[v["id"]] = cell_for(float(c["lat"]), float(c["lng"]), resolution)
+        except (KeyError, TypeError, ValueError):
+            continue
+        area_of.setdefault(cell_of[v["id"]], v.get("area"))
+
+    if night:
+        start, end = grid_history.night_bounds(night)
+    else:
+        end = datetime.now(timezone.utc)
+        start = end - timedelta(days=crowd_moves.LOOKBACK_DAYS)
+    arrivals = await crowd_moves.arrivals_since(start, venue_ids=list(cell_of))
+    arrivals = [a for a in arrivals if a["at"].replace(tzinfo=a["at"].tzinfo or timezone.utc) < end]
+    moves = crowd_moves.moves_from_arrivals(arrivals)
+
+    def by_cell(m):
+        a, b = cell_of.get(m["from"]), cell_of.get(m["to"])
+        return (a, b) if a and b else None
+
+    found = crowd_moves.routes(moves, key=by_cell)
+    for r in found:
+        for end_name in ("from", "to"):
+            lat, lng = h3.cell_to_latlng(r[end_name])
+            r[end_name + "_center"] = {"lat": round(lat, 5), "lng": round(lng, 5)}
+            r[end_name + "_area"] = area_of.get(r[end_name])
+    return {
+        "city": city.lower(),
+        "resolution": resolution,
+        "date": night.isoformat() if night else None,
+        "days": None if night else crowd_moves.LOOKBACK_DAYS,
+        "min_people": crowd_moves.MIN_PEOPLE,
+        "moves_seen": len(moves),
+        "routes": found,
+    }

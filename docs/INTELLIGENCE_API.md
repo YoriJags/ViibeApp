@@ -82,6 +82,7 @@ confidence, never in history) and `none` where there is no reading.
 | `GET /grid/history?cell={cell}&hours=24` | One cell over time, in ten-minute steps, up to seven days |
 | `GET /grid/night?city=lagos&date=2026-11-13&zoom=12` | How a night built: the city's timeline and, for each cell, when it built, when it peaked and how long it held |
 | `GET /grid/forecast?cell={cell}` | The cell's usual night on tonight's weekday, hour by hour in Lagos time, and its usual peak hour |
+| `GET /grid/flows?city=lagos&zoom=12&date=` | Which areas feed which: people moving between cells on the same night, last four weeks by default |
 | `GET /v1/reports/weekly?city=lagos` | The week: hottest areas, areas that rose against last week, the busiest night, the city's peak hour |
 
 A night runs from 07:00 Lagos time to 07:00 the next day and is named for the
@@ -91,6 +92,11 @@ The forecast reports an hour only when at least three past nights on the same
 weekday back it. Until then it returns `"enough": false` and says how many
 nights it has. The weekly report calls an area a riser only when it has at
 least two nights of confirmed readings in both weeks.
+
+Crowd moves come from phones that check in automatically. A move is two
+verified arrivals at different places on the same night, at most three hours
+apart. A route is reported only when at least five different people made it;
+smaller routes are left out, never estimated. No individual is ever returned.
 
 ## Errors
 

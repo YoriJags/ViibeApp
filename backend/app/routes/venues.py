@@ -266,6 +266,34 @@ async def record_direction_click(venue_id: str, authorization: str = Header(defa
     return {"message": "Direction click recorded"}
 
 
+@router.get("/venues/{venue_id}/next")
+async def get_where_next(venue_id: str):
+    """
+    Where the crowd goes after this venue, from auto check-in over the last
+    four weeks: each destination, its share of the people who moved on, and the
+    hour they usually arrive. A destination is named only when at least five
+    different people made the move (services/crowd_moves.py).
+    """
+    from fastapi import HTTPException
+    from app.services.crowd_moves import LOOKBACK_DAYS, moves_from_venue, next_from, usual_move_hour
+
+    venue = await db.venues.find_one({"id": venue_id}, {"_id": 0, "id": 1, "name": 1})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+
+    moves = await moves_from_venue(venue_id)
+    result = next_from(moves, venue_id)
+    ids = [d["to"] for d in result["destinations"]]
+    names = {v["id"]: v for v in await db.venues.find(
+        {"id": {"$in": ids}}, {"_id": 0, "id": 1, "name": 1, "area": 1}
+    ).to_list(len(ids) or 1)}
+    for d in result["destinations"]:
+        d["name"] = (names.get(d["to"]) or {}).get("name")
+        d["area"] = (names.get(d["to"]) or {}).get("area")
+        d["usual_hour_lagos"] = usual_move_hour(moves, venue_id, d["to"])
+    return {"venue_id": venue_id, "venue_name": venue.get("name"), "days": LOOKBACK_DAYS, **result}
+
+
 @router.get("/venues/{venue_id}/comparative")
 async def get_venue_comparative(venue_id: str):
     """
