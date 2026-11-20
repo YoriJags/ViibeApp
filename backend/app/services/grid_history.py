@@ -54,9 +54,15 @@ def _most_common(values: list) -> Optional[str]:
 
 
 def rows_from_cells(cells: Iterable[dict], resolution: int, bucket: datetime,
-                    city_of: dict[str, str], area_of: Optional[dict[str, str]] = None) -> list[dict]:
-    """History rows for one fold of the grid. Real cells only."""
+                    city_of: dict[str, str], area_of: Optional[dict[str, str]] = None,
+                    viibes_of: Optional[dict[str, int]] = None) -> list[dict]:
+    """History rows for one fold of the grid. Real cells only.
+
+    viibes_of: venue id -> rooms that went Viibe in this bucket. A Viibe is
+    five or more people inside feeling the same moment, so it marks the exact
+    ten minutes a cell went off, which a score alone cannot show."""
     area_of = area_of or {}
+    viibes_of = viibes_of or {}
     rows = []
     for c in cells:
         if c.get("source") != SOURCE_SCOUTS or c.get("score") is None:
@@ -77,6 +83,7 @@ def rows_from_cells(cells: Iterable[dict], resolution: int, bucket: datetime,
             "venues_read": c.get("venues_read", 0),
             "active_scouts": c.get("active_scouts", 0),
             "decay_state": c.get("decay_state"),
+            "viibes": sum(viibes_of.get(v, 0) for v in ids),
         })
     return rows
 
@@ -88,6 +95,7 @@ def _point(row: dict) -> dict:
         "confidence": row.get("confidence"),
         "solid": bool(row.get("solid")),
         "active_scouts": row.get("active_scouts", 0),
+        "viibes": row.get("viibes", 0),
     }
 
 
@@ -115,6 +123,7 @@ def summarise_night(rows: Iterable[dict]) -> Optional[dict]:
         "first_reading_at": _as_utc(trusted[0]["bucket"]).isoformat(),
         "last_reading_at": _as_utc(trusted[-1]["bucket"]).isoformat(),
         "trusted_readings": len(trusted),
+        "viibes": sum(r.get("viibes", 0) for r in rows),
     }
 
 
@@ -294,9 +303,19 @@ async def record_grid(now: Optional[datetime] = None) -> int:
     area_of = {v["id"]: v.get("area") for v in venues if v.get("id")}
 
     bucket = bucket_of(now)
+    # Viibes in this bucket so far. The pass repeats within a bucket and
+    # replaces the row, so counting from the bucket start stays exact.
+    viibes_of: dict[str, int] = {}
+    async for lock in db.moment_locks.find(
+        {"locked_at": {"$gte": bucket, "$lt": bucket + timedelta(minutes=BUCKET_MINUTES)}},
+        {"_id": 0, "venue_id": 1},
+    ):
+        viibes_of[lock["venue_id"]] = viibes_of.get(lock["venue_id"], 0) + 1
+
     written = 0
     for res in RESOLUTIONS:
-        for row in rows_from_cells(build_grid(venues, res, now, presence), res, bucket, city_of, area_of):
+        for row in rows_from_cells(build_grid(venues, res, now, presence), res, bucket,
+                                   city_of, area_of, viibes_of):
             # One upsert per cell: a city is a few hundred cells at most, and a
             # second pass in the same bucket replaces the row, never doubles it.
             await db.grid_history.update_one(

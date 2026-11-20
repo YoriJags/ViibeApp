@@ -68,6 +68,20 @@ async def get_night_recap(user: dict = Depends(require_auth)):
     ).to_list(20)
     venues_visited = list({d["venue_id"]: d.get("venue_name", "Unknown") for d in checkin_docs}.items())
 
+    # Viibes this person was part of tonight: rooms that went off with them in it.
+    viibe_docs = await db.moment_locks.find(
+        {"participant_ids": user_id, "locked_at": {"$gte": night_start}},
+        {"_id": 0, "venue_id": 1, "venue_name": 1, "locked_at": 1, "participant_count": 1},
+        sort=[("locked_at", 1)],
+    ).to_list(50)
+    viibes = [{
+        "venue_id": d["venue_id"],
+        "venue_name": d.get("venue_name", ""),
+        "participant_count": d.get("participant_count", 0),
+        "locked_at": (d["locked_at"] if d["locked_at"].tzinfo
+                      else d["locked_at"].replace(tzinfo=timezone.utc)).isoformat(),
+    } for d in viibe_docs]
+
     # Tonight's Heat peak. The ladder is imported rather than restated so the
     # two cannot drift apart, which they already had.
     from app.routes.scout_heat import HEAT_LEVELS
@@ -92,6 +106,8 @@ async def get_night_recap(user: dict = Depends(require_auth)):
         "bolts_tonight": bolts_tonight,
         "venues_visited": [{"id": vid, "name": name} for vid, name in venues_visited],
         "top_venue": top_venue,
+        "viibes_tonight": len(viibes),
+        "viibes": viibes,
         "heat_score": heat_score,
         "heat_level": heat_level,
         "heat_label": heat_label,

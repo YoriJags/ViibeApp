@@ -21,6 +21,7 @@ MAX_STORY_SIZE_BYTES = 500_000  # 500KB
 STORY_POST_CLOUT = 5
 STORY_VIRAL_CLOUT = 10
 STORY_VIRAL_THRESHOLD = 20  # views needed for viral bonus
+VIIBE_PROOF_MINUTES = 3     # a photo counts as Viibe proof this long after one
 
 
 @router.post("/stories")
@@ -64,6 +65,17 @@ async def post_story(data: VenueStory, user: dict = Depends(require_auth)):
         )
 
     now = datetime.now(timezone.utc)
+
+    # Viibe proof: only if this room actually went Viibe in the last few minutes.
+    viibe_at = None
+    if data.viibe:
+        lock = await db.moment_locks.find_one(
+            {"venue_id": data.venue_id, "locked_at": {"$gte": now - timedelta(minutes=VIIBE_PROOF_MINUTES)}},
+            sort=[("locked_at", -1)],
+        )
+        if lock:
+            viibe_at = lock["locked_at"]
+
     story_doc = {
         "id": str(uuid.uuid4()),
         "user_id": user["id"],
@@ -75,6 +87,7 @@ async def post_story(data: VenueStory, user: dict = Depends(require_auth)):
         "caption": data.caption[:100],
         "views": 0,
         "viral_bonus_claimed": False,
+        "viibe_at": viibe_at,
         "created_at": now,
         "expires_at": now + timedelta(hours=STORY_TTL_HOURS),
     }
@@ -96,6 +109,7 @@ async def post_story(data: VenueStory, user: dict = Depends(require_auth)):
         "clout_earned": STORY_POST_CLOUT,
         "expires_in_hours": STORY_TTL_HOURS,
         "slots_remaining": MAX_STORIES_PER_USER_PER_DAY - today_count - 1,
+        "viibe_proof": viibe_at is not None,
     }
 
 

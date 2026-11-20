@@ -88,7 +88,7 @@ async def connect(sid, environ, auth=None):
     token = auth.get("token") if isinstance(auth, dict) else None
     user_id = await tap_gate.user_id_for_token(token)
     if user_id:
-        await sio.save_session(sid, {"user_id": user_id})
+        await _bind_user(sid, user_id)
     logger.info(f"Client connected: {sid}, Total: {len(connected_clients)}")
     await sio.emit(
         "connection_status",
@@ -113,8 +113,23 @@ async def authenticate(sid, data):
     """
     token = data.get("token") if isinstance(data, dict) else None
     user_id = await tap_gate.user_id_for_token(token)
-    await sio.save_session(sid, {"user_id": user_id} if user_id else {})
+    await _bind_user(sid, user_id)
     await sio.emit("authenticated", {"signed_in": bool(user_id)}, to=sid)
+
+
+def user_room(user_id: str) -> str:
+    """Every socket a signed-in person has open, for messages meant only for them."""
+    return f"user_{user_id}"
+
+
+async def _bind_user(sid, user_id: str | None) -> None:
+    """Save who this socket belongs to and move it into that person's room."""
+    old = (await sio.get_session(sid) or {}).get("user_id")
+    if old and old != user_id:
+        await sio.leave_room(sid, user_room(old))
+    await sio.save_session(sid, {"user_id": user_id} if user_id else {})
+    if user_id:
+        await sio.enter_room(sid, user_room(user_id))
 
 
 # sid -> monotonic time we last told it a tap did not count

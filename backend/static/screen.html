@@ -85,7 +85,32 @@
   #chase.leading b, #chase.leading .gap { color: var(--amber); }
   #err { color: var(--ember); font-size: 2.2vh; display: none; letter-spacing: .15em; }
   #foot { position: absolute; bottom: 2.4vh; font-size: 1.7vh; color: #55493C; letter-spacing: .3em; }
-  @media (prefers-reduced-motion: reduce) { #level.electric { animation: none; } }
+  /* The room went Viibe: the whole wall takes over for a few seconds */
+  #viibe {
+    position: absolute; inset: 0; display: none; z-index: 5;
+    flex-direction: column; align-items: center; justify-content: center; gap: 2vh;
+    background: radial-gradient(ellipse at 50% 50%, var(--whitehot) 0%, var(--amber) 22%, var(--ember) 48%, var(--coal) 80%);
+  }
+  #viibe.on { display: flex; animation: burst 7s ease-out forwards; }
+  #viibe .eyebrow { font-size: 3vh; letter-spacing: .5em; color: var(--coal); text-indent: .5em; }
+  #viibe .word {
+    font-family: 'Unbounded', sans-serif; font-weight: 800; font-size: 26vh; line-height: 1;
+    color: var(--coal); letter-spacing: .04em;
+  }
+  #viibe .count { font-size: 4vh; letter-spacing: .2em; color: var(--coal); }
+  @keyframes burst {
+    0% { opacity: 0; transform: scale(1.15); }
+    6% { opacity: 1; transform: scale(1); }
+    12%, 24%, 36% { filter: brightness(1.35); }
+    18%, 30% { filter: brightness(.9); }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .stat.viibes .n { color: var(--whitehot); }
+  @media (prefers-reduced-motion: reduce) {
+    #level.electric { animation: none; }
+    #viibe.on { animation: none; }
+  }
 </style>
 </head>
 <body>
@@ -101,6 +126,12 @@
     <div class="stat"><div class="n" id="scouts">0</div><div class="l">SCOUTS IN THE ROOM</div></div>
     <div class="stat watch"><div class="n" id="watchers">0</div><div class="l">WATCHING ACROSS LAGOS</div></div>
     <div class="stat strata"><div class="n" id="strata-n">&middot;&middot;</div><div class="l">CITY ENERGY STRATA</div></div>
+    <div class="stat viibes"><div class="n" id="viibes-n">0</div><div class="l">VIIBES TONIGHT</div></div>
+  </div>
+  <div id="viibe">
+    <div class="eyebrow">THE ROOM WENT</div>
+    <div class="word">VIIBE</div>
+    <div class="count" id="viibe-count"></div>
   </div>
   <div id="chase"></div>
   <div id="err">SIGNAL LOST &middot; RETRYING</div>
@@ -180,8 +211,32 @@ async function tick() {
   }
 }
 
+// ── Viibe: the room felt it at once. Checked more often than the rest so the
+// wall answers while the crowd is still in it. Only a Viibe from the last
+// 90 seconds plays; opening the screen later never replays an old one.
+let lastViibe = null;
+async function viibeTick() {
+  try {
+    const v = await j(`/api/venues/${venueId}/viibes`);
+    $("viibes-n").textContent = v.tonight || 0;
+    const latest = v.latest;
+    if (!latest || latest.locked_at === lastViibe) return;
+    const fresh = Date.now() - new Date(latest.locked_at).getTime() < 90000;
+    lastViibe = latest.locked_at;
+    if (!fresh) return;
+    const el = $("viibe");
+    $("viibe-count").textContent = latest.participant_count + " FELT IT AT ONCE";
+    el.classList.remove("on");
+    void el.offsetWidth;   // restart the animation
+    el.classList.add("on");
+    setTimeout(() => el.classList.remove("on"), 7000);
+  } catch (e) { /* the main tick reports a lost signal */ }
+}
+
 tick();
 setInterval(tick, 8000);
+viibeTick();
+setInterval(viibeTick, 3000);
 </script>
 </body>
 </html>

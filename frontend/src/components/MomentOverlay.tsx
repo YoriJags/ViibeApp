@@ -19,7 +19,7 @@
  */
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, Modal, Platform, Dimensions,
+  View, Text, StyleSheet, Modal, Platform, Dimensions, AccessibilityInfo, TouchableOpacity,
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle,
@@ -40,6 +40,7 @@ const CY = H / 2;
 const GLITCH_CHARS = '!@#$%^&*<>?/|~⚡';
 const AUTO_DISMISS_PERSONAL_MS = 2500;
 const AUTO_DISMISS_LOCK_MS     = 4000;
+const AUTO_DISMISS_GRAB_MS     = 8000;
 
 // ─── Shockwave ring (Skia) ────────────────────────────────────────────────────
 // Each ring expands from CX,CY outward and fades. Locked state spawns 3 waves
@@ -258,7 +259,18 @@ export interface MomentOverlayProps {
   onDismiss: () => void;
   /** Current vibe score — shown in the locked card */
   vibeScore?: number;
+  /** This phone was one of the people who set it off: it strobes white with
+   *  the others, so the room lights up together. */
+  tookPart?: boolean;
+  /** Shown on the locked card: open the camera and keep the moment as proof. */
+  onGrab?: () => void;
 }
+
+// Three white flashes, two a second: bright enough to see across a dark room,
+// and under the three-a-second line for people sensitive to flashing light.
+const FLASH_ON_MS  = 220;
+const FLASH_OFF_MS = 280;
+const FLASH_COUNT  = 3;
 
 export default function MomentOverlay({
   state,
@@ -268,11 +280,14 @@ export default function MomentOverlay({
   venueName,
   onDismiss,
   vibeScore,
+  tookPart = false,
+  onGrab,
 }: MomentOverlayProps) {
   const visible  = state !== null;
   const isLocked = state === 'locked';
 
   // Shared animation values
+  const flashOpacity    = useSharedValue(0);
   const backdropOpacity = useSharedValue(0);
   const contentOpacity  = useSharedValue(0);
   const contentScale    = useSharedValue(0.82);
@@ -320,20 +335,44 @@ export default function MomentOverlay({
       );
     }
 
+    // ── The room lights up: phones that set it off strobe together ──────────
+    // Nobody with Reduce Motion on gets the strobe.
+    const flashTimers: ReturnType<typeof setTimeout>[] = [];
+    let cancelled = false;
+    if (isLocked && tookPart) {
+      AccessibilityInfo.isReduceMotionEnabled().catch(() => true).then((reduce) => {
+        if (reduce || cancelled) return;
+        for (let i = 0; i < FLASH_COUNT; i++) {
+          flashTimers.push(setTimeout(() => {
+            flashOpacity.value = withSequence(
+              withTiming(1, { duration: 40 }),
+              withTiming(1, { duration: FLASH_ON_MS - 40 }),
+              withTiming(0, { duration: 120 }),
+            );
+            if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          }, i * (FLASH_ON_MS + FLASH_OFF_MS)));
+        }
+      });
+    }
+
     // ── Auto-dismiss ────────────────────────────────────────────────────────
+    // A card with a "Grab it" button stays long enough to press it.
     dismissTimer.current = setTimeout(
       dismiss,
-      isLocked ? AUTO_DISMISS_LOCK_MS : AUTO_DISMISS_PERSONAL_MS,
+      isLocked ? (onGrab ? AUTO_DISMISS_GRAB_MS : AUTO_DISMISS_LOCK_MS) : AUTO_DISMISS_PERSONAL_MS,
     );
 
     return () => {
+      cancelled = true;
+      flashTimers.forEach(clearTimeout);
+      cancelAnimation(flashOpacity);
       if (dismissTimer.current) clearTimeout(dismissTimer.current);
       cancelAnimation(backdropOpacity);
       cancelAnimation(contentOpacity);
       cancelAnimation(contentScale);
       cancelAnimation(countScale);
     };
-  }, [visible, isLocked]);
+  }, [visible, isLocked, tookPart]);
 
   // Animated styles
   const backdropStyle = useAnimatedStyle(() => ({
@@ -345,6 +384,9 @@ export default function MomentOverlay({
   }));
   const countWrapStyle = useAnimatedStyle(() => ({
     transform: [{ scale: countScale.value }],
+  }));
+  const flashStyle = useAnimatedStyle(() => ({
+    opacity: flashOpacity.value,
   }));
 
   if (!visible) return null;
@@ -503,6 +545,24 @@ export default function MomentOverlay({
 
       {/* ── Full-screen tap to dismiss ────────────────────────────────────── */}
       <View style={StyleSheet.absoluteFill} onTouchEnd={dismiss} />
+
+      {/* ── Grab it: keep the moment as a proof photo. Above the dismiss
+             layer so the press reaches it. ─────────────────────────────── */}
+      {isLocked && onGrab && (
+        <View style={styles.grabWrap} pointerEvents="box-none">
+          <TouchableOpacity
+            style={styles.grabBtn}
+            activeOpacity={0.85}
+            onPress={() => { onGrab(); dismiss(); }}
+          >
+            <Ionicons name="camera" size={16} color="#0B0908" />
+            <Text style={styles.grabText}>GRAB IT</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* ── The strobe, over everything ──────────────────────────────────── */}
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.flash, flashStyle]} />
     </Modal>
   );
 }
@@ -510,6 +570,17 @@ export default function MomentOverlay({
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  flash: { backgroundColor: '#FFFFFF' },
+  grabWrap: {
+    position: 'absolute', left: 0, right: 0, bottom: 110,
+    alignItems: 'center',
+  },
+  grabBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#FFF3D6', borderRadius: 999,
+    paddingHorizontal: 26, paddingVertical: 14,
+  },
+  grabText: { color: '#0B0908', fontSize: 14, fontWeight: '900', letterSpacing: 1.5 },
   boltsLayer: {
     ...StyleSheet.absoluteFillObject,
     alignItems:     'center',

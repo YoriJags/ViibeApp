@@ -16,6 +16,7 @@ import { WebView } from 'react-native-webview';
 import { asEnergyState } from '../theme/energy';
 import { energy as tokenEnergy } from '../theme/tokens';
 import type { CityGrid } from '../hooks/useCityGrid';
+import { useVibeStore } from '../store/vibeStore';
 
 const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN || '';
 
@@ -178,6 +179,24 @@ function buildHTML(
       letter-spacing: 0.3px;
       white-space: nowrap;
     }
+    /* A room just went Viibe: rings burst out of its pin for a few seconds */
+    .viibe-burst { position: relative; width: 0; height: 0; pointer-events: none; }
+    .viibe-burst .ring {
+      position: absolute; left: -10px; top: -10px; width: 20px; height: 20px;
+      border-radius: 50%; border: 3px solid #FFF3D6; box-shadow: 0 0 18px #FFB300;
+      animation: viibe-ring 1.6s ease-out 4 both;
+    }
+    .viibe-burst .ring.r2 { animation-delay: .4s; border-color: #FFB300; }
+    .viibe-burst .ring.r3 { animation-delay: .8s; border-color: #FF4D00; }
+    .viibe-burst .tag {
+      position: absolute; left: 50%; top: -46px; transform: translateX(-50%);
+      background: #FFF3D6; color: #0B0908; border-radius: 10px; padding: 4px 9px;
+      font: 800 11px -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: .8px;
+      white-space: nowrap; box-shadow: 0 0 22px #FFB300;
+      animation: viibe-tag 6.4s ease-out both;
+    }
+    @keyframes viibe-ring { 0% { transform: scale(.4); opacity: 1; } 100% { transform: scale(5.5); opacity: 0; } }
+    @keyframes viibe-tag { 0% { opacity: 0; transform: translateX(-50%) scale(.6); } 8% { opacity: 1; transform: translateX(-50%) scale(1); } 85% { opacity: 1; } 100% { opacity: 0; } }
     .popup-score {
       font-size: 11px;
       font-weight: 700;
@@ -233,6 +252,25 @@ function buildHTML(
     var demoFold = ${demoMode ? 'true' : 'false'};
     var refreshCells = function () {};
     window.setCells = function (byRes) { cellsByRes = byRes; refreshCells(); };
+
+    // A room went Viibe. The pin bursts where everyone on the map can see it.
+    // Built from DOM nodes with textContent only: the count is a number and no
+    // venue name is written into the page here.
+    window.viibeBurst = function (venueId, count) {
+      var f = venues.features.find(function (x) { return x.properties.id === venueId; });
+      if (!f || !map.loaded()) return;
+      var el = document.createElement('div');
+      el.className = 'viibe-burst';
+      ['r1', 'r2', 'r3'].forEach(function (k) {
+        var r = document.createElement('div'); r.className = 'ring ' + k; el.appendChild(r);
+      });
+      var tag = document.createElement('div');
+      tag.className = 'tag';
+      tag.textContent = 'VIIBE · ' + (Number(count) || 0) + ' FELT IT';
+      el.appendChild(tag);
+      var m = new mapboxgl.Marker({ element: el }).setLngLat(f.geometry.coordinates).addTo(map);
+      setTimeout(function () { m.remove(); }, 6600);
+    };
 
     map.on('error', function (e) {
       reportMapError('mapbox', (e && e.error && e.error.message) || 'map error');
@@ -586,6 +624,19 @@ export default function VibeMap({
       `window.setCells && window.setCells(${scriptJSON(cells)}); true;`,
     );
   }, [cells]);
+
+  // A room anywhere in the city went Viibe: burst its pin on this map.
+  const socket = useVibeStore((s) => s.socket);
+  useEffect(() => {
+    if (!socket) return;
+    const onViibe = (d: { venue_id: string; participant_count: number }) => {
+      webRef.current?.injectJavaScript(
+        `window.viibeBurst && window.viibeBurst(${scriptJSON(d.venue_id)}, ${Number(d.participant_count) || 0}); true;`,
+      );
+    };
+    socket.on('viibe', onViibe);
+    return () => { socket.off('viibe', onViibe); };
+  }, [socket]);
 
   const [mapError, setMapError] = useState<string | null>(null);
 

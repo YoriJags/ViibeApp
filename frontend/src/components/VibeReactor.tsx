@@ -9,8 +9,10 @@ import React, {
   useEffect, useRef, useState, useCallback,
 } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, TouchableOpacity, Platform,
+  View, Text, StyleSheet, Pressable, TouchableOpacity, Platform, Alert,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import Animated, {
   useSharedValue, useDerivedValue, useAnimatedStyle,
   withSpring, withTiming, withSequence, withRepeat,
@@ -524,11 +526,37 @@ export default function VibeReactor({
     state: 'personal' | 'locked';
     participantCount?: number;
     gesture?: MomentTriggerEvent['gesture'];
+    tookPart?: boolean;
   } | null>(null);
 
   const handleMomentFired = useCallback((event: MomentTriggerEvent) => {
     setMomentOverlay({ state: 'personal', gesture: event.gesture });
   }, []);
+
+  // "Grab it": straight after a Viibe, keep the room as a proof photo. Shrunk
+  // on the phone to fit the story limit; the server marks it as Viibe proof
+  // only if the room really just went off.
+  const postStory = useVibeStore(s => s.postStory);
+  const grabViibe = useCallback(async () => {
+    if (!userLocation) return;
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') return;
+      const shot = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+      if (shot.canceled || !shot.assets?.[0]?.uri) return;
+      const small = await ImageManipulator.manipulateAsync(
+        shot.assets[0].uri,
+        [{ resize: { width: 1080 } }],
+        { compress: 0.6, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+      );
+      if (!small.base64) return;
+      await postStory(venueId, `data:image/jpeg;base64,${small.base64}`, '',
+                      userLocation.lat, userLocation.lng, true);
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e: any) {
+      Alert.alert('Not posted', e?.message || 'Could not post the photo.');
+    }
+  }, [userLocation, venueId, postStory]);
 
   // ── Spark particle system ────────────────────────────────────────────────────
   const sparksRef = useRef<Spark[]>([]);
@@ -713,10 +741,26 @@ export default function VibeReactor({
       if (d.id === venueId && (d.current_vibe_score ?? 100) >= CHARGE_LOW_SCORE)
         setDangerZone(false);
     };
+    // The room went Viibe. The server tells the room, then separately tells
+    // each phone that set it off (viibe_flash). Wait a beat for that second
+    // message so a phone that took part opens the overlay once, strobing,
+    // instead of opening it plain and then again.
+    let lockTimer: ReturnType<typeof setTimeout> | null = null;
+    let flashed = false;
     const onMomentLocked = (d: { venue_id: string; participant_count: number }) => {
       if (d.venue_id !== venueId) return;
-      setMomentOverlay({ state: 'locked', participantCount: d.participant_count });
+      flashed = false;
+      if (lockTimer) clearTimeout(lockTimer);
+      lockTimer = setTimeout(() => {
+        if (!flashed) setMomentOverlay({ state: 'locked', participantCount: d.participant_count });
+      }, 350);
     };
+    const onViibeFlash = (d: { venue_id: string; participant_count: number }) => {
+      if (d.venue_id !== venueId) return;
+      flashed = true;
+      setMomentOverlay({ state: 'locked', participantCount: d.participant_count, tookPart: true });
+    };
+    socket.on('viibe_flash',             onViibeFlash);
 
     socket.on('surge_update',            onSurge);
     socket.on('kinetics_update',         onKinetics);
@@ -737,6 +781,8 @@ export default function VibeReactor({
       socket.off('global_charge_depletion', onDepletion);
       socket.off('venue_update',            onVenueUpd);
       socket.off('moment_locked',           onMomentLocked);
+      socket.off('viibe_flash',             onViibeFlash);
+      if (lockTimer) clearTimeout(lockTimer);
     };
   }, [socket, venueId]);
 
@@ -1237,6 +1283,8 @@ export default function VibeReactor({
         vibeColor={color}
         participantCount={momentOverlay?.participantCount}
         gesture={momentOverlay?.gesture}
+        tookPart={momentOverlay?.tookPart}
+        onGrab={!isDemoMode && userLocation ? grabViibe : undefined}
         venueName={venueName}
         onDismiss={() => setMomentOverlay(null)}
       />

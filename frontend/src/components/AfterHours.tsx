@@ -33,6 +33,9 @@ interface NightRecap {
     energy_level: string;
     tap_count: number;
   } | null;
+  /** Rooms that went Viibe with this person in them tonight. Older servers omit it. */
+  viibes_tonight?: number;
+  viibes?: { venue_id: string; venue_name: string; participant_count: number; locked_at: string }[];
   heat_score: number;
   heat_level: string;
   heat_label: string;
@@ -56,6 +59,11 @@ const DEMO_RECAP: NightRecap = {
     energy_level: 'peak',
     tap_count: 9,
   },
+  viibes_tonight: 2,
+  viibes: [
+    { venue_id: '1', venue_name: 'DNA Nightclub', participant_count: 14, locked_at: '' },
+    { venue_id: '1', venue_name: 'DNA Nightclub', participant_count: 23, locked_at: '' },
+  ],
   heat_score: 39,
   heat_level: 'on_fire',
   heat_label: 'On Fire',
@@ -204,6 +212,27 @@ export default function AfterHours({ visible, onClose, isDemoMode }: Props) {
                   <Text style={styles.statLabel}>Streak</Text>
                 </View>
               </View>
+
+              {/* Viibes: the rooms that went off with you in them */}
+              {(recap.viibes_tonight ?? 0) > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionLabel}>
+                    {recap.viibes_tonight === 1
+                      ? 'YOU WERE IN 1 VIIBE TONIGHT'
+                      : `YOU WERE IN ${recap.viibes_tonight} VIIBES TONIGHT`}
+                  </Text>
+                  <View style={styles.venueList}>
+                    {(recap.viibes ?? []).map((v, i) => (
+                      <View key={`${v.venue_id}-${i}`} style={styles.venueItem}>
+                        <Ionicons name="flash" size={11} color={color} style={{ width: 18 }} />
+                        <Text style={styles.venueItemName}>
+                          {v.venue_name}, {v.participant_count} felt it at once
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
 
               {/* Venues hit tonight */}
               {recap.venues_visited.length > 0 && (

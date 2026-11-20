@@ -88,6 +88,12 @@ confidence, never in history) and `none` where there is no reading.
 A night runs from 07:00 Lagos time to 07:00 the next day and is named for the
 day it started.
 
+Every history point and every night summary carries `viibes`: how many times
+a room in that cell went Viibe in that step (or that night). A Viibe is five
+or more people inside the venue reacting to the same moment within eight
+seconds, so it marks the exact ten minutes an area went off, which a score
+alone cannot show. Points recorded before this field existed read 0.
+
 The forecast reports an hour only when at least three past nights on the same
 weekday back it. Until then it returns `"enough": false` and says how many
 nights it has. The weekly report calls an area a riser only when it has at

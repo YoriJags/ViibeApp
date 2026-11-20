@@ -37,9 +37,19 @@ def env(monkeypatch):
     async def emit(event, data=None, room=None, to=None, **kw):
         emitted.append((event, data, room or to))
 
+    rooms = {}   # sid -> rooms it is in
+
+    async def enter_room(sid, room, **kw):
+        rooms.setdefault(sid, set()).add(room)
+
+    async def leave_room(sid, room, **kw):
+        rooms.setdefault(sid, set()).discard(room)
+
     monkeypatch.setattr(realtime.sio, "save_session", save_session)
     monkeypatch.setattr(realtime.sio, "get_session", get_session)
     monkeypatch.setattr(realtime.sio, "emit", emit)
+    monkeypatch.setattr(realtime.sio, "enter_room", enter_room)
+    monkeypatch.setattr(realtime.sio, "leave_room", leave_room)
 
     ingested = []
     monkeypatch.setattr(realtime, "ingest_pulse", lambda **kw: ingested.append(kw))
@@ -59,7 +69,7 @@ def env(monkeypatch):
                                 "source": "manual", "created_at": NOW - timedelta(minutes=20),
                                 "expires_at": NOW + timedelta(hours=3)}))
     return {"db": db, "rt": realtime, "gate": tap_gate, "sessions": sessions,
-            "emitted": emitted, "ingested": ingested, "run": run}
+            "emitted": emitted, "ingested": ingested, "run": run, "rooms": rooms}
 
 
 def pulse(env, sid, venue="mercury", claimed_user="inside"):
@@ -107,6 +117,18 @@ def test_authenticate_after_connecting_and_signing_out(env):
     pulse(env, "s1")
     assert len(env["ingested"]) == 1
     assert ("authenticated", {"signed_in": False}, "s1") in env["emitted"]
+
+
+def test_a_socket_sits_in_its_owners_room_and_moves_when_they_change(env):
+    # A Viibe flashes a person's phones through this room, so a signed-out or
+    # switched socket must never stay in the old owner's room.
+    rt, run = env["rt"], env["run"]
+    run(rt.connect("s1", {}, {"token": "tok-inside"}))
+    assert env["rooms"]["s1"] == {"user_inside"}
+    run(rt.authenticate("s1", {"token": "tok-outside"}))
+    assert env["rooms"]["s1"] == {"user_outside"}
+    run(rt.authenticate("s1", {"token": None}))
+    assert env["rooms"]["s1"] == set()
 
 
 def test_a_bad_or_expired_token_is_signed_out(env):

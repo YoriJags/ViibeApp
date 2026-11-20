@@ -74,16 +74,37 @@ async def _check_async_moment(venue_id: str, venue_name: str, now: datetime) -> 
         "lock_type":         "async",
         "charge":            charge,
     })
-    await sio.emit("moment_locked", {
+    logger.info(f"ASYNC MOMENT LOCKED — venue={venue_id} charge={charge} scouts={len(parts)}")
+    # A slow build counts everyone who added to it tonight, but only the ones
+    # still in the room get the flash.
+    from app.services.tap_gate import is_inside
+    still_here = [uid for uid in parts if await is_inside(uid, venue_id)]
+    await announce_viibe(venue_id, venue_name, len(parts), still_here, now, "async")
+
+
+async def announce_viibe(venue_id: str, venue_name: str, participant_count: int,
+                         flash_user_ids: list, now: datetime, lock_type: str) -> None:
+    """
+    A room went Viibe. Tell three audiences:
+      - the venue's own room (the reactor overlay, as before),
+      - the whole city (pins burst on the map; no ids, just the venue and count),
+      - each phone that took part, so they light up together.
+    Then push the people who know the venue.
+    """
+    payload = {
         "venue_id":          venue_id,
         "venue_name":        venue_name,
-        "participant_count": len(parts),
+        "participant_count": participant_count,
         "locked_at":         now.isoformat(),
-        "lock_type":         "async",
-    }, room=f"venue_{venue_id}")
-    logger.info(f"ASYNC MOMENT LOCKED — venue={venue_id} charge={charge} scouts={len(parts)}")
+        "lock_type":         lock_type,
+    }
+    await sio.emit("moment_locked", payload, room=f"venue_{venue_id}")
+    await sio.emit("viibe", payload)
+    from app.services.realtime import user_room
+    for uid in set(flash_user_ids):
+        await sio.emit("viibe_flash", payload, room=user_room(uid))
     asyncio.create_task(notify_moment_locked(
-        venue_id=venue_id, venue_name=venue_name or "a venue", participant_count=len(parts),
+        venue_id=venue_id, venue_name=venue_name or "a venue", participant_count=participant_count,
     ))
 
 # ─── Constants ────────────────────────────────────────────────────────────────
@@ -212,34 +233,14 @@ async def record_moment(
                 "locked_at":         now,
                 "participant_count": len(unique_scouts),
                 "participant_ids":   list(unique_scouts),
-                "gesture_breakdown": _gesture_breakdown(_venue_moments[venue_id]),
+                "lock_type":         "simultaneous",
                 "venue_name":        venue.get("name", ""),
             })
-
-            # Broadcast to venue Socket.IO room
-            await sio.emit(
-                "moment_locked",
-                {
-                    "venue_id":          venue_id,
-                    "venue_name":        venue.get("name", ""),
-                    "participant_count": len(unique_scouts),
-                    "locked_at":         now.isoformat(),
-                },
-                room=f"venue_{venue_id}",
-            )
-
             logger.info(
                 f"MOMENT LOCKED — venue={venue_id} scouts={len(unique_scouts)}"
             )
-
-            # Push to nearby users — fire-and-forget, non-blocking
-            asyncio.create_task(
-                notify_moment_locked(
-                    venue_id=venue_id,
-                    venue_name=venue.get("name", "a venue"),
-                    participant_count=len(unique_scouts),
-                )
-            )
+            await announce_viibe(venue_id, venue.get("name", ""), len(unique_scouts),
+                                 list(unique_scouts), now, "simultaneous")
 
     # ── Async Moment: cumulative charge across the night ───────────────────────
     # Only if a simultaneous lock didn't just fire this tick.
@@ -253,6 +254,27 @@ async def record_moment(
         "scouts_in_window": len(unique_scouts),
         "threshold":    MOMENT_LOCK_THRESHOLD,
     }
+
+
+@router.get("/venues/{venue_id}/viibes")
+async def get_venue_viibes(venue_id: str):
+    """How many times this room went Viibe tonight, and the latest one. Public:
+    counts and times only, never who took part. The Big Screen polls it."""
+    now = datetime.now(timezone.utc)
+    locks = await db.moment_locks.find(
+        {"venue_id": venue_id, "locked_at": {"$gte": _night_start(now)}},
+        {"_id": 0, "locked_at": 1, "participant_count": 1, "lock_type": 1},
+        sort=[("locked_at", -1)],
+    ).to_list(100)
+    latest = locks[0] if locks else None
+    if latest:
+        latest = {**latest, "locked_at": _aware(latest["locked_at"]).isoformat()}
+    return {"venue_id": venue_id, "tonight": len(locks), "latest": latest}
+
+
+def _aware(ts: datetime) -> datetime:
+    """Mongo hands datetimes back naive; they were stored as UTC."""
+    return ts if ts.tzinfo else ts.replace(tzinfo=timezone.utc)
 
 
 @router.get("/venues/{venue_id}/moment-charge")
@@ -319,11 +341,6 @@ async def get_tonight_moments(
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
-
-def _gesture_breakdown(window: list) -> dict:
-    counts: dict = {"shake": 0, "raise_to_face": 0, "back_tap": 0}
-    return counts  # breakdown tracked per-moment in DB, aggregate later
-
 
 def _serialize(doc: dict) -> dict:
     doc["_id"] = str(doc["_id"]) if "_id" in doc else None

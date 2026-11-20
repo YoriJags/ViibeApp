@@ -89,3 +89,23 @@ def test_five_people_inside_lock_it_and_outsiders_do_not_add_up(env):
     r = fire(env, "u5", latitude=6.4281, longitude=3.4220)
     assert r.json()["moment_locked"] is True
     assert any(e == "moment_locked" for e, _, _ in env["emitted"])
+
+
+def test_a_viibe_reaches_the_city_and_flashes_only_the_people_who_set_it_off(env):
+    for uid in ("u0", "u1", "u2", "u3", "u4"):
+        fire(env, uid, latitude=6.4282, longitude=3.4219)
+    city = [d for e, d, room in env["emitted"] if e == "viibe"]
+    assert len(city) == 1 and city[0]["participant_count"] == 5
+    assert "participant_ids" not in city[0]           # the city sees counts, never people
+    flashed = sorted(room for e, _, room in env["emitted"] if e == "viibe_flash")
+    assert flashed == ["user_u0", "user_u1", "user_u2", "user_u3", "user_u4"]
+
+
+def test_viibes_endpoint_counts_tonight_without_naming_anyone(env):
+    for uid in ("u0", "u1", "u2", "u3", "u4"):
+        fire(env, uid, latitude=6.4282, longitude=3.4219)
+    body = env["client"].get("/api/venues/mercury/viibes").json()
+    assert body["tonight"] == 1
+    assert body["latest"]["participant_count"] == 5
+    assert "participant_ids" not in body["latest"]
+    assert body["latest"]["locked_at"].endswith("+00:00")

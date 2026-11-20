@@ -282,6 +282,9 @@ class VenueStory(BaseModel):
     caption: str = ""
     latitude: float
     longitude: float
+    # Taken from the "Grab it" prompt straight after the room went Viibe. The
+    # server only marks the story as Viibe proof if one really just happened.
+    viibe: bool = False
 
 
 # ===== Crews =====

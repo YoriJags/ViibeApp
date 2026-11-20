@@ -54,7 +54,8 @@ export interface VenueSlice {
   removeFromLobby: (venueId: string) => Promise<boolean>;
   isInLobby: (venueId: string) => boolean;
   fetchStories: (venueId: string) => Promise<void>;
-  postStory: (venueId: string, mediaUrl: string, caption: string, lat: number, lng: number) => Promise<any>;
+  /** viibe: taken from the "Grab it" prompt right after the room went Viibe. */
+  postStory: (venueId: string, mediaUrl: string, caption: string, lat: number, lng: number, viibe?: boolean) => Promise<any>;
   viewStory: (storyId: string) => Promise<void>;
   fetchTimeline: (venueId: string) => Promise<void>;
   fetchActiveCampaigns: (city?: string) => Promise<void>;
@@ -284,11 +285,11 @@ export const createVenueSlice: StateCreator<
     } catch {}
   },
 
-  postStory: async (venueId, mediaUrl, caption, lat, lng) => {
+  postStory: async (venueId, mediaUrl, caption, lat, lng, viibe = false) => {
     const { getAuthHeaders } = get();
     const response = await fetch(`${API_URL}/api/stories`, {
       method: 'POST', headers: getAuthHeaders(),
-      body: JSON.stringify({ venue_id: venueId, media_url: mediaUrl, caption, latitude: lat, longitude: lng }),
+      body: JSON.stringify({ venue_id: venueId, media_url: mediaUrl, caption, latitude: lat, longitude: lng, viibe }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || 'Failed to post story');
