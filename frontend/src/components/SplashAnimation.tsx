@@ -243,21 +243,20 @@ export default function SplashAnimation({
       {/* VIBE letters */}
       <View style={styles.lettersRow}>
         {LETTERS.map((letter, i) => (
-          <Animated.Text
+          // The animation runs on a wrapping view, not on the glowing Text,
+          // so Android never composites the shadowed text in its own layer.
+          <Animated.View
             key={letter + i}
-            style={[
-              styles.letter,
-              {
-                opacity: letterAnims[i].opacity,
-                transform: [
-                  { scale: letterAnims[i].scale },
-                  { translateY: letterAnims[i].translateY },
-                ],
-              },
-            ]}
+            style={{
+              opacity: letterAnims[i].opacity,
+              transform: [
+                { scale: letterAnims[i].scale },
+                { translateY: letterAnims[i].translateY },
+              ],
+            }}
           >
-            {letter}
-          </Animated.Text>
+            <Text style={styles.letter}>{letter}</Text>
+          </Animated.View>
         ))}
       </View>
 
@@ -311,13 +310,19 @@ const styles = StyleSheet.create({
   lettersRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
   },
+  // Android clips a text shadow to the Text's own box, so a 20px glow on a
+  // tight glyph box drew a hard-edged dark rectangle behind each letter.
+  // Padding gives the glow room; the negative margin takes it back so the
+  // letters keep their 12px spacing (previously letterSpacing 4 + gap 8),
+  // and without trailing letterSpacing the word now sits truly centred.
   letter: {
     fontSize: 56,
     fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: 4,
+    padding: 22,
+    marginHorizontal: -16,
+    marginVertical: -22,
     textShadowColor: '#FF3366',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 20,
