@@ -27,7 +27,8 @@ export default function PutOnMapCard() {
       </TouchableOpacity>
       <View style={styles.links}>
         <Row icon="location-outline" label="Add a place" onPress={() => router.push('/submit/place' as any)} />
-        <Row icon="list-outline" label="My submissions" onPress={() => router.push('/submit/mine' as any)} last />
+        <Row icon="list-outline" label="My submissions" onPress={() => router.push('/submit/mine' as any)} />
+        <Row icon="checkmark-circle-outline" label="Get VIIBE Certified" onPress={() => router.push('/submit/certify' as any)} last />
       </View>
     </View>
   );

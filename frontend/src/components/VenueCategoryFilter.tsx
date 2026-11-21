@@ -45,8 +45,8 @@ const CATEGORY_EMOJI: Record<string, string> = {
   restaurant:  '🍽️',
   concert:     '🎤',
   block_party: '🌆',
-  rave:        '🎤',
-  festival:    '🌆',
+  rave:        '⚡',
+  festival:    '🎪',
 };
 
 const CATEGORIES: CategoryOption[] = [
@@ -56,7 +56,9 @@ const CATEGORIES: CategoryOption[] = [
   { key: 'lounge',      label: 'Lounges',    icon: 'wine',           color: '#9933FF' },
   { key: 'bar',         label: 'Bars',       icon: 'beer',           color: '#FF6B35' },
   { key: 'concert',     label: 'Concerts',   icon: 'mic',            color: '#FF3366' },
-  { key: 'block_party', label: 'Events',     icon: 'people',         color: '#00E676' },
+  { key: 'rave',        label: 'Raves',      icon: 'pulse',          color: '#FF3366' },
+  { key: 'festival',    label: 'Festivals',  icon: 'flag',           color: '#FFBE3B' },
+  { key: 'block_party', label: 'Block parties', icon: 'people',      color: '#00E676' },
 ];
 
 function CategoryTab({

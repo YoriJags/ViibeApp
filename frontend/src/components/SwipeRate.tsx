@@ -174,6 +174,10 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
   const venue  = displayVenues[currentIndex];
   const next   = displayVenues[currentIndex + 1];
   const energy = ENERGY_CONFIG[venue?.energy_level] ?? ENERGY_CONFIG['quiet'];
+  // A reading from scouts, a labelled demo score, or any venue in the demo
+  // (which walks a fully read city). Without one, no energy word is shown.
+  const hasReading = !!venue && ((venue.current_vibe_score > 0 && (isDemoMode || venue.energy_source === 'demo'))
+    || venue.energy_source === 'scouts');
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={dismiss} statusBarTranslucent>
@@ -268,22 +272,24 @@ export default function SwipeRate({ visible, venues, onFire, onClose, isDemoMode
 
                 <View style={styles.cardContent}>
                   {/* Energy pill */}
-                  <View style={[styles.energyPill, { backgroundColor: energy.color + '1A', borderColor: energy.color + '40' }]}>
-                    <Text style={[styles.energyPillText, { color: energy.color }]}>{energy.label}</Text>
-                  </View>
+                  {hasReading ? (
+                    <View style={[styles.energyPill, { backgroundColor: energy.color + '1A', borderColor: energy.color + '40' }]}>
+                      <Text style={[styles.energyPillText, { color: energy.color }]}>{energy.label}</Text>
+                    </View>
+                  ) : null}
 
                   {/* Name */}
                   <Text style={styles.venueName} numberOfLines={2}>{venue.name}</Text>
                   {venue.area && <Text style={styles.venueArea}>{venue.area}</Text>}
 
                   {/* Score bar: real readings only, demo labelled, nothing otherwise */}
-                  {venue.energy_source === 'scouts' || (venue.energy_source === 'demo' && venue.current_vibe_score > 0) ? (
+                  {hasReading ? (
                     <View style={styles.scoreRow}>
                       <View style={styles.scoreTrack}>
                         <View style={[styles.scoreFill, { width: `${Math.round(venue.current_vibe_score)}%` as any, backgroundColor: energy.color }]} />
                       </View>
                       <Text style={[styles.scoreNum, { color: energy.color }]}>
-                        {Math.round(venue.current_vibe_score)}{venue.energy_source === 'demo' ? ' DEMO' : ''}
+                        {Math.round(venue.current_vibe_score)}{venue.energy_source === 'demo' && !isDemoMode ? ' DEMO' : ''}
                       </Text>
                     </View>
                   ) : (

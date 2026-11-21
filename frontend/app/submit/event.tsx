@@ -186,6 +186,10 @@ export default function AddEventScreen() {
                 <Text style={[edType.caption, { marginTop: 4, color: ed.inkSoft }]}>
                   Name, place and time, without an organiser name or ticket link. Anyone could claim to be the organiser, so those show only once the organiser is VIIBE Certified.
                 </Text>
+                <Text style={[edType.label, { color: ed.pink, marginTop: 10 }]} accessibilityRole="link"
+                  onPress={() => router.push('/submit/certify' as any)}>
+                  Are you the organiser? Get certified
+                </Text>
               </View>
             )}
 

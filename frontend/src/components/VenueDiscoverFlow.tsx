@@ -3,6 +3,7 @@
  * No categories, no welcome. Just shuffle all venues and swipe.
  * Right = 🔥 Fire, Left = Skip. Swipe anywhere on screen.
  */
+import { useVibeStore } from '../store/vibeStore';
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import {
   View,
@@ -94,8 +95,11 @@ function VenueCardBody({ venue }: { venue: Venue }) {
   const ownImage = !!(venue.cover_image_url || venue.photo_base64);
   const photo = usePlacePhoto(venue.id, !ownImage && !venue.event);
   const imgUrl = ownImage ? getVenueImage(venue) : photo?.url ?? getVenueImage(venue);
-  // Only a reading from scouts in the room is shown as the energy.
-  const real = venue.energy_source === 'scouts';
+  // Only a reading from scouts in the room is shown as the energy. The demo
+  // walks a fully read city, so its sample venues count as read.
+  const isDemoMode = useVibeStore((st) => st.isDemoMode);
+  const real = venue.energy_source === 'scouts' || (isDemoMode && score > 0);
+  const hasReading = real || (venue.energy_source === 'demo' && score > 0);
   const upcoming = venue.event && venue.event.phase === 'upcoming';
 
   return (
@@ -125,10 +129,12 @@ function VenueCardBody({ venue }: { venue: Venue }) {
             </Text>
           </View>
         ) : (
-          <View style={[styles.energyBadge, { borderColor: energy.color + '80', backgroundColor: energy.color + '22' }]}>
-            <View style={[styles.energyDot, { backgroundColor: energy.color }]} />
-            <Text style={[styles.energyLabel, { color: energy.color }]}>{energy.label}</Text>
-          </View>
+          hasReading ? (
+            <View style={[styles.energyBadge, { borderColor: energy.color + '80', backgroundColor: energy.color + '22' }]}>
+              <View style={[styles.energyDot, { backgroundColor: energy.color }]} />
+              <Text style={[styles.energyLabel, { color: energy.color }]}>{energy.label}</Text>
+            </View>
+          ) : null
         )}
 
         {/* Venue name */}
@@ -137,7 +143,7 @@ function VenueCardBody({ venue }: { venue: Venue }) {
 
         {/* Score: real readings only; demo is labelled; nothing for an event not yet on */}
         {!upcoming && (
-          real || (venue.energy_source === 'demo' && score > 0) ? (
+          hasReading ? (
             <View style={styles.scoreRow}>
               <Text style={[styles.scoreNum, { color: scoreColor }]}>{score}</Text>
               <Text style={styles.scoreLabel}>{real ? 'VIIBE' : 'VIIBE · DEMO'}</Text>

@@ -261,3 +261,52 @@ export async function organiserCertifiedName(): Promise<string | null> {
     return null;
   }
 }
+
+// ── VIIBE Certified (backend/app/routes/certification.py) ──────────────────
+
+export type CertKind = 'organiser' | 'vendor';
+
+export interface CertApplication {
+  id: string;
+  kind: CertKind;
+  name: string;
+  links: string[];
+  contact: string;
+  note?: string | null;
+  status: 'pending' | 'certified' | 'rejected' | 'lapsed';
+  created_at?: string;
+  expires_at?: string;
+  review?: { reason?: string; method?: string };
+}
+
+const demoApplications: CertApplication[] = [];
+
+export async function myCertifications(): Promise<CertApplication[]> {
+  if (isDemo()) return [...demoApplications];
+  const res = await fetch(`${API_URL}/api/certification/me`, { headers: headers() });
+  if (!res.ok) throw await readProblems(res);
+  return (await res.json()).applications || [];
+}
+
+export async function applyForCertification(app: {
+  kind: CertKind; name: string; links: string[]; contact: string; note?: string; venue_id?: string;
+}): Promise<CertApplication> {
+  const payload = {
+    ...app,
+    name: app.name.trim(),
+    links: app.links.map((l) => l.trim()).filter(Boolean),
+    contact: app.contact.trim(),
+    note: app.note?.trim() || undefined,
+  };
+  if (isDemo()) {
+    const item: CertApplication = { id: `demo-cert-${Date.now()}`, ...payload, status: 'pending',
+      created_at: new Date().toISOString() };
+    demoApplications.unshift(item);
+    return item;
+  }
+  const res = await fetch(`${API_URL}/api/certification/apply`, {
+    method: 'POST', headers: headers(), body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw await readProblems(res);
+  return (await res.json()).application;
+}
