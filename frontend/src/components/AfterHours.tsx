@@ -16,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useVibeStore } from '../store/vibeStore';
 import VibeShareCard, { ShareNightData } from './VibeShareCard';
 
@@ -80,6 +81,8 @@ interface Props {
 }
 
 export default function AfterHours({ visible, onClose, isDemoMode }: Props) {
+  // The sheet runs to the screen edge; keep its last button above the navigation bar.
+  const insets = useSafeAreaInsets();
   const getAuthHeaders = useVibeStore(s => s.getAuthHeaders);
   const user           = useVibeStore(s => s.user);
   const cityEnergy      = useVibeStore(s => s.cityEnergy);
@@ -151,7 +154,7 @@ export default function AfterHours({ visible, onClose, isDemoMode }: Props) {
           <Ionicons name="close" size={18} color="#555" />
         </TouchableOpacity>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: 60 + insets.bottom }]}>
           {loading ? (
             <View style={styles.loadingBlock}>
               <ActivityIndicator color={color} />

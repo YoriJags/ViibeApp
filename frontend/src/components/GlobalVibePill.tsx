@@ -36,7 +36,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useVibeStore } from '../store/vibeStore';
 import SurgeFullScreen, { SurgeState } from './SurgeFullScreen';
 import { getBoltCoordinates } from '../utils/boltLocation';
@@ -113,6 +114,9 @@ const heatStyles = StyleSheet.create({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function GlobalVibePill() {
+  // Start below the status bar so the pill never covers the clock and icons.
+  const insets = useSafeAreaInsets();
+  const pathname = usePathname();
   const isInsideVenue    = useVibeStore(s => s.isInsideVenue);
   const activeVenueId    = useVibeStore(s => s.activeVenueId);
   const activeVenueName  = useVibeStore(s => s.activeVenueName);
@@ -313,6 +317,8 @@ export default function GlobalVibePill() {
   }));
 
   if (!isInsideVenue) return null;
+  // The venue's own page already says "You're in" and owns that top strip.
+  if (pathname.startsWith('/venue/')) return null;
 
   return (
     <>
@@ -320,7 +326,7 @@ export default function GlobalVibePill() {
       <RNAnimated.View
         style={[
           styles.pillWrapper,
-          { opacity: pillOpacity, transform: [{ scale: pillScale }] },
+          { top: insets.top + 6, opacity: pillOpacity, transform: [{ scale: pillScale }] },
         ]}
         pointerEvents="box-none"
       >

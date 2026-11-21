@@ -13,7 +13,7 @@ import {
   Dimensions,
   Share,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
@@ -76,6 +76,8 @@ const CLUB_PLACEHOLDERS = [
 export default function VenueDetailScreen() {
   const { id, openRateModal, arrival } = useLocalSearchParams<{ id: string; openRateModal?: string; arrival?: string }>();
   const router = useRouter();
+  // Keeps the Check In / Rate footer above the phone's navigation bar.
+  const insets = useSafeAreaInsets();
 
   // Opened from the arrival prompt: take its one ten-second sound sample.
   // Only if the scout opted into ambient sound, and only once per opening.
@@ -760,7 +762,7 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
         bounces={true}
       >
@@ -1491,7 +1493,7 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
         <BlurView intensity={30} tint="dark" style={styles.stickyBlur}>
           <LinearGradient
             colors={['rgba(15,15,25,0.92)', 'rgba(10,10,18,0.98)']}
-            style={styles.stickyGradient}
+            style={[styles.stickyGradient, insets.bottom > 0 && { paddingBottom: insets.bottom + 10 }]}
           >
             <View style={styles.stickyFooterRow}>
               {/* Check In — primary when geofenced */}

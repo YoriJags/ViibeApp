@@ -13,6 +13,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useVibeStore } from '../store/vibeStore';
@@ -45,6 +46,9 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
   const tabWidth = screenWidth / tabs.length;
 
   const setTabBarHidden = useVibeStore(s => s.setTabBarHidden);
+  // Sit above the phone's own navigation bar (three-button or gesture), never under it.
+  const insets = useSafeAreaInsets();
+  const bottomPad = insets.bottom > 0 ? insets.bottom + 6 : 14;
 
   // Always ensure tab bar is visible on mount
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -115,7 +119,7 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
           ]}
         />
 
-        <View style={styles.row}>
+        <View style={[styles.row, { paddingBottom: bottomPad }]}>
           {tabs.map((tab, index) => {
             const route = state.routes.find((r: any) => r.name === tab.name);
             const isFocused = focusedRouteName === tab.name;
@@ -226,7 +230,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     paddingTop: 10,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 14,
     backgroundColor: 'rgba(8, 8, 18, 0.72)',
     position: 'relative',
     zIndex: 1,
@@ -243,7 +246,7 @@ const styles = StyleSheet.create({
     height: 28,
   },
   label: {
-    fontSize: 9,
+    fontSize: 11,
     marginTop: 3,
   },
   activeDot: {
