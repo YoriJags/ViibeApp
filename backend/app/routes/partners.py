@@ -178,6 +178,9 @@ async def approve_partner_event(event_id: str, payload: dict, user: dict = Depen
         "approved_version": version}})
     if not result.matched_count:
         raise HTTPException(status_code=409, detail="The event changed since you checked it. Review it again.")
+    # The approved spot is the anchor every on-site move is measured from.
+    from app.routes.events import set_anchor
+    await set_anchor(event_id, event["coordinates"])
     return {"approved": event_id, "review_version": version}
 
 

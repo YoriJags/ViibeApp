@@ -112,6 +112,7 @@ async def create_event(payload: dict, user: dict = Depends(require_admin)):
     doc = new_event_document(payload, created_by=user.get("id"))
     key = new_organiser_key()
     await db.venues.insert_one(dict(doc))
+    await set_anchor(doc["id"], doc["coordinates"])
     await db.event_keys.insert_one({"event_id": doc["id"], "key": key,
                                     "created_at": datetime.now(timezone.utc)})
     return {
@@ -319,6 +320,16 @@ async def _set_private(event_id: str, fields: dict) -> None:
     await db.event_private.update_one({"event_id": event_id}, {"$set": fields}, upsert=True)
 
 
+async def set_anchor(event_id: str, coordinates: dict) -> None:
+    """
+    The spot an admin approved (or an admin's own event was created at). Every
+    on-site move is measured from here and the free-fix allowance starts again.
+    Only ever called by an admin action.
+    """
+    await _set_private(event_id, {"approved_coordinates": coordinates, "on_site_fixes": 0,
+                                  "pending_location": None})
+
+
 def _submission_view(sub: dict) -> dict:
     """A submission as its submitter sees it."""
     view = public_event({k: v for k, v in sub.items() if k not in ("status", "reason")})
@@ -468,9 +479,11 @@ async def approve_event(event_id: str, payload: dict | None = None, admin: dict 
     else:
         await db.venues.update_one({"id": event_id}, {"$set": {**fix, "hidden_for_review": False},
                                                        "$unset": {"is_suppressed": ""}})
-    anchor = fix.get("coordinates") or event["coordinates"]
-    await _set_private(event_id, {"approved_coordinates": anchor, "on_site_fixes": 0,
-                                  "review": {"by": admin["id"], "at": now}})
+    # A new approval, or an explicit admin correction, sets the anchor. Putting
+    # a taken-down event back up keeps the anchor and the fixes already used.
+    if sub or fix.get("coordinates"):
+        await set_anchor(event_id, fix.get("coordinates") or event["coordinates"])
+    await _set_private(event_id, {"review": {"by": admin["id"], "at": now}})
     if not await db.event_keys.find_one({"event_id": event_id}):
         await db.event_keys.insert_one({"event_id": event_id, "key": new_organiser_key(), "created_at": now})
     return {"approved": event_id}
@@ -510,7 +523,7 @@ async def admin_move(event_id: str, payload: dict, admin: dict = Depends(require
     why = (payload.get("reason") or "moved by admin")[:200]
     await _log_move(event, to, admin["id"], why)
     await db.venues.update_one({"id": event_id}, {"$set": {"coordinates": to}})
-    await _set_private(event_id, {"approved_coordinates": to, "on_site_fixes": 0, "pending_location": None})
+    await set_anchor(event_id, to)
     return {"moved": event_id, "to": to}
 
 
@@ -580,25 +593,37 @@ async def organiser_here(event_id: str, payload: dict, key: str = Query(...)):
     except (KeyError, TypeError, ValueError):
         raise HTTPException(status_code=422, detail="Send lat, lng and accuracy_m from the phone.")
     priv = await _private(event_id)
-    anchor = priv.get("approved_coordinates") or event["coordinates"]
+    anchor = priv.get("approved_coordinates")
+    to = {"lat": lat, "lng": lng}
+    now = datetime.now(timezone.utc)
+
+    async def hold(distance):
+        await _set_private(event_id, {"pending_location": {**to, "distance_m": distance, "at": now}})
+        return {"decision": "needs_admin", "distance_m": distance,
+                "message": "VIIBE will check this location before moving the pin."}
+
+    # No approved anchor (an event from before anchors existed): fail closed,
+    # never measure from wherever the pin happens to be now.
+    if not anchor:
+        return await hold(None)
     move = calculate_distance(anchor["lat"], anchor["lng"], lat, lng)
     official = listing_of(event) == LISTING_OFFICIAL
     decision = on_site_decision(payload.get("accuracy_m"), move, official)
-    if decision == "apply" and priv.get("on_site_fixes", 0) >= ON_SITE_FIXES_ALLOWED:
-        decision = "needs_admin"
-    to = {"lat": lat, "lng": lng}
     if decision == "too_imprecise":
         return {"decision": decision,
                 "message": "Your phone's location is not precise enough. Step outside or wait a moment and try again."}
-    now = datetime.now(timezone.utc)
     if decision == "needs_admin":
-        await _set_private(event_id, {"pending_location": {**to, "distance_m": round(move), "at": now}})
-        return {"decision": decision, "distance_m": round(move),
-                "message": "VIIBE will check this location before moving the pin."}
+        return await hold(round(move))
+    # Claim one of the free fixes atomically, so two requests at once cannot
+    # both slip under the allowance.
+    claimed = await db.event_private.find_one_and_update(
+        {"event_id": event_id, "on_site_fixes": {"$lt": ON_SITE_FIXES_ALLOWED}},
+        {"$inc": {"on_site_fixes": 1}})
+    if not claimed:
+        return await hold(round(move))
     await _log_move(event, to, "organiser_link", "set on site")
     await db.venues.update_one({"id": event_id}, {"$set": {
         "coordinates": to, "location_set_on_site": True, "location_set_at": now}})
-    await _set_private(event_id, {"on_site_fixes": priv.get("on_site_fixes", 0) + 1})
     # A shared place is never changed by an organiser link. An Official
     # organiser's fix is offered to the admin as the place's location.
     if event.get("place_id") and official:

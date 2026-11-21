@@ -241,6 +241,42 @@ def test_repeated_fixes_cannot_walk_the_pin_away(env):
     assert r4.json()["decision"] == "needs_admin"
 
 
+def test_without_an_approved_anchor_an_on_site_fix_waits_for_an_admin(env):
+    client, db, _ = env
+    ev = submit(client).json()["event"]
+    approve(client, ev["id"])
+    run(db.event_private.update_one({"event_id": ev["id"]}, {"$unset": {"approved_coordinates": ""}}))
+    key = organiser_key(client, db, ev["id"])
+    r = client.post(f"/api/organiser/events/{ev['id']}/here?key={key}",
+                    json={"lat": THEATRE["lat"] + 0.0005, "lng": THEATRE["lng"], "accuracy_m": 10})
+    assert r.json()["decision"] == "needs_admin"
+    assert run(db.venues.find_one({"id": ev["id"]}))["coordinates"] == THEATRE
+
+
+def test_putting_a_taken_down_event_back_up_keeps_its_anchor_and_used_fixes(env):
+    client, db, current = env
+    ev = submit(client).json()["event"]
+    approve(client, ev["id"])
+    key = organiser_key(client, db, ev["id"])
+    url = f"/api/organiser/events/{ev['id']}/here?key={key}"
+    for d in (0.0005, 0.0006):
+        client.post(url, json={"lat": THEATRE["lat"] + d, "lng": THEATRE["lng"], "accuracy_m": 10})
+    for uid in ("r1", "r2", "r3"):
+        current["user"] = {"id": uid}
+        client.post(f"/api/events/{ev['id']}/report", json={"reason": "fake"})
+    approve(client, ev["id"])   # restore, no new coordinates
+    priv = run(db.event_private.find_one({"event_id": ev["id"]}))
+    assert priv["approved_coordinates"] == THEATRE and priv["on_site_fixes"] == 2
+    r = client.post(url, json={"lat": THEATRE["lat"] + 0.0007, "lng": THEATRE["lng"], "accuracy_m": 10})
+    assert r.json()["decision"] == "needs_admin"
+
+
+def test_an_admins_own_event_has_an_anchor_from_the_start(env):
+    client, db, _ = env
+    ev_id = client.post("/api/admin/events", json=body(name="Admin Night")).json()["event"]["id"]
+    assert run(db.event_private.find_one({"event_id": ev_id}))["approved_coordinates"] == THEATRE
+
+
 def test_a_community_organiser_never_changes_the_shared_place(env):
     client, db, _ = env
     r = client.post("/api/places", json={"name": "National Theatre", "place_type": "theatre",
