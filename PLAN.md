@@ -110,16 +110,17 @@ energy badge (score held high for 90 days) keeps its name; they are separate thi
 - [x] Tests for every rule above
 
 **E4. App**
-- [ ] Raves and Festivals filter chips on home (block parties stay under Events)
-- [ ] "Add an event" screen (from Tonight and Profile): name, type, date and time, ticketed
-      or door plus ticket link, then where: search places (VIIBE + OpenStreetMap), or drop a
-      pin on the map and size the ground
-- [ ] "Add a place" inside the same flow when the place is not found
-- [ ] "My submissions": pending, live, or rejected with the reason; organiser link when live
+- [x] Raves and Festivals filter chips on home (Events renamed Block parties; demo rave + festival added)
+- [x] "Add an event" screen (from Profile): what, where (VIIBE + OpenStreetMap search, or
+      "use where I am standing"), when (Lagos-time chips), details. No map pin-drop yet:
+      no map library in the app; admin fixes the pin at review. Entry from Tonight still open
+- [x] "Add a place" (linked from the Where step)
+- [x] "My submissions": pending, live, or rejected with the reason; organiser link when live
+- [x] VIIBE Certified application screen (app/submit/certify.tsx)
 - [ ] Organiser page (backend/static/organiser.html): "I'm here, use my location" button
 - [ ] Admin review screen: each submission on a map with its ground drawn; approve, reject,
       move the pin, resize
-- [ ] Demo mode shows the full flow with a sample event at the National Theatre
+- [x] Demo mode shows the full flow (sample places incl. National Theatre; Kemi Ade Live listed)
 
 **E5. Before any build**
 - [ ] Backend tests green, tsc 0, phone screenshots of every new screen
