@@ -25,6 +25,8 @@ interface Props {
 interface Step {
   id: string;
   label: string;
+  /** Fits under a 44px circle on a 360dp phone; the full label is the CTA. */
+  short: string;
   icon: string;
   done: boolean;
 }
@@ -37,11 +39,11 @@ export default function NightArcStrip({
   onStepPress,
 }: Props) {
   const steps: Step[] = [
-    { id: 'mood',    label: 'Set the Mood',  icon: 'color-palette', done: hasSetMood    },
-    { id: 'explore', label: 'Explore',       icon: 'compass',       done: true           },
-    { id: 'rate',    label: 'Rate a Spot',   icon: 'star',          done: hasRatedVenue  },
-    { id: 'checkin', label: 'Check In',      icon: 'location',      done: hasCheckedIn   },
-    { id: 'crew',    label: 'Roll Deep',     icon: 'people',        done: hasCrewActive  },
+    { id: 'mood',    label: 'Set the Mood', short: 'Mood',      icon: 'color-palette', done: hasSetMood    },
+    { id: 'explore', label: 'Explore',      short: 'Explore',   icon: 'compass',       done: true           },
+    { id: 'rate',    label: 'Rate a Spot',  short: 'Rate',      icon: 'star',          done: hasRatedVenue  },
+    { id: 'checkin', label: 'Check In',     short: 'Check In',  icon: 'location',      done: hasCheckedIn   },
+    { id: 'crew',    label: 'Roll Deep',    short: 'Roll Deep', icon: 'people',        done: hasCrewActive  },
   ];
 
   const completedCount = steps.filter(s => s.done).length;
@@ -155,7 +157,7 @@ export default function NightArcStrip({
                   ]}
                   numberOfLines={1}
                 >
-                  {step.label}
+                  {step.short}
                 </Text>
               </TouchableOpacity>
             </React.Fragment>
@@ -208,7 +210,7 @@ const styles = StyleSheet.create({
     borderColor: '#111120',
     borderRadius: 16,
     padding: 16,
-    marginHorizontal: 12,
+    marginHorizontal: 16,
     marginVertical: 8,
     gap: 12,
   },
@@ -220,7 +222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '900',
     letterSpacing: 2,
     color: '#8A84A8',
@@ -281,10 +283,10 @@ const styles = StyleSheet.create({
     borderColor: '#1A1A28',
   },
   stepLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '700',
     textAlign: 'center',
-    maxWidth: 52,
+    maxWidth: 64,
   },
   stepLabelDone:    { color: '#666' },
   stepLabelCurrent: { color: '#FF3366' },
