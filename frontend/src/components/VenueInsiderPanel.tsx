@@ -56,7 +56,7 @@ function formatDate(iso: string | null): string {
   if (!iso) return '-';
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   } catch {
     return '-';
   }

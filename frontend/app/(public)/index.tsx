@@ -749,6 +749,7 @@ export default function MapScreen() {
               cityEnergy={cityEnergy}
               cityName={cityName}
               callName={user?.call_name}
+              isDemo={isDemoMode}
             />
           ) : (
             <TonightHero

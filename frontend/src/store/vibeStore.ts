@@ -114,6 +114,16 @@ export const useVibeStore = create<VibeStore>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
+          // Builds before the Live/Demo choice saved demo mode but not the demo
+          // venues, so the app woke in demo with an empty list. Start clean:
+          // the launch screen decides the mode, and the sample account is dropped.
+          if (state.isDemoMode) {
+            const wasSample = (state.user as any)?.id === 'demo_user_001';
+            useVibeStore.setState({
+              isDemoMode: false,
+              ...(wasSample ? { user: null, isAuthenticated: false } : {}),
+            });
+          }
           state.setHasHydrated(true);
           // Restore session token from SecureStore on app launch
           // The token lives in SecureStore and loads after the rest. Checking

@@ -16,6 +16,8 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ENERGY_LABELS, energyColor, energyStateFor, asEnergyState } from '../theme/energy';
+import { useVibeStore } from '../store/vibeStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,11 +49,11 @@ function scoreColor(score: number): string {
   return '#3399FF';
 }
 
+// The same six energy names the rest of the app uses (docs/ENERGY.md), not
+// the old ELECTRIC / POPPING / BUZZING set that only this screen still spoke.
 function venueVibeLabel(score: number): { label: string; color: string } {
-  if (score >= 80) return { label: 'ELECTRIC', color: '#FF3366' };
-  if (score >= 60) return { label: 'POPPING',  color: '#FF9933' };
-  if (score >= 40) return { label: 'BUZZING',  color: '#9933FF' };
-  return              { label: 'SLOW BURN', color: '#3399FF' };
+  const state = energyStateFor(score);
+  return { label: ENERGY_LABELS[state], color: energyColor(state) };
 }
 
 function liveTime(): string {
@@ -243,16 +245,13 @@ function IndexHeader({
   cityName, cityScore, cityLabel, venueCount, onExpand, showExpand = false, indexChange,
 }: {
   cityName: string; cityScore: number; cityLabel: string; venueCount: number;
-  onExpand?: () => void; showExpand?: boolean; indexChange: string;
+  onExpand?: () => void; showExpand?: boolean; indexChange: string | null;
 }) {
   const [time, setTime] = useState(liveTime());
   const dotAnim = useRef(new Animated.Value(1)).current;
-  const isPositive = !indexChange.startsWith('-');
+  const isPositive = !indexChange?.startsWith('-');
 
-  const statusColor =
-    cityLabel === 'ELECTRIC' ? '#FF3366' :
-    cityLabel === 'POPPING'  ? '#FF9933' :
-    cityLabel === 'BUZZING'  ? '#9933FF' : '#3399FF';
+  const statusColor = energyColor(cityLabel);
 
   const nowDay  = new Date().getDay();
   const nowHour = new Date().getHours();
@@ -306,12 +305,14 @@ function IndexHeader({
           </Text>
           <Text style={idxSt.cityLabel}>{cityName.toUpperCase()} · {venueCount} ACTIVE</Text>
         </View>
-        <View style={idxSt.changeBlock}>
-          <Text style={[idxSt.indexChange, { color: isPositive ? '#00E676' : '#FF5252' }]}>
-            {isPositive ? '▲' : '▼'} {indexChange.replace('-', '')}
-          </Text>
-          <Text style={idxSt.changeSubtext}>tonight</Text>
-        </View>
+        {indexChange && (
+          <View style={idxSt.changeBlock}>
+            <Text style={[idxSt.indexChange, { color: isPositive ? '#00E676' : '#FF5252' }]}>
+              {isPositive ? '▲' : '▼'} {indexChange.replace('-', '')}
+            </Text>
+            <Text style={idxSt.changeSubtext}>tonight</Text>
+          </View>
+        )}
       </View>
 
       <View style={idxSt.colHeaders}>
@@ -350,7 +351,7 @@ const idxSt = StyleSheet.create({
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
-export default function VibeMarket({ venues, cityName, cityScore = 50, cityLabel = 'BUZZING', onVenuePress }: Props) {
+export default function VibeMarket({ venues, cityName, cityScore = 50, cityLabel = 'QUIET', onVenuePress }: Props) {
   const [fullscreen, setFullscreen] = useState(false);
   const insets = useSafeAreaInsets();
 
@@ -392,10 +393,14 @@ export default function VibeMarket({ venues, cityName, cityScore = 50, cityLabel
     sorted.slice(0, 5).reduce((s, v) => s + (liveScores[v.id] ?? v.current_vibe_score), 0) / Math.min(5, sorted.length)
   );
 
-  const indexChange =
-    cityLabel === 'ELECTRIC' ? '+12.4%' :
-    cityLabel === 'POPPING'  ? '+6.8%'  :
-    cityLabel === 'BUZZING'  ? '+2.1%'  : '-3.4%';
+  // Nothing measures the city's change over the night yet, so live mode shows
+  // no figure. The demo previews one, matched to the city's state.
+  const isDemoMode = useVibeStore(s => s.isDemoMode);
+  const cityState = asEnergyState(cityLabel);
+  const indexChange = !isDemoMode ? null :
+    cityState === 'peak' ? '+12.4%' :
+    cityState === 'lit'  ? '+6.8%'  :
+    cityState === 'charged' || cityState === 'warming' ? '+2.1%' : '-3.4%';
 
   const tickerItems = sorted.slice(0, 8).map(v => {
     const live = liveScores[v.id] ?? v.current_vibe_score;

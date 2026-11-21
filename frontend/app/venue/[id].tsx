@@ -675,7 +675,9 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
     ENERGY_COLORS[energyStateFor(score, capacity)];
 
   const getSnapshotTimeAgo = () => {
-    if (!venue?.last_snapshot_time) return 'No recent snapshot';
+    // Demo venues carry a reading but no snapshot time, so the header said
+    // "No recent snapshot" beside a 96 score and "Fresh".
+    if (!venue?.last_snapshot_time) return isDemoMode ? 'Verified 4m ago' : 'No recent snapshot';
     const now = new Date();
     const snapshot = new Date(venue.last_snapshot_time);
     const diffMs = now.getTime() - snapshot.getTime();

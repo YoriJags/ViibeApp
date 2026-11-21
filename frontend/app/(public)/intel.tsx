@@ -33,16 +33,18 @@ import {
   DEMO_DARK_HORSES,
   DEMO_COSMIC_READING,
 } from '../../src/data/demoData';
+import { energyColor, energyStateFor } from '../../src/theme/energy';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// The server's area pulse may still send the old words; the demo now uses the
+// six standard states, coloured like every other energy reading in the app.
 function zoneColor(state: string) {
   if (state === 'electric') return '#FF3366';
   if (state === 'popping')  return '#FF9933';
-  if (state === 'warming')  return '#9933FF';
-  return '#3399FF';
+  return energyColor(state);
 }
 
 function scoutTierColor(tier: string) {
@@ -91,13 +93,15 @@ function CityZones({ city, isDemoMode, onZonePress }: {
     if (isDemoMode) {
       // Derive from demo venues
       const map: Record<string, number[]> = {};
-      DEMO_VENUES.forEach((v: any) => {
+      // Only the city being viewed: the demo also holds Abuja venues, which
+      // put Wuse and Maitama on the Lagos zone grid.
+      DEMO_VENUES.filter((v: any) => (v.city ?? 'lagos') === city).forEach((v: any) => {
         if (!map[v.area]) map[v.area] = [];
         map[v.area].push(v.current_vibe_score);
       });
       const derived = Object.entries(map).map(([area, scores]) => {
         const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-        const state = avg >= 75 ? 'electric' : avg >= 55 ? 'popping' : avg >= 35 ? 'warming' : 'quiet';
+        const state = energyStateFor(avg);
         return { area, avg_score: avg, venue_count: scores.length, state, trending: avg > 60 ? 'rising' : 'stable' };
       }).sort((a, b) => b.avg_score - a.avg_score);
       setZones(derived);
@@ -214,11 +218,13 @@ function ScoutLeaderboard({ city, isDemoMode }: { city: string; isDemoMode: bool
   const [scouts, setScouts] = useState<any[]>([]);
 
   const DEMO_SCOUTS = [
+    // The same people the rest of the demo shows: you (VibeDemo, 4,250 clout on
+    // Profile) and your crew (AdaObi, TundeWave) sit among the city's top scouts.
     { username: 'Tunde_V',    clout_points: 4820, scout_status: 'legend', ratings_count: 143, city: 'Lagos' },
-    { username: 'ZaraVibe',   clout_points: 3610, scout_status: 'icon',   ratings_count: 97,  city: 'Lagos' },
-    { username: 'AdeScout',   clout_points: 2940, scout_status: 'elite',  ratings_count: 81,  city: 'Lagos' },
+    { username: 'VibeDemo',   clout_points: 4250, scout_status: 'elite',  ratings_count: 128, city: 'Lagos' },
+    { username: 'AdaObi',     clout_points: 3610, scout_status: 'icon',   ratings_count: 97,  city: 'Lagos' },
+    { username: 'TundeWave',  clout_points: 2940, scout_status: 'regular', ratings_count: 81, city: 'Lagos' },
     { username: 'Kemi_Lux',   clout_points: 2105, scout_status: 'elite',  ratings_count: 64,  city: 'Lagos' },
-    { username: 'NijaVibe01', clout_points: 1780, scout_status: 'scout',  ratings_count: 55,  city: 'Lagos' },
   ];
 
   useEffect(() => {

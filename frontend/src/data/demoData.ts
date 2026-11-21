@@ -718,8 +718,9 @@ export const DEMO_VIBE_MATCH = {
 export const DEMO_TONIGHT = {
   phase: 'planning' as const,
   currentHour: '10PM',
-  cityEnergy: 'peak' as const,
-  cityEnergyScore: 87,
+  // Same reading as DEMO_CITY_PULSE, so every card in the demo agrees on the city.
+  cityEnergy: 'lit' as const,
+  cityEnergyScore: 82,
   crewOutCount: 2,
   crewTotal: 4,
   matchVenue: 'Escape Nightclub',

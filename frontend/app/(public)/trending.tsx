@@ -330,7 +330,7 @@ export default function TrendingScreen() {
               venues={vibeMarketVenues}
               cityName={selectedCity.charAt(0).toUpperCase() + selectedCity.slice(1)}
               cityScore={cityEnergy?.energy_score ?? 50}
-              cityLabel={cityEnergy?.energy_label ?? 'BUZZING'}
+              cityLabel={cityEnergy?.energy_label ?? 'QUIET'}
               onVenuePress={(id) => router.push(`/venue/${id}`)}
             />
           </View>

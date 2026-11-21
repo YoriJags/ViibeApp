@@ -19,14 +19,16 @@ interface CityWelcomeProps {
   cityName: string;
   onPlannerPress?: () => void;
   callName?: string;
+  /** Demo mode acts out the finished app, so its sample city reading counts as a reading. */
+  isDemo?: boolean;
 }
 
-export default function CityWelcomeCard({ cityEnergy, cityName, onPlannerPress, callName }: CityWelcomeProps) {
-  // Only a reading built from real scouts may describe the city. This card used
-  // to default to a score of 42 and the word "BUZZING" when it had no data, and
-  // it branched on ELECTRIC / POPPING / BUZZING, words the city label is never
-  // given, so a LIT or PEAK city fell through and was described as quiet.
-  const realReading = cityEnergy?.energy_source === 'scouts';
+export default function CityWelcomeCard({ cityEnergy, cityName, onPlannerPress, callName, isDemo }: CityWelcomeProps) {
+  // In live mode only a reading built from real scouts may describe the city.
+  // This card used to default to a score of 42 and the word "BUZZING" when it
+  // had no data, and it branched on ELECTRIC / POPPING / BUZZING, words the
+  // city label is never given, so a LIT or PEAK city fell through as quiet.
+  const realReading = isDemo || cityEnergy?.energy_source === 'scouts';
   const score = realReading ? (cityEnergy?.energy_score ?? 0) : 0;
   const label = realReading ? String(cityEnergy?.energy_label ?? '').toUpperCase() : 'NONE';
   const scouts = cityEnergy?.active_scouts ?? 0;

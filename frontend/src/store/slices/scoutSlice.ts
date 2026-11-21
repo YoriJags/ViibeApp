@@ -186,7 +186,10 @@ export const createScoutSlice: StateCreator<
   },
 
   fetchCrew: async () => {
-    const { getAuthHeaders, isAuthenticated } = get();
+    const { getAuthHeaders, isAuthenticated, isDemoMode } = get();
+    // The demo has its own crew; asking the server replaced it with "no crew",
+    // so the Crew tab said none while Profile showed Lagos Night Owls.
+    if (isDemoMode) return;
     if (!isAuthenticated) return;
     try {
       const response = await fetch(`${API_URL}/api/crews/me`, { headers: getAuthHeaders() });
