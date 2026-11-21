@@ -180,10 +180,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF3366',
   },
   label: {
-    fontSize: 9, fontWeight: '800', color: '#444', letterSpacing: 1.5,
+    fontSize: 11, fontWeight: '800', color: '#444', letterSpacing: 1.5,
   },
   totalPill: {
-    fontSize: 9, color: '#333', fontWeight: '600', marginLeft: 4,
+    fontSize: 11, color: '#333', fontWeight: '600', marginLeft: 4,
   },
   emojiRow: {
     flexDirection: 'row',
@@ -202,6 +202,6 @@ const styles = StyleSheet.create({
   },
   glyph: { fontSize: 20 },
   count: {
-    fontSize: 10, fontWeight: '800', color: '#8A8A99',
+    fontSize: 11, fontWeight: '800', color: '#8A8A99',
   },
 });

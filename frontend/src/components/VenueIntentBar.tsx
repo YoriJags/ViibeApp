@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#1A1A28',
-    marginHorizontal: 16,
+    marginHorizontal: 20, // the venue page's gutter, like the cards above and below
     marginVertical: 12,
     overflow: 'hidden',
   },
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     color: '#8E8AA3',
     letterSpacing: 2,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A1A28',
   },
   countText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#8A8A99',
   },

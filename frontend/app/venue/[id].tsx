@@ -870,7 +870,7 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
                 {venue.is_verified && (
                   <View style={styles.heroCertBadge}>
                     <Ionicons name="checkmark-circle" size={12} color="#4CAF50" />
-                    <Text style={{ fontSize: 10, color: '#4CAF50', fontWeight: '700', letterSpacing: 1 }}>VERIFIED</Text>
+                    <Text style={{ fontSize: 11, color: '#4CAF50', fontWeight: '700', letterSpacing: 1 }}>VERIFIED</Text>
                   </View>
                 )}
               </View>
@@ -1064,7 +1064,7 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
                               {m.emoji}
                             </Text>
                             <Text style={{
-                              fontSize: 9, fontWeight: '700',
+                              fontSize: 11, fontWeight: '700',
                               color: isCurrent ? vibeColor : 'rgba(255,255,255,0.25)',
                             }}>
                               {m.label}
@@ -1148,7 +1148,7 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
                         borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
                         borderLeftWidth: 3, borderLeftColor: vibeColor,
                       }}>
-                        <Text style={{ fontSize: 9, fontWeight: '900', color: vibeColor, letterSpacing: 1.5, marginTop: 1 }}>LAST 20 MIN</Text>
+                        <Text style={{ fontSize: 11, fontWeight: '900', color: vibeColor, letterSpacing: 1.5, marginTop: 1 }}>LAST 20 MIN</Text>
                         <Text style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '600', lineHeight: 17 }}>
                           {venue.venue_narrative}
                         </Text>
@@ -1162,25 +1162,22 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
                 );
               })()}
 
-              {/* Emoji Pulse */}
-              <View style={styles.contentPad}>
-                <ErrorBoundary label="Emoji Pulse">
-                  <EmojiPulse
-                    venueId={venue.id}
-                    isDemoMode={isDemoMode}
-                  />
-                </ErrorBoundary>
-              </View>
+              {/* Emoji Pulse and Vibe Momentum carry the page's 20px gutter
+                  themselves; wrapping them in contentPad as well put them
+                  40px in, narrower than every card around them. */}
+              <ErrorBoundary label="Emoji Pulse">
+                <EmojiPulse
+                  venueId={venue.id}
+                  isDemoMode={isDemoMode}
+                />
+              </ErrorBoundary>
 
-              {/* Vibe Momentum */}
-              <View style={styles.contentPad}>
-                <ErrorBoundary label="Viibe Momentum">
-                  <VibeMomentum
-                    venueId={venue.id}
-                    isDemoMode={isDemoMode}
-                  />
-                </ErrorBoundary>
-              </View>
+              <ErrorBoundary label="Viibe Momentum">
+                <VibeMomentum
+                  venueId={venue.id}
+                  isDemoMode={isDemoMode}
+                />
+              </ErrorBoundary>
 
               {/* Scout Pressure Chip */}
               <ErrorBoundary label="Scout Pressure">
@@ -1793,7 +1790,7 @@ const styles = StyleSheet.create({
     top: 96,
     right: 12,
     maxWidth: '70%',
-    fontSize: 10,
+    fontSize: 11,
     color: 'rgba(255,255,255,0.75)',
     backgroundColor: 'rgba(0,0,0,0.45)',
     paddingHorizontal: 6,
@@ -1848,7 +1845,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   heroSnapshotText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#4CAF50',
     fontWeight: '600',
     letterSpacing: 0.5,
@@ -1883,7 +1880,7 @@ const styles = StyleSheet.create({
     lineHeight: 44,
   },
   heroScoreLabel: {
-    fontSize: 10,
+    fontSize: 11,
     color: 'rgba(255,255,255,0.5)',
     letterSpacing: 2,
     textAlign: 'right',
@@ -1976,7 +1973,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   statLabel: {
-    fontSize: 9,
+    fontSize: 11,
     color: 'rgba(255,255,255,0.35)',
     letterSpacing: 2,
     marginTop: 4,
@@ -1994,7 +1991,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
   },
   viibeBarText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     color: '#C9A84C',
     letterSpacing: 2,
@@ -2017,7 +2014,7 @@ const styles = StyleSheet.create({
 
   // ====== SECTION LABEL ======
   sectionLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     color: '#C9A84C',
     letterSpacing: 3,

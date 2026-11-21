@@ -139,11 +139,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4,
   },
   dot: { width: 4, height: 4, borderRadius: 2 },
-  cellLabel: { fontSize: 8, fontWeight: '800', color: '#444', letterSpacing: 1.5 },
+  cellLabel: { fontSize: 11, fontWeight: '800', color: '#444', letterSpacing: 1.5 },
   velocityRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   velocityText: { fontSize: 14, fontWeight: '900', letterSpacing: 0.5 },
   velocityPct:  { fontSize: 11, fontWeight: '700' },
   freshnessText: { fontSize: 14, fontWeight: '900', letterSpacing: 0.5 },
-  cellSub: { fontSize: 10, color: '#444', fontWeight: '500' },
+  cellSub: { fontSize: 11, color: '#444', fontWeight: '500' },
   divider: { width: 1, backgroundColor: '#111120', marginVertical: 10 },
 });

@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(201,168,76,0.25)',
   },
   regularityText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#C9A84C',
     fontWeight: '700',
     letterSpacing: 1,
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   alignLabel: {
-    fontSize: 10,
+    fontSize: 11,
     color: 'rgba(255,255,255,0.35)',
     fontWeight: '600',
     letterSpacing: 0.8,
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   statKey: {
-    fontSize: 9,
+    fontSize: 11,
     color: 'rgba(255,255,255,0.3)',
     fontWeight: '700',
     letterSpacing: 1,
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   footerText: {
-    fontSize: 10,
+    fontSize: 11,
     color: 'rgba(255,255,255,0.3)',
     fontWeight: '500',
   },
