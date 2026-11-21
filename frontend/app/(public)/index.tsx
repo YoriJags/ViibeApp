@@ -1419,13 +1419,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
   },
+  // No side padding here: every card sets its own 16px gutter and the
+  // horizontal strips run edge to edge. A 10px padding on top of that put
+  // siblings at 10, 22 and 26px from the screen edge.
   listContainer: {
     flex: 1,
-    paddingHorizontal: 10,
   },
   reactorBanner: {
     borderRadius: 14,
     overflow: 'hidden',
+    marginHorizontal: 16,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: '#FF336628',
@@ -1453,7 +1456,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginHorizontal: 4,
+    marginHorizontal: 16,
     marginBottom: 14,
     backgroundColor: '#0D0D1A',
     borderRadius: 12,

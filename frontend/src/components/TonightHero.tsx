@@ -330,6 +330,7 @@ export default function TonightHero({
 
 const s = StyleSheet.create({
   container: {
+    marginHorizontal: 16,
     marginBottom: 16,
   },
   card: {

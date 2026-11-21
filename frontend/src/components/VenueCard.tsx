@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
   cardOuter: {
     marginBottom: 10,
     borderRadius: 20,
-    marginHorizontal: 0,
+    marginHorizontal: 16,
   },
   gradientBorderWrap: {
     ...StyleSheet.absoluteFillObject,

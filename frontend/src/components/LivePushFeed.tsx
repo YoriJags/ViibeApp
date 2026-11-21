@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     gap: 10,
   },
   card: {

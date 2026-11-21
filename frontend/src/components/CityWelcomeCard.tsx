@@ -98,6 +98,7 @@ export default function CityWelcomeCard({ cityEnergy, cityName, onPlannerPress, 
 
 const styles = StyleSheet.create({
   wrap: {
+    marginHorizontal: 16,
     marginBottom: 12,
   },
   card: {
