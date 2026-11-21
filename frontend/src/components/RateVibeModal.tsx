@@ -926,7 +926,7 @@ const styles = StyleSheet.create({
     borderRadius: 16, borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
   },
-  submitTextDisabled: { fontSize: 13, fontWeight: '700', color: '#555' },
+  submitTextDisabled: { fontSize: 13, fontWeight: '700', color: '#8A8A99' },
 
   // Context divider
   contextDivider: {

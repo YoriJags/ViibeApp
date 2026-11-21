@@ -24,7 +24,6 @@ import CloutReward from '../../src/components/CloutReward';
 import { SkeletonLoader } from '../../src/components/SkeletonLoader';
 import { neonGlow } from '../../src/theme';
 import DemoModeBanner from '../../src/components/DemoModeBanner';
-import FloorSwitcher from '../../src/components/FloorSwitcher';
 import RatePromptFAB from '../../src/components/RatePromptFAB';
 import VenueCategoryFilter, { VenueCategory } from '../../src/components/VenueCategoryFilter';
 import ElectricTransition from '../../src/components/ElectricTransition';
@@ -1042,7 +1041,7 @@ export default function MapScreen() {
         onComplete={() => setShowTransition(false)}
       />
 
-      <FloorSwitcher currentFloor="public" />
+      {/* Switching floors lives on Profile; the floating button covered home content. */}
 
 
       <VibePlusModal

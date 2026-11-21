@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   },
   seeMoreText: {
     fontSize: 10,
-    color: '#555',
+    color: '#8A8A99',
     fontWeight: '600',
   },
   scrollContent: {

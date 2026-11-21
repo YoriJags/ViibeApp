@@ -335,5 +335,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 10,
     borderTopWidth: 1, borderTopColor: '#1A1A28',
   },
-  fsTableCell: { fontSize: 11, fontWeight: '700', color: '#555', width: 72, letterSpacing: 0.5 },
+  fsTableCell: { fontSize: 11, fontWeight: '700', color: '#8A8A99', width: 72, letterSpacing: 0.5 },
 });

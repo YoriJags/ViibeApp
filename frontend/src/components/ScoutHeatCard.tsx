@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   headerRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 },
   iconCircle:   { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
   titleBlock:   { flex: 1, gap: 2 },
-  sectionLabel: { fontSize: 9, color: '#3A3A4E', fontWeight: '700', letterSpacing: 1.5 },
+  sectionLabel: { fontSize: 9, color: '#8E8AA3', fontWeight: '700', letterSpacing: 1.5 },
   levelLabel:   { fontSize: 18, fontWeight: '900', letterSpacing: 1 },
   hotNightsBadge: {
     alignItems: 'center', borderWidth: 1, borderRadius: 10,

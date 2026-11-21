@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     lineHeight: 16,
   },
-  labelDisabled: { color: '#555' },
+  labelDisabled: { color: '#8A8A99' },
   clout: {
     fontSize: 9,
     fontWeight: '700',

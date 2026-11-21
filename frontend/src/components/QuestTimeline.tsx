@@ -354,5 +354,5 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 5,
     paddingHorizontal: 5, paddingVertical: 2,
   },
-  participantText: { fontSize: 8, color: '#555', fontWeight: '600' },
+  participantText: { fontSize: 8, color: '#8A8A99', fontWeight: '600' },
 });

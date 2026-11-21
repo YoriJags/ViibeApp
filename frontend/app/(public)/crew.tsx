@@ -350,7 +350,7 @@ export default function CrewScreen() {
             {([
               { key: 'out',   label: "I'm Out",  icon: 'checkmark-circle', color: '#00E676' },
               { key: 'maybe', label: 'Maybe',     icon: 'help-circle',      color: '#FF9933' },
-              { key: 'skip',  label: 'Staying In',icon: 'close-circle',     color: '#555'    },
+              { key: 'skip',  label: 'Staying In',icon: 'close-circle',     color: '#8A8A99'    },
             ] as const).map(opt => (
               <TouchableOpacity
                 key={opt.key}
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerTitle: { fontSize: 16, fontWeight: '900', color: '#FFF', letterSpacing: 2 },
-  headerSub: { fontSize: 11, color: '#555', marginTop: 2, fontWeight: '500' },
+  headerSub: { fontSize: 11, color: '#8A8A99', marginTop: 2, fontWeight: '500' },
 
   // 6-person unity icon
   handNode: {
@@ -632,13 +632,13 @@ const styles = StyleSheet.create({
   heroBody: { fontSize: 13, color: '#777', textAlign: 'center', lineHeight: 20, marginBottom: 20 },
   heroStats: { flexDirection: 'row', gap: 20 },
   heroStat: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  heroStatText: { fontSize: 11, color: '#555', fontWeight: '600' },
+  heroStatText: { fontSize: 11, color: '#8A8A99', fontWeight: '600' },
 
   // Form section
   formSection: { marginBottom: 20 },
   formLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
   formDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#9933FF' },
-  formLabel: { fontSize: 9, fontWeight: '800', color: '#555', letterSpacing: 1.5 },
+  formLabel: { fontSize: 9, fontWeight: '800', color: '#8A8A99', letterSpacing: 1.5 },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -729,13 +729,13 @@ const styles = StyleSheet.create({
   readinessWrap: { gap: 8 },
   readinessBar: { height: 3, backgroundColor: '#111', borderRadius: 2 },
   readinessFill: { height: 3, borderRadius: 2 },
-  readinessText: { fontSize: 11, color: '#555', fontWeight: '500' },
+  readinessText: { fontSize: 11, color: '#8A8A99', fontWeight: '500' },
 
   // Section
   section: { marginBottom: 24 },
   sectionLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
   sectionDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#9933FF' },
-  sectionLabel: { fontSize: 9, fontWeight: '800', color: '#555', letterSpacing: 1.5 },
+  sectionLabel: { fontSize: 9, fontWeight: '800', color: '#8A8A99', letterSpacing: 1.5 },
   sectionSub: { fontSize: 9, color: '#333', fontWeight: '600' },
 
   // Member cards
@@ -802,7 +802,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   startVoteBtnText: { flex: 1, fontSize: 14, fontWeight: '700', color: '#CCC' },
-  pickerHint: { fontSize: 11, color: '#555', marginBottom: 12, fontWeight: '600' },
+  pickerHint: { fontSize: 11, color: '#8A8A99', marginBottom: 12, fontWeight: '600' },
   venuePickRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -825,5 +825,5 @@ const styles = StyleSheet.create({
   },
   intelBtnText: { flex: 1 },
   intelBtnTitle: { fontSize: 12, fontWeight: '900', color: '#9933FF', letterSpacing: 1.5 },
-  intelBtnSub: { fontSize: 11, color: '#555', fontWeight: '500', marginTop: 1 },
+  intelBtnSub: { fontSize: 11, color: '#8A8A99', fontWeight: '500', marginTop: 1 },
 });

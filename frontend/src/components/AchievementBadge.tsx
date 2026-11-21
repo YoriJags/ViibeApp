@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   lockedText: {
-    color: '#555',
+    color: '#8A8A99',
   },
   progressBar: {
     position: 'absolute',

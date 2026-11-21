@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  loadingText: { color: '#555', fontSize: 12 },
+  loadingText: { color: '#8A8A99', fontSize: 12 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     color: '#FF3366',
     letterSpacing: 2,
   },
-  sectionSub: { fontSize: 11, color: '#555', marginTop: 2 },
+  sectionSub: { fontSize: 11, color: '#8A8A99', marginTop: 2 },
   summaryStrip: {
     flexDirection: 'row',
     borderTopWidth: 1,
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   },
   summaryItem: { flex: 1, alignItems: 'center', gap: 3 },
   summaryValue: { fontSize: 18, fontWeight: '900', color: '#FFF' },
-  summaryLabel: { fontSize: 9, color: '#555', fontWeight: '600', letterSpacing: 0.5 },
+  summaryLabel: { fontSize: 9, color: '#8A8A99', fontWeight: '600', letterSpacing: 0.5 },
   detail: { padding: 16, paddingTop: 4, gap: 16 },
   section: { gap: 8 },
   sectionTitle: {
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
   },
   hourChipTop: { borderColor: '#FF336640', backgroundColor: '#FF336610' },
   hourTime: { fontSize: 13, fontWeight: '800', color: '#FFF' },
-  hourCount: { fontSize: 9, color: '#555', marginTop: 1 },
+  hourCount: { fontSize: 9, color: '#8A8A99', marginTop: 1 },
   slowNightRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   },
   scoutRank: { fontSize: 11, fontWeight: '800', color: '#FF3366', width: 24 },
   scoutName: { fontSize: 13, fontWeight: '700', color: '#FFF', flex: 1 },
-  scoutStats: { fontSize: 10, color: '#555' },
+  scoutStats: { fontSize: 10, color: '#8A8A99' },
   rankBadge: {
     backgroundColor: '#FF336610',
     borderRadius: 8,

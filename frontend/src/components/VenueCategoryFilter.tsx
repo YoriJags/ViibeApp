@@ -183,6 +183,6 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 9,
     fontWeight: '700',
-    color: '#555',
+    color: '#8A8A99',
   },
 });

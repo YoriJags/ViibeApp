@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   headerLabel: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#3A3A4E',
+    color: '#8E8AA3',
     letterSpacing: 2,
     marginBottom: 3,
   },
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   followBtnText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#555',
+    color: '#8A8A99',
     letterSpacing: 0.3,
   },
   followBtnTextActive: {
@@ -334,6 +334,6 @@ const styles = StyleSheet.create({
   countText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#555',
+    color: '#8A8A99',
   },
 });

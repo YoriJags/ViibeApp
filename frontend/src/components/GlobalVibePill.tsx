@@ -46,7 +46,7 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 const EMPTY_SURGE: SurgeState = {
   charge_pct: 0, level: 'empty', level_label: 'EMPTY',
-  level_color: '#3A3A4E', level_progress: 0, taps_to_next: 5,
+  level_color: '#8E8AA3', level_progress: 0, taps_to_next: 5,
   next_level: 'TRICKLE', tap_count: 0, total_surges: 0,
 };
 

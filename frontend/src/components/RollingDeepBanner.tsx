@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   venueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   venueName: { flex: 1, fontSize: 16, fontWeight: '800', color: '#FFF' },
   memberCount: { fontSize: 12, color: '#888', fontWeight: '500' },
-  initiatorLine: { fontSize: 10, color: '#555', fontWeight: '500' },
+  initiatorLine: { fontSize: 10, color: '#8A8A99', fontWeight: '500' },
   joinBtn: { borderRadius: 12, overflow: 'hidden', marginTop: 4 },
   joinBtnGrad: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

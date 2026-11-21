@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   },
   countItem: { alignItems: 'center', gap: 2 },
   countValue: { fontSize: 20, fontWeight: '900', color: '#FFF' },
-  countLabel: { fontSize: 9, color: '#555', fontWeight: '600', letterSpacing: 0.5 },
+  countLabel: { fontSize: 9, color: '#8A8A99', fontWeight: '600', letterSpacing: 0.5 },
   divider: { width: 1, height: 28, backgroundColor: '#1A1A25' },
   emptyHint: { fontSize: 11, color: '#444', marginLeft: 8 },
   list: { paddingHorizontal: 12, paddingBottom: 12, gap: 2 },
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   rowHighlight: { backgroundColor: '#FF336608' },
   energyDot: { width: 6, height: 6, borderRadius: 3 },
   username: { fontSize: 13, fontWeight: '700', color: '#FFF', flex: 1 },
-  clout: { fontSize: 10, color: '#555' },
+  clout: { fontSize: 10, color: '#8A8A99' },
   energyChip: {
     paddingHorizontal: 7,
     paddingVertical: 2,
@@ -196,5 +196,5 @@ const styles = StyleSheet.create({
   energyLabel: { fontSize: 9, fontWeight: '700' },
   timeAgo: { fontSize: 10, color: '#444', minWidth: 44, textAlign: 'right' },
   showMore: { paddingVertical: 8, alignItems: 'center' },
-  showMoreText: { fontSize: 11, color: '#555', fontWeight: '600' },
+  showMoreText: { fontSize: 11, color: '#8A8A99', fontWeight: '600' },
 });

@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(8,8,20,0.72)',
   },
   overlayIcon: { fontSize: 24 },
-  overlayTitle: { fontSize: 14, fontWeight: '700', color: '#555' },
+  overlayTitle: { fontSize: 14, fontWeight: '700', color: '#8A8A99' },
   overlaySubtitle: { fontSize: 11, color: '#333', textAlign: 'center', paddingHorizontal: 24, lineHeight: 17 },
   overlayText: { fontSize: 12, color: '#444', fontWeight: '600' },
 

@@ -131,10 +131,10 @@ const styles = StyleSheet.create({
   },
   stat: { flex: 1, alignItems: 'center' },
   statNum: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
-  statLabel: { fontSize: 10, color: '#555', marginTop: 2, fontWeight: '500' },
+  statLabel: { fontSize: 10, color: '#8A8A99', marginTop: 2, fontWeight: '500' },
   statDivider: { width: 1, height: 30, backgroundColor: '#252530' },
   ctaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  ctaHint: { fontSize: 12, color: '#555' },
+  ctaHint: { fontSize: 12, color: '#8A8A99' },
   plannerBtn: {
     flexDirection: 'row',
     alignItems: 'center',

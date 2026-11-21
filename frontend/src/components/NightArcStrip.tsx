@@ -223,12 +223,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 2,
-    color: '#2A2A4A',
+    color: '#8A84A8',
   },
   count: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#2A2A4A',
+    color: '#8A84A8',
   },
   countDone: {
     color: '#FF3366',
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   },
   stepLabelDone:    { color: '#666' },
   stepLabelCurrent: { color: '#FF3366' },
-  stepLabelPending: { color: '#1A1A28' },
+  stepLabelPending: { color: '#5E5A76' },
 
   // Progress bar
   progressTrack: {
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   },
   nextStepText: {
     fontSize: 11,
-    color: '#2A2A4A',
+    color: '#8A84A8',
     fontWeight: '600',
   },
 });

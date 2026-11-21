@@ -272,13 +272,13 @@ const styles = StyleSheet.create({
   },
   earned: {
     fontSize: 12,
-    color: '#555',
+    color: '#8A8A99',
     marginTop: 2,
     marginBottom: 4,
   },
   hint: {
     fontSize: 11,
-    color: '#555',
+    color: '#8A8A99',
     marginTop: 6,
     fontStyle: 'italic',
   },
@@ -334,6 +334,6 @@ const styles = StyleSheet.create({
     color: '#FFD700',
   },
   textDim: {
-    color: '#555',
+    color: '#8A8A99',
   },
 });

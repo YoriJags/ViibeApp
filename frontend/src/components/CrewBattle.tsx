@@ -510,7 +510,7 @@ const styles = StyleSheet.create({
 
   acceptWrap: { alignItems: 'center', gap: 8, paddingVertical: 8 },
   acceptTitle: { fontSize: 15, fontWeight: '800', color: '#EEE', textAlign: 'center' },
-  acceptSub: { fontSize: 11, color: '#555', textAlign: 'center' },
+  acceptSub: { fontSize: 11, color: '#8A8A99', textAlign: 'center' },
   acceptBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: '#FF3366', borderRadius: 12,
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
   acceptBtnText: { fontSize: 13, fontWeight: '900', color: '#FFF', letterSpacing: 1 },
 
   waitingWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, justifyContent: 'center' },
-  waitingText: { fontSize: 12, color: '#555', fontWeight: '600' },
+  waitingText: { fontSize: 12, color: '#8A8A99', fontWeight: '600' },
 
   venueRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 6 },
   venueLabel: { flex: 1, fontSize: 10, color: '#444', fontWeight: '600' },
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12, alignItems: 'center', gap: 3,
   },
   tapCount: { fontSize: 32, fontWeight: '900', color: '#FFF', lineHeight: 36 },
-  tapCrewName: { fontSize: 9, color: '#555', fontWeight: '700', letterSpacing: 0.8 },
+  tapCrewName: { fontSize: 9, color: '#8A8A99', fontWeight: '700', letterSpacing: 0.8 },
   tapCta: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
   tapCtaText: { fontSize: 9, fontWeight: '900', color: '#FF3366', letterSpacing: 1.2 },
   cooldownText: { fontSize: 11, fontWeight: '800', color: '#333' },
@@ -554,7 +554,7 @@ const modal = StyleSheet.create({
   sheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   handle: { width: 40, height: 4, backgroundColor: '#333', borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   title: { fontSize: 20, fontWeight: '900', color: '#FFF', letterSpacing: 0.5, marginBottom: 6 },
-  sub: { fontSize: 12, color: '#555', lineHeight: 18, marginBottom: 20 },
+  sub: { fontSize: 12, color: '#8A8A99', lineHeight: 18, marginBottom: 20 },
   input: {
     backgroundColor: '#111', borderWidth: 1, borderColor: '#222', borderRadius: 12,
     paddingHorizontal: 16, paddingVertical: 14,

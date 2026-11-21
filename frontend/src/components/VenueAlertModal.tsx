@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
   },
   existingNote: {
     fontSize: 11,
-    color: '#555',
+    color: '#8A8A99',
     marginTop: 1,
   },
   existingCondition: {
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#555',
+    color: '#8A8A99',
   },
   chipTextActive: {
     color: '#FF3366',

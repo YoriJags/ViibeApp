@@ -51,7 +51,7 @@ function heatLabel(heat: number): string {
 }
 
 const HEAT_LEGEND = [
-  { label: 'QUIET',   color: '#2A2A4A' },
+  { label: 'QUIET',   color: '#8A84A8' },
   { label: 'CHILL',   color: '#3399FF' },
   { label: 'WARMING', color: '#6655FF' },
   { label: 'CHARGED', color: '#9933FF' },
@@ -82,11 +82,11 @@ function AreaRow({ area, index, fullscreen = false }: { area: AreaHeat; index: n
         </View>
         {fullscreen ? (
           <View style={fs.metaRow}>
-            <Text style={styles.areaMeta}>{area.venue_count} venues · {area.bolt_total_1h} bolts/hr</Text>
+            <Text style={styles.areaMeta}>{area.venue_count} {area.venue_count === 1 ? 'venue' : 'venues'} · {area.bolt_total_1h} bolts/hr</Text>
             <Text style={fs.topVenue}>🏆 {area.top_venue}</Text>
           </View>
         ) : (
-          <Text style={styles.areaMeta}>{area.venue_count} venues · {area.bolt_total_1h} bolts/hr</Text>
+          <Text style={styles.areaMeta}>{area.venue_count} {area.venue_count === 1 ? 'venue' : 'venues'} · {area.bolt_total_1h} bolts/hr</Text>
         )}
       </View>
       {fullscreen && (
@@ -220,12 +220,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 16, marginTop: 12, padding: 14,
     backgroundColor: '#0C0C15', borderRadius: 16, borderWidth: 1, borderColor: '#1C1C2C',
   },
-  loadingText: { color: '#3A3A4E', fontSize: 12 },
+  loadingText: { color: '#8E8AA3', fontSize: 12 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerLabel: { fontSize: 9, color: '#FF3366', fontWeight: '800', letterSpacing: 1.5 },
-  headerCity: { fontSize: 9, color: '#2A2A4A', fontWeight: '700', letterSpacing: 1.5 },
+  headerCity: { fontSize: 9, color: '#8A84A8', fontWeight: '700', letterSpacing: 1.5 },
   expandBtn: {
     width: 28, height: 28, borderRadius: 8,
     backgroundColor: 'rgba(255,255,255,0.05)',
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14,
   },
   hotZoneArea: { fontSize: 14, fontWeight: '900' },
-  hotZoneVenue: { fontSize: 10, color: '#555', fontWeight: '500', marginTop: 1 },
+  hotZoneVenue: { fontSize: 10, color: '#8A8A99', fontWeight: '500', marginTop: 1 },
   hotZoneHeat: { fontSize: 28, fontWeight: '900', lineHeight: 30 },
   grid: { gap: 10 },
   areaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   heatBadge: { fontSize: 8, fontWeight: '800', letterSpacing: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 },
   barTrack: { height: 3, backgroundColor: '#111120', borderRadius: 2, overflow: 'hidden' },
   barFill: { height: 3, borderRadius: 2 },
-  areaMeta: { fontSize: 9, color: '#3A3A4E', fontWeight: '500' },
+  areaMeta: { fontSize: 9, color: '#8E8AA3', fontWeight: '500' },
 });
 
 const SCREEN_H = Dimensions.get('window').height;
@@ -271,7 +271,7 @@ const fs = StyleSheet.create({
   },
   title: { fontSize: 13, fontWeight: '900', color: '#FFF', letterSpacing: 2 },
   cityChip: {
-    fontSize: 9, color: '#555', fontWeight: '700', letterSpacing: 2,
+    fontSize: 9, color: '#8A8A99', fontWeight: '700', letterSpacing: 2,
     backgroundColor: '#1A1A28', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
   },
   closeBtn: {
@@ -284,16 +284,16 @@ const fs = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12,
     margin: 16, borderRadius: 16, borderWidth: 1, padding: 16,
   },
-  heroLabel: { fontSize: 9, color: '#555', fontWeight: '800', letterSpacing: 1.5 },
+  heroLabel: { fontSize: 9, color: '#8A8A99', fontWeight: '800', letterSpacing: 1.5 },
   heroArea: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
-  heroMeta: { fontSize: 11, color: '#555' },
+  heroMeta: { fontSize: 11, color: '#8A8A99' },
   heroScore: { fontSize: 44, fontWeight: '900', lineHeight: 46 },
   areaList: { marginHorizontal: 16, gap: 14 },
   areaRow: { paddingVertical: 4 },
   areaName: { fontSize: 14, fontWeight: '700' },
   heatScore: { fontSize: 22, fontWeight: '900', width: 44, textAlign: 'right' },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  topVenue: { fontSize: 9, color: '#555', fontWeight: '600' },
+  topVenue: { fontSize: 9, color: '#8A8A99', fontWeight: '600' },
   legend: {
     flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center',
     marginHorizontal: 16, marginTop: 24, paddingTop: 16,

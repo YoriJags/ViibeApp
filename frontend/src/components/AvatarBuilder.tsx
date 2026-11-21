@@ -49,7 +49,7 @@ const COLOR_OPTIONS = [
   { color: '#00E676', label: 'Green' },
   { color: '#00D4FF', label: 'Cyan' },
   { color: '#9C27B0', label: 'Purple' },
-  { color: '#1A1A28', label: 'Dark' },
+  { color: '#5E5A76', label: 'Dark' },
   { color: '#FF69B4', label: 'Hot Pink' },
 ];
 

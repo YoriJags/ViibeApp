@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   successTitle: { fontSize: 22, fontWeight: '900', color: '#FFF', marginBottom: 8 },
   successAmount: { fontSize: 36, color: '#FFD700', fontWeight: '900' },
   successSub: { fontSize: 14, color: '#888', marginTop: 4 },
-  successRef: { fontSize: 10, color: '#555', marginTop: 12, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
+  successRef: { fontSize: 10, color: '#8A8A99', marginTop: 12, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
   successNote: { fontSize: 12, color: '#666', textAlign: 'center', marginTop: 20, lineHeight: 18 },
   error: { fontSize: 13, color: '#FF6B6B', marginTop: 12, textAlign: 'center' },
 });

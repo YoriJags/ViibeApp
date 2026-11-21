@@ -126,7 +126,7 @@ function BattleArena({
         {/* VS block */}
         <View style={styles.vsBlock}>
           <Text style={[styles.vsText, fullscreen && fs.vsText]}>VS</Text>
-          <Text style={[styles.totalTaps, fullscreen && { color: '#555', fontSize: 12 }]}>
+          <Text style={[styles.totalTaps, fullscreen && { color: '#8A8A99', fontSize: 12 }]}>
             {battle.total_taps} bolts
           </Text>
           {isEnded && battle.winner && (
@@ -381,13 +381,13 @@ const styles = StyleSheet.create({
   venueArea: { fontSize: 9, color: '#444', fontWeight: '500', textAlign: 'center' },
   votedBadge: { fontSize: 8, fontWeight: '900', letterSpacing: 1 },
   vsBlock: { alignItems: 'center', gap: 4 },
-  vsText: { fontSize: 16, fontWeight: '900', color: '#3A3A4E' },
-  totalTaps: { fontSize: 8, color: '#2A2A4A', fontWeight: '600' },
+  vsText: { fontSize: 16, fontWeight: '900', color: '#8E8AA3' },
+  totalTaps: { fontSize: 8, color: '#8A84A8', fontWeight: '600' },
   progressTrack: { height: 4, backgroundColor: '#0E0E1C', borderRadius: 2, overflow: 'hidden', marginBottom: 6 },
   progressFillA: { height: 4, borderRadius: 2 },
   shareRow: { flexDirection: 'row', justifyContent: 'space-between' },
   shareText: { fontSize: 10, fontWeight: '800' },
-  cta: { fontSize: 10, color: '#2A2A4A', fontWeight: '600', textAlign: 'center', marginTop: 8 },
+  cta: { fontSize: 10, color: '#8A84A8', fontWeight: '600', textAlign: 'center', marginTop: 8 },
 });
 
 // Fullscreen-specific overrides
@@ -420,7 +420,7 @@ const fs = StyleSheet.create({
   tapBtn: { paddingVertical: 36, borderRadius: 20, borderWidth: 2 },
   tapNum: { fontSize: 48, lineHeight: 52 },
   venueName: { fontSize: 15, lineHeight: 20, fontWeight: '800' },
-  venueArea: { fontSize: 11, color: '#555' },
+  venueArea: { fontSize: 11, color: '#8A8A99' },
   vsText: { fontSize: 26, fontWeight: '900', letterSpacing: 2 },
   progressTrack: { height: 8, borderRadius: 4, marginBottom: 10, marginHorizontal: 0 },
   shareText: { fontSize: 14, fontWeight: '900' },

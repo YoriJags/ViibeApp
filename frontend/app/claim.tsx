@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   },
   resultInfo: { flex: 1 },
   resultName: { fontSize: 14, fontWeight: '700', color: '#FFF' },
-  resultMeta: { fontSize: 11, color: '#555', marginTop: 2 },
+  resultMeta: { fontSize: 11, color: '#8A8A99', marginTop: 2 },
   claimedBadge: {
     borderWidth: 1,
     borderColor: '#333',
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  claimedText: { fontSize: 10, fontWeight: '700', color: '#555' },
+  claimedText: { fontSize: 10, fontWeight: '700', color: '#8A8A99' },
   noResults: { fontSize: 13, color: '#444', textAlign: 'center', paddingVertical: 16 },
   infoBox: {
     flexDirection: 'row',

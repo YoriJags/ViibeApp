@@ -16,7 +16,7 @@ const TIER_CONFIG: Record<string, { label: string; color: string; icon: string; 
   charged: { label: 'CHARGED', color: '#9933FF', icon: 'thunderstorm',up: true  },
   warming: { label: 'WARMING', color: '#6655FF', icon: 'trending-up', up: true  },
   chill:   { label: 'CHILL',   color: '#3399FF', icon: 'trending-down',up: false },
-  quiet:   { label: 'QUIET',   color: '#555',    icon: 'moon',        up: false },
+  quiet:   { label: 'QUIET',   color: '#8A8A99',    icon: 'moon',        up: false },
 };
 
 interface Props {

@@ -140,7 +140,7 @@ function CityZones({ city, isDemoMode, onZonePress }: {
               </View>
               <Text style={[s.zoneScore, { color: col }]}>{z.avg_score}</Text>
               <Text style={s.zoneArea} numberOfLines={1}>{z.area}</Text>
-              <Text style={s.zoneVenueCount}>{z.venue_count} venues</Text>
+              <Text style={s.zoneVenueCount}>{z.venue_count} {z.venue_count === 1 ? 'venue' : 'venues'}</Text>
               {z.trending === 'rising' && (
                 <View style={[s.zoneTrendBadge, { backgroundColor: col + '15' }]}>
                   <Text style={[s.zoneTrendText, { color: col }]}>▲ RISING</Text>
@@ -430,7 +430,7 @@ const s = StyleSheet.create({
   zoneBarFill: { height: 3, borderRadius: 2 },
   zoneScore: { fontSize: 28, fontWeight: '900', letterSpacing: -1 },
   zoneArea:  { fontSize: 12, fontWeight: '700', color: '#CCC', marginTop: 1 },
-  zoneVenueCount: { fontSize: 10, color: '#555', marginTop: 2 },
+  zoneVenueCount: { fontSize: 10, color: '#8A8A99', marginTop: 2 },
   zoneTrendBadge: { alignSelf: 'flex-start', borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2, marginTop: 6 },
   zoneTrendText:  { fontSize: 8, fontWeight: '800', letterSpacing: 0.5 },
 
@@ -503,8 +503,8 @@ const s = StyleSheet.create({
   },
   modeCardActive: { borderColor: 'rgba(255,51,102,0.4)', backgroundColor: 'rgba(255,51,102,0.06)' },
   modeEmoji: { fontSize: 24, marginBottom: 8 },
-  modeTitle: { fontSize: 13, fontWeight: '800', color: '#555', marginBottom: 6 },
-  modeDesc:  { fontSize: 11, color: '#3A3A4E', lineHeight: 16 },
+  modeTitle: { fontSize: 13, fontWeight: '800', color: '#8A8A99', marginBottom: 6 },
+  modeDesc:  { fontSize: 11, color: '#8E8AA3', lineHeight: 16 },
   modeActivePill: {
     marginTop: 10, width: 20, height: 8, borderRadius: 4,
     backgroundColor: 'rgba(255,51,102,0.2)', alignItems: 'center', justifyContent: 'center',

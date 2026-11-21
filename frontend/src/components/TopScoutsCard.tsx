@@ -330,7 +330,7 @@ const fs = StyleSheet.create({
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 13, fontWeight: '900', color: '#FFF', letterSpacing: 2 },
   venueChip: {
-    fontSize: 9, color: '#555', fontWeight: '700', letterSpacing: 2,
+    fontSize: 9, color: '#8A8A99', fontWeight: '700', letterSpacing: 2,
     backgroundColor: '#1A1A28', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
   },
   closeBtn: {
@@ -341,7 +341,7 @@ const fs = StyleSheet.create({
   content: { paddingBottom: 48 },
   podiumSection: { padding: 16 },
   sectionLabel: {
-    fontSize: 9, color: '#555', fontWeight: '800', letterSpacing: 2,
+    fontSize: 9, color: '#8A8A99', fontWeight: '800', letterSpacing: 2,
     marginBottom: 14,
   },
   leaderboard: { marginHorizontal: 16, marginBottom: 24 },
@@ -356,5 +356,5 @@ const fs = StyleSheet.create({
   tierItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   tierDot: { width: 10, height: 10, borderRadius: 5, marginTop: 3 },
   tierName: { fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
-  tierDesc: { fontSize: 10, color: '#555', marginTop: 1 },
+  tierDesc: { fontSize: 10, color: '#8A8A99', marginTop: 1 },
 });

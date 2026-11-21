@@ -30,7 +30,7 @@ const ENERGY_CONFIG: Record<string, { label: string; color: string }> = {
   charged: { label: 'CHARGED', color: '#9933FF' },
   warming: { label: 'WARMING', color: '#6655FF' },
   chill:   { label: 'CHILL',   color: '#3399FF' },
-  quiet:   { label: 'QUIET',   color: '#3A3A4E' },
+  quiet:   { label: 'QUIET',   color: '#8E8AA3' },
 };
 
 const CAPACITY_LABELS: Record<string, string> = {
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   certText:      { color: '#FFD700', fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
   content:       { paddingHorizontal: 20, paddingTop: 16, flex: 1 },
   venueName:     { color: '#FFF', fontSize: 26, fontWeight: '900', letterSpacing: -0.5, lineHeight: 30 },
-  venueArea:     { color: '#555', fontSize: 13, fontWeight: '500', marginTop: 3, marginBottom: 10 },
+  venueArea:     { color: '#8A8A99', fontSize: 13, fontWeight: '500', marginTop: 3, marginBottom: 10 },
   scoreRow:      { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   scoreBarTrack: { flex: 1, height: 3, backgroundColor: '#1A1A2A', borderRadius: 2 },
   scoreBarFill:  { height: 3, borderRadius: 2 },

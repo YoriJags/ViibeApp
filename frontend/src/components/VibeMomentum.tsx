@@ -42,7 +42,7 @@ const VELOCITY_CONFIG: Record<Velocity, { icon: string; color: string; label: st
 const FRESHNESS_CONFIG: Record<Freshness, { color: string; label: string; dot: string }> = {
   fresh:   { color: '#00E676', label: 'FRESH',   dot: '#00E676' },
   cooling: { color: '#FF9933', label: 'COOLING', dot: '#FF9933' },
-  cold:    { color: '#555',    label: 'COLD',    dot: '#444'    },
+  cold:    { color: '#8A8A99',    label: 'COLD',    dot: '#444'    },
 };
 
 interface Props {

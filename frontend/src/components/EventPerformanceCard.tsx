@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   title: { fontSize: 10, fontWeight: '800', color: '#FF3366', letterSpacing: 2 },
-  subtitle: { fontSize: 11, color: '#555', marginTop: 2 },
+  subtitle: { fontSize: 11, color: '#8A8A99', marginTop: 2 },
   logBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
   },
   logBtnText: { fontSize: 12, fontWeight: '700', color: '#FFF' },
   empty: { padding: 24, alignItems: 'center', gap: 4 },
-  emptyText: { fontSize: 13, color: '#555', fontWeight: '600' },
+  emptyText: { fontSize: 13, color: '#8A8A99', fontWeight: '600' },
   emptyHint: { fontSize: 11, color: '#333' },
   list: { padding: 12, gap: 10 },
   eventCard: {
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   eventTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   eventInfo: { flex: 1, gap: 3 },
   eventName: { fontSize: 14, fontWeight: '800', color: '#FFF' },
-  eventMeta: { fontSize: 11, color: '#555' },
+  eventMeta: { fontSize: 11, color: '#8A8A99' },
   eventRight: { alignItems: 'flex-end', gap: 6 },
   statusChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   statusLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 1 },
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
   barFill: { height: '100%', borderRadius: 4 },
   barValue: { fontSize: 13, fontWeight: '800', color: '#FFF' },
   upcomingText: { fontSize: 13, fontWeight: '700', color: '#9933FF' },
-  crowdText: { fontSize: 10, color: '#555' },
+  crowdText: { fontSize: 10, color: '#8A8A99' },
   resultBadge: { borderRadius: 8, padding: 8 },
   resultText: { fontSize: 11, fontWeight: '600', textAlign: 'center' },
 
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 16, fontWeight: '800', color: '#FFF' },
   formGroup: { marginBottom: 16, gap: 6 },
   formRow: { flexDirection: 'row', gap: 12 },
-  formLabel: { fontSize: 9, fontWeight: '800', color: '#555', letterSpacing: 1.5 },
+  formLabel: { fontSize: 9, fontWeight: '800', color: '#8A8A99', letterSpacing: 1.5 },
   input: {
     backgroundColor: '#0D0D14',
     borderWidth: 1,

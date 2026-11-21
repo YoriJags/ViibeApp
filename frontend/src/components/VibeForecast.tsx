@@ -264,7 +264,7 @@ export default function VibeForecast({ venueId, venueName }: VibeForecastProps) 
                             <Text style={[fs.tableCell, { flex: 1, color: col, fontSize: 9 }]}>
                               {p.predicted_energy?.toUpperCase() ?? energyDesc(p.predicted_energy).split(' ')[0]}
                             </Text>
-                            <Text style={[fs.tableCell, { width: 56, color: '#555' }]}>
+                            <Text style={[fs.tableCell, { width: 56, color: '#8A8A99' }]}>
                               {Math.round(p.confidence)}%
                             </Text>
                           </View>
@@ -333,7 +333,7 @@ const fs = StyleSheet.create({
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 13, fontWeight: '900', color: '#FFF', letterSpacing: 2 },
   venueChip: {
-    fontSize: 9, color: '#555', fontWeight: '700', letterSpacing: 2,
+    fontSize: 9, color: '#8A8A99', fontWeight: '700', letterSpacing: 2,
     backgroundColor: '#1A1A28', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
   },
   closeBtn: {
@@ -344,7 +344,7 @@ const fs = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingTop: 80, gap: 12 },
   emptyEmoji: { fontSize: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '800', color: '#FFF' },
-  emptyDesc: { fontSize: 13, color: '#555', textAlign: 'center', paddingHorizontal: 32 },
+  emptyDesc: { fontSize: 13, color: '#8A8A99', textAlign: 'center', paddingHorizontal: 32 },
   heroCard: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     margin: 16, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,51,102,0.25)', padding: 20,
@@ -359,14 +359,14 @@ const fs = StyleSheet.create({
   heroSub: { fontSize: 12, color: '#888' },
   dataBlock: { alignItems: 'center', gap: 2 },
   dataNum: { fontSize: 24, fontWeight: '900', color: '#FFF' },
-  dataLabel: { fontSize: 8, color: '#555', fontWeight: '700', letterSpacing: 1, textAlign: 'center' },
+  dataLabel: { fontSize: 8, color: '#8A8A99', fontWeight: '700', letterSpacing: 1, textAlign: 'center' },
   chartSection: { marginHorizontal: 8, marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 12, paddingVertical: 12 },
-  sectionLabel: { fontSize: 9, color: '#555', fontWeight: '800', letterSpacing: 2, paddingHorizontal: 16, marginBottom: 4 },
+  sectionLabel: { fontSize: 9, color: '#8A8A99', fontWeight: '800', letterSpacing: 2, paddingHorizontal: 16, marginBottom: 4 },
   tableSection: { marginHorizontal: 16, marginBottom: 16 },
   table: { borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#1A1A28' },
   tableHeader: { flexDirection: 'row', backgroundColor: '#111120', paddingHorizontal: 14, paddingVertical: 8 },
   tableRow: { flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1A1A28' },
-  tableCell: { fontSize: 11, fontWeight: '700', color: '#555', letterSpacing: 0.5 },
+  tableCell: { fontSize: 11, fontWeight: '700', color: '#8A8A99', letterSpacing: 0.5 },
   footer: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, paddingTop: 8 },
   footerText: { fontSize: 10, color: '#333' },
 });

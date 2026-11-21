@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   },
   earlyNote: {
     fontSize: 9,
-    color: '#555',
+    color: '#8A8A99',
   },
   headline: {
     fontSize: 15,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   },
   altLabel: {
     fontSize: 11,
-    color: '#555',
+    color: '#8A8A99',
   },
   altChip: {
     backgroundColor: 'rgba(255,255,255,0.05)',

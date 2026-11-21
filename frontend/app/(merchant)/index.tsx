@@ -1271,7 +1271,7 @@ const styles = StyleSheet.create({
   },
   livePushCharCount: {
     fontSize: 11,
-    color: '#555',
+    color: '#8A8A99',
     fontWeight: '600',
   },
   livePushSendBtn: {

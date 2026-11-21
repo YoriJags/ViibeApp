@@ -202,6 +202,6 @@ const styles = StyleSheet.create({
   },
   glyph: { fontSize: 20 },
   count: {
-    fontSize: 10, fontWeight: '800', color: '#555',
+    fontSize: 10, fontWeight: '800', color: '#8A8A99',
   },
 });

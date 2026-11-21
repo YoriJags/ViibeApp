@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   iconWrap:  { width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   textBlock: { flex: 0 },
   levelName: { fontSize: 11, fontWeight: '900', letterSpacing: 0.8, lineHeight: 13 },
-  subLabel:  { fontSize: 8, color: '#3A3A4E', fontWeight: '700', letterSpacing: 1 },
+  subLabel:  { fontSize: 8, color: '#8E8AA3', fontWeight: '700', letterSpacing: 1 },
   barTrack:  { flex: 1, height: 3, backgroundColor: '#181826', borderRadius: 2, overflow: 'hidden' },
   barFill:   { height: 3, borderRadius: 2 },
   pctText:   { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },

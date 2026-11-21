@@ -19,7 +19,7 @@ const LEVEL_ORDER = ['empty', 'trickle', 'rising', 'surging', 'maxed'];
 
 // Demo level progression — full journey from TRICKLE to MAXED in ~12 taps
 const DEMO_LEVELS = [
-  { level: 'empty',  label: 'EMPTY',  color: '#3A3A4E', min: 0,    next: 'RISING' },
+  { level: 'empty',  label: 'EMPTY',  color: '#8E8AA3', min: 0,    next: 'RISING' },
   { level: 'trickle', label: 'TRICKLE', color: '#6655FF', min: 0.08, next: 'RISING' },
   { level: 'rising',  label: 'RISING',  color: '#33CCFF', min: 0.32, next: 'SURGING' },
   { level: 'surging',  label: 'SURGING',  color: '#FF9933', min: 0.58, next: 'MAXED' },
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   iconShine:    { position: 'absolute', top: 0, left: 0, right: 0, height: '55%', borderTopLeftRadius: 22, borderTopRightRadius: 22 },
   centerBlock:  { flex: 1, gap: 6 },
   labelRow:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sectionLabel: { fontSize: 9, color: '#3A3A4E', fontWeight: '700', letterSpacing: 1.5 },
+  sectionLabel: { fontSize: 9, color: '#8E8AA3', fontWeight: '700', letterSpacing: 1.5 },
   levelText:    { fontSize: 13, fontWeight: '900', letterSpacing: 1 },
   barTrack:     {
     height: 8, backgroundColor: '#0A0A18', borderRadius: 4, overflow: 'hidden',
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)',
   },
   barFill:      { height: 8, borderRadius: 4, shadowOffset: { width: 0, height: 0 }, overflow: 'hidden' },
-  subText:      { fontSize: 9, color: '#3A3A4E', fontWeight: '500' },
+  subText:      { fontSize: 9, color: '#8E8AA3', fontWeight: '500' },
   rightBlock:   { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dotsCol:      { gap: 4, alignItems: 'center' },
   dot:          { width: 6, height: 6, borderRadius: 3, shadowOffset: { width: 0, height: 0 } },

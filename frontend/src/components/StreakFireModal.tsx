@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   },
   dismissText: {
     fontSize: 13,
-    color: '#2A2A4A',
+    color: '#8A84A8',
     fontWeight: '600',
   },
 });

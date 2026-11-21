@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   title: { fontSize: 10, fontWeight: '800', color: '#FF3366', letterSpacing: 2 },
-  subtitle: { fontSize: 11, color: '#555', marginTop: 2 },
+  subtitle: { fontSize: 11, color: '#8A8A99', marginTop: 2 },
   summaryStrip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   },
   summaryItem: { flex: 1, alignItems: 'center', gap: 2 },
   summaryValue: { fontSize: 18, fontWeight: '900', color: '#FFF' },
-  summaryLabel: { fontSize: 9, color: '#555', fontWeight: '600', letterSpacing: 0.5 },
+  summaryLabel: { fontSize: 9, color: '#8A8A99', fontWeight: '600', letterSpacing: 0.5 },
   divider: { width: 1, height: 28, backgroundColor: '#FF336625' },
   list: { padding: 12, gap: 10 },
   blastCard: {
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   },
   funnelStep: { alignItems: 'center', gap: 2, minWidth: 50 },
   funnelValue: { fontSize: 14, fontWeight: '800', color: '#FFF' },
-  funnelLabel: { fontSize: 8, color: '#555', letterSpacing: 0.5 },
+  funnelLabel: { fontSize: 8, color: '#8A8A99', letterSpacing: 0.5 },
   conversionChip: {
     marginLeft: 'auto' as any,
     backgroundColor: '#FF336615',

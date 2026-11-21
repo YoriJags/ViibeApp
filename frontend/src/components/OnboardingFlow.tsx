@@ -563,6 +563,6 @@ const callNameStyles = StyleSheet.create({
     right: 14,
     bottom: -20,
     fontSize: 11,
-    color: '#555',
+    color: '#8A8A99',
   },
 });

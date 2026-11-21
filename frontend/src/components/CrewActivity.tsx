@@ -207,7 +207,7 @@ const s = StyleSheet.create({
     fontWeight: '500',
   },
   statusOffline: {
-    color: '#555',
+    color: '#8A8A99',
   },
   footer: {
     marginTop: 6,

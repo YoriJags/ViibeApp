@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
   },
   area: {
     fontSize: 12,
-    color: '#555',
+    color: '#8A8A99',
     marginTop: 3,
     letterSpacing: 0.2,
   },

@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
   headerSub: {
     fontSize: 12,
-    color: '#555',
+    color: '#8A8A99',
     flex: 1,
   },
   scrollContent: {
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   cardTime: {
     fontSize: 11,
-    color: '#555',
+    color: '#8A8A99',
     marginTop: 1,
   },
   livePill: {

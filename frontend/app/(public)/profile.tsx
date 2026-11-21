@@ -65,16 +65,16 @@ const DEMO_DEBRIEF = {
 
 const profileCallNameStyles = StyleSheet.create({
   row:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  placeholder:  { fontSize: 14, color: '#555', fontWeight: '500', fontStyle: 'italic' },
+  placeholder:  { fontSize: 14, color: '#8A8A99', fontWeight: '500', fontStyle: 'italic' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
   modalCard:    { width: '100%', backgroundColor: '#0E0E1A', borderRadius: 20, borderWidth: 1, borderColor: '#9933FF44', padding: 24, gap: 8 },
   modalTitle:   { fontSize: 18, fontWeight: '900', color: '#FFF', letterSpacing: -0.3 },
-  modalSub:     { fontSize: 12, color: '#555', lineHeight: 17, marginBottom: 8 },
+  modalSub:     { fontSize: 12, color: '#8A8A99', lineHeight: 17, marginBottom: 8 },
   modalInput:   { backgroundColor: '#111118', borderRadius: 14, borderWidth: 1.5, borderColor: '#9933FF55', paddingHorizontal: 18, paddingVertical: 16, fontSize: 18, fontWeight: '700', color: '#FFF', textAlign: 'center', letterSpacing: 0.3 },
-  charCount:    { fontSize: 11, color: '#555', textAlign: 'right' },
+  charCount:    { fontSize: 11, color: '#8A8A99', textAlign: 'right' },
   modalActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
   cancelBtn:    { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#333', alignItems: 'center' },
-  cancelText:   { fontSize: 14, fontWeight: '700', color: '#555' },
+  cancelText:   { fontSize: 14, fontWeight: '700', color: '#8A8A99' },
   saveBtn:      { flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: '#9933FF', alignItems: 'center' },
   saveText:     { fontSize: 14, fontWeight: '800', color: '#FFF', letterSpacing: 0.3 },
 });
@@ -1473,7 +1473,7 @@ const styles = StyleSheet.create({
   skinSectionTitle: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#555',
+    color: '#8A8A99',
     letterSpacing: 2,
   },
   skinSectionSub: {
@@ -1528,7 +1528,7 @@ const styles = StyleSheet.create({
   },
   skinPreviewHex: {
     fontSize: 10,
-    color: '#555',
+    color: '#8A8A99',
     letterSpacing: 1,
     marginLeft: 4,
   },
@@ -1548,7 +1548,7 @@ const styles = StyleSheet.create({
   },
   nightModalStat: { alignItems: 'center', gap: 6 },
   nightModalStatVal: { fontSize: 32, fontWeight: '900' },
-  nightModalStatLbl: { color: '#555', fontSize: 10, fontWeight: '600', letterSpacing: 0.5 },
+  nightModalStatLbl: { color: '#8A8A99', fontSize: 10, fontWeight: '600', letterSpacing: 0.5 },
   nightModalDivider: { height: 1, backgroundColor: '#1A1A1A', marginBottom: 20 },
   nightModalScroll: { flex: 1 },
   nightModalDebrief: { color: '#CCC', fontSize: 16, lineHeight: 26, fontStyle: 'italic' },
@@ -1598,7 +1598,7 @@ const styles = StyleSheet.create({
   crewSectionLabel: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#3A3A4E',
+    color: '#8E8AA3',
     letterSpacing: 2,
     marginBottom: 8,
   },

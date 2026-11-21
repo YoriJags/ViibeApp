@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   feeText: { fontSize: 12, color: '#FF9933', fontWeight: '600' },
   formGroup: { marginBottom: 14, gap: 5 },
   formRow: { flexDirection: 'row', gap: 12 },
-  label: { fontSize: 9, fontWeight: '800', color: '#555', letterSpacing: 1.5 },
+  label: { fontSize: 9, fontWeight: '800', color: '#8A8A99', letterSpacing: 1.5 },
   input: { backgroundColor: '#0D0D14', borderWidth: 1, borderColor: '#252530', borderRadius: 10, padding: 12, color: '#FFF', fontSize: 14 },
   sizeChip: { backgroundColor: '#1A1A25', borderRadius: 8, width: 40, height: 40, alignItems: 'center', justifyContent: 'center', marginRight: 8, borderWidth: 1, borderColor: '#252530' },
   sizeChipActive: { backgroundColor: '#FF3366', borderColor: '#FF3366' },
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
   successTitle: { fontSize: 22, fontWeight: '900', color: '#FFF' },
   successSub: { fontSize: 14, color: '#AAA' },
   successDate: { fontSize: 14, color: '#FF3366', fontWeight: '700' },
-  successNote: { fontSize: 11, color: '#555', marginTop: 8 },
+  successNote: { fontSize: 11, color: '#8A8A99', marginTop: 8 },
   doneBtn: { backgroundColor: '#4CAF50', borderRadius: 12, paddingHorizontal: 40, paddingVertical: 14, marginTop: 16 },
   doneBtnText: { fontSize: 15, fontWeight: '800', color: '#FFF' },
 });

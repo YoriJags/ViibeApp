@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#555',
+    color: '#8A8A99',
     letterSpacing: 2,
   },
   sample: {

@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   },
   timeAgo: {
     fontSize: 10,
-    color: '#555',
+    color: '#8A8A99',
     marginTop: 2,
   },
 });
