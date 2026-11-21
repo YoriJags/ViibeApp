@@ -4,7 +4,88 @@
 **Category:** Not a nightlife app — a live-energy intel layer. Nightlife is the beachhead scene, not the identity.
 **Doctrine:** Poco a poco. A-tier now, S-tier at scale gates. **Compress, don't expand.**
 **Funding model:** Reachng generates runway. VIIBE runs lean until 10/10 milestone hits.
-**Last updated:** 2026-05-09
+**Last updated:** 2026-11-21
+
+---
+
+## NOW (21 Nov 2026): screen fixes, then places and events
+
+**No APK until the founder says planning and building are settled.** Verify with
+tsc, the backend tests and screenshots from the connected phone.
+
+### D. Screen fixes (done, committed, not pushed)
+- [x] D1 Tab bar, venue footer, AfterHours button above the phone's navigation bar
+- [x] D2 Live or Demo choice at launch; greeting pop-ups only in the demo, one at a time
+- [x] D3 Demo tells one story (city 82 Lit everywhere, crew, Intel, leaderboard, energy words, empty home list)
+- [x] D4 Removed AI features no longer sold (Oracle, Night Planner)
+- [x] D5 Readable text colours across 60 files; floating floor switcher off home
+- [x] D6 Church and worship removed (app, demo, backend); a stored "church" loads as "other"
+- [x] D7 Morning night recap was empty after 8am; fixed
+- [ ] D8 Design agent: docs/DEMO_VS_LIVE.md, 3 font options (founder picks), in-place polish
+- [ ] D9 Founder picks a font; apply it
+
+### E. Places and events at borrowed grounds
+The problem: raves, block parties and concerts happen at places that are not
+their own (Dave at the National Theatre, a rave on a beach). They need to be
+registered and located correctly without a permanent venue.
+
+The model: a **place** is a permanent location (National Theatre, Tafawa Balewa
+Square, a beach). It is not on the map by itself. An **event** is dated and sits
+at a place, or at a dropped pin. The next event at the same place reuses the
+place's checked location.
+
+Decisions (founder, 21 Nov): any signed-in user can submit an event or a place;
+every submission waits for admin approval. No Google for now: search uses VIIBE's
+own places plus OpenStreetMap (free, no billing); Google slots in later.
+
+**E1. Backend: places**
+- [ ] `places` collection: name, area, city, coordinates, ground radius, place type
+      (theatre, arena, stadium, park, beach, field, street, hall, other), status
+      (pending, approved), how the location was set (pin, OpenStreetMap, organiser GPS,
+      crowd), who submitted it
+- [ ] `GET /places/search?q=`: approved VIIBE places first, then OpenStreetMap results
+      bounded to the city (generic client name, results cached, light use only)
+- [ ] `POST /places` (signed in): submit a new place, pending
+- [ ] Default ground radius by place type (theatre 120 m, stadium 300 m, beach 400 m ...),
+      inside the existing 60 to 1500 m bounds
+
+**E2. Backend: event submission and approval**
+- [ ] `block_party` joins concert, festival, rave as an event type
+- [ ] `POST /events/submit` (signed in): at a place (place_id) or a pin; pending, never
+      on the map or watched by phones until approved (same rule partner events already follow)
+- [ ] The submitter gets the organiser link once approved; `GET /me/submissions` shows status
+- [ ] Admin: list pending events and places; approve, reject with a reason, or correct the
+      pin and radius before approving
+- [ ] An event at an approved place copies its coordinates and radius; an approved event
+      at a pin can create the place for next time
+
+**E3. Backend: confirming the location**
+- [ ] Organiser on-site: `POST /organiser/events/{id}/here?key=` with the phone's position
+      and accuracy; accepted only when accuracy is 50 m or better; sets the centre and marks
+      it "set on site". If the place had no on-site fix yet, the place takes it too
+- [ ] Crowd confirmation: the event is "location confirmed" once 5 different verified
+      arrivals land inside its ground during the event
+- [ ] Drift check: refused arrivals and check-ins near a live event log a rounded position
+      (events only, about 10 m precision). If 5 or more different people gather outside
+      the ground, the admin and organiser see "people are gathering N m away, move the pin?"
+      One tap moves it; it never moves by itself
+- [ ] Tests for every rule above
+
+**E4. App**
+- [ ] Raves and Festivals filter chips on home (block parties stay under Events)
+- [ ] "Add an event" screen (from Tonight and Profile): name, type, date and time, ticketed
+      or door plus ticket link, then where: search places (VIIBE + OpenStreetMap), or drop a
+      pin on the map and size the ground
+- [ ] "Add a place" inside the same flow when the place is not found
+- [ ] "My submissions": pending, live, or rejected with the reason; organiser link when live
+- [ ] Organiser page (backend/static/organiser.html): "I'm here, use my location" button
+- [ ] Admin review screen: each submission on a map with its ground drawn; approve, reject,
+      move the pin, resize
+- [ ] Demo mode shows the full flow with a sample event at the National Theatre
+
+**E5. Before any build**
+- [ ] Backend tests green, tsc 0, phone screenshots of every new screen
+- [ ] Founder confirms, then one APK
 
 ---
 
