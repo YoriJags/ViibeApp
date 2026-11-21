@@ -88,8 +88,8 @@ export default function ScoutHeatChip() {
 
         {/* Label */}
         <View style={styles.textBlock}>
-          <Text style={[styles.levelName, { color }]}>{label.toUpperCase()}</Text>
-          <Text style={styles.subLabel}>TONIGHT'S HEAT</Text>
+          <Text style={[styles.levelName, { color }]} numberOfLines={1}>{label.toUpperCase()}</Text>
+          <Text style={styles.subLabel} numberOfLines={1}>TONIGHT'S HEAT</Text>
         </View>
 
         {/* Mini progress bar */}
@@ -118,10 +118,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.2, shadowRadius: 6, elevation: 2,
   },
   iconWrap:  { width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  textBlock: { flex: 0 },
-  levelName: { fontSize: 11, fontWeight: '900', letterSpacing: 0.8, lineHeight: 13 },
-  subLabel:  { fontSize: 8, color: '#8E8AA3', fontWeight: '700', letterSpacing: 1 },
-  barTrack:  { flex: 1, height: 3, backgroundColor: '#181826', borderRadius: 2, overflow: 'hidden' },
+  // flexShrink 0, not flex 0: with flex 0 Android could squeeze the block to
+  // one glyph wide and "TONIGHT'S HEAT" rendered as a column of letters.
+  textBlock: { flexShrink: 0 },
+  levelName: { fontSize: 12, fontWeight: '900', letterSpacing: 0.8, lineHeight: 15 },
+  subLabel:  { fontSize: 11, lineHeight: 13, color: '#8E8AA3', fontWeight: '700', letterSpacing: 1 },
+  barTrack:  { flex: 1, minWidth: 24, height: 3, backgroundColor: '#181826', borderRadius: 2, overflow: 'hidden' },
   barFill:   { height: 3, borderRadius: 2 },
-  pctText:   { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+  pctText:   { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
 });
