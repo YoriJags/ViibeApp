@@ -26,7 +26,6 @@ const CATEGORY_ICONS: Record<string, string> = {
   concert:      '🎤',
   block_party:  '🏙',
   event:        '🎟',
-  church:       '✝',
   brunch:       '☀️',
   rooftop:      '🌃',
 };

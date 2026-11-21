@@ -25,14 +25,13 @@ _PEAK_WINDOWS = {
     "rave":        {"weekday": ("11:00pm", "4:00am"),  "weekend": ("12:00am", "5:00am")},
     "block_party": {"weekday": ("5:00pm",  "10:00pm"), "weekend": ("4:00pm",  "11:00pm")},
     "event":       {"weekday": ("6:00pm",  "9:00pm"),  "weekend": ("5:00pm",  "10:00pm")},
-    "church":      {"weekday": ("9:00am",  "11:30am"), "weekend": ("9:00am",  "12:00pm")},
 }
-_BASE_CONF = {"club": 82, "lounge": 78, "bar": 75, "restaurant": 80, "concert": 85, "rave": 70, "block_party": 88, "event": 80, "church": 90}
+_BASE_CONF = {"club": 82, "lounge": 78, "bar": 75, "restaurant": 80, "concert": 85, "rave": 70, "block_party": 88, "event": 80}
 # Expected energy by venue type, on the canonical ladder (docs/ENERGY.md). It
 # used to say "electric", "popping", "warm" and "uplifting", four words no other
 # part of the product uses. These read naturally in the headline below:
 # "Bature will be lit by 11pm tonight".
-_ENERGY_LABELS = {"club": "lit", "lounge": "warming", "bar": "warming", "restaurant": "chill", "concert": "lit", "rave": "lit", "block_party": "lit", "event": "warming", "church": "lit"}
+_ENERGY_LABELS = {"club": "lit", "lounge": "warming", "bar": "warming", "restaurant": "chill", "concert": "lit", "rave": "lit", "block_party": "lit", "event": "warming"}
 
 
 def _best_arrival(peak_start: str) -> str:

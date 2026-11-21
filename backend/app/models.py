@@ -4,7 +4,7 @@ All data models used across the application.
 """
 import uuid
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal
 
 
@@ -69,8 +69,15 @@ class Venue(BaseModel):
     address: str
     area: str
     city: str = "lagos"
-    venue_type: Literal["club", "lounge", "restaurant", "bar", "church", "concert", "rave", "block_party", "festival", "event", "other"] = "club"
+    venue_type: Literal["club", "lounge", "restaurant", "bar", "concert", "rave", "block_party", "festival", "event", "other"] = "club"
     coordinates: Coordinates
+
+    @field_validator("venue_type", mode="before")
+    @classmethod
+    def _retired_types(cls, v):
+        # Places of worship are not covered. A record saved under the old
+        # "church" type still loads, as "other", rather than failing.
+        return "other" if v == "church" else v
     current_vibe_score: float = 0.0
     energy_level: Literal["quiet", "chill", "warming", "charged", "lit", "peak"] = "quiet"
     vibe_state: Optional[str] = None          # derived display state (quiet/chill/warming/charged/lit/peak)

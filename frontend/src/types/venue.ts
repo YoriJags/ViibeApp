@@ -28,7 +28,7 @@ export interface Venue {
   address: string;
   area: string;
   city?: string;
-  venue_type?: 'club' | 'lounge' | 'restaurant' | 'bar' | 'church' | 'concert' | 'rave' | 'block_party' | 'festival' | 'event' | 'other';
+  venue_type?: 'club' | 'lounge' | 'restaurant' | 'bar' | 'concert' | 'rave' | 'block_party' | 'festival' | 'event' | 'other';
   coordinates?: Coordinates;
 
   // Live state

@@ -39,7 +39,7 @@ const adminColors = {
   border: 'rgba(255,255,255,0.06)',
 };
 
-const VENUE_TYPES = ['club', 'restaurant', 'lounge', 'bar', 'concert', 'block_party', 'church', 'rave', 'festival'];
+const VENUE_TYPES = ['club', 'restaurant', 'lounge', 'bar', 'concert', 'block_party', 'rave', 'festival'];
 const CITIES = ['lagos', 'abuja', 'port_harcourt', 'ibadan'];
 
 interface Venue {

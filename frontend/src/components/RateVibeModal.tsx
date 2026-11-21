@@ -34,7 +34,7 @@ type EnergyLevel    = 'quiet' | 'chill' | 'warming' | 'lit' | 'peak';
 type CapacityLevel  = 'sparse' | 'vibrant' | 'full';
 type GateLevel      = 'clear' | 'slow' | 'blocked';
 type VenueType      =
-  | 'club' | 'lounge' | 'restaurant' | 'bar' | 'church'
+  | 'club' | 'lounge' | 'restaurant' | 'bar'
   | 'concert' | 'rave' | 'block_party' | 'festival' | 'event' | 'other';
 
 interface EmojiOption {
@@ -121,13 +121,6 @@ const LOUNGE_SERVICE_OPTIONS: EmojiOption[] = [
   { value: 'on_point',       emoji: '✨', label: 'ON POINT' },
 ];
 
-// Church worship
-const WORSHIP_OPTIONS: EmojiOption[] = [
-  { value: 'flat_crowd',     emoji: '🙏', label: 'OKAY' },
-  { value: 'building_crowd', emoji: '😊', label: 'GOOD' },
-  { value: 'going_off',      emoji: '🔥', label: 'DEEP' },
-];
-
 // ─── Venue type → 2nd dimension mapping ───────────────────────
 type VenueDimConfig = { label: string; options: EmojiOption[] };
 
@@ -140,7 +133,6 @@ const VENUE_DIMENSION: Record<string, VenueDimConfig> = {
   event:       { label: '🎯  THE VIIBE',        options: CROWD_RESPONSE_OPTIONS  },
   bar:         { label: '🎵  ATMOSPHERE',      options: BAR_ATMOSPHERE_OPTIONS  },
   lounge:      { label: '✨  SERVICE',         options: LOUNGE_SERVICE_OPTIONS  },
-  church:      { label: '🙏  WORSHIP',         options: WORSHIP_OPTIONS         },
 };
 
 // ─── Section colors ────────────────────────────────────────────

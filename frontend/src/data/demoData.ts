@@ -188,27 +188,6 @@ export const DEMO_VENUES = [
     active_pulse_tier: 'spark',
     geofence_radius_m: 150,
   },
-  {
-    id: 'demo_venue_church',
-    name: 'Daystar Christian Centre',
-    address: 'Oregun, Ikeja',
-    area: 'Ikeja',
-    city: 'lagos',
-    venue_type: 'church' as const,
-    coordinates: { lat: 6.6010, lng: 3.3625 },
-    current_vibe_score: 71,
-    energy_level: 'lit' as const,
-    capacity_level: 'vibrant' as const,
-    gate_level: 'clear' as const,
-    vibe_velocity: 'stable' as const,
-    total_ratings_24h: 22,
-    is_featured: false,
-    is_verified: true,
-    profile_views: 1200,
-    direction_clicks: 89,
-    glow_boost: 0,
-    geofence_radius_m: 200,
-  },
   // Abuja venues
   {
     id: 'demo_venue_play',
@@ -765,9 +744,6 @@ export const DEMO_CATEGORY_TRENDING = {
   bar: [
     { rank: 1, name: 'Cova Lounge', score: 58, trend: 'down' as const },
   ],
-  church: [
-    { rank: 1, name: 'Daystar Christian Centre', score: 71, trend: 'stable' as const },
-  ],
   block_party: [
     { rank: 1, name: 'Detty December Block Party', score: 96, trend: 'up' as const },
   ],
@@ -915,14 +891,6 @@ export const DEMO_ORACLE_PREDICTIONS: Record<string, OraclePrediction> = {
     peak_window_start: "7:00pm", peak_window_end: "9:30pm",
     best_arrival: "6:15pm", current_trajectory: 'rising',
     signals: [{icon:"🌅", label:"Dinner Rush", type:"day_of_week"}, {icon:"🍽️", label:"Restaurant", type:"genre"}],
-    generated_at: _now,
-  },
-  'demo_venue_church': {
-    venue_id: 'demo_venue_church', confidence: 93,
-    headline: "Daystar Sunday service peaks at 9:00am",
-    peak_window_start: "9:00am", peak_window_end: "12:00pm",
-    best_arrival: "8:15am", current_trajectory: 'rising',
-    signals: [{icon:"⛪", label:"Sunday Service", type:"day_of_week"}, {icon:"✅", label:"Verified Venue", type:"certification"}],
     generated_at: _now,
   },
   'demo_venue_play': {

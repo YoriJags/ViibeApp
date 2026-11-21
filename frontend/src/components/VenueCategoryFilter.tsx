@@ -19,7 +19,6 @@ export type VenueCategory =
   | 'lounge'
   | 'restaurant'
   | 'bar'
-  | 'church'
   | 'concert'
   | 'block_party'
   | 'rave'
@@ -46,7 +45,6 @@ const CATEGORY_EMOJI: Record<string, string> = {
   restaurant:  '🍽️',
   concert:     '🎤',
   block_party: '🌆',
-  church:      '●',
   rave:        '🎤',
   festival:    '🌆',
 };
@@ -59,7 +57,6 @@ const CATEGORIES: CategoryOption[] = [
   { key: 'bar',         label: 'Bars',       icon: 'beer',           color: '#FF6B35' },
   { key: 'concert',     label: 'Concerts',   icon: 'mic',            color: '#FF3366' },
   { key: 'block_party', label: 'Events',     icon: 'people',         color: '#00E676' },
-  { key: 'church',      label: 'Worship',    icon: 'heart',          color: '#00D4FF' },
 ];
 
 function CategoryTab({

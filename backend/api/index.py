@@ -603,10 +603,9 @@ _ORACLE_PEAK_WINDOWS = {
     "rave":        {"weekday": ("11:00pm","4:00am"),  "weekend": ("12:00am","5:00am")},
     "block_party": {"weekday": ("5:00pm","10:00pm"),  "weekend": ("4:00pm","11:00pm")},
     "event":       {"weekday": ("6:00pm","9:00pm"),   "weekend": ("5:00pm","10:00pm")},
-    "church":      {"weekday": ("9:00am","11:30am"),  "weekend": ("9:00am","12:00pm")},
 }
-_ORACLE_BASE_CONF = {"club":82,"lounge":78,"bar":75,"restaurant":80,"concert":85,"rave":70,"block_party":88,"event":80,"church":90}
-_ORACLE_ENERGY_LABELS = {"club":"peak","lounge":"lit","bar":"lit","restaurant":"warming","concert":"peak","rave":"peak","block_party":"peak","event":"lit","church":"uplifting"}
+_ORACLE_BASE_CONF = {"club":82,"lounge":78,"bar":75,"restaurant":80,"concert":85,"rave":70,"block_party":88,"event":80}
+_ORACLE_ENERGY_LABELS = {"club":"peak","lounge":"lit","bar":"lit","restaurant":"warming","concert":"peak","rave":"peak","block_party":"peak","event":"lit"}
 
 def _oracle_best_arrival(peak_start_str):
     """Return '45 min before X' as a human string."""
