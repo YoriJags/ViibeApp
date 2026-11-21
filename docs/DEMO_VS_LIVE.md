@@ -189,7 +189,7 @@ Checked on 21 Nov 2026 at 09:07 UTC. That is morning in Lagos, not a night, so t
 
 ### Night debrief
 - **Demo shows:** "Electric VI Run", 3 spots, inline `DEMO_DEBRIEF`.
-- **Live shows today:** Only with Viibe+ and the `night_debrief` flag, from `/users/{id}/night-debrief`, which calls Claude (`ai_features.py`). Without Viibe+, a locked card says "Your AI recap of the night" (line 631).
+- **Live shows today:** Only with Viibe+ and the `night_debrief` flag, from `/users/{id}/night-debrief`, which calls Claude (`ai_features.py`). Without Viibe+, a locked card says "Your recap of the night" (line 631; the word AI was removed in f2bd748).
 - **Gap:** partly built. Needs a paying Viibe+ user and the Anthropic key. The locked card still advertises an AI feature, which conflicts with today's removal of advertised AI features.
 
 ### Passport (`VibePassport.tsx`)
@@ -308,7 +308,7 @@ These are the only demo items to fix. Feature previews stay.
 2. **Venues that are not in the demo:** DNA Nightclub, Club Quilox, Escape Lagos, DropShot Bar, Jazzhole and Terra Kulture appear in `HeatMapCard`, `VenueBattle`, `AfterHours` and `VibeTapCard`. The demo venue list calls them Quilox Nightclub and Escape Nightclub, and has no DNA.
 3. **Escape's area:** Lekki on the heat map and tap card. Victoria Island in `DEMO_VENUES`.
 4. **Quilox's score:** 87 Peak in the venue list. 65 Charged in the venue battle. 96 as the city's trending venue (`DEMO_CITY_PULSE`). "Hit 94% while you were away" in missed peaks, while the crew and hero say you are at Quilox.
-5. **Energy words that do not match the score** (`energyStateFor` in `src/theme/energy.ts`): House 70 at 83 says Peak (should be Lit). Play Abuja at 81 says Peak (Lit). Shiro at 65 says Chill (Lit, and the lobby already says Lit). Cova at 58 says Chill (Warming, and the lobby already says Warming).
+5. **Energy words that do not match the score** (`energyStateFor` in `src/theme/energy.ts`): House 70 at 83 says Peak (should be Lit). Play Abuja at 81 says Peak (Lit). Shiro at 65 says Chill (Lit, and the lobby already says Lit). Cova at 58 says Chill (Warming, and the lobby already says Warming). **Fixed in f41e0d2.**
 6. **Who tops the city:** VibeDemo is first on Trending. Tunde_V is first on Intel. Scout of the Night shows a different cast again (nightkingxx, vibequeen_). The venue top scouts tab uses a fourth set of names.
 7. **Tonight's count:** the hero says 3 venues, the debrief says 3 spots, the recap and heat card say 2 check-ins, and the tap card lists 3 venues.
 8. **Phases of the night:** the demo never reaches the hero's "recap" phase (`getNightPhase` in `src/store/types.ts` returns planning in demo). Last call, After Hours and Scout of the Night only open in their real-clock windows, so one demo session cannot show the whole night.
