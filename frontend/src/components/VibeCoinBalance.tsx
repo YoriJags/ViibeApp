@@ -38,8 +38,6 @@ interface Props {
 
 const PERKS_STATIC: Perk[] = [
   { id: 'boost_rating', name: 'Boost Rating', description: 'Pin to venue top for 24h', cost: 50, icon: 'rocket' },
-  { id: 'oracle_unlock', name: 'Oracle Unlock', description: 'AI predictions for 24h', cost: 100, icon: 'eye' },
-  { id: 'planner_session', name: 'Night Planner', description: '+1 AI planning session', cost: 75, icon: 'sparkles' },
   { id: 'profile_title', name: 'Verified Scout', description: 'Permanent profile badge', cost: 200, icon: 'shield-checkmark' },
 ];
 

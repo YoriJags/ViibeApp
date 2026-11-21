@@ -38,7 +38,7 @@ const { width: W } = Dimensions.get('window');
 const SCOUT_STATUS_CONFIG: Record<string, { level: string; label: string; color: string; perks: string[] }> = {
   newbie:  { level: 'shadow',      label: 'Shadow',      color: '#666666', perks: [] },
   regular: { level: 'rising',      label: 'Rising',      color: '#9933FF', perks: ['Clout multiplier +1.2x', 'Crew eligible', 'Trending feed access'] },
-  scout:   { level: 'scene_maker', label: 'Scene Maker', color: '#FF3366', perks: ['Viibe Oracle predictions', 'Clout multiplier +1.5x', 'Scout radar visible'] },
+  scout:   { level: 'scene_maker', label: 'Scene Maker', color: '#FF3366', perks: ['Peak-hour forecasts', 'Clout multiplier +1.5x', 'Scout radar visible'] },
   elite:   { level: 'vibe_god',    label: 'Viibe God',    color: '#FFD700', perks: ['VIIBE GOD status', 'Elite 2x clout multiplier', 'All Viibe+ perks free'] },
 };
 
