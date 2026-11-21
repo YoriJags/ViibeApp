@@ -21,7 +21,7 @@ tsc, the backend tests and screenshots from the connected phone.
 - [x] D5 Readable text colours across 60 files; floating floor switcher off home
 - [x] D6 Church and worship removed (app, demo, backend); a stored "church" loads as "other"
 - [x] D7 Morning night recap was empty after 8am; fixed
-- [ ] D8 Design agent: docs/DEMO_VS_LIVE.md, 3 font options (founder picks), in-place polish
+- [x] D8 Design agent: docs/DEMO_VS_LIVE.md, 3 font options (founder picks), in-place polish
 - [ ] D9 Founder picks a font; apply it
 
 ### E. Places and events at borrowed grounds
@@ -38,38 +38,74 @@ Decisions (founder, 21 Nov): any signed-in user can submit an event or a place;
 every submission waits for admin approval. No Google for now: search uses VIIBE's
 own places plus OpenStreetMap (free, no billing); Google slots in later.
 
+**E0. Fraud rules (founder, 21 Nov: "someone can claim to be Dave")**
+Every submission is a claim until proven. The risks and the rule for each:
+- [x] Impersonation. A submitter is never shown as the organiser or the artist.
+      Submitted events are "Community listing": the organiser name and ticket link are
+      hidden until an admin verifies the organiser. Only verified events read "Official"
+- [x] Organiser verification is an admin act with a recorded method: an official social
+      post carrying a VIIBE code, a ticketing partner, a known promoter, or in person
+- [x] Scam tickets. A ticket link is shown only on an Official event
+- [x] Tracking people. Nothing is on the map and no phone watches the ground until
+      approved. Every pin move is logged (who, from where, to where, why)
+- [x] Pin moves. A community organiser's on-site fix may move the centre at most 300 m from
+      the approved spot, a verified organiser 1 km; anything further waits for an admin.
+      Moving to where the crowd is gathering needs an admin or a verified organiser
+- [x] Spam. At most 3 pending submissions per person and 5 a day
+- [x] Duplicates. A second event at the same ground with overlapping times is refused and
+      pointed at the existing one; the admin queue shows near duplicates
+- [x] Reports. Anyone signed in can report an event; 3 different reports take a community
+      listing off the map until an admin looks. An Official event is flagged, not hidden
+- [x] The submitter's id never appears in any public response
+
+**E0b. VIIBE Certified (founder, 21 Nov)**
+Organisers and vendors (venue owners) prove who they are before we certify them.
+"VIIBE Certified" means we checked the proofs. The existing automatic "Vibe Certified"
+energy badge (score held high for 90 days) keeps its name; they are separate things.
+- [x] Proof is a ticketing page or website link (no ID photos). A link only proves the event
+      or business exists, so the admin confirms through the contact that page lists
+      (email, phone, official account) before certifying. Method recorded
+- [x] `POST /certification/apply`: organiser or vendor, the name to certify, 1 to 5 https
+      links, a business contact, a note; a vendor names the venue they own
+- [x] `GET /certification/me`; admin queue, certify (method, note) or reject (reason)
+- [x] Certification lasts 12 months, then lapses until renewed
+- [x] A certified organiser's events show as Official with the certified name and ticket
+      link (still placed and approved like any event); pin moves up to 1 km on site
+- [x] A certified vendor's venue carries the VIIBE Certified badge
+- [x] Freeform organiser names are never shown; only a certified name is
+
 **E1. Backend: places**
-- [ ] `places` collection: name, area, city, coordinates, ground radius, place type
+- [x] `places` collection: name, area, city, coordinates, ground radius, place type
       (theatre, arena, stadium, park, beach, field, street, hall, other), status
       (pending, approved), how the location was set (pin, OpenStreetMap, organiser GPS,
       crowd), who submitted it
-- [ ] `GET /places/search?q=`: approved VIIBE places first, then OpenStreetMap results
+- [x] `GET /places/search?q=`: approved VIIBE places first, then OpenStreetMap results
       bounded to the city (generic client name, results cached, light use only)
-- [ ] `POST /places` (signed in): submit a new place, pending
-- [ ] Default ground radius by place type (theatre 120 m, stadium 300 m, beach 400 m ...),
+- [x] `POST /places` (signed in): submit a new place, pending
+- [x] Default ground radius by place type (theatre 120 m, stadium 300 m, beach 400 m ...),
       inside the existing 60 to 1500 m bounds
 
 **E2. Backend: event submission and approval**
-- [ ] `block_party` joins concert, festival, rave as an event type
-- [ ] `POST /events/submit` (signed in): at a place (place_id) or a pin; pending, never
+- [x] `block_party` joins concert, festival, rave as an event type
+- [x] `POST /events/submit` (signed in): at a place (place_id) or a pin; pending, never
       on the map or watched by phones until approved (same rule partner events already follow)
-- [ ] The submitter gets the organiser link once approved; `GET /me/submissions` shows status
-- [ ] Admin: list pending events and places; approve, reject with a reason, or correct the
+- [x] The submitter gets the organiser link once approved; `GET /me/submissions` shows status
+- [x] Admin: list pending events and places; approve, reject with a reason, or correct the
       pin and radius before approving
-- [ ] An event at an approved place copies its coordinates and radius; an approved event
+- [x] An event at an approved place copies its coordinates and radius; an approved event
       at a pin can create the place for next time
 
 **E3. Backend: confirming the location**
-- [ ] Organiser on-site: `POST /organiser/events/{id}/here?key=` with the phone's position
+- [x] Organiser on-site: `POST /organiser/events/{id}/here?key=` with the phone's position
       and accuracy; accepted only when accuracy is 50 m or better; sets the centre and marks
       it "set on site". If the place had no on-site fix yet, the place takes it too
-- [ ] Crowd confirmation: the event is "location confirmed" once 5 different verified
+- [x] Crowd confirmation: the event is "location confirmed" once 5 different verified
       arrivals land inside its ground during the event
-- [ ] Drift check: refused arrivals and check-ins near a live event log a rounded position
+- [x] Drift check: refused arrivals and check-ins near a live event log a rounded position
       (events only, about 10 m precision). If 5 or more different people gather outside
       the ground, the admin and organiser see "people are gathering N m away, move the pin?"
       One tap moves it; it never moves by itself
-- [ ] Tests for every rule above
+- [x] Tests for every rule above
 
 **E4. App**
 - [ ] Raves and Festivals filter chips on home (block parties stay under Events)

@@ -32,6 +32,10 @@ async def ghost_checkin(data: GhostCheckin, user: dict = Depends(require_auth)):
     venue_coords = Coordinates(**venue["coordinates"])
     venue_radius = venue.get("geofence_radius_m", 100)
     if not is_within_geofence(user_coords, venue_coords, radius_m=venue_radius):
+        # At a live event, where refused people stand shows whether the pin is
+        # in the wrong place (rounded, events only; see event_trust.drift_suggestion).
+        from app.routes.events import log_position_near_event
+        await log_position_near_event(venue, user["id"], data.latitude, data.longitude, "checkin_refused")
         raise HTTPException(
             status_code=403,
             detail=f"You must be within {int(venue_radius)}m of the venue to check in. Get closer!",

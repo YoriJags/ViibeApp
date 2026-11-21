@@ -29,7 +29,24 @@ ENTRY_TICKETED = "ticketed"
 ENTRY_DOOR = "door"
 ENTRIES = (ENTRY_TICKETED, ENTRY_DOOR)
 
-EVENT_TYPES = ("concert", "festival", "rave")
+EVENT_TYPES = ("concert", "festival", "rave", "block_party")
+
+# Where an event came from. An admin's own event is trusted as entered. A
+# ticketing partner's or a community member's waits for an admin.
+SOURCE_ADMIN = "admin"
+SOURCE_PARTNER = "partner"
+SOURCE_COMMUNITY = "community"
+
+# Who is behind it. Every submission is a claim ("this is Dave's concert")
+# until an admin checks the organiser. A community listing shows no organiser
+# name and no ticket link, so nobody can borrow an artist's name to sell tickets.
+LISTING_COMMUNITY = "community"
+LISTING_OFFICIAL = "official"
+VERIFY_METHODS = ("official_social_post", "ticketing_partner", "known_promoter", "in_person")
+
+# Fields that never leave the server in a public response.
+PRIVATE_FIELDS = ("_id", "created_by", "submitted_by", "reports", "review", "verification",
+                  "claimed_organiser", "pending_location", "rejected_reason")
 
 PROMISE_TIMING = "timing"
 PROMISE_WORTH = "worth"
@@ -88,12 +105,34 @@ def event_phase(event: dict, now: datetime | None = None) -> str:
     return "upcoming"
 
 
+def needs_approval(event: dict) -> bool:
+    """A partner's or a community member's event waits for an admin; an admin's own does not."""
+    return bool(event.get("partner_id")) or event.get("source") == SOURCE_COMMUNITY
+
+
+def is_held(event: dict) -> bool:
+    """
+    Kept off the map: not yet approved, or taken down while reports are looked at.
+
+    A partner or a member could otherwise drop a geofence on any spot and watch
+    who arrives there.
+    """
+    if needs_approval(event) and not event.get("approved"):
+        return True
+    return bool(event.get("hidden_for_review"))
+
+
+def listing_of(event: dict) -> str:
+    """Official once an admin has verified the organiser, or for an admin's own event."""
+    if event.get("listing") == LISTING_OFFICIAL:
+        return LISTING_OFFICIAL
+    return LISTING_COMMUNITY if event.get("source") == SOURCE_COMMUNITY else LISTING_OFFICIAL
+
+
 def is_listed(event: dict, now: datetime | None = None) -> bool:
     """Whether the event should appear on the map and in listings right now."""
     now = now or datetime.now(timezone.utc)
-    # A ticketing partner's event stays off the map until an admin has checked
-    # it, so a partner cannot drop a geofence on any spot and watch who arrives.
-    if event.get("partner_id") and not event.get("approved"):
+    if is_held(event):
         return False
     start, end = _aware(event.get("starts_at")), _aware(event.get("ends_at"))
     if start is None or end is None:
@@ -107,7 +146,7 @@ def is_watchable(event: dict, now: datetime | None = None) -> bool:
     doors to end: a temporary geofence must not fire on an empty field the
     week before, or count people who happen to live next to it.
     """
-    if event.get("partner_id") and not event.get("approved"):
+    if is_held(event):
         return False
     return event_phase(event, now) in ("doors", "live")
 
@@ -215,7 +254,10 @@ def new_event_document(payload: dict, created_by: str | None = None) -> dict:
         "starts_at": _aware(payload["starts_at"]),
         "ends_at": _aware(payload["ends_at"]),
         "host_venue_id": payload.get("host_venue_id"),
+        "place_id": payload.get("place_id"),
         "organiser_name": (payload.get("organiser_name") or "").strip() or None,
+        "ticket_url": payload.get("ticket_url"),
+        "source": payload.get("source") or SOURCE_ADMIN,
         "created_by": created_by,
         "created_at": datetime.now(timezone.utc),
         # Venue fields every existing system expects, at honest empty values.
@@ -233,9 +275,19 @@ def new_event_document(payload: dict, created_by: str | None = None) -> dict:
 
 
 def public_event(doc: dict) -> dict:
-    """An event as anyone may see it, with dates as ISO strings."""
-    out = {k: v for k, v in doc.items() if k != "_id"}
-    for k in ("starts_at", "ends_at", "created_at"):
+    """
+    An event as anyone may see it, with dates as ISO strings.
+
+    Never carries who submitted it. A community listing also drops the
+    organiser name and ticket link: those are claims until an admin checks them.
+    """
+    out = {k: v for k, v in doc.items() if k not in PRIVATE_FIELDS}
+    listing = listing_of(doc)
+    out["listing"] = listing
+    if listing == LISTING_COMMUNITY:
+        out.pop("organiser_name", None)
+        out.pop("ticket_url", None)
+    for k in ("starts_at", "ends_at", "created_at", "location_set_at"):
         if isinstance(out.get(k), datetime):
             out[k] = _aware(out[k]).isoformat()
     return out

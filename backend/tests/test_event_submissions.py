@@ -1,0 +1,310 @@
+"""
+Community events, places and VIIBE Certified, through the real routes.
+
+Anyone signed in can put an event forward, so every rule here is about not
+being fooled: by someone claiming to be Dave, by a duplicate, by a pin dropped
+to watch who turns up somewhere, or by a pin in the wrong place.
+"""
+from datetime import datetime, timedelta, timezone
+
+import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+mongomock_motor = pytest.importorskip("mongomock_motor")
+
+ADMIN = {"id": "admin-1", "username": "yori", "is_super_admin": True}
+ALICE = {"id": "alice", "username": "alice"}
+BOB = {"id": "bob", "username": "bob"}
+
+THEATRE = {"lat": 6.4750, "lng": 3.3690}   # a ground inside Lagos
+
+
+@pytest.fixture
+def env(monkeypatch):
+    db = mongomock_motor.AsyncMongoMockClient()["viibe_test"]
+    import app.config
+    import app.routes.certification as cert_routes
+    import app.routes.checkins as checkin_routes
+    import app.routes.events as events_routes
+    import app.routes.places as places_routes
+    import app.routes.venues as venue_routes
+    import app.services.auth as auth
+    for mod in (app.config, cert_routes, checkin_routes, events_routes, places_routes, venue_routes, auth):
+        monkeypatch.setattr(mod, "db", db, raising=False)
+
+    async def no_osm(q, city, client=None):
+        return [{"source": "openstreetmap", "osm_id": "way/1", "name": "National Theatre Lagos",
+                 "address": "Iganmu, Lagos", "place_type": "theatre",
+                 "coordinates": THEATRE, "ground_radius_m": 120}]
+    monkeypatch.setattr(places_routes, "search_openstreetmap", no_osm)
+
+    current = {"user": ALICE}
+
+    async def as_admin():
+        return ADMIN
+
+    async def as_current():
+        return current["user"]
+
+    app_ = FastAPI()
+    for r in (events_routes.router, places_routes.router, cert_routes.router, venue_routes.router,
+              checkin_routes.router):
+        app_.include_router(r, prefix="/api")
+    app_.dependency_overrides[auth.require_admin] = as_admin
+    app_.dependency_overrides[auth.require_auth] = as_current
+    return TestClient(app_), db, current
+
+
+def body(**over):
+    start = datetime.now(timezone.utc) + timedelta(minutes=-30)
+    b = {"name": "Dave Live in Lagos", "venue_type": "concert", "entry": "ticketed",
+         "coordinates": THEATRE, "geofence_radius_m": 150, "area": "Iganmu",
+         "starts_at": start.isoformat(), "ends_at": (start + timedelta(hours=5)).isoformat(),
+         "organiser_name": "Dave", "ticket_url": "https://tix.example/dave"}
+    b.update(over)
+    return b
+
+
+def submit(client, **over):
+    return client.post("/api/events/submit", json=body(**over))
+
+
+def approve(client, event_id, **payload):
+    return client.post(f"/api/admin/events/{event_id}/approve", json=payload)
+
+
+def run(db_call):
+    import asyncio
+    return asyncio.run(db_call)
+
+
+# ── Impersonation and privacy ────────────────────────────────────────────────
+
+def test_a_submission_waits_off_the_map_and_never_shows_who_sent_it(env):
+    client, db, _ = env
+    r = submit(client)
+    assert r.status_code == 200, r.text
+    ev = r.json()["event"]
+    assert r.json()["status"] == "pending"
+    assert "submitted_by" not in ev and "created_by" not in ev
+    assert client.get("/api/events?city=lagos").json() == []
+    assert all(v.get("id") != ev["id"] for v in client.get("/api/venues?city=lagos").json())
+
+
+def test_claiming_to_be_dave_shows_no_organiser_and_no_ticket_link(env):
+    client, db, _ = env
+    ev = submit(client).json()["event"]
+    approve(client, ev["id"])
+    listed = client.get("/api/events?city=lagos").json()[0]
+    assert listed["listing"] == "community"
+    assert "organiser_name" not in listed and "ticket_url" not in listed
+    # The admin still sees what was claimed.
+    claimed = run(db.venues.find_one({"id": ev["id"]}))["claimed_organiser"]
+    assert claimed == "Dave"
+
+
+def test_a_certified_organisers_event_is_official_under_the_certified_name(env):
+    client, db, current = env
+    client.post("/api/certification/apply", json={
+        "kind": "organiser", "name": "Dave Official", "links": ["https://davemusic.example"],
+        "contact": "mgmt@davemusic.example"})
+    app_id = client.get("/api/admin/certification").json()["applications"][0]["id"]
+    assert client.post(f"/api/admin/certification/{app_id}/certify",
+                       json={"method": "link_and_contact_confirmed"}).status_code == 200
+    ev = submit(client, organiser_name="Anything Typed").json()["event"]
+    approve(client, ev["id"])
+    listed = client.get("/api/events?city=lagos").json()[0]
+    assert listed["listing"] == "official"
+    assert listed["organiser_name"] == "Dave Official"
+    assert listed["ticket_url"] == "https://tix.example/dave"
+
+
+# ── Spam and duplicates ──────────────────────────────────────────────────────
+
+def test_at_most_three_waiting_submissions_per_person(env):
+    client, _, _ = env
+    for i in range(3):
+        later = datetime.now(timezone.utc) + timedelta(days=i + 1)
+        assert submit(client, name=f"Night {i}", starts_at=later.isoformat(),
+                      ends_at=(later + timedelta(hours=4)).isoformat()).status_code == 200
+    later = datetime.now(timezone.utc) + timedelta(days=9)
+    r = submit(client, name="Fourth", starts_at=later.isoformat(), ends_at=(later + timedelta(hours=4)).isoformat())
+    assert r.status_code == 429
+
+
+def test_the_same_event_twice_is_refused(env):
+    client, _, current = env
+    ev = submit(client).json()["event"]
+    approve(client, ev["id"])
+    current["user"] = BOB
+    r = submit(client, name="Dave at the Theatre")
+    assert r.status_code == 409
+    assert r.json()["detail"]["existing"]["id"] == ev["id"]
+
+
+# ── Approval, rejection, the organiser link ─────────────────────────────────
+
+def test_approval_lists_it_and_only_the_submitter_gets_the_organiser_link(env):
+    client, _, current = env
+    ev = submit(client).json()["event"]
+    approve(client, ev["id"])
+    mine = client.get("/api/me/submissions").json()["events"][0]
+    assert mine["status"] == "live" and mine["organiser_link"].startswith(f"/organiser/{ev['id']}?key=")
+    current["user"] = BOB
+    assert client.get("/api/me/submissions").json()["events"] == []
+
+
+def test_a_rejection_reaches_the_submitter_with_its_reason(env):
+    client, _, _ = env
+    ev = submit(client).json()["event"]
+    client.post(f"/api/admin/events/{ev['id']}/reject", json={"reason": "No proof this is happening."})
+    mine = client.get("/api/me/submissions").json()["events"][0]
+    assert mine["status"] == "rejected" and mine["reason"] == "No proof this is happening."
+
+
+# ── Reports ──────────────────────────────────────────────────────────────────
+
+def test_three_different_reports_take_a_community_listing_down(env):
+    client, _, current = env
+    ev = submit(client).json()["event"]
+    approve(client, ev["id"])
+    for uid in ("r1", "r1", "r2"):
+        current["user"] = {"id": uid}
+        client.post(f"/api/events/{ev['id']}/report", json={"reason": "fake"})
+    assert len(client.get("/api/events?city=lagos").json()) == 1   # r1 twice counts once
+    current["user"] = {"id": "r3"}
+    client.post(f"/api/events/{ev['id']}/report", json={"reason": "impersonation"})
+    assert client.get("/api/events?city=lagos").json() == []
+    assert client.get("/api/admin/submissions").json()["events"][0]["hidden_for_review"] is True
+
+
+def test_reports_flag_but_do_not_hide_an_official_event(env):
+    client, _, current = env
+    r = client.post("/api/admin/events", json=body(name="Admin Event"))
+    ev_id = r.json()["event"]["id"]
+    for uid in ("r1", "r2", "r3"):
+        current["user"] = {"id": uid}
+        client.post(f"/api/events/{ev_id}/report", json={"reason": "fake"})
+    assert len(client.get("/api/events?city=lagos").json()) == 1
+
+
+# ── The organiser on site ────────────────────────────────────────────────────
+
+def organiser_key(client, db, event_id):
+    return run(db.event_keys.find_one({"event_id": event_id}))["key"]
+
+
+def test_an_imprecise_fix_is_refused_and_a_short_one_moves_the_pin(env):
+    client, db, _ = env
+    ev = submit(client).json()["event"]
+    approve(client, ev["id"])
+    key = organiser_key(client, db, ev["id"])
+    near = {"lat": THEATRE["lat"] + 0.0009, "lng": THEATRE["lng"]}      # about 100 m
+    r = client.post(f"/api/organiser/events/{ev['id']}/here?key={key}", json={**near, "accuracy_m": 120})
+    assert r.json()["decision"] == "too_imprecise"
+    r = client.post(f"/api/organiser/events/{ev['id']}/here?key={key}", json={**near, "accuracy_m": 15})
+    assert r.json()["decision"] == "apply"
+    doc = run(db.venues.find_one({"id": ev["id"]}))
+    assert doc["coordinates"] == near and doc["location_set_on_site"] is True
+    assert run(db.event_location_log.count_documents({"event_id": ev["id"]})) == 1
+
+
+def test_a_far_fix_waits_for_an_admin_and_a_wrong_key_finds_nothing(env):
+    client, db, _ = env
+    ev = submit(client).json()["event"]
+    approve(client, ev["id"])
+    key = organiser_key(client, db, ev["id"])
+    far = {"lat": THEATRE["lat"] + 0.02, "lng": THEATRE["lng"]}          # about 2.2 km
+    r = client.post(f"/api/organiser/events/{ev['id']}/here?key={key}", json={**far, "accuracy_m": 10})
+    assert r.json()["decision"] == "needs_admin"
+    assert run(db.venues.find_one({"id": ev["id"]}))["coordinates"] == THEATRE
+    assert client.post(f"/api/organiser/events/{ev['id']}/here?key=wrong",
+                       json={**far, "accuracy_m": 10}).status_code == 404
+
+
+# ── The crowd confirms or corrects ───────────────────────────────────────────
+
+def test_five_verified_arrivals_confirm_the_location(env):
+    client, db, _ = env
+    ev = submit(client).json()["event"]
+    approve(client, ev["id"])
+    now = datetime.now(timezone.utc)
+    for i in range(5):
+        run(db.checkins.insert_one({"user_id": f"p{i}", "venue_id": ev["id"], "source": "auto",
+                                    "verified": True, "created_at": now}))
+    run(db.checkins.insert_one({"user_id": "p9", "venue_id": ev["id"], "source": "auto",
+                                "verified": False, "created_at": now}))
+    loc = client.get(f"/api/admin/events/{ev['id']}/location").json()["location"]
+    assert loc["status"] == "confirmed" and loc["confirmed_people"] == 5
+
+
+def test_people_gathering_elsewhere_suggest_a_move_that_only_an_admin_applies(env):
+    client, db, current = env
+    ev = submit(client).json()["event"]
+    approve(client, ev["id"])
+    real_spot = {"lat": THEATRE["lat"] + 0.004, "lng": THEATRE["lng"]}   # about 440 m north
+    for i in range(5):
+        current["user"] = {"id": f"fan{i}"}
+        r = client.post("/api/checkins", json={"venue_id": ev["id"], "latitude": real_spot["lat"],
+                                                 "longitude": real_spot["lng"]})
+        assert r.status_code in (403, 404)
+    drift = client.get(f"/api/admin/events/{ev['id']}/location").json()["location"]["drift"]
+    assert drift and drift["people"] == 5 and 400 <= drift["distance_m"] <= 480
+    assert run(db.venues.find_one({"id": ev["id"]}))["coordinates"] == THEATRE   # never by itself
+    client.post(f"/api/admin/events/{ev['id']}/move", json={**real_spot, "reason": "crowd is here"})
+    assert run(db.venues.find_one({"id": ev["id"]}))["coordinates"] == real_spot
+
+
+# ── Places ───────────────────────────────────────────────────────────────────
+
+def test_an_event_at_an_approved_place_takes_the_places_location(env):
+    client, db, _ = env
+    r = client.post("/api/places", json={"name": "National Theatre", "place_type": "theatre",
+                                         "city": "lagos", "coordinates": THEATRE,
+                                         "location_source": "openstreetmap"})
+    place = r.json()["place"]
+    assert "submitted_by" not in place and place["status"] == "pending"
+    client.post(f"/api/admin/places/{place['id']}/approve", json={})
+    ev = submit(client, place_id=place["id"], coordinates={"lat": 6.0, "lng": 3.0},
+                geofence_radius_m=None).json()["event"]
+    assert ev["coordinates"] == THEATRE and ev["geofence_radius_m"] == 120
+
+
+def test_a_place_outside_the_city_is_refused_and_search_puts_ours_first(env):
+    client, db, _ = env
+    r = client.post("/api/places", json={"name": "Somewhere", "city": "lagos",
+                                         "coordinates": {"lat": 9.05, "lng": 7.49}})
+    assert r.status_code == 422
+    r = client.post("/api/places", json={"name": "National Theatre", "place_type": "theatre",
+                                         "city": "lagos", "coordinates": THEATRE})
+    client.post(f"/api/admin/places/{r.json()['place']['id']}/approve", json={})
+    results = client.get("/api/places/search?q=national&city=lagos").json()["results"]
+    assert results[0]["source"] == "viibe" and results[1]["source"] == "openstreetmap"
+
+
+# ── VIIBE Certified ──────────────────────────────────────────────────────────
+
+def test_a_vendor_can_only_certify_the_venue_they_run(env):
+    client, db, current = env
+    app_ = {"kind": "vendor", "name": "Quilox", "links": ["https://quilox.example"],
+            "contact": "+234 800 000 0000", "venue_id": "quilox"}
+    assert client.post("/api/certification/apply", json=app_).status_code == 422
+    current["user"] = {**ALICE, "merchant_venue_id": "quilox"}
+    run(db.venues.insert_one({"id": "quilox", "name": "Quilox", "city": "lagos",
+                              "coordinates": {"lat": 6.43, "lng": 3.42}}))
+    assert client.post("/api/certification/apply", json=app_).status_code == 200
+    app_id = client.get("/api/admin/certification").json()["applications"][0]["id"]
+    client.post(f"/api/admin/certification/{app_id}/certify", json={"method": "link_and_contact_confirmed"})
+    venue = run(db.venues.find_one({"id": "quilox"}))
+    assert venue["business_certified"] is True and venue["business_certified_name"] == "Quilox"
+
+
+def test_links_must_be_https_and_a_certification_lapses_after_a_year(env):
+    client, db, _ = env
+    bad = client.post("/api/certification/apply", json={
+        "kind": "organiser", "name": "X", "links": ["http://x.example"], "contact": "x@x.example"})
+    assert bad.status_code == 422
+    from app.services.event_trust import is_certified
+    old = {"status": "certified", "expires_at": datetime.now(timezone.utc) - timedelta(days=1)}
+    assert is_certified(old) is False

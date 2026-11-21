@@ -11,7 +11,7 @@ from app.config import db, CITIES
 from app.services.promotion import compute_promotion
 from app.services.signal_density import compute_signal_density
 from app.services.reading_confidence import attach_confidence
-from app.services.events import event_summary, is_event, is_listed
+from app.services.events import event_summary, is_event, is_listed, public_event
 from app.services.timeutil import as_utc
 
 router = APIRouter(tags=["venues"])
@@ -172,13 +172,9 @@ async def get_venues(city: Optional[str] = None):
     # makes (timing for ticketed, worth for door). See services/events.py.
     now = datetime.now(timezone.utc)
     venues = [v for v in venues if not is_event(v) or is_listed(v, now)]
-    for v in venues:
-        if is_event(v):
-            v["event"] = event_summary(v, now)
-            for k in ("starts_at", "ends_at", "created_at"):
-                if isinstance(v.get(k), datetime):
-                    stamp = v[k] if v[k].tzinfo else v[k].replace(tzinfo=timezone.utc)
-                    v[k] = stamp.isoformat()
+    # An event goes out through public_event: never who submitted it, and no
+    # organiser name or ticket link until the organiser is verified.
+    venues = [{**public_event(v), "event": event_summary(v, now)} if is_event(v) else v for v in venues]
 
     # Attach 30-min rating counts for seismic ring display
     cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
@@ -225,11 +221,7 @@ async def get_venue(venue_id: str, authorization: str = Header(default="")):
     if is_event(venue):
         if not is_listed(venue):
             raise HTTPException(status_code=404, detail="Venue not found")
-        venue["event"] = event_summary(venue)
-        for k in ("starts_at", "ends_at", "created_at"):
-            if isinstance(venue.get(k), datetime):
-                stamp = venue[k] if venue[k].tzinfo else venue[k].replace(tzinfo=timezone.utc)
-                venue[k] = stamp.isoformat()
+        venue = {**public_event(venue), "event": event_summary(venue)}
         # Crowd flow from auto check-in: arrivals and departures, never energy.
         from app.services.crowd_flow import flow_for
         venue["flow"] = await flow_for([venue_id], 30)

@@ -90,6 +90,8 @@ async def presence_enter(event: PresenceEvent, user: dict = Depends(require_auth
     position = check_position(distance, venue.get("geofence_radius_m"))
     if position == "far":
         await _log(user["id"], event.venue_id, "enter_refused", {"distance_m": distance})
+        from app.routes.events import log_position_near_event
+        await log_position_near_event(venue, user["id"], event.lat, event.lng, "enter_refused")
         raise HTTPException(status_code=403, detail="Position does not match this venue.")
     # "missing" is accepted and logged, but the visit is unverified and is never
     # counted as presence. See check_position for why this fails closed.
