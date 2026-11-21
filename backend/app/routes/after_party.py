@@ -18,11 +18,11 @@ router = APIRouter(tags=["after_party"])
 
 
 def _night_start() -> datetime:
+    # The night runs from 17:00 UTC to 17:00 UTC the next day. It used to flip
+    # to today's 17:00 at 07:00, a start still in the future, so a recap opened
+    # after 8am Lagos time (the hours it is shown) found nothing from last night.
     now = datetime.now(timezone.utc)
-    if now.hour < 7:
-        base = now - timedelta(days=1)
-    else:
-        base = now
+    base = now - timedelta(days=1) if now.hour < 17 else now
     return base.replace(hour=17, minute=0, second=0, microsecond=0)
 
 
