@@ -15,6 +15,11 @@ import ErrorBoundary from '../src/components/ErrorBoundary';
 import GlobalVibePill from '../src/components/GlobalVibePill';
 import { initPostHog } from '../src/services/posthog';
 import { registerForPushNotifications, attachNotificationTapHandler } from '../src/services/pushNotifications';
+import { useFonts } from 'expo-font';
+import { APP_FONTS, installAppFont } from '../src/theme/appFont';
+
+// Space Grotesk for big numbers and titles, Inter for the rest (src/theme/appFont.tsx).
+installAppFont();
 
 // Keep native splash visible until we're ready to show our animated one
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -26,6 +31,9 @@ initPostHog();
 function AppInitializer({ children }: { children: React.ReactNode }) {
   const { hasHydrated, fetchCities, connectSocket, hasSeenOnboarding, completeOnboarding, fetchFeatureFlags, hasSeenAppTutorial, completeAppTutorial, sessionToken } = useVibeStore();
   const [isReady, setIsReady] = useState(false);
+  // The splash waits for the fonts, so no screen flashes in the system font first.
+  // A font that fails to load leaves that text in the system font; it never blocks the app.
+  const [fontsLoaded, fontError] = useFonts(APP_FONTS);
   const [showSplash, setShowSplash] = useState(true);
   const [modeChosen, setModeChosen] = useState(false);
   const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
@@ -80,7 +88,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   if (showSplash) {
     return (
       <SplashAnimation
-        isReady={isReady}
+        isReady={isReady && (fontsLoaded || !!fontError)}
         onAnimationComplete={handleSplashComplete}
       />
     );
