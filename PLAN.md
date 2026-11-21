@@ -22,7 +22,9 @@ tsc, the backend tests and screenshots from the connected phone.
 - [x] D6 Church and worship removed (app, demo, backend); a stored "church" loads as "other"
 - [x] D7 Morning night recap was empty after 8am; fixed
 - [x] D8 Design agent: docs/DEMO_VS_LIVE.md, 3 font options (founder picks), in-place polish
-- [ ] D9 Founder picks a font; apply it
+- [x] D9 Font: Space Grotesk (titles, numbers) + Inter (text), app and landing
+- [x] D10 DEMO_AMBIENT=0 on production (21 Nov); old sample scores still stored, wipe pending founder OK
+- [x] D11 Landing: organisers at any ground, block parties, VIIBE Certified, nobody borrows a name
 
 ### E. Places and events at borrowed grounds
 The problem: raves, block parties and concerts happen at places that are not
