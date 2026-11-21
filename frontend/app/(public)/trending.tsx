@@ -362,8 +362,8 @@ export default function TrendingScreen() {
 
                 {/* Venue Info */}
                 <View style={styles.sponsoredVenueInfo}>
-                  <Text style={styles.sponsoredVenueName}>{item.venue.name}</Text>
-                  <Text style={styles.sponsoredVenueArea}>{item.venue.area}</Text>
+                  <Text style={styles.sponsoredVenueName} numberOfLines={1}>{item.venue.name}</Text>
+                  <Text style={styles.sponsoredVenueArea} numberOfLines={1}>{item.venue.area}</Text>
                 </View>
 
                 {/* Energy Score */}
@@ -674,7 +674,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start', // LIVE pill lines up with the title, not between title and city
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
@@ -697,6 +697,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
     gap: spacing.xs,
+    marginTop: 4,
   },
   liveDot: {
     width: 8,
@@ -898,7 +899,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   goldScoreLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: typography.fontWeight.semibold,
     color: '#0A0A0F80',
     letterSpacing: 1,
@@ -932,7 +933,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   podiumArea: {
-    fontSize: 10,
+    fontSize: 11,
     color: colors.text.muted,
     marginBottom: spacing.md,
   },
@@ -940,7 +941,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   podiumScoreLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.muted,
     letterSpacing: 1,
@@ -1006,7 +1007,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   rateChipText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: typography.fontWeight.bold,
     color: '#FFF',
     letterSpacing: 0.5,
@@ -1111,7 +1112,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold,
   },
   scoutTier: {
-    fontSize: 9,
+    fontSize: 11,
     marginTop: spacing.xs,
     letterSpacing: 1,
     fontWeight: typography.fontWeight.bold,
@@ -1351,7 +1352,7 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
   },
   activityEnergy: {
-    fontSize: 10,
+    fontSize: 11,
     color: colors.text.secondary,
     marginTop: 2,
   },
@@ -1444,7 +1445,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   sponsoredPulseText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: typography.fontWeight.black,
     color: '#FFD700',
     letterSpacing: 1,
@@ -1467,7 +1468,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   sponsoredEnergyLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: typography.fontWeight.semibold,
   },
   sponsoredScore: {
