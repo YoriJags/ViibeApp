@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import PutOnMapCard from '../../src/components/submit/PutOnMapCard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useVibeStore } from '../../src/store/vibeStore';
@@ -561,6 +562,9 @@ export default function ProfileScreen() {
 
         {/* Achievements */}
         <AchievementBadge badges={isDemoMode ? DEMO_BADGES : computeBadges(user)} />
+
+        {/* Put it on the map: events and places, reviewed before they go live */}
+        <PutOnMapCard />
 
         {/* Crew */}
         {(isDemoMode ? DEMO_CREW : crew) && (
