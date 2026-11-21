@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#130A2B">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   /* Ironbow: the colour scale thermal cameras use. Cold reads indigo, not
      black, and heat climbs through violet, magenta, ember and amber to white. */
@@ -27,8 +27,9 @@
     --ink-faint: #8E7FA6;
     --rule:      rgba(199, 186, 216, 0.16);
 
-    --display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
-    --body:    'Archivo', 'Helvetica Neue', Arial, system-ui, sans-serif;
+    /* The app's own pair: Space Grotesk for titles and numbers, Inter for text. */
+    --display: 'Space Grotesk', 'Arial Black', system-ui, sans-serif;
+    --body:    'Inter', 'Helvetica Neue', Arial, system-ui, sans-serif;
 
     --measure: 34rem;
     --gutter: clamp(1.25rem, 5vw, 4.5rem);
@@ -226,6 +227,7 @@
     <a class="mark" href="/">VIIBE</a>
     <nav class="head-links" aria-label="Primary">
       <a class="hide-sm" href="#how">How it works</a>
+      <a class="hide-sm" href="#organisers">For organisers</a>
       <a class="hide-sm" href="#venues">For venues</a>
       <a href="#early">Get early access</a>
     </nav>
@@ -317,10 +319,39 @@
         <li>Concerts</li>
         <li>Festivals</li>
         <li>Raves</li>
+        <li>Block parties</li>
         <li>Detty December</li>
       </ul>
       <div class="prose">
-        <p>If thousands of people are in one place for the music, VIIBE should be able to tell you what it actually feels like in there.</p>
+        <p>If thousands of people are in one place for the music, VIIBE should be able to tell you what it actually feels like in there. Even when that place is a beach, a street or a theatre that belongs to someone else for the night.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="organisers" aria-labelledby="organisers-title">
+    <div class="wrap split">
+      <div>
+        <h2 id="organisers-title">Organisers: put your night on the map, wherever it is.</h2>
+        <div class="prose">
+          <p>A rave on the beach, a block party on a street, a concert at the National Theatre. Your event doesn't need a venue of its own. It gets a ground for the night, and phones only count the people inside it while it's on.</p>
+        </div>
+      </div>
+      <div>
+        <dl class="venue-list">
+          <div>
+            <dt>Pick the place, or drop a pin</dt>
+            <dd>Choose a known ground like the National Theatre, or drop a pin on the sand and size the area. A place checked once stays checked for the next event there.</dd>
+          </div>
+          <div>
+            <dt>We look at it first</dt>
+            <dd>Nothing goes on the map until someone at VIIBE has checked it. On the day, you confirm the exact spot from your phone, standing at the grounds.</dd>
+          </div>
+          <div>
+            <dt>Your night, live</dt>
+            <dd>Arrivals, the gate and the energy inside, on any phone, through a private link that's yours alone.</dd>
+          </div>
+        </dl>
+        <a class="btn btn-line" href="mailto:yoriajagun08@gmail.com?subject=VIIBE%20event%20listing">List your event</a>
       </div>
     </div>
   </section>
@@ -344,6 +375,14 @@
         <div>
           <dt>Cooling gets announced too</dt>
           <dd>If the place you're heading to is emptying out, we tell you. That's the message nobody else sends.</dd>
+        </div>
+        <div>
+          <dt>Nobody can borrow a name</dt>
+          <dd>Anyone can tell us about an event, but it only shows an organiser and a ticket link once we've checked who is behind it. Until then there's no name on it to trade on.</dd>
+        </div>
+        <div>
+          <dt>VIIBE Certified means we checked</dt>
+          <dd>Organisers and venues send us their official ticket page or website, and we confirm it through the contact that page lists before the badge goes on. Every year, again.</dd>
         </div>
       </dl>
     </div>
@@ -371,6 +410,10 @@
             <dt>Lift report</dt>
             <dd>Every Monday, in naira: did the DJ, the promo, the night actually lift the room?</dd>
           </div>
+          <div>
+            <dt>VIIBE Certified</dt>
+            <dd>Show us it's really yours and carry the badge, so people know the venue on the map is the venue they'll walk into.</dd>
+          </div>
         </dl>
         <a class="btn btn-line" href="mailto:yoriajagun08@gmail.com?subject=VIIBE%20for%20my%20venue">VIIBE for your venue</a>
       </div>
@@ -390,11 +433,12 @@
     <div class="wrap">
       <h2 id="early-title">Be one of the first people reading Lagos.</h2>
       <div class="prose">
-        <p>We're starting with founding scouts in the Lekki and Victoria Island corridor. If you're out in Lagos and want to put your read on the map, or you run a venue there, get in touch.</p>
+        <p>We're starting with founding scouts in the Lekki and Victoria Island corridor. If you're out in Lagos and want to put your read on the map, you run a venue, or you throw the nights people travel for, get in touch.</p>
       </div>
       <div class="actions">
         <a class="btn btn-hot" href="mailto:yoriajagun08@gmail.com?subject=VIIBE%20early%20access%20-%20scout">Get early access</a>
         <a class="btn btn-line" href="mailto:yoriajagun08@gmail.com?subject=VIIBE%20for%20my%20venue">VIIBE for your venue</a>
+        <a class="btn btn-line" href="mailto:yoriajagun08@gmail.com?subject=VIIBE%20event%20listing">List your event</a>
       </div>
     </div>
   </section>
