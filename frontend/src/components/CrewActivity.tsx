@@ -169,7 +169,7 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   brandLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 2,
     color: '#FF3366',

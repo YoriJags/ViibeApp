@@ -493,9 +493,9 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  headerLabel: { fontSize: 9, color: '#FF3366', fontWeight: '800', letterSpacing: 1.5 },
+  headerLabel: { fontSize: 11, color: '#FF3366', fontWeight: '800', letterSpacing: 1.5 },
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1 },
-  statusText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  statusText: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
 
   noBattleWrap: { alignItems: 'center', paddingVertical: 16, gap: 10 },
   noBattleText: { fontSize: 13, color: '#333', fontWeight: '600' },
@@ -522,8 +522,8 @@ const styles = StyleSheet.create({
   waitingText: { fontSize: 12, color: '#8A8A99', fontWeight: '600' },
 
   venueRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 6 },
-  venueLabel: { flex: 1, fontSize: 10, color: '#444', fontWeight: '600' },
-  vsSmall: { fontSize: 10, color: '#222', fontWeight: '900' },
+  venueLabel: { flex: 1, fontSize: 11, color: '#444', fontWeight: '600' },
+  vsSmall: { fontSize: 11, color: '#222', fontWeight: '900' },
 
   tapsRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   tapBlock: {
@@ -531,16 +531,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12, alignItems: 'center', gap: 3,
   },
   tapCount: { fontSize: 32, fontWeight: '900', color: '#FFF', lineHeight: 36 },
-  tapCrewName: { fontSize: 9, color: '#8A8A99', fontWeight: '700', letterSpacing: 0.8 },
+  tapCrewName: { fontSize: 11, color: '#8A8A99', fontWeight: '700', letterSpacing: 0.8 },
   tapCta: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
-  tapCtaText: { fontSize: 9, fontWeight: '900', color: '#FF3366', letterSpacing: 1.2 },
+  tapCtaText: { fontSize: 11, fontWeight: '900', color: '#FF3366', letterSpacing: 1.2 },
   cooldownText: { fontSize: 11, fontWeight: '800', color: '#333' },
   vsText: { fontSize: 18, fontWeight: '900', color: '#2A2A3E' },
 
   progressTrack: { height: 4, backgroundColor: '#0E0E1C', borderRadius: 2, overflow: 'hidden', marginBottom: 4 },
   progressFillMine: { height: 4, borderRadius: 2, backgroundColor: '#FF3366' },
   shareRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  shareText: { fontSize: 10, fontWeight: '800', color: '#FF3366' },
+  shareText: { fontSize: 11, fontWeight: '800', color: '#FF3366' },
 
   resultBadge: {
     marginTop: 10, borderRadius: 10, borderWidth: 1,

@@ -638,7 +638,7 @@ const styles = StyleSheet.create({
   formSection: { marginBottom: 20 },
   formLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
   formDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#9933FF' },
-  formLabel: { fontSize: 9, fontWeight: '800', color: '#8A8A99', letterSpacing: 1.5 },
+  formLabel: { fontSize: 11, fontWeight: '800', color: '#8A8A99', letterSpacing: 1.5 },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
   },
   inputIcon: { marginRight: 10 },
   input: { flex: 1, fontSize: 15, color: '#EEE', fontWeight: '600' },
-  inputCounter: { fontSize: 10, color: '#333', fontWeight: '600' },
+  inputCounter: { fontSize: 11, color: '#333', fontWeight: '600' },
   ctaBtn: {
     borderRadius: 14,
     paddingVertical: 15,
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
   },
   codeLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
   codeLiveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#9933FF' },
-  codeCardLabel: { fontSize: 9, fontWeight: '800', color: '#666', letterSpacing: 1.5 },
+  codeCardLabel: { fontSize: 11, fontWeight: '800', color: '#666', letterSpacing: 1.5 },
   codeValue: {
     fontSize: 36,
     fontWeight: '900',
@@ -735,8 +735,8 @@ const styles = StyleSheet.create({
   section: { marginBottom: 24 },
   sectionLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
   sectionDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#9933FF' },
-  sectionLabel: { fontSize: 9, fontWeight: '800', color: '#8A8A99', letterSpacing: 1.5 },
-  sectionSub: { fontSize: 9, color: '#333', fontWeight: '600' },
+  sectionLabel: { fontSize: 11, fontWeight: '800', color: '#8A8A99', letterSpacing: 1.5 },
+  sectionSub: { fontSize: 11, color: '#333', fontWeight: '600' },
 
   // Member cards
   memberCard: {
@@ -765,7 +765,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  captainBadgeText: { fontSize: 8, fontWeight: '800', color: '#FF3366', letterSpacing: 1 },
+  captainBadgeText: { fontSize: 11, fontWeight: '800', color: '#FF3366', letterSpacing: 1 },
   memberVenue: { fontSize: 11, color: '#00E676', fontWeight: '500' },
   memberOffline: { fontSize: 11, color: '#333', fontWeight: '500' },
   livePulse: {

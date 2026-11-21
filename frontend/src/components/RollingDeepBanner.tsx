@@ -203,11 +203,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   statusDot: { width: 5, height: 5, borderRadius: 3 },
-  statusText: { fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
+  statusText: { fontSize: 11, fontWeight: '800', letterSpacing: 1.5 },
   venueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   venueName: { flex: 1, fontSize: 16, fontWeight: '800', color: '#FFF' },
   memberCount: { fontSize: 12, color: '#888', fontWeight: '500' },
-  initiatorLine: { fontSize: 10, color: '#8A8A99', fontWeight: '500' },
+  initiatorLine: { fontSize: 11, color: '#8A8A99', fontWeight: '500' },
   joinBtn: { borderRadius: 12, overflow: 'hidden', marginTop: 4 },
   joinBtnGrad: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

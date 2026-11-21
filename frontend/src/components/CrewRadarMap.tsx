@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   memberName: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#AAA',
     fontWeight: '600',
     maxWidth: 52,
