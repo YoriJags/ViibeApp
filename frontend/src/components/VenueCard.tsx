@@ -476,6 +476,9 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     paddingRight: 14,
     margin: 1,
+    // Clip to the radius so the square ends of the left accent bar stay
+    // inside the rounded corners.
+    overflow: 'hidden',
   },
   cardBoosted: {
     backgroundColor: '#110F1A',
@@ -532,7 +535,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   energyLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.2,
     textTransform: 'uppercase',
@@ -609,10 +612,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   viibeStampText: {
-    fontSize: 8,
+    fontSize: 11,
     fontWeight: '900',
     color: '#D4AF37',
-    letterSpacing: 2,
+    letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
   pulseBadgeRow: {
@@ -633,7 +636,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   pulseBadgeText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     color: '#D4AF37',
     letterSpacing: 1.2,
@@ -688,7 +691,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   rateChipText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     color: '#FFF',
     letterSpacing: 1.2,
