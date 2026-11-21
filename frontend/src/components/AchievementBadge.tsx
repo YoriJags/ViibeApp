@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   badgeName: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '700',
     color: '#CCC',
     textAlign: 'center',

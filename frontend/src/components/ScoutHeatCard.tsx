@@ -244,14 +244,14 @@ const styles = StyleSheet.create({
   headerRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 },
   iconCircle:   { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
   titleBlock:   { flex: 1, gap: 2 },
-  sectionLabel: { fontSize: 9, color: '#8E8AA3', fontWeight: '700', letterSpacing: 1.5 },
+  sectionLabel: { fontSize: 11, color: '#8E8AA3', fontWeight: '700', letterSpacing: 1.5 },
   levelLabel:   { fontSize: 18, fontWeight: '900', letterSpacing: 1 },
   hotNightsBadge: {
     alignItems: 'center', borderWidth: 1, borderRadius: 10,
     paddingHorizontal: 8, paddingVertical: 4,
   },
   hotNightsNum:  { fontSize: 18, fontWeight: '900', lineHeight: 20 },
-  hotNightsLabel: { fontSize: 7, color: '#444', fontWeight: '600', letterSpacing: 0.5, textAlign: 'center' },
+  hotNightsLabel: { fontSize: 11, color: '#444', fontWeight: '600', letterSpacing: 0.5, textAlign: 'center' },
   dotsRow:      { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   dotItem:      { flexDirection: 'row', alignItems: 'center', flex: 1 },
   dot:          { width: 10, height: 10, borderRadius: 5, shadowOffset: { width: 0, height: 0 } },
@@ -265,5 +265,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#111120', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5,
   },
   statNum:      { fontSize: 13, fontWeight: '900' },
-  statLbl:      { fontSize: 9, color: '#444', fontWeight: '500' },
+  statLbl:      { fontSize: 11, color: '#444', fontWeight: '500' },
 });

@@ -84,7 +84,7 @@ function SparkRow({ history, big = false }: { history: TapHistoryData['history']
                 },
               ]} />
             </View>
-            <Text style={[sparkSt.label, isToday && { color: ACCENT }, big && { fontSize: 9 }]}>
+            <Text style={[sparkSt.label, isToday && { color: ACCENT }, big && { fontSize: 11 }]}>
               {isToday ? 'now' : new Date(day.date + 'T12:00:00Z').toLocaleDateString('en', { weekday: 'narrow' })}
             </Text>
             {big && <Text style={[sparkSt.count, isToday && { color: ACCENT }]}>{day.total_taps}</Text>}
@@ -100,8 +100,8 @@ const sparkSt = StyleSheet.create({
   col: { flex: 1, alignItems: 'center', height: '100%' },
   barWrap: { flex: 1, justifyContent: 'flex-end', width: '100%' },
   bar: { width: '100%', borderRadius: 3, minHeight: 3 },
-  label: { fontSize: 7, color: '#8A84A8', fontWeight: '600', marginTop: 3 },
-  count: { fontSize: 8, color: '#333', fontWeight: '700' },
+  label: { fontSize: 11, color: '#8A84A8', fontWeight: '600', marginTop: 3 },
+  count: { fontSize: 11, color: '#333', fontWeight: '700' },
 });
 
 // ── Venue chips ───────────────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ const chipSt = StyleSheet.create({
   barFill: { height: 2, backgroundColor: ACCENT, borderRadius: 1 },
   tapNum: { fontSize: 20, fontWeight: '900', color: ACCENT, lineHeight: 22 },
   venueName: { fontSize: 11, fontWeight: '700', color: '#DDD', marginTop: 1 },
-  venueArea: { fontSize: 9, color: '#444', fontWeight: '500' },
+  venueArea: { fontSize: 11, color: '#444', fontWeight: '500' },
 });
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -316,18 +316,18 @@ const styles = StyleSheet.create({
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   iconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(102,85,255,0.15)', justifyContent: 'center', alignItems: 'center' },
-  sectionLabel: { fontSize: 9, color: '#8E8AA3', fontWeight: '700', letterSpacing: 1.5 },
+  sectionLabel: { fontSize: 11, color: '#8E8AA3', fontWeight: '700', letterSpacing: 1.5 },
   subtitle: { fontSize: 11, color: '#8A8A99', fontWeight: '500', marginTop: 1 },
   allTimeBlock: { alignItems: 'flex-end' },
   allTimeNum: { fontSize: 24, fontWeight: '900', color: ACCENT, lineHeight: 26 },
-  allTimeLabel: { fontSize: 8, color: '#8E8AA3', fontWeight: '600', letterSpacing: 0.5 },
+  allTimeLabel: { fontSize: 11, color: '#8E8AA3', fontWeight: '600', letterSpacing: 0.5 },
   expandBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' },
   divider: { height: 1, backgroundColor: '#111120', marginVertical: 10 },
-  tonightLabel: { fontSize: 8, color: '#8E8AA3', fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 },
+  tonightLabel: { fontSize: 11, color: '#8E8AA3', fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 },
   footerRow: { flexDirection: 'row', gap: 16 },
   footerStat: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
   footerNum: { fontSize: 11, fontWeight: '800', color: '#666', flex: 1 },
-  footerLabel: { fontSize: 9, color: '#8E8AA3', fontWeight: '500' },
+  footerLabel: { fontSize: 11, color: '#8E8AA3', fontWeight: '500' },
 });
 
 const fs = StyleSheet.create({
@@ -335,22 +335,22 @@ const fs = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.07)' },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 13, fontWeight: '900', color: '#FFF', letterSpacing: 2 },
-  subtitle: { fontSize: 9, color: '#8A8A99', fontWeight: '700', letterSpacing: 1.5, backgroundColor: '#1A1A28', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  subtitle: { fontSize: 11, color: '#8A8A99', fontWeight: '700', letterSpacing: 1.5, backgroundColor: '#1A1A28', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   closeBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
   content: { paddingBottom: 48 },
   heroRow: { flexDirection: 'row', margin: 16, gap: 10 },
   heroCard: { flex: 1, borderRadius: 16, borderWidth: 1, padding: 14, alignItems: 'center', gap: 6 },
   heroNum: { fontSize: 22, fontWeight: '900', letterSpacing: -1 },
-  heroLabel: { fontSize: 8, color: '#8A8A99', fontWeight: '800', letterSpacing: 1, textAlign: 'center' },
+  heroLabel: { fontSize: 11, color: '#8A8A99', fontWeight: '800', letterSpacing: 1, textAlign: 'center' },
   section: { marginHorizontal: 16, marginBottom: 20 },
-  sectionLabel: { fontSize: 9, color: '#8A8A99', fontWeight: '800', letterSpacing: 2, marginBottom: 10 },
+  sectionLabel: { fontSize: 11, color: '#8A8A99', fontWeight: '800', letterSpacing: 2, marginBottom: 10 },
   topVenueCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(102,85,255,0.08)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(102,85,255,0.2)', padding: 16 },
   topVenueIcon: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center' },
   topVenueName: { fontSize: 16, fontWeight: '800', color: '#FFF' },
   topVenueDesc: { fontSize: 11, color: '#8A8A99' },
   topVenueCount: { alignItems: 'center' },
   topVenueNum: { fontSize: 28, fontWeight: '900' },
-  topVenueCountLabel: { fontSize: 9, color: '#8A8A99', fontWeight: '700', letterSpacing: 1 },
+  topVenueCountLabel: { fontSize: 11, color: '#8A8A99', fontWeight: '700', letterSpacing: 1 },
   infoCard: { marginHorizontal: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, borderWidth: 1, borderColor: '#1A1A28', padding: 16, gap: 12 },
   infoTitle: { fontSize: 12, fontWeight: '800', color: '#888', letterSpacing: 0.5 },
   infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },

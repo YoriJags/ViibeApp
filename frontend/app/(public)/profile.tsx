@@ -628,7 +628,7 @@ export default function ProfileScreen() {
             >
               <View style={styles.debriefLockedLeft}>
                 <Text style={styles.debriefLockedLabel}>NIGHT DEBRIEF</Text>
-                <Text style={styles.debriefLockedDesc}>Your AI recap of the night: what you hit, how the energy held up, and your scout read.</Text>
+                <Text style={styles.debriefLockedDesc}>Your recap of the night: what you hit, how the energy held up, and your scout read.</Text>
               </View>
               <View style={styles.debriefLockedRight}>
                 <Ionicons name="lock-closed" size={18} color="#FFD700" />
@@ -1283,7 +1283,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   progressLevelText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#666',
     textTransform: 'capitalize',
   },
@@ -1372,7 +1372,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   zodiacName: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.2,
   },
@@ -1399,7 +1399,7 @@ const styles = StyleSheet.create({
   },
   vibePlusBadgeText: {
     color: '#FFD700',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '900',
     letterSpacing: 1.2,
   },
@@ -1429,12 +1429,12 @@ const styles = StyleSheet.create({
   nightSummaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   nightSummaryLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   nightSummaryDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF9933' },
-  nightSummaryLabel: { color: '#FF9933', fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
+  nightSummaryLabel: { color: '#FF9933', fontSize: 11, fontWeight: '800', letterSpacing: 1.5 },
   nightSummaryTitle: { color: '#FF9933', fontSize: 12, fontWeight: '700' },
   nightSummaryStats: { flexDirection: 'row', gap: 20 },
   nightSummaryStat: { alignItems: 'center', gap: 2 },
   nightSummaryStatVal: { color: '#FFF', fontSize: 22, fontWeight: '900' },
-  nightSummaryStatLbl: { color: '#666', fontSize: 9, fontWeight: '600', letterSpacing: 0.5 },
+  nightSummaryStatLbl: { color: '#666', fontSize: 11, fontWeight: '600', letterSpacing: 0.5 },
   nightSummaryFooter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   nightSummaryPreview: { flex: 1, color: '#666', fontSize: 12, fontStyle: 'italic' },
   // Replay tutorial
@@ -1490,7 +1490,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.12)',
   },
   skinChangeBtnText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     color: '#888',
     letterSpacing: 1.5,
@@ -1527,7 +1527,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   skinPreviewHex: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#8A8A99',
     letterSpacing: 1,
     marginLeft: 4,
@@ -1539,7 +1539,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
     marginBottom: 28,
   },
-  nightModalLabel: { color: '#FF9933', fontSize: 10, fontWeight: '800', letterSpacing: 2, marginBottom: 4 },
+  nightModalLabel: { color: '#FF9933', fontSize: 11, fontWeight: '800', letterSpacing: 2, marginBottom: 4 },
   nightModalNightTitle: { color: '#FFF', fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
   nightModalStats: {
     flexDirection: 'row', justifyContent: 'space-around',
@@ -1548,7 +1548,7 @@ const styles = StyleSheet.create({
   },
   nightModalStat: { alignItems: 'center', gap: 6 },
   nightModalStatVal: { fontSize: 32, fontWeight: '900' },
-  nightModalStatLbl: { color: '#8A8A99', fontSize: 10, fontWeight: '600', letterSpacing: 0.5 },
+  nightModalStatLbl: { color: '#8A8A99', fontSize: 11, fontWeight: '600', letterSpacing: 0.5 },
   nightModalDivider: { height: 1, backgroundColor: '#1A1A1A', marginBottom: 20 },
   nightModalScroll: { flex: 1 },
   nightModalDebrief: { color: '#CCC', fontSize: 16, lineHeight: 26, fontStyle: 'italic' },
@@ -1571,7 +1571,7 @@ const styles = StyleSheet.create({
   },
   debriefLockedLabel: {
     color: '#FF9933',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,
   },
@@ -1587,7 +1587,7 @@ const styles = StyleSheet.create({
   },
   debriefLockedChip: {
     color: '#FFD700',
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0.8,
   },
@@ -1596,7 +1596,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   crewSectionLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     color: '#8E8AA3',
     letterSpacing: 2,
