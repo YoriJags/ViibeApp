@@ -122,7 +122,7 @@ def new_place_document(payload: dict, submitted_by: str, approved: bool = False)
 
 def public_place(doc: dict) -> dict:
     """A place as anyone may see it: never who submitted it."""
-    out = {k: v for k, v in doc.items() if k not in ("_id", "submitted_by", "review")}
+    out = {k: v for k, v in doc.items() if k not in ("_id", "submitted_by", "review", "proposed_location")}
     for k in ("created_at", "on_site_fix_at"):
         if isinstance(out.get(k), datetime):
             v = out[k]

@@ -35,6 +35,10 @@ REPORT_REASONS = ("fake", "wrong_location", "impersonation", "scam_tickets", "ot
 
 ON_SITE_ACCURACY_M = 50
 ON_SITE_MOVE_LIMIT_M = 300
+# On-site fixes an organiser link may apply before an admin must look. Every
+# fix is measured from the admin-approved spot, so repeated fixes cannot walk
+# a geofence away step by step.
+ON_SITE_FIXES_ALLOWED = 2
 CERTIFIED_MOVE_LIMIT_M = 1000
 
 CROWD_CONFIRM_PEOPLE = 5

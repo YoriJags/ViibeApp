@@ -99,9 +99,21 @@ def test_claiming_to_be_dave_shows_no_organiser_and_no_ticket_link(env):
     listed = client.get("/api/events?city=lagos").json()[0]
     assert listed["listing"] == "community"
     assert "organiser_name" not in listed and "ticket_url" not in listed
-    # The admin still sees what was claimed.
-    claimed = run(db.venues.find_one({"id": ev["id"]}))["claimed_organiser"]
-    assert claimed == "Dave"
+    # The admin still sees what was claimed, from the private record only.
+    assert run(db.event_private.find_one({"event_id": ev["id"]}))["claimed_organiser"] == "Dave"
+    live = run(db.venues.find_one({"id": ev["id"]}))
+    assert not any(k in live for k in ("submitted_by", "claimed_organiser", "ticket_url_claimed", "reports"))
+    assert live.get("ticket_url") is None and live.get("created_by") is None
+
+
+def test_a_pending_submission_is_not_in_the_venues_collection_at_all(env):
+    # Dozens of routes read venues in their own ways; a pending or rejected
+    # submission must not be there for any of them to leak.
+    client, db, _ = env
+    ev = submit(client).json()["event"]
+    assert run(db.venues.find_one({"id": ev["id"]})) is None
+    client.post(f"/api/admin/events/{ev['id']}/reject", json={"reason": "Not real."})
+    assert run(db.venues.find_one({"id": ev["id"]})) is None
 
 
 def test_a_certified_organisers_event_is_official_under_the_certified_name(env):
@@ -176,7 +188,8 @@ def test_three_different_reports_take_a_community_listing_down(env):
     current["user"] = {"id": "r3"}
     client.post(f"/api/events/{ev['id']}/report", json={"reason": "impersonation"})
     assert client.get("/api/events?city=lagos").json() == []
-    assert client.get("/api/admin/submissions").json()["events"][0]["hidden_for_review"] is True
+    queued = client.get("/api/admin/submissions").json()["events"][0]
+    assert queued["state"] == "taken_down" and len(queued["reports"]) == 3
 
 
 def test_reports_flag_but_do_not_hide_an_official_event(env):
@@ -208,6 +221,53 @@ def test_an_imprecise_fix_is_refused_and_a_short_one_moves_the_pin(env):
     doc = run(db.venues.find_one({"id": ev["id"]}))
     assert doc["coordinates"] == near and doc["location_set_on_site"] is True
     assert run(db.event_location_log.count_documents({"event_id": ev["id"]})) == 1
+
+
+def test_repeated_fixes_cannot_walk_the_pin_away(env):
+    client, db, _ = env
+    ev = submit(client).json()["event"]
+    approve(client, ev["id"])
+    key = organiser_key(client, db, ev["id"])
+    url = f"/api/organiser/events/{ev['id']}/here?key={key}"
+    step = 0.0025  # about 280 m north each time
+    r1 = client.post(url, json={"lat": THEATRE["lat"] + step, "lng": THEATRE["lng"], "accuracy_m": 10})
+    assert r1.json()["decision"] == "apply"
+    # The second step is 560 m from the approved spot, not 280 m from the last fix.
+    r2 = client.post(url, json={"lat": THEATRE["lat"] + 2 * step, "lng": THEATRE["lng"], "accuracy_m": 10})
+    assert r2.json()["decision"] == "needs_admin"
+    # And after two applied fixes, even a short one waits.
+    client.post(url, json={"lat": THEATRE["lat"] + 0.0005, "lng": THEATRE["lng"], "accuracy_m": 10})
+    r4 = client.post(url, json={"lat": THEATRE["lat"] + 0.0006, "lng": THEATRE["lng"], "accuracy_m": 10})
+    assert r4.json()["decision"] == "needs_admin"
+
+
+def test_a_community_organiser_never_changes_the_shared_place(env):
+    client, db, _ = env
+    r = client.post("/api/places", json={"name": "National Theatre", "place_type": "theatre",
+                                         "city": "lagos", "coordinates": THEATRE})
+    place_id = r.json()["place"]["id"]
+    client.post(f"/api/admin/places/{place_id}/approve", json={})
+    ev = submit(client, place_id=place_id).json()["event"]
+    approve(client, ev["id"])
+    key = organiser_key(client, db, ev["id"])
+    client.post(f"/api/organiser/events/{ev['id']}/here?key={key}",
+                json={"lat": THEATRE["lat"] + 0.001, "lng": THEATRE["lng"], "accuracy_m": 10})
+    place = run(db.places.find_one({"id": place_id}))
+    assert place["coordinates"] == THEATRE and "proposed_location" not in place
+
+
+def test_a_taken_down_or_rejected_events_organiser_link_stops_working(env):
+    client, db, current = env
+    ev = submit(client).json()["event"]
+    approve(client, ev["id"])
+    key = organiser_key(client, db, ev["id"])
+    assert client.get(f"/api/organiser/events/{ev['id']}?key={key}").status_code == 200
+    for uid in ("r1", "r2", "r3"):
+        current["user"] = {"id": uid}
+        client.post(f"/api/events/{ev['id']}/report", json={"reason": "fake"})
+    assert client.get(f"/api/organiser/events/{ev['id']}?key={key}").status_code == 404
+    client.post(f"/api/admin/events/{ev['id']}/reject", json={"reason": "Fake event."})
+    assert run(db.event_keys.find_one({"event_id": ev["id"]})) is None
 
 
 def test_a_far_fix_waits_for_an_admin_and_a_wrong_key_finds_nothing(env):

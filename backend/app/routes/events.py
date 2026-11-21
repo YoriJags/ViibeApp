@@ -21,7 +21,9 @@ from app.config import db
 from app.services.auth import require_admin, require_auth
 from app.services.crowd_flow import arrival_curve, flow_for
 from app.services.event_trust import (
+    ON_SITE_FIXES_ALLOWED,
     REPORT_REASONS,
+    REPORTS_TO_HIDE,
     drift_suggestion,
     find_duplicate,
     location_status,
@@ -37,6 +39,7 @@ from app.services.events import (
     SOURCE_COMMUNITY,
     event_phase,
     event_summary,
+    is_held,
     is_listed,
     listing_of,
     new_event_document,
@@ -164,10 +167,8 @@ async def event_timing(event_id: str):
 @router.get("/organiser/events/{event_id}")
 async def organiser_view(event_id: str, key: str = Query(...)):
     """Everything the promoter needs on the night, behind their private link."""
-    event = await db.venues.find_one({"id": event_id, "kind": KIND_EVENT}, {"_id": 0})
-    stored = await db.event_keys.find_one({"event_id": event_id}) if event else None
-    if not event or not stored or not secrets.compare_digest(str(stored.get("key", "")), str(key)):
-        raise HTTPException(status_code=404, detail="Event not found")
+    event = await _event_for_key(event_id, key)
+    event.pop("_id", None)
     return await live_payload(event)
 
 
@@ -297,23 +298,43 @@ async def log_position_near_event(event: dict, user_id: str, lat: float, lng: fl
 
 
 # ── Community submissions ────────────────────────────────────────────────────
+#
+# A submission lives in event_submissions until an admin approves it. Only
+# then does a public, venue-shaped copy go into venues, the collection dozens
+# of routes read in their own ways. Everything private (who submitted it, the
+# organiser they claimed, an unverified ticket link, reports, proposed pins,
+# the approved anchor) lives in event_private, which no public route reads.
+# The same reason organiser keys live in event_keys.
 
 async def _organiser_certification(user_id: str) -> dict | None:
     from app.routes.certification import certified_record
     return await certified_record(user_id, "organiser")
 
 
+async def _private(event_id: str) -> dict:
+    return await db.event_private.find_one({"event_id": event_id}) or {}
+
+
+async def _set_private(event_id: str, fields: dict) -> None:
+    await db.event_private.update_one({"event_id": event_id}, {"$set": fields}, upsert=True)
+
+
+def _submission_view(sub: dict) -> dict:
+    """A submission as its submitter sees it."""
+    view = public_event({k: v for k, v in sub.items() if k not in ("status", "reason")})
+    return view
+
+
 @router.post("/events/submit")
 async def submit_event(payload: dict, user: dict = Depends(require_auth)):
     """
-    Anyone signed in can put an event forward. It stays off the map, and no
+    Anyone signed in can put an event forward. It is not on the map, and no
     phone watches its ground, until an admin approves it. A certified
     organiser's event is Official; anyone else's is a community listing that
     shows no organiser name and no ticket link.
     """
     from app.routes.places import submissions_today_and_pending
     payload = dict(payload)
-    place = None
     if payload.get("place_id"):
         place = await db.places.find_one({"id": payload["place_id"]})
         usable = place and (place.get("status") == "approved"
@@ -339,46 +360,49 @@ async def submit_event(payload: dict, user: dict = Depends(require_auth)):
 
     cert = await _organiser_certification(user["id"])
     claimed = (payload.get("organiser_name") or "").strip() or None
+    ticket = payload.get("ticket_url")
     payload["source"] = SOURCE_COMMUNITY
     payload["organiser_name"] = cert["name"] if cert else None
-    doc = new_event_document(payload, created_by=user["id"])
-    doc.update({
-        "submitted_by": user["id"],
-        "approved": False,
-        "listing": LISTING_OFFICIAL if cert else LISTING_COMMUNITY,
-        # What they claimed, for the admin only. Never shown publicly.
-        "claimed_organiser": claimed,
-    })
+    payload["ticket_url"] = ticket if cert else None
+    doc = new_event_document(payload, created_by=None)
+    doc["listing"] = LISTING_OFFICIAL if cert else LISTING_COMMUNITY
 
-    nearby = await db.venues.find({"kind": KIND_EVENT, "city": doc["city"], "rejected": {"$ne": True}},
-                                  {"_id": 0}).to_list(2000)
-    dup = find_duplicate(doc, nearby)
+    listed = await db.venues.find({"kind": KIND_EVENT, "city": doc["city"]}, {"_id": 0}).to_list(2000)
+    waiting = await db.event_submissions.find({"city": doc["city"], "status": "pending"}, {"_id": 0}).to_list(2000)
+    dup = find_duplicate(doc, listed + waiting)
     if dup:
         detail = {"problems": ["This event looks already listed at the same place and time."]}
         if is_listed(dup):
             detail["existing"] = {"id": dup["id"], "name": dup["name"]}
         raise HTTPException(status_code=409, detail=detail)
 
-    await db.venues.insert_one(dict(doc))
+    await db.event_submissions.insert_one({**doc, "status": "pending", "submitted_by": user["id"]})
+    await _set_private(doc["id"], {"submitted_by": user["id"], "claimed_organiser": claimed,
+                                   "claimed_ticket_url": ticket})
     return {"event": public_event(doc), "status": "pending"}
 
 
 @router.get("/me/submissions")
 async def my_submissions(user: dict = Depends(require_auth)):
     """The submitter's own events and places, with their organiser link once approved."""
-    events = await db.venues.find({"kind": KIND_EVENT, "submitted_by": user["id"]}, {"_id": 0}) \
+    subs = await db.event_submissions.find({"submitted_by": user["id"]}, {"_id": 0}) \
         .sort("created_at", -1).to_list(100)
     out = []
-    for e in events:
-        status = ("rejected" if e.get("rejected") else "under_review" if e.get("hidden_for_review")
-                  else "live" if e.get("approved") else "pending")
-        item = {"event": public_event(e), "status": status}
-        if status == "rejected":
-            item["reason"] = e.get("rejected_reason")
-        if e.get("approved"):
-            stored = await db.event_keys.find_one({"event_id": e["id"]})
-            if stored:
-                item["organiser_link"] = f"/organiser/{e['id']}?key={stored['key']}"
+    for s in subs:
+        item = {"event": _submission_view(s), "status": s["status"]}
+        if s["status"] == "rejected":
+            item["reason"] = s.get("reason")
+        if s["status"] == "approved":
+            live = await db.venues.find_one({"id": s["id"], "kind": KIND_EVENT}, {"_id": 0})
+            if live:
+                item["event"] = public_event(live)
+                if live.get("hidden_for_review"):
+                    item["status"] = "under_review"
+                else:
+                    item["status"] = "live"
+                    stored = await db.event_keys.find_one({"event_id": s["id"]})
+                    if stored:
+                        item["organiser_link"] = f"/organiser/{s['id']}?key={stored['key']}"
         out.append(item)
     from app.services.places import public_place
     places = await db.places.find({"submitted_by": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
@@ -391,21 +415,21 @@ async def my_submissions(user: dict = Depends(require_auth)):
 
 @router.get("/admin/submissions")
 async def submissions_queue(admin: dict = Depends(require_admin)):
-    """Events waiting for approval or taken down by reports, with near duplicates."""
-    rows = await db.venues.find(
-        {"kind": KIND_EVENT, "rejected": {"$ne": True},
-         "$or": [{"source": SOURCE_COMMUNITY, "approved": {"$ne": True}}, {"hidden_for_review": True}]},
-        {"_id": 0}).sort("created_at", 1).to_list(200)
-    others = await db.venues.find({"kind": KIND_EVENT, "rejected": {"$ne": True}}, {"_id": 0}).to_list(2000)
+    """Submissions waiting for approval and live events taken down by reports."""
+    waiting = await db.event_submissions.find({"status": "pending"}, {"_id": 0}).sort("created_at", 1).to_list(200)
+    held = await db.venues.find({"kind": KIND_EVENT, "hidden_for_review": True}, {"_id": 0}).to_list(200)
+    listed = await db.venues.find({"kind": KIND_EVENT}, {"_id": 0}).to_list(2000)
     out = []
-    for r in rows:
-        dup = find_duplicate(r, [o for o in others if o["id"] != r["id"]])
+    for r in waiting + held:
+        dup = find_duplicate(r, [o for o in listed + waiting if o["id"] != r["id"]])
+        priv = await _private(r["id"])
         out.append({
             "event": public_event(r),
-            "submitted_by": r.get("submitted_by"),
-            "claimed_organiser": r.get("claimed_organiser"),
-            "reports": r.get("reports", []),
-            "hidden_for_review": bool(r.get("hidden_for_review")),
+            "state": "pending" if r in waiting else "taken_down",
+            "submitted_by": priv.get("submitted_by"),
+            "claimed_organiser": priv.get("claimed_organiser"),
+            "claimed_ticket_url": priv.get("claimed_ticket_url"),
+            "reports": await db.event_reports.find({"event_id": r["id"]}, {"_id": 0}).to_list(100),
             "possible_duplicate": {"id": dup["id"], "name": dup["name"]} if dup else None,
         })
     return {"events": out}
@@ -413,43 +437,68 @@ async def submissions_queue(admin: dict = Depends(require_admin)):
 
 @router.post("/admin/events/{event_id}/approve")
 async def approve_event(event_id: str, payload: dict | None = None, admin: dict = Depends(require_admin)):
+    """
+    Approve a submission (it goes on the map) or put a taken-down event back up.
+    The admin may correct the pin or the ground size. The approved spot becomes
+    the anchor every later on-site move is measured from.
+    """
     payload = payload or {}
-    event = await _event_or_404(event_id)
-    update = {"approved": True, "hidden_for_review": False,
-              "review": {"by": admin["id"], "at": datetime.now(timezone.utc)}}
+    sub = await db.event_submissions.find_one({"id": event_id, "status": "pending"}, {"_id": 0})
+    live = None if sub else await db.venues.find_one({"id": event_id, "kind": KIND_EVENT}, {"_id": 0})
+    event = sub or live
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    fix = {}
     if payload.get("coordinates") or payload.get("geofence_radius_m"):
         check = {**event, **{k: payload[k] for k in ("coordinates", "geofence_radius_m") if payload.get(k)}}
         problems = validate_event(check)
         if problems:
             raise HTTPException(status_code=422, detail={"problems": problems})
         if payload.get("coordinates"):
-            to = {"lat": float(payload["coordinates"]["lat"]), "lng": float(payload["coordinates"]["lng"])}
-            await _log_move(event, to, admin["id"], "corrected at approval")
-            update["coordinates"] = to
+            fix["coordinates"] = {"lat": float(payload["coordinates"]["lat"]),
+                                  "lng": float(payload["coordinates"]["lng"])}
+            await _log_move(event, fix["coordinates"], admin["id"], "corrected at approval")
         if payload.get("geofence_radius_m"):
-            update["geofence_radius_m"] = float(payload["geofence_radius_m"])
-    await db.venues.update_one({"id": event_id}, {"$set": update})
+            fix["geofence_radius_m"] = float(payload["geofence_radius_m"])
+    now = datetime.now(timezone.utc)
+    if sub:
+        public = {k: v for k, v in sub.items() if k not in ("status", "submitted_by", "reason")}
+        await db.venues.insert_one({**public, **fix, "approved": True})
+        await db.event_submissions.update_one({"id": event_id}, {"$set": {"status": "approved", "approved_at": now}})
+    else:
+        await db.venues.update_one({"id": event_id}, {"$set": {**fix, "hidden_for_review": False},
+                                                       "$unset": {"is_suppressed": ""}})
+    anchor = fix.get("coordinates") or event["coordinates"]
+    await _set_private(event_id, {"approved_coordinates": anchor, "on_site_fixes": 0,
+                                  "review": {"by": admin["id"], "at": now}})
     if not await db.event_keys.find_one({"event_id": event_id}):
-        await db.event_keys.insert_one({"event_id": event_id, "key": new_organiser_key(),
-                                        "created_at": datetime.now(timezone.utc)})
+        await db.event_keys.insert_one({"event_id": event_id, "key": new_organiser_key(), "created_at": now})
     return {"approved": event_id}
 
 
 @router.post("/admin/events/{event_id}/reject")
 async def reject_event(event_id: str, payload: dict, admin: dict = Depends(require_admin)):
+    """Reject a submission, or take a live event down for good. The organiser link stops working."""
     reason = (payload.get("reason") or "").strip()
     if not reason or len(reason) > 500:
         raise HTTPException(status_code=422, detail="Give the reason the submitter will see (at most 500 characters).")
-    await _event_or_404(event_id)
-    await db.venues.update_one({"id": event_id}, {"$set": {
-        "rejected": True, "approved": False, "rejected_reason": reason,
-        "review": {"by": admin["id"], "at": datetime.now(timezone.utc)}}})
+    now = datetime.now(timezone.utc)
+    sub = await db.event_submissions.find_one({"id": event_id})
+    live = await db.venues.find_one({"id": event_id, "kind": KIND_EVENT})
+    if not sub and not live:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if sub:
+        await db.event_submissions.update_one({"id": event_id}, {"$set": {"status": "rejected", "reason": reason}})
+    if live:
+        await db.venues.delete_one({"id": event_id, "kind": KIND_EVENT})
+    await db.event_keys.delete_many({"event_id": event_id})
+    await _set_private(event_id, {"review": {"by": admin["id"], "at": now, "reason": reason}})
     return {"rejected": event_id}
 
 
 @router.post("/admin/events/{event_id}/move")
 async def admin_move(event_id: str, payload: dict, admin: dict = Depends(require_admin)):
-    """Move the pin, for example to where the crowd is gathering. Logged with the reason."""
+    """Move the pin, for example to where the crowd is gathering. Logged; becomes the new anchor."""
     event = await _event_or_404(event_id)
     try:
         to = {"lat": float(payload["lat"]), "lng": float(payload["lng"])}
@@ -460,7 +509,8 @@ async def admin_move(event_id: str, payload: dict, admin: dict = Depends(require
         raise HTTPException(status_code=422, detail={"problems": problems})
     why = (payload.get("reason") or "moved by admin")[:200]
     await _log_move(event, to, admin["id"], why)
-    await db.venues.update_one({"id": event_id}, {"$set": {"coordinates": to}, "$unset": {"pending_location": ""}})
+    await db.venues.update_one({"id": event_id}, {"$set": {"coordinates": to}})
+    await _set_private(event_id, {"approved_coordinates": to, "on_site_fixes": 0, "pending_location": None})
     return {"moved": event_id, "to": to}
 
 
@@ -468,7 +518,8 @@ async def admin_move(event_id: str, payload: dict, admin: dict = Depends(require
 async def admin_location(event_id: str, admin: dict = Depends(require_admin)):
     event = await _event_or_404(event_id)
     log = await db.event_location_log.find({"event_id": event_id}, {"_id": 0}).sort("at", 1).to_list(200)
-    return {"location": await location_picture(event), "pending_location": event.get("pending_location"),
+    priv = await _private(event_id)
+    return {"location": await location_picture(event), "pending_location": priv.get("pending_location"),
             "moves": log}
 
 
@@ -477,32 +528,37 @@ async def admin_location(event_id: str, admin: dict = Depends(require_admin)):
 @router.post("/events/{event_id}/report")
 async def report_event(event_id: str, payload: dict, user: dict = Depends(require_auth)):
     """
-    Anyone signed in can report an event once. Three different people take a
-    community listing off the map until an admin looks; an Official event is
-    flagged for review but stays up.
+    Anyone signed in can report a listed event once. Three different people
+    take a community listing off the map until an admin looks; an Official
+    event is flagged for review but stays up.
     """
     reason = payload.get("reason")
     if reason not in REPORT_REASONS:
         raise HTTPException(status_code=422, detail=f"Reason must be one of: {', '.join(REPORT_REASONS)}.")
-    detail = (payload.get("detail") or "")[:500]
     event = await _event_or_404(event_id)
-    if any(r.get("user_id") == user["id"] for r in event.get("reports", [])):
+    if await db.event_reports.find_one({"event_id": event_id, "user_id": user["id"]}):
         return {"reported": event_id, "already": True}
-    report = {"user_id": user["id"], "reason": reason, "detail": detail, "at": datetime.now(timezone.utc)}
-    reporters = {r["user_id"] for r in event.get("reports", [])} | {user["id"]}
-    update = {"$push": {"reports": report}}
-    if should_hide_for_reports(len(reporters), listing_of(event) == LISTING_OFFICIAL):
-        update["$set"] = {"hidden_for_review": True}
-    await db.venues.update_one({"id": event_id}, update)
+    await db.event_reports.insert_one({"event_id": event_id, "user_id": user["id"], "reason": reason,
+                                       "detail": (payload.get("detail") or "")[:500],
+                                       "at": datetime.now(timezone.utc)})
+    reporters = len(await db.event_reports.distinct("user_id", {"event_id": event_id}))
+    if should_hide_for_reports(reporters, listing_of(event) == LISTING_OFFICIAL):
+        # is_suppressed too, so the many venue queries that already honour it drop it.
+        await db.venues.update_one({"id": event_id}, {"$set": {"hidden_for_review": True, "is_suppressed": True}})
+    elif reporters >= REPORTS_TO_HIDE:
+        await db.venues.update_one({"id": event_id}, {"$set": {"flagged_for_review": True}})
     return {"reported": event_id}
 
 
 # ── Organiser on site ────────────────────────────────────────────────────────
 
 async def _event_for_key(event_id: str, key: str) -> dict:
+    """The event behind an organiser link. A rejected or taken-down event's link stops working."""
     event = await db.venues.find_one({"id": event_id, "kind": KIND_EVENT})
     stored = await db.event_keys.find_one({"event_id": event_id}) if event else None
     if not event or not stored or not secrets.compare_digest(str(stored.get("key", "")), str(key)):
+        raise HTTPException(status_code=404, detail="Event not found")
+    if is_held(event):
         raise HTTPException(status_code=404, detail="Event not found")
     return event
 
@@ -512,37 +568,40 @@ async def organiser_here(event_id: str, payload: dict, key: str = Query(...)):
     """
     "I'm here, use my location." The organiser stands at the grounds and the
     phone's fix becomes the centre. Refused when the fix is worse than 50 m.
-    A short move is applied; a long one waits for an admin, so an organiser
-    link cannot carry a geofence across the city to watch who arrives.
+
+    Every move is measured from the spot the admin approved, never from the
+    last move, and only ON_SITE_FIXES_ALLOWED fixes apply without an admin, so
+    an organiser link cannot walk a geofence across the city step by step.
+    A longer move, or one past the allowance, waits for an admin.
     """
     event = await _event_for_key(event_id, key)
     try:
         lat, lng = float(payload["lat"]), float(payload["lng"])
     except (KeyError, TypeError, ValueError):
         raise HTTPException(status_code=422, detail="Send lat, lng and accuracy_m from the phone.")
-    c = event["coordinates"]
-    move = calculate_distance(c["lat"], c["lng"], lat, lng)
-    certified = listing_of(event) == LISTING_OFFICIAL
-    decision = on_site_decision(payload.get("accuracy_m"), move, certified)
+    priv = await _private(event_id)
+    anchor = priv.get("approved_coordinates") or event["coordinates"]
+    move = calculate_distance(anchor["lat"], anchor["lng"], lat, lng)
+    official = listing_of(event) == LISTING_OFFICIAL
+    decision = on_site_decision(payload.get("accuracy_m"), move, official)
+    if decision == "apply" and priv.get("on_site_fixes", 0) >= ON_SITE_FIXES_ALLOWED:
+        decision = "needs_admin"
     to = {"lat": lat, "lng": lng}
     if decision == "too_imprecise":
         return {"decision": decision,
                 "message": "Your phone's location is not precise enough. Step outside or wait a moment and try again."}
     now = datetime.now(timezone.utc)
     if decision == "needs_admin":
-        await db.venues.update_one({"id": event_id}, {"$set": {
-            "pending_location": {**to, "distance_m": round(move), "at": now, "by": "organiser_link"}}})
+        await _set_private(event_id, {"pending_location": {**to, "distance_m": round(move), "at": now}})
         return {"decision": decision, "distance_m": round(move),
-                "message": "That is far from the approved spot, so VIIBE will check it before moving the pin."}
+                "message": "VIIBE will check this location before moving the pin."}
     await _log_move(event, to, "organiser_link", "set on site")
     await db.venues.update_one({"id": event_id}, {"$set": {
         "coordinates": to, "location_set_on_site": True, "location_set_at": now}})
-    # The place learns the on-site fix too, once, so the next event there starts right.
-    if event.get("place_id"):
-        place = await db.places.find_one({"id": event["place_id"]})
-        if place and not place.get("on_site_fix_at"):
-            pc = place["coordinates"]
-            if calculate_distance(pc["lat"], pc["lng"], lat, lng) <= 300:
-                await db.places.update_one({"id": place["id"]}, {"$set": {
-                    "coordinates": to, "location_source": "on_site", "on_site_fix_at": now}})
+    await _set_private(event_id, {"on_site_fixes": priv.get("on_site_fixes", 0) + 1})
+    # A shared place is never changed by an organiser link. An Official
+    # organiser's fix is offered to the admin as the place's location.
+    if event.get("place_id") and official:
+        await db.places.update_one({"id": event["place_id"]}, {"$set": {
+            "proposed_location": {**to, "from_event": event_id, "at": now}}})
     return {"decision": "apply", "distance_m": round(move), "to": to}

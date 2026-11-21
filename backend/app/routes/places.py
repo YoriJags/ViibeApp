@@ -33,11 +33,10 @@ async def submissions_today_and_pending(user_id: str) -> tuple[int, int]:
     """Events and places together count towards one person's limits."""
     since = datetime.now(timezone.utc) - timedelta(days=1)
     pending = (await db.places.count_documents({"submitted_by": user_id, "status": STATUS_PENDING})
-               + await db.venues.count_documents({"kind": "event", "submitted_by": user_id,
-                                                  "approved": {"$ne": True}, "rejected": {"$ne": True}}))
+               + await db.event_submissions.count_documents({"submitted_by": user_id, "status": "pending"}))
     today = (await db.places.count_documents({"submitted_by": user_id, "created_at": {"$gte": since}})
-             + await db.venues.count_documents({"kind": "event", "submitted_by": user_id,
-                                                "created_at": {"$gte": since}}))
+             + await db.event_submissions.count_documents({"submitted_by": user_id,
+                                                           "created_at": {"$gte": since}}))
     return pending, today
 
 
