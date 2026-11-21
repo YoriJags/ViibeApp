@@ -112,11 +112,11 @@ function TickerTape({ items }: { items: Array<{ name: string; score: number; cha
 }
 
 const tickSt = StyleSheet.create({
-  wrap: { height: 26, overflow: 'hidden', backgroundColor: '#09090F', borderBottomWidth: 1, borderBottomColor: '#1A1A24' },
-  item: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10 },
-  name: { fontSize: 9, fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: 0.5 },
-  score: { fontSize: 10, fontWeight: '900' },
-  change: { fontSize: 9, fontWeight: '700' },
+  wrap: { height: 28, overflow: 'hidden', backgroundColor: '#09090F', borderBottomWidth: 1, borderBottomColor: '#1A1A24' },
+  item: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, height: 27 },
+  name: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: 0.5 },
+  score: { fontSize: 12, fontWeight: '900' },
+  change: { fontSize: 11, fontWeight: '700' },
   dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#2A2A38' },
   fadeLeft: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 24, zIndex: 1 },
   fadeRight: { position: 'absolute', right: 0, top: 0, bottom: 0, width: 24, zIndex: 1 },
@@ -203,7 +203,7 @@ function VenueRow({
             </View>
             <Text style={rowSt.area} numberOfLines={1}>
               {venue.area}
-              <Text style={{ color: vl.color, fontWeight: '800', fontSize: 8 }}> · {vl.label}</Text>
+              <Text style={{ color: vl.color, fontWeight: '800', fontSize: 11 }}> · {vl.label}</Text>
             </Text>
           </View>
 
@@ -231,11 +231,11 @@ const rowSt = StyleSheet.create({
   nameRow:{ flexDirection: 'row', alignItems: 'center', gap: 5 },
   name:   { fontSize: 13, fontWeight: '700', color: '#EEE', marginBottom: 1, flexShrink: 1 },
   featuredBadge: { backgroundColor: '#FFD70020', borderWidth: 1, borderColor: '#FFD70055', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4 },
-  featuredText:  { fontSize: 7, fontWeight: '900', color: '#FFD700', letterSpacing: 0.5 },
-  area:   { fontSize: 10, color: '#444' },
+  featuredText:  { fontSize: 11, fontWeight: '900', color: '#FFD700', letterSpacing: 0.5 },
+  area:   { fontSize: 11, color: '#444' },
   priceCol: { alignItems: 'flex-end', gap: 2, width: 52 },
   price:  { fontSize: 20, fontWeight: '900', letterSpacing: -0.5, textAlign: 'right' },
-  change: { fontSize: 9, fontWeight: '800', letterSpacing: 0.3 },
+  change: { fontSize: 11, fontWeight: '800', letterSpacing: 0.3 },
   divider:{ height: 1, backgroundColor: '#1A1A24', marginHorizontal: 14 },
 });
 
@@ -276,15 +276,9 @@ function IndexHeader({
         <View style={idxSt.liveRow}>
           <Animated.View style={[idxSt.liveDot, { opacity: dotAnim }]} />
           <Text style={idxSt.liveText}>LIVE</Text>
-          <Text style={idxSt.exchange}>VIIBE EXCHANGE</Text>
-          {isWeekend && (
-            <View style={idxSt.weekendChip}>
-              <Text style={idxSt.weekendChipText}>🎉 {weekendTag}</Text>
-            </View>
-          )}
+          <Text style={idxSt.exchange} numberOfLines={1}>VIIBE EXCHANGE</Text>
         </View>
         <View style={idxSt.timeRow}>
-          <Text style={idxSt.timeText}>{time}</Text>
           <View style={[idxSt.marketBadge, { borderColor: statusColor + '50' }]}>
             <View style={[idxSt.statusDot, { backgroundColor: statusColor }]} />
             <Text style={[idxSt.marketLabel, { color: statusColor }]}>{cityLabel}</Text>
@@ -304,6 +298,16 @@ function IndexHeader({
             <Text style={idxSt.indexUnit}> pts</Text>
           </Text>
           <Text style={idxSt.cityLabel}>{cityName.toUpperCase()} · {venueCount} ACTIVE</Text>
+          {/* Clock and weekend tag sit here: in the top row they pushed the
+              city badge and expand button off a 360dp-wide card. */}
+          <View style={idxSt.metaRow}>
+            {isWeekend && (
+              <View style={idxSt.weekendChip}>
+                <Text style={idxSt.weekendChipText}>🎉 {weekendTag}</Text>
+              </View>
+            )}
+            <Text style={idxSt.timeText}>{time}</Text>
+          </View>
         </View>
         {indexChange && (
           <View style={idxSt.changeBlock}>
@@ -324,29 +328,32 @@ function IndexHeader({
 }
 
 const idxSt = StyleSheet.create({
-  card: { borderTopLeftRadius: 14, borderTopRightRadius: 14, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8, borderWidth: 1, borderColor: '#1E1E2A', borderBottomWidth: 0 },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  // No border of its own: both wrappers (the board and the full-screen
+  // index) already draw one, and two made a card inside a card.
+  card: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 8 },
+  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 1 },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#00E676' },
-  liveText: { fontSize: 9, fontWeight: '900', color: '#00E676', letterSpacing: 1.5 },
-  exchange: { fontSize: 9, color: 'rgba(255,255,255,0.45)', fontWeight: '700', letterSpacing: 1.5, marginLeft: 4 },
-  weekendChip: { backgroundColor: '#FF336618', borderWidth: 1, borderColor: '#FF336640', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginLeft: 6 },
-  weekendChipText: { fontSize: 8, fontWeight: '800', color: '#FF9933', letterSpacing: 0.5 },
+  liveText: { fontSize: 11, fontWeight: '900', color: '#00E676', letterSpacing: 1.2 },
+  exchange: { fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: '700', letterSpacing: 1.2, marginLeft: 4, flexShrink: 1 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
+  weekendChip: { backgroundColor: '#FF336618', borderWidth: 1, borderColor: '#FF336640', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  weekendChipText: { fontSize: 11, fontWeight: '800', color: '#FF9933', letterSpacing: 0.5 },
   timeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  timeText: { fontSize: 10, color: '#666', fontWeight: '600', letterSpacing: 0.5 },
+  timeText: { fontSize: 11, color: '#666', fontWeight: '600', letterSpacing: 0.5 },
   marketBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
   statusDot: { width: 5, height: 5, borderRadius: 3 },
-  marketLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  marketLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 1 },
   expandBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.07)', justifyContent: 'center', alignItems: 'center' },
   indexRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 },
   indexScore: { fontSize: 32, fontWeight: '900', color: '#FFF', letterSpacing: -1 },
   indexUnit: { fontSize: 14, color: '#8A8A99', fontWeight: '500' },
-  cityLabel: { fontSize: 9, color: '#8A8A99', fontWeight: '700', letterSpacing: 1.5, marginTop: 2 },
+  cityLabel: { fontSize: 11, color: '#8A8A99', fontWeight: '700', letterSpacing: 1.2, marginTop: 2 },
   changeBlock: { alignItems: 'flex-end' },
   indexChange: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5 },
-  changeSubtext: { fontSize: 9, color: '#444', marginTop: 2 },
+  changeSubtext: { fontSize: 11, color: '#444', marginTop: 2 },
   colHeaders: { flexDirection: 'row', alignItems: 'center', paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: '#1A1A24', gap: 8 },
-  colLabel: { fontSize: 8, color: '#444', fontWeight: '700', letterSpacing: 1 },
+  colLabel: { fontSize: 11, color: '#444', fontWeight: '700', letterSpacing: 1 },
 });
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
@@ -441,7 +448,7 @@ export default function VibeMarket({ venues, cityName, cityScore = 50, cityLabel
             />
           ))}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>VIIBE EXCHANGE · RANKINGS RESET 6AM · DATA LIVE</Text>
+            <Text style={[styles.footerText, { flexShrink: 1 }]} numberOfLines={1}>VIIBE EXCHANGE · RANKINGS RESET 6AM · DATA LIVE</Text>
             <Text style={styles.footerText}>◈</Text>
           </View>
         </View>
@@ -526,7 +533,7 @@ const styles = StyleSheet.create({
   container: { marginBottom: 16, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#1E1E2A' },
   board: { backgroundColor: '#0B0B12', borderBottomLeftRadius: 14, borderBottomRightRadius: 14 },
   footer: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#1A1A24' },
-  footerText: { fontSize: 7, color: '#2A2A38', fontWeight: '700', letterSpacing: 1 },
+  footerText: { fontSize: 10, color: '#2A2A38', fontWeight: '700', letterSpacing: 0.5 },
 });
 
 const fs = StyleSheet.create({
@@ -534,7 +541,7 @@ const fs = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.07)' },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 13, fontWeight: '900', color: '#FFF', letterSpacing: 2 },
-  cityChip: { fontSize: 9, color: '#666', fontWeight: '700', letterSpacing: 2, backgroundColor: '#1A1A28', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  cityChip: { fontSize: 11, color: '#666', fontWeight: '700', letterSpacing: 2, backgroundColor: '#1A1A28', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   closeBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
   content: { paddingBottom: 32 },
   tickerWrap: { marginBottom: 0 },
@@ -543,7 +550,7 @@ const fs = StyleSheet.create({
   statsRow: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 14, borderWidth: 1, borderColor: '#1A1A28', padding: 16 },
   statBlock: { flex: 1, alignItems: 'center', gap: 4 },
   statValue: { fontSize: 22, fontWeight: '900', color: '#FFF' },
-  statLabel: { fontSize: 8, fontWeight: '800', letterSpacing: 1 },
+  statLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.8 },
   footer: { marginHorizontal: 16, alignItems: 'center', paddingVertical: 8 },
-  footerText: { fontSize: 8, color: '#2A2A38', fontWeight: '700', letterSpacing: 1 },
+  footerText: { fontSize: 11, color: '#2A2A38', fontWeight: '700', letterSpacing: 0.5 },
 });
