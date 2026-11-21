@@ -406,7 +406,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10,
   },
-  headerBadgeText: { fontSize: 8, fontWeight: '800', color: '#FFF', letterSpacing: 1 },
+  headerBadgeText: { fontSize: 11, fontWeight: '800', color: '#FFF', letterSpacing: 1 },
 
   scroll:  { paddingTop: 8 },
   section: { paddingHorizontal: 16, marginBottom: 28 },
@@ -418,21 +418,22 @@ const s = StyleSheet.create({
   emptySub:  { fontSize: 11, color: '#2A2A3E' },
 
   // City Zones
-  zonesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  // space-between: two 47% tiles plus an 8px gap left the right column short of the edge.
+  zonesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8 },
   zoneCard: {
     width: '47%', borderRadius: 14, overflow: 'hidden',
     borderWidth: 1,
   },
   zoneGrad: { padding: 14, borderRadius: 14, minHeight: 110, justifyContent: 'flex-end' },
   hotZoneBadge: { alignSelf: 'flex-start', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, marginBottom: 8 },
-  hotZoneBadgeText: { fontSize: 8, fontWeight: '900', letterSpacing: 1 },
+  hotZoneBadgeText: { fontSize: 11, fontWeight: '900', letterSpacing: 1 },
   zoneBar: { height: 3, borderRadius: 2, overflow: 'hidden', marginBottom: 8 },
   zoneBarFill: { height: 3, borderRadius: 2 },
   zoneScore: { fontSize: 28, fontWeight: '900', letterSpacing: -1 },
   zoneArea:  { fontSize: 12, fontWeight: '700', color: '#CCC', marginTop: 1 },
-  zoneVenueCount: { fontSize: 10, color: '#8A8A99', marginTop: 2 },
+  zoneVenueCount: { fontSize: 11, color: '#8A8A99', marginTop: 2 },
   zoneTrendBadge: { alignSelf: 'flex-start', borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2, marginTop: 6 },
-  zoneTrendText:  { fontSize: 8, fontWeight: '800', letterSpacing: 0.5 },
+  zoneTrendText:  { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
 
   // Dark Horse
   darkHorseRow: { borderRadius: 14, overflow: 'hidden' },
@@ -446,14 +447,14 @@ const s = StyleSheet.create({
   darkHorseNameRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 3 },
   darkHorseName: { fontSize: 13, fontWeight: '700', color: '#EEE', flexShrink: 1 },
   risingChip: { backgroundColor: 'rgba(153,51,255,0.15)', borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 },
-  risingChipText: { fontSize: 7, fontWeight: '900', color: '#9933FF', letterSpacing: 0.5 },
+  risingChipText: { fontSize: 11, fontWeight: '900', color: '#9933FF', letterSpacing: 0.5 },
   darkHorseDnaChip: { backgroundColor: 'rgba(0,188,212,0.15)', borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 },
-  darkHorseDnaText: { fontSize: 7, fontWeight: '800', color: '#00BCD4' },
+  darkHorseDnaText: { fontSize: 11, fontWeight: '800', color: '#00BCD4' },
   darkHorseArea: { fontSize: 11, color: '#444' },
   darkHorseRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   darkHorseScore: { fontSize: 20, fontWeight: '900', color: '#9933FF' },
   darkHorseFooter: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 2, marginTop: 4 },
-  darkHorseFooterText: { fontSize: 10, color: '#333', fontStyle: 'italic' },
+  darkHorseFooterText: { fontSize: 11, color: '#333', fontStyle: 'italic' },
 
   // Scene Planner
   plannerCard: {
@@ -488,12 +489,12 @@ const s = StyleSheet.create({
   scoutAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   scoutInfo:   { flex: 1 },
   scoutName:   { fontSize: 13, fontWeight: '700', color: '#EEE', marginBottom: 2 },
-  scoutMeta:   { fontSize: 10, color: '#444' },
+  scoutMeta:   { fontSize: 11, color: '#444' },
   scoutClout:  { alignItems: 'flex-end' },
   scoutCloutNum:   { fontSize: 14, fontWeight: '900' },
-  scoutCloutLabel: { fontSize: 8, color: '#444', fontWeight: '700', letterSpacing: 1 },
+  scoutCloutLabel: { fontSize: 11, color: '#444', fontWeight: '700', letterSpacing: 1 },
   leaderboardFooter: { paddingHorizontal: 2, paddingTop: 6 },
-  leaderboardFooterText: { fontSize: 10, color: '#2A2A3E', fontStyle: 'italic' },
+  leaderboardFooterText: { fontSize: 11, color: '#2A2A3E', fontStyle: 'italic' },
 
   // Scene Mode
   modeRow: { flexDirection: 'row', gap: 10 },
