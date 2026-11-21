@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   nearbyText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.5,
   },
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   tierText: {
-    fontSize: 8,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,
   },

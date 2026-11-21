@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   labelText: { fontSize: 11, fontWeight: '900', color: '#FFF', letterSpacing: 0.5 },
   energyRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   energyDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF9933' },
-  energyText: { fontSize: 10, color: '#FF993388', fontWeight: '700' },
+  energyText: { fontSize: 11, color: '#FF993388', fontWeight: '700' },
   headline: { fontSize: 20, fontWeight: '900', color: '#FFF', letterSpacing: -0.3, marginBottom: 6 },
   subline: { fontSize: 12, color: '#888', lineHeight: 17, marginBottom: 14 },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start' },

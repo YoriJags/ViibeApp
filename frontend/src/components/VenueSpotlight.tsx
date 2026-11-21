@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
   },
-  certText:      { color: '#FFD700', fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
+  certText:      { color: '#FFD700', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   content:       { paddingHorizontal: 20, paddingTop: 16, flex: 1 },
   venueName:     { color: '#FFF', fontSize: 26, fontWeight: '900', letterSpacing: -0.5, lineHeight: 30 },
   venueArea:     { color: '#8A8A99', fontSize: 13, fontWeight: '500', marginTop: 3, marginBottom: 10 },

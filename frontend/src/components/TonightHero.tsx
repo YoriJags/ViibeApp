@@ -340,7 +340,7 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   phaseLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 2,
     marginBottom: 8,
@@ -365,7 +365,7 @@ const s = StyleSheet.create({
     borderRadius: 3,
   },
   energyBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   headlineWrap: {
@@ -460,7 +460,7 @@ const s = StyleSheet.create({
     color: '#FFF',
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     color: '#888',
     letterSpacing: 1,

@@ -183,7 +183,7 @@ export default function HeatMapCard({ city = 'lagos', isDemoMode }: Props) {
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text style={fs.heroLabel}>HOTTEST ZONE RIGHT NOW</Text>
                   <Text style={[fs.heroArea, { color: heatColor(topArea.avg_heat) }]}>{topArea.area}</Text>
-                  <Text style={fs.heroMeta}>{topArea.top_venue} · {topArea.bolt_total_1h} bolts/hr · {topArea.venue_count} venues</Text>
+                  <Text style={fs.heroMeta}>{topArea.top_venue} · {topArea.bolt_total_1h} bolts/hr · {topArea.venue_count} {topArea.venue_count === 1 ? 'venue' : 'venues'}</Text>
                 </View>
                 <Text style={[fs.heroScore, { color: heatColor(topArea.avg_heat) }]}>{topArea.avg_heat}</Text>
               </View>
@@ -224,8 +224,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerLabel: { fontSize: 9, color: '#FF3366', fontWeight: '800', letterSpacing: 1.5 },
-  headerCity: { fontSize: 9, color: '#8A84A8', fontWeight: '700', letterSpacing: 1.5 },
+  headerLabel: { fontSize: 11, color: '#FF3366', fontWeight: '800', letterSpacing: 1.5 },
+  headerCity: { fontSize: 11, color: '#8A84A8', fontWeight: '700', letterSpacing: 1.5 },
   expandBtn: {
     width: 28, height: 28, borderRadius: 8,
     backgroundColor: 'rgba(255,255,255,0.05)',
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14,
   },
   hotZoneArea: { fontSize: 14, fontWeight: '900' },
-  hotZoneVenue: { fontSize: 10, color: '#8A8A99', fontWeight: '500', marginTop: 1 },
+  hotZoneVenue: { fontSize: 11, color: '#8A8A99', fontWeight: '500', marginTop: 1 },
   hotZoneHeat: { fontSize: 28, fontWeight: '900', lineHeight: 30 },
   grid: { gap: 10 },
   areaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -245,10 +245,10 @@ const styles = StyleSheet.create({
   areaInfo: { flex: 1, gap: 3 },
   areaTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   areaName: { fontSize: 12, fontWeight: '700', color: '#CCC', flex: 1 },
-  heatBadge: { fontSize: 8, fontWeight: '800', letterSpacing: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 },
+  heatBadge: { fontSize: 11, fontWeight: '800', letterSpacing: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 },
   barTrack: { height: 3, backgroundColor: '#111120', borderRadius: 2, overflow: 'hidden' },
   barFill: { height: 3, borderRadius: 2 },
-  areaMeta: { fontSize: 9, color: '#8E8AA3', fontWeight: '500' },
+  areaMeta: { fontSize: 11, color: '#8E8AA3', fontWeight: '500' },
 });
 
 const SCREEN_H = Dimensions.get('window').height;
@@ -271,7 +271,7 @@ const fs = StyleSheet.create({
   },
   title: { fontSize: 13, fontWeight: '900', color: '#FFF', letterSpacing: 2 },
   cityChip: {
-    fontSize: 9, color: '#8A8A99', fontWeight: '700', letterSpacing: 2,
+    fontSize: 11, color: '#8A8A99', fontWeight: '700', letterSpacing: 2,
     backgroundColor: '#1A1A28', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
   },
   closeBtn: {
@@ -284,7 +284,7 @@ const fs = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12,
     margin: 16, borderRadius: 16, borderWidth: 1, padding: 16,
   },
-  heroLabel: { fontSize: 9, color: '#8A8A99', fontWeight: '800', letterSpacing: 1.5 },
+  heroLabel: { fontSize: 11, color: '#8A8A99', fontWeight: '800', letterSpacing: 1.5 },
   heroArea: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
   heroMeta: { fontSize: 11, color: '#8A8A99' },
   heroScore: { fontSize: 44, fontWeight: '900', lineHeight: 46 },
@@ -293,7 +293,7 @@ const fs = StyleSheet.create({
   areaName: { fontSize: 14, fontWeight: '700' },
   heatScore: { fontSize: 22, fontWeight: '900', width: 44, textAlign: 'right' },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  topVenue: { fontSize: 9, color: '#8A8A99', fontWeight: '600' },
+  topVenue: { fontSize: 11, color: '#8A8A99', fontWeight: '600' },
   legend: {
     flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center',
     marginHorizontal: 16, marginTop: 24, paddingTop: 16,
@@ -301,5 +301,5 @@ const fs = StyleSheet.create({
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  legendLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 1 },
 });

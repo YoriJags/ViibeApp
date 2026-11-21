@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     borderColor: '#ff4d6d40',
   },
   livePillText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     color: '#ff4d6d',
     letterSpacing: 0.5,
@@ -231,12 +231,12 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   enrouteText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#4ade80',
     fontWeight: '600',
   },
   tapHint: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#444',
   },
 });

@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
   handle:        { width: 40, height: 4, backgroundColor: '#1A1A2C', borderRadius: 2, alignSelf: 'center', marginTop: 12 },
   closeBtn:      { position: 'absolute', top: 16, right: 20, padding: 6, zIndex: 10 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 60, paddingTop: 16 },
-  eyebrow:       { fontSize: 9, color: '#8A84A8', fontWeight: '800', letterSpacing: 2, textAlign: 'center', marginBottom: 4 },
+  eyebrow:       { fontSize: 11, color: '#8A84A8', fontWeight: '800', letterSpacing: 2, textAlign: 'center', marginBottom: 4 },
 
   // Winner block
   winnerBlock:   { alignItems: 'center', marginBottom: 24 },
@@ -340,17 +340,17 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start', borderWidth: 1, borderRadius: 6,
     paddingHorizontal: 8, paddingVertical: 2,
   },
-  heatPillText:  { fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  heatPillText:  { fontSize: 11, fontWeight: '800', letterSpacing: 1 },
   winnerScore:   { alignItems: 'center' },
   winnerScoreNum: { fontSize: 32, fontWeight: '900', color: '#FFD700', lineHeight: 34 },
-  winnerScoreLbl: { fontSize: 9, color: '#3A2A00', fontWeight: '600' },
+  winnerScoreLbl: { fontSize: 11, color: '#3A2A00', fontWeight: '600' },
   winnerStats:   { flexDirection: 'row', borderTopWidth: 1, borderColor: '#1A1200' },
   winnerStat:    { flex: 1, alignItems: 'center', paddingVertical: 12, gap: 3, flexDirection: 'row', justifyContent: 'center' },
   winnerStatNum: { fontSize: 16, fontWeight: '900', color: '#EEE', marginLeft: 4 },
-  winnerStatLbl: { fontSize: 9, color: '#3A2A00', fontWeight: '600' },
+  winnerStatLbl: { fontSize: 11, color: '#3A2A00', fontWeight: '600' },
 
   // Board
-  boardLabel:    { fontSize: 8, color: '#2A2A3A', fontWeight: '800', letterSpacing: 2, marginBottom: 12, marginTop: 4 },
+  boardLabel:    { fontSize: 11, color: '#2A2A3A', fontWeight: '800', letterSpacing: 2, marginBottom: 12, marginTop: 4 },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: '#0C0C18', borderRadius: 14, borderWidth: 1,
@@ -364,9 +364,9 @@ const styles = StyleSheet.create({
   rowName:       { fontSize: 13, fontWeight: '700', color: '#CCC' },
   rowChips:      { flexDirection: 'row', alignItems: 'center', gap: 8 },
   rowHeatPill:   { borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 },
-  rowHeatText:   { fontSize: 8, fontWeight: '800', letterSpacing: 0.5 },
-  rowMini:       { fontSize: 10, color: '#8E8AA3', fontWeight: '500' },
+  rowHeatText:   { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
+  rowMini:       { fontSize: 11, color: '#8E8AA3', fontWeight: '500' },
   rowScore:      { fontSize: 16, fontWeight: '900', color: '#EEE' },
   scoringNote:   { marginTop: 20, alignItems: 'center' },
-  scoringNoteText: { fontSize: 9, color: '#1C1C2C', fontWeight: '600', letterSpacing: 0.5 },
+  scoringNoteText: { fontSize: 11, color: '#1C1C2C', fontWeight: '600', letterSpacing: 0.5 },
 });

@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF3366',
   },
   liveText: {
-    fontSize: 8,
+    fontSize: 11,
     fontWeight: '900',
     color: '#FF3366',
     letterSpacing: 1.5,

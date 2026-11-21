@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   label: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     color: '#FF9933',
     letterSpacing: 1.5,
@@ -156,14 +156,14 @@ const styles = StyleSheet.create({
     marginBottom: 1,
   },
   area: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#888',
     marginBottom: 4,
   },
   message: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#666',
-    lineHeight: 13,
+    lineHeight: 15,
     fontStyle: 'italic',
   },
 });

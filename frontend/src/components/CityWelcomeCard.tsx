@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   energyDot: { width: 6, height: 6, borderRadius: 3 },
-  energyLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 2 },
+  energyLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 2 },
   headline: { fontSize: 20, fontWeight: '800', color: '#FFF', lineHeight: 26, marginBottom: 6 },
   subline: { fontSize: 13, color: '#888', lineHeight: 18, marginBottom: 16 },
   statsRow: {
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   stat: { flex: 1, alignItems: 'center' },
   statNum: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
-  statLabel: { fontSize: 10, color: '#8A8A99', marginTop: 2, fontWeight: '500' },
+  statLabel: { fontSize: 11, color: '#8A8A99', marginTop: 2, fontWeight: '500' },
   statDivider: { width: 1, height: 30, backgroundColor: '#252530' },
   ctaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   ctaHint: { fontSize: 12, color: '#8A8A99' },

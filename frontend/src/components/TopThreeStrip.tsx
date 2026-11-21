@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#00E676',
   },
   headerTitle: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '900',
     color: '#888',
     letterSpacing: 2,
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   seeMoreText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#8A8A99',
     fontWeight: '600',
   },
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   medalText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     lineHeight: 42,
   },
   stateLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.5,
     marginTop: 1,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   area: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#666',
     flex: 1,
   },

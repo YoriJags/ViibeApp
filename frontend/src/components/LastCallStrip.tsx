@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
   },
   textBlock: { flex: 1 },
-  timeText: { fontSize: 8, fontWeight: '900', color: '#FF3366', letterSpacing: 2, marginBottom: 2 },
+  timeText: { fontSize: 11, fontWeight: '900', color: '#FF3366', letterSpacing: 2, marginBottom: 2 },
   bodyText: { fontSize: 12, color: '#999', fontWeight: '500', lineHeight: 16 },
   goBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,

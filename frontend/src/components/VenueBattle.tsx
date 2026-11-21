@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerLabel: { fontSize: 9, color: '#FF3366', fontWeight: '800', letterSpacing: 1.5 },
+  headerLabel: { fontSize: 11, color: '#FF3366', fontWeight: '800', letterSpacing: 1.5 },
   timerPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: '#111120', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
@@ -376,18 +376,18 @@ const styles = StyleSheet.create({
     paddingVertical: 14, alignItems: 'center', gap: 4,
   },
   venueTapNum: { fontSize: 26, fontWeight: '900', lineHeight: 28 },
-  tapHintText: { fontSize: 8, fontWeight: '900', letterSpacing: 1.5, marginTop: 2 },
+  tapHintText: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, marginTop: 2 },
   venueName: { fontSize: 11, fontWeight: '700', color: '#DDD', textAlign: 'center', lineHeight: 14 },
-  venueArea: { fontSize: 9, color: '#444', fontWeight: '500', textAlign: 'center' },
-  votedBadge: { fontSize: 8, fontWeight: '900', letterSpacing: 1 },
+  venueArea: { fontSize: 11, color: '#444', fontWeight: '500', textAlign: 'center' },
+  votedBadge: { fontSize: 11, fontWeight: '900', letterSpacing: 1 },
   vsBlock: { alignItems: 'center', gap: 4 },
   vsText: { fontSize: 16, fontWeight: '900', color: '#8E8AA3' },
-  totalTaps: { fontSize: 8, color: '#8A84A8', fontWeight: '600' },
+  totalTaps: { fontSize: 11, color: '#8A84A8', fontWeight: '600' },
   progressTrack: { height: 4, backgroundColor: '#0E0E1C', borderRadius: 2, overflow: 'hidden', marginBottom: 6 },
   progressFillA: { height: 4, borderRadius: 2 },
   shareRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  shareText: { fontSize: 10, fontWeight: '800' },
-  cta: { fontSize: 10, color: '#8A84A8', fontWeight: '600', textAlign: 'center', marginTop: 8 },
+  shareText: { fontSize: 11, fontWeight: '800' },
+  cta: { fontSize: 11, color: '#8A84A8', fontWeight: '600', textAlign: 'center', marginTop: 8 },
 });
 
 // Fullscreen-specific overrides
@@ -435,5 +435,5 @@ const fs = StyleSheet.create({
     paddingVertical: 16, alignItems: 'center',
     borderTopWidth: 1, borderTopColor: 'rgba(255,51,102,0.1)',
   },
-  footerText: { fontSize: 9, color: '#333', fontWeight: '700', letterSpacing: 1 },
+  footerText: { fontSize: 11, color: '#333', fontWeight: '700', letterSpacing: 1 },
 });

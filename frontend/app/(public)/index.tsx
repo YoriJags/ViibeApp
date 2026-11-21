@@ -1171,7 +1171,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   sceneSuperLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 3,
     color: '#FF3366',
@@ -1194,7 +1194,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   liveChipText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '700',
     color: '#00E676',
   },
@@ -1441,7 +1441,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   reactorBannerLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     color: '#FF3366',
     letterSpacing: 1.5,
@@ -1472,7 +1472,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF3366',
   },
   quickRateLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '900',
     color: '#FF3366',
     letterSpacing: 1.5,
