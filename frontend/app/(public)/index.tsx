@@ -122,6 +122,32 @@ export default function MapScreen() {
   const discoverShownRef = useRef(_discoverShownThisSession);
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [streakData, setStreakData] = useState({ streak: 3, cloutBonus: 50 });
+
+  // Pop-ups that open by themselves belong to the demo tour, not to live.
+  // Live opens onto the real app with nothing on top. In the demo they wait
+  // for the tour to finish, then come one at a time, never stacked.
+  type AutoPopup = 'streak' | 'mood' | 'discover' | 'lastCall' | 'afterHours' | 'scoutOfNight';
+  const hasSeenDemoTutorial = useVibeStore(s => s.hasSeenDemoTutorial);
+  const [popupQueue, setPopupQueue] = useState<AutoPopup[]>([]);
+  const enqueuePopup = useCallback((p: AutoPopup) => {
+    setPopupQueue(q => (q.includes(p) ? q : [...q, p]));
+  }, []);
+  const anyPopupOpen = showSceneMood || showLastCall || showAfterHours || showScoutOfNight || showDiscoverFlow || showStreakModal;
+  useEffect(() => {
+    if (!isDemoMode) { if (popupQueue.length) setPopupQueue([]); return; }
+    if (!hasSeenDemoTutorial || anyPopupOpen || popupQueue.length === 0) return;
+    const timer = setTimeout(() => {
+      const [next, ...rest] = popupQueue;
+      setPopupQueue(rest);
+      if (next === 'streak') setShowStreakModal(true);
+      else if (next === 'mood') setShowSceneMood(true);
+      else if (next === 'discover') setShowDiscoverFlow(true);
+      else if (next === 'lastCall') setShowLastCall(true);
+      else if (next === 'afterHours') setShowAfterHours(true);
+      else if (next === 'scoutOfNight') setShowScoutOfNight(true);
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [isDemoMode, hasSeenDemoTutorial, anyPopupOpen, popupQueue]);
   const [hasRatedThisSession, setHasRatedThisSession] = useState(false);
   const prevVenueTiers = useRef<Record<string, string>>({});
   const rewardRef = useRef<VariableRewardRef>(null);
@@ -171,7 +197,7 @@ export default function MapScreen() {
     if (!isDemoMode) return;
     const timer = setTimeout(() => {
       setStreakData({ streak: 7, cloutBonus: 150 });
-      setShowStreakModal(true);
+      enqueuePopup('streak');
     }, 4000);
     return () => clearTimeout(timer);
   }, [isDemoMode]);
@@ -186,7 +212,7 @@ export default function MapScreen() {
     const setToday = sceneMoodSetAt ? new Date(sceneMoodSetAt).toDateString() : null;
     if (setToday === today) return; // Already set this session
     // Small delay — let the app load first
-    const timer = setTimeout(() => setShowSceneMood(true), 2500);
+    const timer = setTimeout(() => enqueuePopup('mood'), 2500);
     return () => clearTimeout(timer);
   }, [user]);
 
@@ -236,7 +262,7 @@ export default function MapScreen() {
     if (!discoverShownRef.current && venues.length > 0 && user) {
       discoverShownRef.current = true;
       _discoverShownThisSession = true;
-      const timer = setTimeout(() => setShowDiscoverFlow(true), 600);
+      const timer = setTimeout(() => enqueuePopup('discover'), 600);
       return () => clearTimeout(timer);
     }
   }, [venues.length, user]);
@@ -266,7 +292,7 @@ export default function MapScreen() {
     if (!isLateNight) return;
     const hotVenues = venues.filter(v => v.energy_level === 'peak' || v.energy_level === 'lit');
     if (hotVenues.length > 0) {
-      const timer = setTimeout(() => setShowLastCall(true), 3000);
+      const timer = setTimeout(() => enqueuePopup('lastCall'), 3000);
       return () => clearTimeout(timer);
     }
   }, [venues]);
@@ -276,7 +302,7 @@ export default function MapScreen() {
     if (!user) return;
     const hour = new Date().getHours();
     if (hour >= 6 && hour <= 10) {
-      const timer = setTimeout(() => setShowAfterHours(true), 5000);
+      const timer = setTimeout(() => enqueuePopup('afterHours'), 5000);
       return () => clearTimeout(timer);
     }
   }, [user]);
@@ -286,7 +312,7 @@ export default function MapScreen() {
     if (!user) return;
     const hour = new Date().getHours();
     if (hour >= 0 && hour <= 3) {
-      const timer = setTimeout(() => setShowScoutOfNight(true), 8000);
+      const timer = setTimeout(() => enqueuePopup('scoutOfNight'), 8000);
       return () => clearTimeout(timer);
     }
   }, [user]);

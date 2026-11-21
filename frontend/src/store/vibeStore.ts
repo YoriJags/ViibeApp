@@ -89,12 +89,14 @@ export const useVibeStore = create<VibeStore>()(
       },
       partialize: (state) => ({
         // Auth
-        user: state.user,
+        // The demo never outlives the app: every launch asks Live or Demo, so
+        // what is saved is always the real person, never the sample account.
+        user: state.isDemoMode ? (state.preDemoSession?.user ?? null) : state.user,
         // sessionToken intentionally excluded — stored in SecureStore, not AsyncStorage
-        isAuthenticated: state.isAuthenticated,
+        isAuthenticated: state.isDemoMode ? (state.preDemoSession?.isAuthenticated ?? false) : state.isAuthenticated,
         hasSeenOnboarding: state.hasSeenOnboarding,
         hasSeenMerchantOnboarding: state.hasSeenMerchantOnboarding,
-        isDemoMode: state.isDemoMode,
+        isDemoMode: false,
         hasSeenDemoTutorial: state.hasSeenDemoTutorial,
         avatarConfig: state.avatarConfig,
         locationSharingEnabled: state.locationSharingEnabled,

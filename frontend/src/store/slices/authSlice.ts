@@ -15,6 +15,8 @@ export interface AuthSlice {
   hasSeenOnboarding: boolean;
   hasSeenMerchantOnboarding: boolean;
   isDemoMode: boolean;
+  /** The real session, set aside while the demo runs and given back on exit. Never persisted. */
+  preDemoSession: { user: User | null; sessionToken: string | null; isAuthenticated: boolean } | null;
   hasSeenDemoTutorial: boolean;
   avatarConfig: { emoji: string; bgColor: string; accentColor: string } | null;
   locationSharingEnabled: boolean;
@@ -67,6 +69,7 @@ export const createAuthSlice: StateCreator<
   hasSeenOnboarding: false,
   hasSeenMerchantOnboarding: false,
   isDemoMode: false,
+  preDemoSession: null,
   hasSeenDemoTutorial: false,
   hasSeenAppTutorial: false,
   avatarConfig: null,
@@ -245,10 +248,12 @@ export const createAuthSlice: StateCreator<
   completeMerchantOnboarding: () => set({ hasSeenMerchantOnboarding: true }),
 
   toggleDemoMode: () => {
-    const { isDemoMode } = get();
+    const { isDemoMode, user, sessionToken, isAuthenticated, preDemoSession } = get();
     if (!isDemoMode) {
       set({
         isDemoMode: true,
+        // Set the real session aside so leaving the demo signs nobody out.
+        preDemoSession: { user, sessionToken, isAuthenticated },
         user: DEMO_USER as any,
         isAuthenticated: true,
         venues: DEMO_VENUES as any[],
@@ -259,9 +264,10 @@ export const createAuthSlice: StateCreator<
     } else {
       set({
         isDemoMode: false,
-        user: null,
-        sessionToken: null,
-        isAuthenticated: false,
+        user: preDemoSession?.user ?? null,
+        sessionToken: preDemoSession?.sessionToken ?? null,
+        isAuthenticated: preDemoSession?.isAuthenticated ?? false,
+        preDemoSession: null,
         venues: [],
         streak: null,
         crew: null,

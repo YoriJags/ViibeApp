@@ -10,6 +10,7 @@ import OnboardingFlow from '../src/components/OnboardingFlow';
 import AppTutorial from '../src/components/AppTutorial';
 import SplashAnimation from '../src/components/SplashAnimation';
 import DemoTutorial from '../src/components/DemoTutorial';
+import ModeChoice from '../src/components/ModeChoice';
 import ErrorBoundary from '../src/components/ErrorBoundary';
 import GlobalVibePill from '../src/components/GlobalVibePill';
 import { initPostHog } from '../src/services/posthog';
@@ -26,6 +27,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   const { hasHydrated, fetchCities, connectSocket, hasSeenOnboarding, completeOnboarding, fetchFeatureFlags, hasSeenAppTutorial, completeAppTutorial, sessionToken } = useVibeStore();
   const [isReady, setIsReady] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+  const [modeChosen, setModeChosen] = useState(false);
   const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
 
   // Hide native splash once our animated splash mounts
@@ -92,6 +94,15 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   // How-to tutorial — shown once after onboarding (and for existing users on next launch)
   if (!hasSeenAppTutorial) {
     return <AppTutorial visible onComplete={completeAppTutorial} />;
+  }
+
+  // Every launch: Live or Demo, before anything else can open on top.
+  if (!modeChosen) {
+    const choose = (demo: boolean) => {
+      if (useVibeStore.getState().isDemoMode !== demo) useVibeStore.getState().toggleDemoMode();
+      setModeChosen(true);
+    };
+    return <ModeChoice onLive={() => choose(false)} onDemo={() => choose(true)} />;
   }
 
   return <>{children}</>;
