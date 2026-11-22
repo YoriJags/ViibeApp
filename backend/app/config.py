@@ -94,6 +94,10 @@ async def ensure_indexes():
     await db.grid_history.create_index([("city", 1), ("res", 1), ("bucket", 1)])
     # the city grid reads venues by bounding box (routes/grid.py)
     await db.venues.create_index([("coordinates.lat", 1), ("coordinates.lng", 1)])
+    # push_log: one row per push that must not repeat (services/notifications.first_time).
+    # Unique so two simultaneous events cannot both send; kept 14 days.
+    await db.push_log.create_index("key", unique=True)
+    await db.push_log.create_index("at", expireAfterSeconds=14 * 24 * 3600)
 
     # users: login/signup lookups + leaderboard sorting
     await db.users.create_index("id", unique=True)

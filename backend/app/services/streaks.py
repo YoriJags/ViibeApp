@@ -94,6 +94,15 @@ async def update_streak(user_id: str) -> dict:
             {"$inc": {"clout_points": milestone_hit["clout"]}},
         )
         logger.info(f"Streak milestone {new_count} for user {user_id}: +{milestone_hit['clout']} clout")
+        if milestone_hit.get("badge"):
+            # The badge push (once per badge; demo accounts never get one).
+            try:
+                import asyncio
+                from app.services.notifications import notify_achievement_unlocked
+                asyncio.create_task(notify_achievement_unlocked(
+                    user_id, milestone_hit["badge"], f"{new_count} nights in a row. Keep the streak going."))
+            except Exception:
+                pass
 
     await db.streaks.update_one(
         {"user_id": user_id},

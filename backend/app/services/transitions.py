@@ -270,10 +270,10 @@ async def _push_to_watchers(venue_id: str, copy: dict, payload: dict, delivered:
     if not outside_ids:
         return delivered
 
-    tokens = await db.push_tokens.find(
-        {"user_id": {"$in": outside_ids}}, {"expo_push_token": 1},
-    ).to_list(500)
-    token_list = [t["expo_push_token"] for t in tokens if t.get("expo_push_token")]
+    # Nothing ever wrote a push_tokens collection; tokens live on the user
+    # record and in alert preferences (services/notifications.py).
+    from app.services.notifications import push_tokens_for
+    token_list = await push_tokens_for(outside_ids)
     if token_list:
         await send_push_notifications(
             token_list,

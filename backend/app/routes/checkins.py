@@ -128,6 +128,18 @@ async def ghost_checkin(data: GhostCheckin, user: dict = Depends(require_auth)):
     # Broadcast to Socket.IO
     await emit_checkin_update(data.venue_id, active_count)
 
+    # Tell the rest of the crew (once per member per venue per night).
+    try:
+        crew = await db.crews.find_one({"members": user["id"]}, {"id": 1})
+        if crew:
+            import asyncio
+            from app.services.notifications import notify_crew_checkin
+            asyncio.create_task(notify_crew_checkin(
+                crew["id"], user["id"], user.get("username") or "Someone in your crew",
+                data.venue_id, venue.get("name", "a venue")))
+    except Exception:
+        pass  # a push must never fail the check-in
+
     return {
         "message": "You're here! Ghost check-in active.",
         "clout_earned": CHECKIN_CLOUT,

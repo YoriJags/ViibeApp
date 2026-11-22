@@ -266,6 +266,9 @@ async def startup():
     # The Call: settle staked readings against what the room actually did
     from app.services.stake import settle_loop
     asyncio.create_task(settle_loop())
+    # Streak reminders at 8pm Lagos, once per person per night
+    from app.services.notifications import streak_reminder_loop
+    asyncio.create_task(streak_reminder_loop())
     # Grid history: keep the city grid every ten minutes (GRID_HISTORY=0 turns it off)
     from app.services.grid_history import recording_enabled, record_loop
     if recording_enabled():

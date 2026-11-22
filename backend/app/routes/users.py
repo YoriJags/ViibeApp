@@ -190,6 +190,13 @@ async def register_push_token(
         {"id": user["id"]},
         {"$set": {"push_token": token}},
     )
+    # The venue alerts route reads the token from alert_preferences; keep it in
+    # step so registering once is enough for every push (services/notifications.py).
+    await db.alert_preferences.update_one(
+        {"user_id": user["id"]},
+        {"$set": {"expo_push_token": token}, "$setOnInsert": {"user_id": user["id"]}},
+        upsert=True,
+    )
     return {"success": True}
 
 

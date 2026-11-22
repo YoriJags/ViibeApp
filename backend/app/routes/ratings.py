@@ -284,6 +284,13 @@ async def create_rating(rating_data: RatingCreate, user: dict = Depends(require_
             asyncio.create_task(announce_transition(
                 fresh, venue.get("vibe_state"), fresh.get("vibe_state"),
             ))
+            # A real reading just took the room to Peak: tell the people who
+            # saved it, and people who love this kind of room (both once a night).
+            if (fresh.get("vibe_state") == "peak" and venue.get("vibe_state") != "peak"
+                    and not str(rating_data.user_id).startswith("demo-scout-")):
+                from app.services.notifications import notify_lobby_hot, notify_vibe_spike
+                asyncio.create_task(notify_lobby_hot(rating_data.venue_id))
+                asyncio.create_task(notify_vibe_spike(rating_data.venue_id, current_score, "peak"))
     except Exception:
         pass
 
