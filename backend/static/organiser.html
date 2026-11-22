@@ -67,6 +67,16 @@
   .told p { margin: 0; }
   .told .head { font: 600 1.15rem/1.35 var(--display); margin-bottom: 0.35rem; }
 
+  .here { margin-top: 1rem; width: 100%; min-height: 3.25rem; border: 0; border-radius: 999px;
+          background: var(--white-hot); color: var(--cold); font: 600 1rem/1 var(--body); cursor: pointer; }
+  .here:disabled { opacity: 0.5; cursor: default; }
+  .here-msg { margin: 0.75rem 0 0; padding: 0.8rem 1rem; border-radius: 12px; background: var(--cold-2); }
+  .here-msg[data-tone="good"] { border-left: 3px solid #7CE3B0; }
+  .here-msg[data-tone="wait"] { border-left: 3px solid var(--hotter); }
+  .here-msg[data-tone="bad"] { border-left: 3px solid #E0558F; }
+  .gate-word[data-pin="confirmed"], .gate-word[data-pin="on_site"] { color: #7CE3B0; }
+  .gate-word[data-pin="unconfirmed"] { color: var(--hotter); }
+
   .error { padding: 3rem 0; }
   .error h1 { margin-bottom: 0.75rem; }
 
@@ -116,6 +126,14 @@
     <p class="muted" id="energy-note"></p>
   </section>
 
+  <section class="card" id="pin-wrap" hidden>
+    <h2>The pin</h2>
+    <div class="gate-word" id="pin-status">&middot;</div>
+    <p class="muted" id="pin-note"></p>
+    <button class="here" id="here" type="button">I'm here, use my location</button>
+    <p class="here-msg" id="here-msg" role="status" aria-live="polite" hidden></p>
+  </section>
+
   <section class="card" id="told-wrap" hidden>
     <h2>What ticket holders are being told</h2>
     <div class="told"><p class="head" id="told-head"></p><p id="told-detail"></p></div>
@@ -136,6 +154,49 @@
   const GATE = { clear: 'Clear', slow: 'Slow', blocked: 'Jammed' };
   let lastUpdated = null;
   const PHASE = { upcoming: 'Coming up', doors: 'Doors opening', live: 'Live now', ended: 'Finished' };
+  const PIN = { confirmed: 'Confirmed by the crowd', on_site: 'Set on site', unconfirmed: 'Not checked on site yet' };
+
+  // "I'm here": the phone's own fix goes to the server, which decides. A short
+  // move with a precise fix applies; anything else waits for VIIBE to check.
+  function hereMessage(text, tone) {
+    const m = $('here-msg');
+    m.hidden = false;
+    m.textContent = text;
+    m.dataset.tone = tone;
+  }
+  function imHere() {
+    if (!navigator.geolocation) { hereMessage('This browser cannot share your location. Try Chrome or Safari.', 'bad'); return; }
+    const btn = $('here');
+    btn.disabled = true;
+    btn.textContent = 'Finding you...';
+    const done = () => { btn.disabled = false; btn.textContent = "I'm here, use my location"; };
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        const r = await fetch('/api/organiser/events/' + encodeURIComponent(eventId) + '/here?key=' + encodeURIComponent(key), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy_m: pos.coords.accuracy }),
+        });
+        if (!r.ok) throw new Error(String(r.status));
+        const res = await r.json();
+        if (res.decision === 'apply') {
+          hereMessage('Done. The pin is now where you are standing' + (res.distance_m ? ', ' + res.distance_m + ' m from before.' : '.'), 'good');
+          load();
+        } else if (res.decision === 'needs_admin') {
+          hereMessage('That is further than we move a pin without checking. VIIBE will look at it shortly.', 'wait');
+        } else {
+          hereMessage(res.message || 'Your location is not precise enough yet. Step outside, wait a moment, and try again.', 'bad');
+        }
+      } catch (e) {
+        hereMessage("Couldn't reach VIIBE. Check your connection and try again.", 'bad');
+      } finally { done(); }
+    }, (err) => {
+      hereMessage(err.code === 1
+        ? 'Location is blocked for this page. Allow it in your browser settings, then try again.'
+        : 'Your phone could not get a location. Step outside and try again.', 'bad');
+      done();
+    }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+  }
+
   const DIR = {
     filling: 'Filling up', emptying: 'Emptying out', steady: 'Steady',
     quiet: 'Not enough movement yet to say which way it is going.'
@@ -209,6 +270,19 @@
       $('energy-note').textContent = 'This appears as soon as scouts inside report how it feels. Nothing here is estimated.';
     }
 
+    // The pin: how far its location is proven, and the button to fix it on site.
+    const loc = d.location;
+    $('pin-wrap').hidden = !loc || ev.phase === 'ended';
+    if (loc) {
+      $('pin-status').textContent = PIN[loc.status] || 'Not checked yet';
+      $('pin-status').dataset.pin = loc.status || '';
+      $('pin-note').textContent = loc.status === 'confirmed'
+        ? loc.confirmed_people + ' people with VIIBE arrived inside the grounds, so the pin is right.'
+        : loc.status === 'on_site'
+          ? 'You set it standing at the grounds. It is confirmed once people start arriving inside.'
+          : 'If the pin is off, stand at the centre of your grounds and tap the button. Phones only count people inside the area around the pin.';
+    }
+
     const t = d.attendees_are_told;
     $('told-wrap').hidden = !t;
     if (t) { $('told-head').textContent = t.headline; $('told-detail').textContent = t.detail || ''; }
@@ -244,6 +318,7 @@
     return true;
   }
 
+  $('here').addEventListener('click', imHere);
   load().then((ok) => { if (ok) setInterval(load, 30000); });
 })();
 </script>
