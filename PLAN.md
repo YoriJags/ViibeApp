@@ -117,9 +117,12 @@ energy badge (score held high for 90 days) keeps its name; they are separate thi
 - [x] "Add a place" (linked from the Where step)
 - [x] "My submissions": pending, live, or rejected with the reason; organiser link when live
 - [x] VIIBE Certified application screen (app/submit/certify.tsx)
-- [ ] Organiser page (backend/static/organiser.html): "I'm here, use my location" button
-- [ ] Admin review screen: each submission on a map with its ground drawn; approve, reject,
-      move the pin, resize
+- [x] Organiser page (backend/static/organiser.html): "I'm here, use my location" button
+- [x] Admin review screen (app/(admin)/review.tsx): events, places, certification; approve,
+      reject, move the pin, resize. No in-app map: spots open in Google Maps
+- [x] Make it yours: cover, description, lineup, genres, dress code, price, age, host name
+      (shown not verified); ticket link and verified mark stay certified-only
+- [x] VIIBE Certified emblem (option B) in app, landing and docs/brand
 - [x] Demo mode shows the full flow (sample places incl. National Theatre; Kemi Ade Live listed)
 
 **E5. Before any build**
