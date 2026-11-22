@@ -44,11 +44,12 @@ export default function ScoutPressureChip({ venueId, isDemoMode, style }: Props)
       return;
     }
     try {
-      const res = await fetch(`${API_URL}/api/venues/${venueId}/headings-count`);
+      const res = await fetch(`${API_URL}/api/venues/${venueId}/heading-count`);
       if (!res.ok) return;
       const data = await res.json();
-      setCount(data.count ?? 0);
-      setEnrouteCount(data.enroute_count ?? 0);
+      // People on the way, and people who said they might come.
+      setCount((data.enroute ?? 0) + (data.maybe ?? 0));
+      setEnrouteCount(data.enroute ?? 0);
     } catch {
       // Silently fail — endpoint may not exist yet
     }

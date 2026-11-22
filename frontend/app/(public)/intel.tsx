@@ -88,8 +88,10 @@ function CityZones({ city, isDemoMode, onZonePress }: {
   city: string; isDemoMode: boolean; onZonePress: (area: string) => void;
 }) {
   const [zones, setZones] = useState<any[]>([]);
+  const [zonesLoaded, setZonesLoaded] = useState(false);
 
   useEffect(() => {
+    setZonesLoaded(false);
     if (isDemoMode) {
       // Derive from demo venues
       const map: Record<string, number[]> = {};
@@ -107,13 +109,18 @@ function CityZones({ city, isDemoMode, onZonePress }: {
       setZones(derived);
       return;
     }
+    // The route returns {city, areas: [...]}, already sorted, scout readings only.
     fetch(`${API_URL}/api/area-pulse/${city}`)
       .then(r => r.json())
-      .then(d => { if (Array.isArray(d)) setZones(d.sort((a, b) => b.avg_score - a.avg_score)); })
-      .catch(() => {});
+      .then(d => { setZones(Array.isArray(d?.areas) ? d.areas : []); setZonesLoaded(true); })
+      .catch(() => setZonesLoaded(true));
   }, [city, isDemoMode]);
 
-  if (!zones.length) return <EmptyState icon="map-outline" text="Zone data loading…" />;
+  if (!zones.length) {
+    return isDemoMode || zonesLoaded
+      ? <EmptyState icon="map-outline" text="No area readings yet tonight" sub="Areas light up as scouts read the venues in them." />
+      : <EmptyState icon="map-outline" text="Loading areas…" />;
+  }
 
   return (
     <View style={s.zonesGrid}>
@@ -216,6 +223,7 @@ function DarkHorse({ venues, isDemoMode, onVenuePress, vibeDNA }: {
 
 function ScoutLeaderboard({ city, isDemoMode }: { city: string; isDemoMode: boolean }) {
   const [scouts, setScouts] = useState<any[]>([]);
+  const [scoutsLoaded, setScoutsLoaded] = useState(false);
 
   const DEMO_SCOUTS = [
     // The same people the rest of the demo shows: you (VibeDemo, 4,250 clout on
@@ -229,13 +237,24 @@ function ScoutLeaderboard({ city, isDemoMode }: { city: string; isDemoMode: bool
 
   useEffect(() => {
     if (isDemoMode) { setScouts(DEMO_SCOUTS); return; }
-    fetch(`${API_URL}/api/leaderboard/top-scouts/${city}?limit=5`)
+    // /top-scouts/{city}: real scouts in the last 24 hours, demo accounts excluded.
+    fetch(`${API_URL}/api/top-scouts/${city}?limit=5`)
       .then(r => r.json())
-      .then(d => { if (d.scouts?.length) setScouts(d.scouts); })
-      .catch(() => {});
+      .then(d => {
+        setScouts((d?.scouts ?? []).map((x: any) => ({
+          username: x.username, clout_points: x.clout_points ?? 0,
+          scout_status: x.tier, ratings_count: x.check_count, city,
+        })));
+        setScoutsLoaded(true);
+      })
+      .catch(() => setScoutsLoaded(true));
   }, [city, isDemoMode]);
 
-  if (!scouts.length) return <EmptyState icon="trophy-outline" text="Loading scouts…" />;
+  if (!scouts.length) {
+    return scoutsLoaded
+      ? <EmptyState icon="trophy-outline" text="No scouts out yet tonight" sub="The first readings put you at the top." />
+      : <EmptyState icon="trophy-outline" text="Loading scouts…" />;
+  }
 
   return (
     <View style={{ gap: 6 }}>

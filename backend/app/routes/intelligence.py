@@ -107,9 +107,13 @@ async def get_area_pulse(city: str):
     """
     Aggregate vibe scores by area for a city. Returns area-level pulse.
     Venues not in a defined area go into 'Other'.
+
+    Only venues with a current scout reading count: an area average built
+    from stored or demo scores would describe a crowd nobody measured. A
+    quiet night returns no areas, and the app says so.
     """
     venues = await db.venues.find(
-        {"city": city} if city != "lagos" else {},
+        {"city": city.lower(), "energy_source": "scouts", "current_vibe_score": {"$gt": 0}},
         {"_id": 0, "id": 1, "name": 1, "area": 1, "current_vibe_score": 1,
          "energy_level": 1, "coordinates": 1, "vibe_velocity": 1}
     ).to_list(200)

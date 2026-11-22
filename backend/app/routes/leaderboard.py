@@ -159,8 +159,11 @@ async def get_top_scouts(city: str, limit: int = 5):
     now = datetime.now(timezone.utc)
     day_ago = now - timedelta(hours=24)
 
+    from app.services.synthetic import real_only_filter
     pipeline = [
-        {"$match": {"timestamp": {"$gte": day_ago}, "superseded": {"$ne": True}}},
+        # Real scouts only: the ambient demo engine's demo-scout-* accounts
+        # must never appear to real users as tonight's scouts.
+        {"$match": {"timestamp": {"$gte": day_ago}, "superseded": {"$ne": True}, **real_only_filter()}},
         {"$lookup": {"from": "venues", "localField": "venue_id", "foreignField": "id", "as": "venue_info"}},
         {"$match": {"venue_info.city": city.lower()}},
         {"$group": {

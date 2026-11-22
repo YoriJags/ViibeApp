@@ -23,8 +23,13 @@ async def get_heat_map(city: str):
     venues = await db.venues.find(
         {"city": {"$regex": city_lower, "$options": "i"}},
         {"_id": 0, "id": 1, "name": 1, "area": 1, "lat": 1, "lng": 1,
-         "current_vibe_score": 1, "energy_level": 1, "capacity_level": 1},
+         "current_vibe_score": 1, "energy_level": 1, "capacity_level": 1, "energy_source": 1},
     ).to_list(200)
+    # A score counts as heat only when scouts produced it; a stored or demo
+    # score would paint a crowd nobody measured. Bolts are real taps.
+    for v in venues:
+        if v.get("energy_source") != "scouts":
+            v["current_vibe_score"] = 0
 
     # Enrich with bolt velocity (last 1 hour) per venue
     heat_points = []
@@ -46,6 +51,9 @@ async def get_heat_map(city: str):
             # Heat intensity 0-100: blend of vibe score + bolt activity
             "heat_intensity": min(100, v.get("current_vibe_score", 0) + min(bolt_1h * 2, 30)),
         })
+
+    # Nothing measured, nothing shown: a venue with no reading and no taps adds no heat.
+    heat_points = [p for p in heat_points if p["heat_intensity"] > 0]
 
     # Area-level aggregation for the grid view
     area_map: dict = {}

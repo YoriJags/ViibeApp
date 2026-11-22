@@ -119,14 +119,17 @@ export default function ScoutOfTheNight({ visible, onClose, isDemoMode, city }: 
     if (isDemoMode) { setScouts(DEMO_LEADERBOARD); return; }
     setLoading(true);
     try {
-      const params = city ? `?city=${city}` : '';
-      const res = await fetch(`${API_URL}/api/leaderboard/tonight${params}`, {
+      const res = await fetch(`${API_URL}/api/top-scouts/${(city || 'lagos').toLowerCase()}?limit=10`, {
         headers: getAuthHeaders(),
       });
       // Never fall back to the demo leaderboard: those are invented people,
       // and in real mode they read as tonight's actual scouts. No data, no popup.
       const data = res.ok ? await res.json() : null;
-      const list = data?.scouts ?? [];
+      const list: ScoutEntry[] = (data?.scouts ?? []).map((x: any) => ({
+        rank: x.rank, user_id: x.user_id, username: x.username,
+        bolts_tonight: 0, venues_visited: x.venues_visited ?? 0,
+        ratings_tonight: x.check_count ?? 0, score: x.check_count ?? 0,
+      }));
       setScouts(list);
       if (list.length === 0) onClose();
     } catch {
@@ -265,12 +268,16 @@ export default function ScoutOfTheNight({ visible, onClose, isDemoMode, city }: 
                         {isMe && ' (you)'}
                       </Text>
                       <View style={styles.rowChips}>
-                        <View style={[styles.rowHeatPill, { backgroundColor: heatColor + '1A' }]}>
-                          <Text style={[styles.rowHeatText, { color: heatColor }]}>
-                            {s.heat_level?.replace('_', ' ') ?? 'cold'}
-                          </Text>
-                        </View>
-                        <Text style={styles.rowMini}>{s.bolts_tonight} bolts · {s.venues_visited} venues</Text>
+                        {s.heat_level ? (
+                          <View style={[styles.rowHeatPill, { backgroundColor: heatColor + '1A' }]}>
+                            <Text style={[styles.rowHeatText, { color: heatColor }]}>
+                              {s.heat_level.replace('_', ' ')}
+                            </Text>
+                          </View>
+                        ) : null}
+                        <Text style={styles.rowMini}>
+                          {s.bolts_tonight ? `${s.bolts_tonight} bolts · ` : `${s.ratings_tonight} readings · `}{s.venues_visited} venues
+                        </Text>
                       </View>
                     </View>
 
