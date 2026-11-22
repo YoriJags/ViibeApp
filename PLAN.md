@@ -129,6 +129,19 @@ energy badge (score held high for 90 days) keeps its name; they are separate thi
 - [ ] Backend tests green, tsc 0, phone screenshots of every new screen
 - [ ] Founder confirms, then one APK
 
+### F. MVP (founder, 22 Nov: "launch an MVP"; closed beta of scouts in Lekki/VI)
+- [x] F0 Home restyle pass 1 (Editorial Night structure) and pass 2 (venue cards,
+      Battle, City heat). Peak gold; stock photos until real ones
+- [x] F1 Live faults: Intel zones/leaderboard, Scout of the Night, scout pressure chip on
+      real routes; area pulse, heat map, top scouts count real scout readings only
+- [x] F1b Pushes: the app's token was never where senders looked (only surge worked);
+      one lookup now, five pushes wired once-a-night
+- [ ] F2 Live end-to-end on the real server: submit an event and a place, approve,
+      certify, "I'm here", a crew check-in push. Needs the new APK (the phone has none
+      of these screens)
+- [ ] F3 One APK to a closed beta (founder says when)
+- [ ] F4 Phone number verification (SMS provider) before opening to everyone
+
 ---
 
 ## The 10/10 Milestone (north star)
