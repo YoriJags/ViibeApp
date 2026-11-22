@@ -24,6 +24,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useVibeStore } from '../../src/store/vibeStore';
 import WhenToLeaveCard from '../../src/components/WhenToLeaveCard';
 import { usePlacePhoto } from '../../src/services/usePlacePhoto';
+import EventDetails, { eventCoverUrl } from '../../src/components/EventDetails';
 import { sampleArrivalSound } from '../../src/services/arrivalSample';
 import { calculateDistance } from '../../src/utils/geo';
 import RateVibeModal from '../../src/components/RateVibeModal';
@@ -772,7 +773,7 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
         {/* ====== CINEMATIC HERO ====== */}
         <View style={styles.heroContainer}>
           <Image
-            source={{ uri: venue.last_snapshot_url || placePhoto?.url || getPlaceholderImage() }}
+            source={{ uri: eventCoverUrl((venue as any).cover_image_url) || venue.last_snapshot_url || placePhoto?.url || getPlaceholderImage() }}
             style={styles.heroImage}
             resizeMode="cover"
           />
@@ -877,6 +878,13 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
             )}
           </View>
         </View>
+
+        {/* ====== EVENT DETAILS (what the host added) ====== */}
+        {(venue as any).kind === 'event' && (
+          <ErrorBoundary label="Event details">
+            <EventDetails event={venue as any} />
+          </ErrorBoundary>
+        )}
 
         {/* ====== WHEN TO LEAVE (ticketed events) ======
             The ticket holder has already decided to go, so the first thing they

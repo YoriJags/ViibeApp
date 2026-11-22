@@ -4,6 +4,7 @@
  * Right = 🔥 Fire, Left = Skip. Swipe anywhere on screen.
  */
 import { useVibeStore } from '../store/vibeStore';
+import { eventCoverUrl } from './EventDetails';
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import {
   View,
@@ -35,7 +36,7 @@ const CLUB_PLACEHOLDERS = [
 ];
 
 function getVenueImage(venue: Venue): string {
-  if (venue.cover_image_url) return venue.cover_image_url;
+  if (venue.cover_image_url) return eventCoverUrl(venue.cover_image_url) as string;
   if (venue.photo_base64) return `data:image/jpeg;base64,${venue.photo_base64}`;
   // Deterministic placeholder — same venue always gets same photo
   const hash = venue.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);

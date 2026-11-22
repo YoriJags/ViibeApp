@@ -20,6 +20,7 @@ What is event-specific:
   3. An organiser, who gets a live screen for their own event, opened with a
      private link rather than an account. See routes/events.py.
 """
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -164,7 +165,29 @@ def event_summary(event: dict, now: datetime | None = None) -> dict:
     }
 
 
-TEXT_LIMITS = {"name": 120, "address": 200, "area": 80, "organiser_name": 120}
+TEXT_LIMITS = {"name": 120, "address": 200, "area": 80, "organiser_name": 120,
+               "description": 600, "dress_code": 80, "price_text": 60}
+
+# The parts of an event its submitter can shape freely (fair game for anyone,
+# certified or not). Ticket links and the Official badge are the only things
+# held back for certified organisers, because those are where trust and money
+# change hands.
+LIST_LIMITS = {"lineup": (12, 60), "genres": (6, 24)}
+AGE_LIMITS = (None, 16, 18, 21)
+
+# Free text may not carry links or phone numbers: a "buy tickets at" line in a
+# description would get round the rule that only certified organisers show a
+# ticket link.
+_LINK = re.compile(r"(https?://|www\.|\b[\w-]+\.(com|ng|net|org|io|co|me|ly|link|africa)\b|wa\.me|t\.me|bit\.ly)", re.I)
+_PHONE = re.compile(r"(\+?\d[\d\s().-]{8,}\d)")
+_CONTACT_FIELDS = ("name", "description", "dress_code", "price_text", "organiser_name")
+
+
+def _has_contact(text: str, phones: bool = True) -> bool:
+    """A link, or a run of 11 or more digits that reads as a phone number (080..., +234...)."""
+    if _LINK.search(text):
+        return True
+    return phones and any(sum(c.isdigit() for c in m.group(0)) >= 11 for m in _PHONE.finditer(text))
 
 
 def _bad_text(value) -> bool:
@@ -187,6 +210,23 @@ def validate_event(payload: dict) -> list[str]:
     if url is not None and (not isinstance(url, str) or len(url) > 500
                             or not url.startswith("https://") or _bad_text(url)):
         problems.append("ticket_url must be an https:// link of at most 500 characters.")
+    for field, (count, limit) in LIST_LIMITS.items():
+        items = payload.get(field)
+        if items is None:
+            continue
+        if (not isinstance(items, list) or len(items) > count
+                or any(not isinstance(i, str) or not i.strip() or len(i) > limit or _bad_text(i) for i in items)):
+            problems.append(f"{field} must be at most {count} entries of up to {limit} characters each.")
+        elif any(_has_contact(i) for i in items):
+            problems.append(f"{field} cannot contain links or phone numbers.")
+    if payload.get("age_limit") not in AGE_LIMITS:
+        problems.append("Age limit must be none, 16, 18 or 21.")
+    for field in _CONTACT_FIELDS:
+        value = payload.get(field)
+        # A price range can look like a phone number, so prices are checked for links only.
+        if isinstance(value, str) and _has_contact(value, phones=field != "price_text"):
+            problems.append(f"{field} cannot contain links or phone numbers. "
+                            "A ticket link shows on events by VIIBE Certified organisers.")
     if not (payload.get("name") or "").strip():
         problems.append("The event needs a name.")
     if payload.get("venue_type") not in EVENT_TYPES:
@@ -257,6 +297,13 @@ def new_event_document(payload: dict, created_by: str | None = None) -> dict:
         "place_id": payload.get("place_id"),
         "organiser_name": (payload.get("organiser_name") or "").strip() or None,
         "ticket_url": payload.get("ticket_url"),
+        "description": (payload.get("description") or "").strip() or None,
+        "dress_code": (payload.get("dress_code") or "").strip() or None,
+        "price_text": (payload.get("price_text") or "").strip() or None,
+        "lineup": [i.strip() for i in payload.get("lineup") or []],
+        "genres": [i.strip() for i in payload.get("genres") or []],
+        "age_limit": payload.get("age_limit"),
+        "cover_image_url": None,
         "source": payload.get("source") or SOURCE_ADMIN,
         "created_by": created_by,
         "created_at": datetime.now(timezone.utc),
@@ -278,14 +325,15 @@ def public_event(doc: dict) -> dict:
     """
     An event as anyone may see it, with dates as ISO strings.
 
-    Never carries who submitted it. A community listing also drops the
-    organiser name and ticket link: those are claims until an admin checks them.
+    Never carries who submitted it. A community listing keeps its host name,
+    marked not verified, and drops the ticket link: a link is where a fake
+    organiser takes money, so it shows only for certified organisers.
     """
     out = {k: v for k, v in doc.items() if k not in PRIVATE_FIELDS}
     listing = listing_of(doc)
     out["listing"] = listing
+    out["organiser_verified"] = listing == LISTING_OFFICIAL and bool(out.get("organiser_name"))
     if listing == LISTING_COMMUNITY:
-        out.pop("organiser_name", None)
         out.pop("ticket_url", None)
     for k in ("starts_at", "ends_at", "created_at", "location_set_at"):
         if isinstance(out.get(k), datetime):

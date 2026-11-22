@@ -12,10 +12,11 @@ a promoter can put it on any phone on the night. The key is compared in
 constant time, and a wrong key returns 404 rather than 403 so the link does not
 even confirm that an event exists.
 """
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from app.config import db
 from app.services.auth import require_admin, require_auth
@@ -330,6 +331,35 @@ async def set_anchor(event_id: str, coordinates: dict) -> None:
                                   "pending_location": None})
 
 
+COVER_MAX_BYTES = 600_000   # a phone photo resized to about 1200px wide fits easily
+
+
+def decode_cover(value) -> tuple[tuple[bytes, str] | None, str | None]:
+    """A cover photo as (bytes, content type), or the problem with it. JPEG or PNG only."""
+    import base64
+    import binascii
+    if not isinstance(value, str) or len(value) > COVER_MAX_BYTES * 4 // 3 + 4:
+        return None, "The cover photo is too large. Pick a smaller one."
+    try:
+        data = base64.b64decode(value, validate=True)
+    except (binascii.Error, ValueError):
+        return None, "The cover photo could not be read."
+    if data[:3] == bytes([0xFF, 0xD8, 0xFF]):
+        return (data, "image/jpeg"), None
+    if data[:8] == bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]):
+        return (data, "image/png"), None
+    return None, "The cover photo must be a JPEG or PNG."
+
+
+async def _name_is_certified(name: str) -> bool:
+    """True when a current VIIBE Certified organiser goes by this name (any case)."""
+    from app.services.event_trust import is_certified
+    rows = await db.business_certifications.find(
+        {"kind": "organiser", "status": "certified",
+         "name": {"$regex": f"^{re.escape(name.strip())}$", "$options": "i"}}).to_list(10)
+    return any(is_certified(r) for r in rows)
+
+
 def _submission_view(sub: dict) -> dict:
     """A submission as its submitter sees it."""
     view = public_event({k: v for k, v in sub.items() if k not in ("status", "reason")})
@@ -369,14 +399,28 @@ async def submit_event(payload: dict, user: dict = Depends(require_auth)):
     if limit:
         raise HTTPException(status_code=429, detail=limit)
 
+    cover = None
+    if payload.get("cover_base64") is not None:
+        cover, problem = decode_cover(payload["cover_base64"])
+        if problem:
+            raise HTTPException(status_code=422, detail={"problems": [problem]})
+
     cert = await _organiser_certification(user["id"])
     claimed = (payload.get("organiser_name") or "").strip() or None
+    if claimed and not cert and await _name_is_certified(claimed):
+        # Freedom to name your own host, not to borrow a certified one.
+        raise HTTPException(status_code=422, detail={"problems": [
+            f"\"{claimed}\" is a VIIBE Certified organiser. Only they can list events under that name."]})
     ticket = payload.get("ticket_url")
     payload["source"] = SOURCE_COMMUNITY
-    payload["organiser_name"] = cert["name"] if cert else None
+    # A certified organiser lists under their certified name. Anyone else may
+    # name a host; it shows marked not verified (services/events.public_event).
+    payload["organiser_name"] = cert["name"] if cert else claimed
     payload["ticket_url"] = ticket if cert else None
     doc = new_event_document(payload, created_by=None)
     doc["listing"] = LISTING_OFFICIAL if cert else LISTING_COMMUNITY
+    if cover:
+        doc["cover_image_url"] = f"/api/events/{doc['id']}/cover"
 
     listed = await db.venues.find({"kind": KIND_EVENT, "city": doc["city"]}, {"_id": 0}).to_list(2000)
     waiting = await db.event_submissions.find({"city": doc["city"], "status": "pending"}, {"_id": 0}).to_list(2000)
@@ -387,6 +431,9 @@ async def submit_event(payload: dict, user: dict = Depends(require_auth)):
             detail["existing"] = {"id": dup["id"], "name": dup["name"]}
         raise HTTPException(status_code=409, detail=detail)
 
+    if cover:
+        await db.event_covers.insert_one({"event_id": doc["id"], "data": cover[0], "content_type": cover[1],
+                                          "created_at": datetime.now(timezone.utc)})
     await db.event_submissions.insert_one({**doc, "status": "pending", "submitted_by": user["id"]})
     await _set_private(doc["id"], {"submitted_by": user["id"], "claimed_organiser": claimed,
                                    "claimed_ticket_url": ticket})
@@ -505,8 +552,33 @@ async def reject_event(event_id: str, payload: dict, admin: dict = Depends(requi
     if live:
         await db.venues.delete_one({"id": event_id, "kind": KIND_EVENT})
     await db.event_keys.delete_many({"event_id": event_id})
+    await db.event_covers.delete_many({"event_id": event_id})
     await _set_private(event_id, {"review": {"by": admin["id"], "at": now, "reason": reason}})
     return {"rejected": event_id}
+
+
+def _cover_response(cover: dict) -> Response:
+    return Response(content=cover["data"], media_type=cover["content_type"],
+                    headers={"Cache-Control": "public, max-age=3600"})
+
+
+@router.get("/events/{event_id}/cover")
+async def event_cover(event_id: str):
+    """An event's cover photo, once the event is approved and not taken down."""
+    event = await db.venues.find_one({"id": event_id, "kind": KIND_EVENT})
+    cover = await db.event_covers.find_one({"event_id": event_id}) if event and not is_held(event) else None
+    if not cover:
+        raise HTTPException(status_code=404, detail="No cover photo")
+    return _cover_response(cover)
+
+
+@router.get("/admin/events/{event_id}/cover")
+async def event_cover_for_review(event_id: str, admin: dict = Depends(require_admin)):
+    """The cover photo of any event, pending or not, so it can be checked before approval."""
+    cover = await db.event_covers.find_one({"event_id": event_id})
+    if not cover:
+        raise HTTPException(status_code=404, detail="No cover photo")
+    return _cover_response(cover)
 
 
 @router.post("/admin/events/{event_id}/move")

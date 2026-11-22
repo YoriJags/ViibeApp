@@ -1,5 +1,5 @@
 /**
- * Add an event: what, where, when, details. It goes to review, never straight
+ * Add an event: what, where, when, make it yours, details. It goes to review, never straight
  * onto the map (backend/app/routes/events.py submit_event).
  */
 import React, { useEffect, useState } from 'react';
@@ -10,10 +10,12 @@ import { ed, edType, edSpace, edRadius } from '../../src/theme/editorial';
 import {
   ScreenHeader, StepBar, SectionLabel, Footer, PrimaryButton, GhostButton, Chip, ChoiceCard, Field,
   Problems, PlaceCard, PlacePicker, WhenPicker, WhenValue, lagosIso, formatLagos,
+  TagInput, CoverPicker, TextArea,
 } from '../../src/components/submit/ui';
 import SignInGate, { useCanSubmit } from '../../src/components/submit/SignInGate';
 import {
   EventType, Entry, PlaceResult, EVENT_TYPE_LABELS, submitEvent, SubmitError, organiserCertifiedName,
+  CUSTOM_LIMITS, hasContact,
 } from '../../src/services/submissions';
 import { useVibeStore } from '../../src/store/vibeStore';
 
@@ -24,7 +26,13 @@ const TYPES: { type: EventType; icon: keyof typeof Ionicons.glyphMap; body: stri
   { type: 'block_party', icon: 'people-outline', body: 'A street or compound party, open to the area.' },
 ];
 
-const STEPS = ['What', 'Where', 'When', 'Details'];
+const STEPS = ['What', 'Where', 'When', 'Make it yours', 'Details'];
+const TITLES = ['What is on?', 'Where is it?', 'When is it?', 'Make it yours', 'Last details'];
+
+const GENRES = ['Afrobeats', 'Amapiano', 'Hip hop', 'Afro house', 'Highlife', 'R&B', 'Dancehall', 'Live band'];
+const AGES: { label: string; value: 16 | 18 | 21 | null }[] = [
+  { label: 'All ages', value: null }, { label: '16+', value: 16 }, { label: '18+', value: 18 }, { label: '21+', value: 21 },
+];
 
 export default function AddEventScreen() {
   const canSubmit = useCanSubmit();
@@ -42,6 +50,13 @@ export default function AddEventScreen() {
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [certifiedAs, setCertifiedAs] = useState<string | null>(null);
+  const [cover, setCover] = useState<string | null>(null);
+  const [description, setDescription] = useState('');
+  const [lineup, setLineup] = useState<string[]>([]);
+  const [genres, setGenres] = useState<string[]>([]);
+  const [dressCode, setDressCode] = useState('');
+  const [price, setPrice] = useState('');
+  const [age, setAge] = useState<16 | 18 | 21 | null>(null);
 
   useEffect(() => {
     if (canSubmit) organiserCertifiedName().then(setCertifiedAs);
@@ -64,11 +79,27 @@ export default function AddEventScreen() {
   if (sent) return <Sent name={name.trim()} />;
 
   const ticketBad = ticket.trim().length > 0 && !/^https:\/\/\S+\.\S+/.test(ticket.trim());
+  // Free text is free, except for links and phone numbers (the server refuses those too).
+  const descriptionBad = hasContact(description);
+  const lineupBad = lineup.some((l) => hasContact(l));
+  const customBad = descriptionBad || lineupBad || genres.some((g) => hasContact(g))
+    || hasContact(dressCode) || hasContact(price, false);
+  const hostBad = !certifiedAs && hasContact(organiser);
+  const touches = [
+    cover ? 'Cover photo' : null,
+    description.trim() ? 'About' : null,
+    lineup.length ? `${lineup.length} on the lineup` : null,
+    genres.length ? genres.join(', ') : null,
+    dressCode.trim() ? dressCode.trim() : null,
+    price.trim() ? price.trim() : null,
+    age ? `${age}+` : null,
+  ].filter(Boolean).join(' · ');
   const ready = [
-    name.trim().length >= 2 && !!type && !!entry,
+    name.trim().length >= 2 && !!type && !!entry && !hasContact(name),
     !!place,
     !!when && when.startMs > Date.now() - 30 * 60000,
-    !ticketBad,
+    !customBad,
+    !ticketBad && !hostBad,
   ][step];
 
   const next = async () => {
@@ -82,6 +113,8 @@ export default function AddEventScreen() {
         starts_at: lagosIso(when.startMs),
         ends_at: lagosIso(when.startMs + when.hours * 3600_000),
         organiser_name: organiser, ticket_url: ticket,
+        description, lineup, genres, dress_code: dressCode, price_text: price, age_limit: age,
+        cover_base64: cover || undefined,
       }, city);
       setSent(true);
     } catch (e) {
@@ -99,7 +132,7 @@ export default function AddEventScreen() {
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScreenHeader
         kicker={`Step ${step + 1} of ${STEPS.length} · ${STEPS[step]}`}
-        title={['What is on?', 'Where is it?', 'When is it?', 'Last details'][step]}
+        title={TITLES[step]}
         onBack={back}
       />
       <StepBar step={step} total={STEPS.length} />
@@ -154,14 +187,64 @@ export default function AddEventScreen() {
 
         {step === 3 && (
           <>
+            <Text style={[edType.body, { marginTop: edSpace.sm }]}>
+              All optional. The more you add, the easier it is for people to decide.
+            </Text>
+            <SectionLabel>Cover photo</SectionLabel>
+            <CoverPicker value={cover} onChange={setCover} />
+
+            <SectionLabel>About it</SectionLabel>
+            <TextArea value={description} onChangeText={setDescription} maxLength={CUSTOM_LIMITS.description}
+              placeholder="What to expect: stages, food, the theme, anything special" />
+            {descriptionBad ? (
+              <Text style={[edType.caption, { color: ed.danger, marginTop: 2 }]}>
+                No links or phone numbers here. A ticket link shows once you are VIIBE Certified.
+              </Text>
+            ) : null}
+
+            <SectionLabel hint="Tap a name to remove it.">{type === 'rave' ? 'DJs' : 'Lineup'}</SectionLabel>
+            <TagInput values={lineup} onChange={setLineup} max={CUSTOM_LIMITS.lineup.count}
+              maxLength={CUSTOM_LIMITS.lineup.length}
+              placeholder={type === 'rave' ? 'Add a DJ' : 'Add an artist or DJ'} />
+            {lineupBad ? (
+              <Text style={[edType.caption, { color: ed.danger, marginTop: 6 }]}>Names only, no links or phone numbers.</Text>
+            ) : null}
+
+            <SectionLabel>Sound</SectionLabel>
+            <TagInput values={genres} onChange={setGenres} max={CUSTOM_LIMITS.genres.count}
+              maxLength={CUSTOM_LIMITS.genres.length} placeholder="Add a genre" suggestions={GENRES} />
+
+            <SectionLabel>Dress code</SectionLabel>
+            <Field value={dressCode} onChangeText={setDressCode} placeholder="e.g. All white, smart casual"
+              maxLength={CUSTOM_LIMITS.dress_code} />
+
+            <SectionLabel>Price</SectionLabel>
+            <Field value={price} onChangeText={setPrice} placeholder="e.g. Free before 11pm, then ₦5,000"
+              maxLength={CUSTOM_LIMITS.price_text} />
+
+            <SectionLabel>Age</SectionLabel>
+            <View style={styles.row}>
+              {AGES.map((a) => (
+                <Chip key={String(a.value)} label={a.label} selected={age === a.value} onPress={() => setAge(a.value)} />
+              ))}
+            </View>
+          </>
+        )}
+
+        {step === 4 && (
+          <>
             {certifiedAs ? null : (
               <>
-                <SectionLabel hint="Optional. Shown on Official listings only.">Organiser</SectionLabel>
+                <SectionLabel hint="Optional. Shows as 'Hosted by', marked not verified.">Host</SectionLabel>
                 <Field value={organiser} onChangeText={setOrganiser} placeholder="Who is putting it on" maxLength={120}
                   autoCapitalize="words" />
+                {hostBad ? (
+                  <Text style={[edType.caption, { color: ed.danger, marginTop: 6 }]}>No links or phone numbers here.</Text>
+                ) : null}
               </>
             )}
-            <SectionLabel hint="Optional. Must start with https://">Ticket link</SectionLabel>
+            <SectionLabel hint={certifiedAs ? 'Optional. Must start with https://'
+              : 'Optional. Shows once you are VIIBE Certified; until then it helps us check the event.'}>Ticket link</SectionLabel>
             <Field value={ticket} onChangeText={setTicket} placeholder="https://" maxLength={500}
               autoCapitalize="none" keyboardType="url" />
             {ticketBad ? (
@@ -184,7 +267,7 @@ export default function AddEventScreen() {
                 <Text style={edType.kicker}>HOW IT WILL SHOW</Text>
                 <Text style={[edType.bodyStrong, { marginTop: 8 }]}>Community listing</Text>
                 <Text style={[edType.caption, { marginTop: 4, color: ed.inkSoft }]}>
-                  Name, place and time, without an organiser name or ticket link. Anyone could claim to be the organiser, so those show only once the organiser is VIIBE Certified.
+                  Everything you added shows{organiser.trim() ? `, with "Hosted by ${organiser.trim()}" marked not verified` : ''}. The ticket link and the verified mark show only for VIIBE Certified organisers, so nobody can sell tickets under someone else's name.
                 </Text>
                 <Text style={[edType.label, { color: ed.pink, marginTop: 10 }]} accessibilityRole="link"
                   onPress={() => router.push('/submit/certify' as any)}>
@@ -202,8 +285,8 @@ export default function AddEventScreen() {
                 label="Time"
                 value={when ? `${formatLagos(when.startMs)} to ${formatLagos(when.startMs + when.hours * 3600_000)}` : ''}
                 onEdit={() => setStep(2)}
-                last
               />
+              <ReviewRow label="Your touches" value={touches || 'None added'} onEdit={() => setStep(3)} last />
             </View>
           </>
         )}

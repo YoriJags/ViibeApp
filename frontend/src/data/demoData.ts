@@ -295,6 +295,17 @@ export const DEMO_VENUES = [
     direction_clicks: 160,
     glow_boost: 0,
     geofence_radius_m: 400,
+    // A community listing: the host named themselves, so it shows not verified.
+    kind: 'event',
+    listing: 'community',
+    organiser_name: 'Night Shift Collective',
+    organiser_verified: false,
+    description: 'Sunset to sunrise on the sand. Two sound systems, a chill-out tent and food by the water.',
+    lineup: ['DJ Tolu K', 'Amara B2B Femi', 'Sola Deep'],
+    genres: ['Afro house', 'Amapiano'],
+    dress_code: 'Comfortable shoes, you will be on sand',
+    price_text: 'Free before midnight, then ₦5,000',
+    age_limit: 18,
   },
   {
     id: 'demo_venue_festival',
@@ -316,6 +327,16 @@ export const DEMO_VENUES = [
     direction_clicks: 120,
     glow_boost: 0,
     geofence_radius_m: 300,
+    // An Official listing: the organiser is VIIBE Certified.
+    kind: 'event',
+    listing: 'official',
+    organiser_name: 'Eko Sound Co.',
+    organiser_verified: true,
+    description: 'A day of live music in the park: three stages, a craft market and the city skyline at dusk.',
+    lineup: ['Kemi Adé', 'The Lagos Strings', 'DJ Tolu K'],
+    genres: ['Afrobeats', 'Highlife', 'Live band'],
+    price_text: '₦15,000 day pass',
+    age_limit: null,
   },
 ];
 

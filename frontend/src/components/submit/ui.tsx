@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator,
+  View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -440,6 +440,162 @@ export function WhenPicker({ value, onChange }: { value: WhenValue | null; onCha
   );
 }
 
+// ── Make it yours ───────────────────────────────────────────────────────────
+
+/** Type a name, tap Add (or the return key), and it becomes a removable chip. */
+export function TagInput({ values, onChange, placeholder, max, maxLength, suggestions }: {
+  values: string[]; onChange: (v: string[]) => void; placeholder: string;
+  max: number; maxLength: number; suggestions?: string[];
+}) {
+  const [draft, setDraft] = useState('');
+  const add = (raw: string) => {
+    const v = raw.trim();
+    if (!v || values.length >= max) return;
+    if (values.some((x) => x.toLowerCase() === v.toLowerCase())) { setDraft(''); return; }
+    onChange([...values, v.slice(0, maxLength)]);
+    setDraft('');
+  };
+  const full = values.length >= max;
+  return (
+    <View>
+      {values.length ? (
+        <View style={[s.wrap, { marginBottom: 10 }]}>
+          {values.map((v) => (
+            <TouchableOpacity
+              key={v}
+              onPress={() => onChange(values.filter((x) => x !== v))}
+              style={s.tag}
+              accessibilityRole="button"
+              accessibilityLabel={`Remove ${v}`}
+            >
+              <Text style={edType.label}>{v}</Text>
+              <Ionicons name="close" size={14} color={ed.inkSoft} />
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : null}
+      {full ? (
+        <Text style={edType.caption}>That is the most you can add. Tap one to remove it.</Text>
+      ) : (
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flex: 1 }}>
+            <TextInput
+              value={draft}
+              onChangeText={setDraft}
+              onSubmitEditing={() => add(draft)}
+              blurOnSubmit={false}
+              placeholder={placeholder}
+              placeholderTextColor={ed.inkFaint}
+              maxLength={maxLength}
+              autoCorrect={false}
+              returnKeyType="done"
+              style={s.field}
+            />
+          </View>
+          <TouchableOpacity
+            onPress={() => add(draft)}
+            disabled={!draft.trim()}
+            style={[s.addBtn, !draft.trim() && { opacity: 0.4 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Add"
+          >
+            <Ionicons name="add" size={22} color={ed.ink} />
+          </TouchableOpacity>
+        </View>
+      )}
+      {suggestions && !full ? (
+        <View style={[s.wrap, { marginTop: 10 }]}>
+          {suggestions.filter((g) => !values.includes(g)).map((g) => (
+            <TouchableOpacity key={g} onPress={() => add(g)} style={s.suggest} accessibilityRole="button">
+              <Text style={[edType.caption, { color: ed.inkSoft }]}>+ {g}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * Pick a cover photo from the library, cropped wide and resized so it uploads
+ * quickly and stays under the server's limit. Gives back JPEG base64.
+ */
+export function CoverPicker({ value, onChange }: { value: string | null; onChange: (b64: string | null) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const pick = async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      const ImagePicker = await import('expo-image-picker');
+      const ImageManipulator = await import('expo-image-manipulator');
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'], allowsEditing: true, aspect: [16, 9], quality: 0.9,
+      });
+      if (res.canceled || !res.assets?.[0]?.uri) return;
+      const small = await ImageManipulator.manipulateAsync(
+        res.assets[0].uri,
+        [{ resize: { width: 1200 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+      );
+      if (!small.base64) { setError('Could not read that photo. Try another.'); return; }
+      if (small.base64.length > 790_000) { setError('That photo is too large. Try another.'); return; }
+      onChange(small.base64);
+    } catch {
+      setError('Could not open your photos. Check that VIIBE may use them in Settings.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (value) {
+    return (
+      <View>
+        <Image source={{ uri: `data:image/jpeg;base64,${value}` }} style={s.cover} resizeMode="cover" />
+        <View style={{ flexDirection: 'row', gap: 16, marginTop: 10 }}>
+          <Text style={[edType.label, { color: ed.pink }]} onPress={pick} accessibilityRole="button">Change photo</Text>
+          <Text style={[edType.label, { color: ed.inkSoft }]} onPress={() => onChange(null)} accessibilityRole="button">Remove</Text>
+        </View>
+      </View>
+    );
+  }
+  return (
+    <View>
+      <TouchableOpacity onPress={pick} style={s.coverEmpty} activeOpacity={0.85} accessibilityRole="button">
+        {busy ? <ActivityIndicator color={ed.inkSoft} /> : (
+          <>
+            <Ionicons name="image-outline" size={28} color={ed.inkSoft} />
+            <Text style={[edType.label, { marginTop: 8 }]}>Add a cover photo</Text>
+            <Text style={[edType.caption, { marginTop: 2 }]}>Your flyer or a shot of the venue</Text>
+          </>
+        )}
+      </TouchableOpacity>
+      {error ? <Text style={[edType.caption, { color: ed.danger, marginTop: 6 }]}>{error}</Text> : null}
+    </View>
+  );
+}
+
+/** Multi-line field for the description. */
+export function TextArea({ value, onChangeText, placeholder, maxLength }: {
+  value: string; onChangeText: (t: string) => void; placeholder: string; maxLength: number;
+}) {
+  return (
+    <View>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={ed.inkFaint}
+        maxLength={maxLength}
+        multiline
+        textAlignVertical="top"
+        style={[s.field, { height: 120, paddingTop: 14 }]}
+      />
+      <Text style={[edType.caption, { textAlign: 'right', marginTop: 4 }]}>{value.length}/{maxLength}</Text>
+    </View>
+  );
+}
+
 // ── Styles ──────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
@@ -510,6 +666,23 @@ const s = StyleSheet.create({
   time: {
     width: 66, height: 40, borderRadius: edRadius.pill, backgroundColor: ed.raised,
     alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: ed.line,
+  },
+  tag: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 14, paddingRight: 10, height: 36,
+    borderRadius: edRadius.pill, backgroundColor: ed.raised, borderWidth: 1, borderColor: ed.lineStrong,
+  },
+  suggest: {
+    paddingHorizontal: 12, height: 32, borderRadius: edRadius.pill, borderWidth: 1, borderColor: ed.line,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  addBtn: {
+    width: 52, height: 52, borderRadius: edRadius.sm, backgroundColor: ed.raised,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: ed.line,
+  },
+  cover: { width: '100%', aspectRatio: 16 / 9, borderRadius: edRadius.md, backgroundColor: ed.surface },
+  coverEmpty: {
+    width: '100%', aspectRatio: 16 / 9, borderRadius: edRadius.md, borderWidth: 1, borderStyle: 'dashed',
+    borderColor: ed.lineStrong, backgroundColor: ed.surface, alignItems: 'center', justifyContent: 'center',
   },
   whenSummary: {
     marginTop: edSpace.lg, padding: 16, borderRadius: edRadius.md,

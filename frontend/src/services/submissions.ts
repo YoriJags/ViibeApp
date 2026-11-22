@@ -55,6 +55,27 @@ export interface EventDraft {
   place: PlaceResult;
   organiser_name?: string;
   ticket_url?: string;
+  // Free for anyone to set (backend services/events.py LIST_LIMITS, TEXT_LIMITS).
+  description?: string;
+  lineup?: string[];
+  genres?: string[];
+  dress_code?: string;
+  price_text?: string;
+  age_limit?: 16 | 18 | 21 | null;
+  cover_base64?: string;     // JPEG, already resized
+}
+
+export const CUSTOM_LIMITS = {
+  description: 600, dress_code: 80, price_text: 60, organiser_name: 120,
+  lineup: { count: 12, length: 60 }, genres: { count: 6, length: 24 },
+} as const;
+
+/** Mirrors the server: links and phone numbers are not allowed in free text. */
+export function hasContact(text: string, phones = true): boolean {
+  if (/(https?:\/\/|www\.|\b[\w-]+\.(com|ng|net|org|io|co|me|ly|link|africa)\b|wa\.me|t\.me|bit\.ly)/i.test(text)) return true;
+  if (!phones) return false;
+  const runs = text.match(/\+?\d[\d\s().-]{8,}\d/g) || [];
+  return runs.some((r) => (r.match(/\d/g) || []).length >= 11);
 }
 
 export interface SubmittedEvent {
@@ -168,6 +189,13 @@ export async function submitEvent(draft: EventDraft, city: string): Promise<Subm
     city,
     organiser_name: draft.organiser_name?.trim() || undefined,
     ticket_url: draft.ticket_url?.trim() || undefined,
+    description: draft.description?.trim() || undefined,
+    lineup: draft.lineup?.length ? draft.lineup : undefined,
+    genres: draft.genres?.length ? draft.genres : undefined,
+    dress_code: draft.dress_code?.trim() || undefined,
+    price_text: draft.price_text?.trim() || undefined,
+    age_limit: draft.age_limit ?? undefined,
+    cover_base64: draft.cover_base64 || undefined,
   };
   if (p.source === 'viibe' && p.id) {
     payload.place_id = p.id;

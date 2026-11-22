@@ -92,13 +92,17 @@ def test_a_submission_waits_off_the_map_and_never_shows_who_sent_it(env):
     assert all(v.get("id") != ev["id"] for v in client.get("/api/venues?city=lagos").json())
 
 
-def test_claiming_to_be_dave_shows_no_organiser_and_no_ticket_link(env):
+def test_claiming_to_be_dave_shows_a_host_marked_not_verified_and_no_ticket_link(env):
+    # People are free to name their host. What they cannot get without being
+    # certified is the ticket link (where a fake organiser takes money) or the
+    # verified mark.
     client, db, _ = env
     ev = submit(client).json()["event"]
     approve(client, ev["id"])
     listed = client.get("/api/events?city=lagos").json()[0]
     assert listed["listing"] == "community"
-    assert "organiser_name" not in listed and "ticket_url" not in listed
+    assert listed["organiser_name"] == "Dave" and listed["organiser_verified"] is False
+    assert "ticket_url" not in listed
     # The admin still sees what was claimed, from the private record only.
     assert run(db.event_private.find_one({"event_id": ev["id"]}))["claimed_organiser"] == "Dave"
     live = run(db.venues.find_one({"id": ev["id"]}))
@@ -130,6 +134,73 @@ def test_a_certified_organisers_event_is_official_under_the_certified_name(env):
     assert listed["listing"] == "official"
     assert listed["organiser_name"] == "Dave Official"
     assert listed["ticket_url"] == "https://tix.example/dave"
+
+
+def _certify(client, name):
+    client.post("/api/certification/apply", json={
+        "kind": "organiser", "name": name, "links": ["https://davemusic.example"],
+        "contact": "mgmt@davemusic.example"})
+    app_id = client.get("/api/admin/certification").json()["applications"][0]["id"]
+    client.post(f"/api/admin/certification/{app_id}/certify", json={"method": "link_and_contact_confirmed"})
+
+
+def test_nobody_else_can_host_under_a_certified_organisers_name(env):
+    client, db, current = env
+    current["user"] = BOB
+    _certify(client, "Dave Official")
+    current["user"] = ALICE
+    r = submit(client, organiser_name="dave official")
+    assert r.status_code == 422 and "VIIBE Certified organiser" in r.text
+    assert submit(client, organiser_name="Dave Fan Club").status_code == 200
+
+
+# ── Making it yours ──────────────────────────────────────────────────────────
+
+def test_anyone_can_describe_their_event_freely(env):
+    client, db, _ = env
+    ev = submit(client, description="Two stages, food court, bring your crew.",
+                lineup=["Dave", "DJ Spinall"], genres=["Afrobeats", "Amapiano"],
+                dress_code="All white", price_text="N10000 - 15000", age_limit=18).json()["event"]
+    approve(client, ev["id"])
+    listed = client.get("/api/events?city=lagos").json()[0]
+    assert listed["lineup"] == ["Dave", "DJ Spinall"] and listed["genres"] == ["Afrobeats", "Amapiano"]
+    assert listed["dress_code"] == "All white" and listed["age_limit"] == 18
+    assert listed["price_text"] == "N10000 - 15000"   # a price range is not a phone number
+
+
+@pytest.mark.parametrize("field,value", [
+    ("description", "Tickets at www.dave-tix.com"),
+    ("description", "DM 08031234567 for tables"),
+    ("description", "Buy at https://fake.example"),
+    ("lineup", ["Dave", "wa.me/2348031234567"]),
+    ("price_text", "Pay at davetix.ng"),
+])
+def test_links_and_phone_numbers_cannot_slip_in_through_free_text(env, field, value):
+    client, _, _ = env
+    r = submit(client, **{field: value})
+    assert r.status_code == 422 and "links or phone numbers" in r.text
+
+
+def test_a_cover_photo_shows_only_after_approval(env):
+    import base64
+    client, db, _ = env
+    jpeg = bytes([0xFF, 0xD8, 0xFF, 0xE0]) + bytes(64)
+    ev = submit(client, cover_base64=base64.b64encode(jpeg).decode()).json()["event"]
+    assert ev["cover_image_url"] == f"/api/events/{ev['id']}/cover"
+    assert client.get(f"/api/events/{ev['id']}/cover").status_code == 404     # pending
+    assert client.get(f"/api/admin/events/{ev['id']}/cover").content == jpeg  # admin can check it
+    approve(client, ev["id"])
+    r = client.get(f"/api/events/{ev['id']}/cover")
+    assert r.status_code == 200 and r.content == jpeg and r.headers["content-type"] == "image/jpeg"
+    client.post(f"/api/admin/events/{ev['id']}/reject", json={"reason": "Fake."})
+    assert run(db.event_covers.find_one({"event_id": ev["id"]})) is None
+
+
+def test_a_cover_that_is_not_a_photo_is_refused(env):
+    import base64
+    client, _, _ = env
+    r = submit(client, cover_base64=base64.b64encode(b"<script>").decode())
+    assert r.status_code == 422 and "JPEG or PNG" in r.text
 
 
 # ── Spam and duplicates ──────────────────────────────────────────────────────
