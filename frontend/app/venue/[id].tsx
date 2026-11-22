@@ -25,6 +25,7 @@ import { useVibeStore } from '../../src/store/vibeStore';
 import WhenToLeaveCard from '../../src/components/WhenToLeaveCard';
 import { usePlacePhoto } from '../../src/services/usePlacePhoto';
 import EventDetails, { eventCoverUrl } from '../../src/components/EventDetails';
+import { CertifiedPill, venueIsCertified } from '../../src/components/CertifiedMark';
 import { sampleArrivalSound } from '../../src/services/arrivalSample';
 import { calculateDistance } from '../../src/utils/geo';
 import RateVibeModal from '../../src/components/RateVibeModal';
@@ -865,8 +866,9 @@ const getVibeColor = (score: number, capacity = 'sparse') =>
             ) : null}
 
             {/* Certified + Verified badges */}
-            {(venue.vibe_certified || venue.is_verified) && (
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+            {(venue.vibe_certified || venue.is_verified || venueIsCertified(venue)) && (
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                {venueIsCertified(venue) && <CertifiedPill />}
                 {venue.vibe_certified && <CertifiedBadge compact />}
                 {venue.is_verified && (
                   <View style={styles.heroCertBadge}>

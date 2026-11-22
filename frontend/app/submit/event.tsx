@@ -18,6 +18,7 @@ import {
   CUSTOM_LIMITS, hasContact,
 } from '../../src/services/submissions';
 import { useVibeStore } from '../../src/store/vibeStore';
+import CertifiedMark from '../../src/components/CertifiedMark';
 
 const TYPES: { type: EventType; icon: keyof typeof Ionicons.glyphMap; body: string }[] = [
   { type: 'concert', icon: 'mic-outline', body: 'An artist on a stage. Theatres, arenas, halls.' },
@@ -255,7 +256,7 @@ export default function AddEventScreen() {
               <View style={[styles.listing, { borderColor: ed.pink }]}>
                 <Text style={edType.kicker}>HOW IT WILL SHOW</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
-                  <Ionicons name="checkmark-circle" size={18} color={ed.pink} />
+                  <CertifiedMark size={18} />
                   <Text style={edType.bodyStrong}>Official listing by {certifiedAs}</Text>
                 </View>
                 <Text style={[edType.caption, { marginTop: 4, color: ed.inkSoft }]}>

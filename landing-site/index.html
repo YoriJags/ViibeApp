@@ -181,6 +181,7 @@
   .venue-list div { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 1.5rem; padding: 1.1rem 0; border-top: 1px solid var(--rule); }
   .venue-list div:last-child { border-bottom: 1px solid var(--rule); }
   .venue-list dt { font: 700 1rem/1.5 var(--display); }
+  .cert-mark { width: 1.1em; height: 1.1em; vertical-align: -0.18em; margin-right: 0.4em; }
   .venue-list dd { margin: 0; color: var(--ink-soft); }
 
   .ask { max-width: 46rem; }
@@ -339,8 +340,12 @@
       <div>
         <dl class="venue-list">
           <div>
-            <dt>Pick the place, or drop a pin</dt>
-            <dd>Choose a known ground like the National Theatre, or drop a pin on the sand and size the area. A place checked once stays checked for the next event there.</dd>
+            <dt>Pick the place, or stand on it</dt>
+            <dd>Choose a known ground like the National Theatre, or stand on the sand and use your phone's location. A place checked once stays checked for the next event there.</dd>
+          </div>
+          <div>
+            <dt>Make it yours</dt>
+            <dd>Your flyer as the cover, the lineup, the sound, the dress code, the price. Dress it up however you like.</dd>
           </div>
           <div>
             <dt>We look at it first</dt>
@@ -378,10 +383,10 @@
         </div>
         <div>
           <dt>Nobody can borrow a name</dt>
-          <dd>Anyone can tell us about an event, but it only shows an organiser and a ticket link once we've checked who is behind it. Until then there's no name on it to trade on.</dd>
+          <dd>Anyone can tell us about an event and name its host, but that name shows as not verified, and a ticket link only appears once we've checked who is behind it. Nobody else can host under a certified organiser's name.</dd>
         </div>
         <div>
-          <dt>VIIBE Certified means we checked</dt>
+          <dt><svg class="cert-mark" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="#FF3366"/><path d="M26 52 L40 66 M40 66 L66 28 M50 70 L76 32" fill="none" stroke="#FFF5DE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>VIIBE Certified means we checked</dt>
           <dd>Organisers and venues send us their official ticket page or website, and we confirm it through the contact that page lists before the badge goes on. Every year, again.</dd>
         </div>
       </dl>
@@ -411,7 +416,7 @@
             <dd>Every Monday, in naira: did the DJ, the promo, the night actually lift the room?</dd>
           </div>
           <div>
-            <dt>VIIBE Certified</dt>
+            <dt><svg class="cert-mark" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="#FF3366"/><path d="M26 52 L40 66 M40 66 L66 28 M50 70 L76 32" fill="none" stroke="#FFF5DE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>VIIBE Certified</dt>
             <dd>Show us it's really yours and carry the badge, so people know the venue on the map is the venue they'll walk into.</dd>
           </div>
         </dl>

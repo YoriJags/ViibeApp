@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="1024" height="1024">
+  <title>VIIBE Certified, checked by people (door sticker and certificate)</title>
+  <defs>
+    <path id="ring" d="M50 50 m-36 0 a36 36 0 1 1 72 0 a36 36 0 1 1 -72 0"/>
+  </defs>
+  <circle cx="50" cy="50" r="49" fill="#0A090D"/>
+  <circle cx="50" cy="50" r="46.5" fill="none" stroke="#FF3366" stroke-width="2.5"/>
+  <text font-family="'Space Grotesk', 'Arial Black', sans-serif" font-weight="700" font-size="8.6" fill="#FF3366">
+    <textPath href="#ring" textLength="224" lengthAdjust="spacing">VIIBE CERTIFIED · CHECKED BY PEOPLE · </textPath>
+  </text>
+  <g transform="translate(50 50) scale(0.6) translate(-50 -50)">
+    <circle cx="50" cy="50" r="46" fill="#FF3366"/>
+    <path d="M26 52 L40 66" fill="none" stroke="#FFF5DE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M40 66 L66 28" fill="none" stroke="#FFF5DE" stroke-width="7" stroke-linecap="round"/>
+    <path d="M50 70 L76 32" fill="none" stroke="#FFF5DE" stroke-width="7" stroke-linecap="round"/>
+  </g>
+</svg>

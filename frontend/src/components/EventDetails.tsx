@@ -8,6 +8,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ed, edType, edRadius } from '../theme/editorial';
+import { CertifiedPill } from './CertifiedMark';
 
 export interface EventInfo {
   listing?: 'community' | 'official';
@@ -48,10 +49,7 @@ export default function EventDetails({ event }: { event: EventInfo }) {
           <Text style={edType.caption}>Hosted by</Text>
           <Text style={[edType.bodyStrong, { flexShrink: 1 }]} numberOfLines={1}>{event.organiser_name}</Text>
           {verified ? (
-            <View style={styles.verified}>
-              <Ionicons name="checkmark-circle" size={14} color={ed.pink} />
-              <Text style={[edType.caption, { color: ed.pink, fontWeight: '700' }]}>VIIBE Certified</Text>
-            </View>
+            <CertifiedPill />
           ) : (
             <View style={styles.unverified}>
               <Text style={[edType.caption, { color: ed.inkFaint }]}>Not verified</Text>
@@ -109,10 +107,6 @@ const styles = StyleSheet.create({
     backgroundColor: ed.surface, borderWidth: 1, borderColor: ed.line,
   },
   hostRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  verified: {
-    flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3,
-    borderRadius: edRadius.pill, backgroundColor: ed.pinkSoft,
-  },
   unverified: {
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: edRadius.pill,
     borderWidth: 1, borderColor: ed.line,

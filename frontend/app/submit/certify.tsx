@@ -17,6 +17,7 @@ import {
   CertApplication, CertKind, applyForCertification, myCertifications, SubmitError,
 } from '../../src/services/submissions';
 import { useVibeStore } from '../../src/store/vibeStore';
+import CertifiedMark, { CertifiedPill } from '../../src/components/CertifiedMark';
 
 const MAX_LINKS = 5;
 const isLink = (l: string) => /^https:\/\/\S+\.\S+/.test(l.trim());
@@ -75,10 +76,7 @@ export default function CertifyScreen() {
       <ScreenHeader kicker="For organisers and venues" title="VIIBE Certified" />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.badgeRow}>
-          <View style={styles.badge}>
-            <Ionicons name="checkmark-circle" size={16} color={ed.pink} />
-            <Text style={[edType.label, { color: ed.pink }]}>VIIBE Certified</Text>
-          </View>
+          <CertifiedMark size={56} />
         </View>
         <Text style={edType.body}>
           Means a person at VIIBE checked who you are. Certified organisers list events as Official, with their name and ticket link. Certified venues carry the badge for a year.
@@ -188,9 +186,11 @@ function AppCard({ app }: { app: CertApplication }) {
       <Text style={edType.kicker}>{app.kind === 'vendor' ? 'Venue' : 'Organiser'}</Text>
       <Text style={[edType.title, { marginTop: 6 }]}>{app.name}</Text>
       <View style={{ flexDirection: 'row', marginTop: 10 }}>
-        <View style={[styles.pill, { backgroundColor: s.bg }]}>
-          <Text style={[edType.caption, { color: s.color, fontWeight: '700' }]}>{s.label}</Text>
-        </View>
+        {app.status === 'certified' ? <CertifiedPill size="md" /> : (
+          <View style={[styles.pill, { backgroundColor: s.bg }]}>
+            <Text style={[edType.caption, { color: s.color, fontWeight: '700' }]}>{s.label}</Text>
+          </View>
+        )}
       </View>
       {app.status === 'certified' && app.expires_at ? (
         <Text style={[edType.caption, { marginTop: 8 }]}>Until {formatDate(app.expires_at)}</Text>

@@ -5,6 +5,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, RefreshControl, Linking, TouchableOpacity, Alert } from 'react-native';
 import { useVibeStore } from '../../src/store/vibeStore';
+import CertifiedMark from '../../src/components/CertifiedMark';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ed, edType, edSpace, edRadius } from '../../src/theme/editorial';
@@ -90,7 +91,7 @@ export default function MySubmissionsScreen() {
                   <Text style={edType.kicker}>{EVENT_TYPE_LABELS[item.event.venue_type] || 'Event'}</Text>
                   {item.event.listing === 'official' ? (
                     <View style={styles.official}>
-                      <Ionicons name="checkmark-circle" size={14} color={ed.pink} />
+                      <CertifiedMark size={14} />
                       <Text style={[edType.caption, { color: ed.pink, fontWeight: '700' }]}>Official</Text>
                     </View>
                   ) : null}
