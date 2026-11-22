@@ -490,7 +490,34 @@ async def submissions_queue(admin: dict = Depends(require_admin)):
             "reports": await db.event_reports.find({"event_id": r["id"]}, {"_id": 0}).to_list(100),
             "possible_duplicate": {"id": dup["id"], "name": dup["name"]} if dup else None,
         })
+    # Live events whose organiser asked, on site, for a move too far to apply
+    # by itself. Without this the request would sit in event_private unseen.
+    asked = await db.event_private.find({"pending_location": {"$ne": None}}, {"_id": 0}).to_list(200)
+    shown = {o["event"]["id"] for o in out}
+    for priv in asked:
+        live = next((v for v in listed if v["id"] == priv["event_id"]), None)
+        if not live or live["id"] in shown:
+            continue
+        out.append({
+            "event": public_event(live),
+            "state": "move_requested",
+            "pending_location": priv["pending_location"],
+            "approved_coordinates": priv.get("approved_coordinates"),
+            "submitted_by": priv.get("submitted_by"),
+            "claimed_organiser": priv.get("claimed_organiser"),
+            "claimed_ticket_url": priv.get("claimed_ticket_url"),
+            "reports": [],
+            "possible_duplicate": None,
+        })
     return {"events": out}
+
+
+@router.post("/admin/events/{event_id}/move/dismiss")
+async def dismiss_move(event_id: str, admin: dict = Depends(require_admin)):
+    """Keep the pin where it is and clear the organiser's on-site move request."""
+    await _event_or_404(event_id)
+    await _set_private(event_id, {"pending_location": None})
+    return {"dismissed": event_id}
 
 
 @router.post("/admin/events/{event_id}/approve")

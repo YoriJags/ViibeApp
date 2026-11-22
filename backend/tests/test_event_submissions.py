@@ -390,6 +390,26 @@ def test_a_far_fix_waits_for_an_admin_and_a_wrong_key_finds_nothing(env):
                        json={**far, "accuracy_m": 10}).status_code == 404
 
 
+def test_a_waiting_move_reaches_the_review_queue_and_can_be_applied_or_dismissed(env):
+    client, db, _ = env
+    ev = submit(client).json()["event"]
+    approve(client, ev["id"])
+    key = organiser_key(client, db, ev["id"])
+    far = {"lat": THEATRE["lat"] + 0.02, "lng": THEATRE["lng"]}
+    client.post(f"/api/organiser/events/{ev['id']}/here?key={key}", json={**far, "accuracy_m": 10})
+    queue = client.get("/api/admin/submissions").json()["events"]
+    asked = [q for q in queue if q["state"] == "move_requested"]
+    assert len(asked) == 1 and asked[0]["pending_location"]["lat"] == far["lat"]
+    # Dismiss: the pin stays and the request leaves the queue.
+    assert client.post(f"/api/admin/events/{ev['id']}/move/dismiss").status_code == 200
+    assert not [q for q in client.get("/api/admin/submissions").json()["events"] if q["state"] == "move_requested"]
+    # Ask again, then apply: the move becomes the new anchor and clears the request.
+    client.post(f"/api/organiser/events/{ev['id']}/here?key={key}", json={**far, "accuracy_m": 10})
+    assert client.post(f"/api/admin/events/{ev['id']}/move", json=far).status_code == 200
+    assert run(db.venues.find_one({"id": ev["id"]}))["coordinates"] == far
+    assert not [q for q in client.get("/api/admin/submissions").json()["events"] if q["state"] == "move_requested"]
+
+
 # ── The crowd confirms or corrects ───────────────────────────────────────────
 
 def test_five_verified_arrivals_confirm_the_location(env):

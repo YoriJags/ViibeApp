@@ -11,12 +11,15 @@ import { Platform, View, Text, StyleSheet, ActivityIndicator } from 'react-nativ
 import { Ionicons } from '@expo/vector-icons';
 import { adminTheme, spacing, typography } from '../../src/theme/floors';
 import { useVibeStore } from '../../src/store/vibeStore';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { colors } = adminTheme;
 
 export default function AdminLayout() {
   const router = useRouter();
   const { user, isAuthenticated } = useVibeStore();
+  // Room for the labels above the phone's own navigation bar (edge-to-edge is on).
+  const insets = useSafeAreaInsets();
 
   // Navigation guard - redirect non-admins to public floor
   useEffect(() => {
@@ -52,9 +55,9 @@ export default function AdminLayout() {
           backgroundColor: colors.background.card,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+          paddingBottom: insets.bottom + 8,
           paddingTop: 8,
-          height: Platform.OS === 'ios' ? 85 : 65,
+          height: 72 + insets.bottom,
         },
         tabBarLabelStyle: {
           fontSize: 11,
@@ -68,6 +71,15 @@ export default function AdminLayout() {
           title: 'Treasury',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="stats-chart" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="review"
+        options={{
+          title: 'Review',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="shield-checkmark" size={size} color={color} />
           ),
         }}
       />
