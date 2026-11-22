@@ -295,6 +295,9 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         bounces={false}
+        // Every page is one screen wide, so "Next" can jump straight to it
+        // without the list having measured pages it has not drawn yet.
+        getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
           { useNativeDriver: false }

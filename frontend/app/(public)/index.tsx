@@ -10,7 +10,7 @@ import {
   Modal,
   Animated,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
@@ -25,11 +25,10 @@ import { SkeletonLoader } from '../../src/components/SkeletonLoader';
 import { neonGlow } from '../../src/theme';
 import DemoModeBanner from '../../src/components/DemoModeBanner';
 import RatePromptFAB from '../../src/components/RatePromptFAB';
-import VenueCategoryFilter, { VenueCategory } from '../../src/components/VenueCategoryFilter';
+import { VenueCategory } from '../../src/components/VenueCategoryFilter';
 import ElectricTransition from '../../src/components/ElectricTransition';
-import TonightHero from '../../src/components/TonightHero';
 import ActivityTicker from '../../src/components/ActivityTicker';
-import { DEMO_ACTIVITY_FEED, DEMO_TONIGHT, DEMO_VIBE_MATCH, DEMO_VENUES } from '../../src/data/demoData';
+import { DEMO_ACTIVITY_FEED, DEMO_TONIGHT, DEMO_VIBE_MATCH, DEMO_VENUES, DEMO_CITY_PULSE, DEMO_CREW } from '../../src/data/demoData';
 import VibePlusModal from '../../src/components/VibePlusModal';
 import ErrorBoundary from '../../src/components/ErrorBoundary';
 import { useAutoPresenceSync } from '../../src/hooks/useAutoPresenceSync';
@@ -37,12 +36,10 @@ import TheWave from '../../src/components/TheWave';
 import { VibeMarketVenue } from '../../src/components/VibeMarket';
 import NoDulling from '../../src/components/NoDulling';
 import CityEnergyBar from '../../src/components/CityEnergyBar';
-import TopThreeStrip from '../../src/components/TopThreeStrip';
 import { getNightPhase } from '../../src/store/vibeStore';
 import { calculateDistance } from '../../src/utils/geo';
 import LivePushFeed from '../../src/components/LivePushFeed';
 import * as Haptics from 'expo-haptics';
-import CityWelcomeCard from '../../src/components/CityWelcomeCard';
 import WeekendCard from '../../src/components/WeekendCard';
 import InsiderFeed from '../../src/components/InsiderFeed';
 import ScoutHeatChip from '../../src/components/ScoutHeatChip';
@@ -59,11 +56,14 @@ import HeatMapCard from '../../src/components/HeatMapCard';
 import SceneMoodSelector, { SceneMood } from '../../src/components/SceneMoodSelector';
 import VariableRewardOverlay, { VariableRewardRef } from '../../src/components/VariableRewardOverlay';
 import VenueDiscoverFlow from '../../src/components/VenueDiscoverFlow';
-import NightArcStrip from '../../src/components/NightArcStrip';
 import FeatureStoryStrip from '../../src/components/FeatureStoryStrip';
 import StreakFireModal from '../../src/components/StreakFireModal';
 import analytics, { EVENT } from '../../src/services/analytics';
-import { ENERGY_COLORS } from '../../src/theme/energy';
+import { ENERGY_COLORS, asEnergyState } from '../../src/theme/energy';
+import {
+  HomeHero, SceneChips, ArcRow, SectionHeader, VenueShelf, MatchCard, SceneTiles, CrewRow, MoreTonight,
+  SCENES, CityReading,
+} from '../../src/components/home/HomeSections';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [CityWelcomeCard, WeekendCard, InsiderFeed extracted to src/components/]
@@ -507,6 +507,43 @@ export default function MapScreen() {
   // These users see CityWelcomeCard instead of TonightHero
   const isNewUser = !activeCheckin && !vibePersona;
 
+  // ── Editorial Night home ──
+  const insets = useSafeAreaInsets();
+  const heroMode = showList && userMode !== 'insider';
+  const homeScrollRef = useRef<ScrollView>(null);
+  const listY = useRef(0);
+  // A score is shown only when it came from a reading: scouts live, any venue in the demo.
+  const hasReading = useCallback((v: any) => (v?.current_vibe_score ?? 0) > 0
+    && (isDemoMode || v?.energy_source === 'scouts'), [isDemoMode]);
+  const cityReading: CityReading | null = useMemo(() => {
+    const p: any = isDemoMode ? DEMO_CITY_PULSE : (cityEnergy?.energy_source === 'scouts' ? cityEnergy : null);
+    if (!p || !(p.energy_score > 0)) return null;
+    return {
+      score: p.energy_score, state: asEnergyState(p.energy_label), trend: p.trend,
+      scouts: p.active_scouts, readings: p.readings_tonight, hotVenues: p.hot_venues, sparkline: p.sparkline,
+    };
+  }, [isDemoMode, cityEnergy]);
+  const aliveVenues = useMemo(() => [...filteredVenues].filter(hasReading)
+    .sort((a: any, b: any) => (b.current_vibe_score ?? 0) - (a.current_vibe_score ?? 0)).slice(0, 10),
+  [filteredVenues, hasReading]);
+  const upcomingEvents = useMemo(() => {
+    const now = Date.now();
+    return filteredVenues.filter((v: any) => v.kind === 'event' && v.event?.starts_at
+      && Date.parse(v.event.starts_at) > now && v.event.phase === 'upcoming')
+      .sort((a: any, b: any) => Date.parse(a.event.starts_at) - Date.parse(b.event.starts_at)).slice(0, 10);
+  }, [filteredVenues]);
+  const homeMatch = useMemo(() => {
+    if (isDemoMode) {
+      const v = DEMO_VENUES.find((x: any) => x.id === DEMO_VIBE_MATCH.venueId);
+      return v ? { venue: v, percent: DEMO_VIBE_MATCH.matchPercent,
+        reason: 'AdaObi from your crew is here, and you love a Peak room.' } : null;
+    }
+    const best = aliveVenues.map((v: any) => ({ venue: v, percent: dnaMatchMap[v.id] ?? 0 }))
+      .sort((a, b) => b.percent - a.percent)[0];
+    return best && best.percent >= 70 ? { ...best, reason: 'Matches the rooms you rate highest.' } : null;
+  }, [isDemoMode, aliveVenues, dnaMatchMap]);
+  const homeCrew = isDemoMode ? DEMO_CREW : crew;
+
   // Full data for nearby venue (NoDulling shows its energy state)
   const nearbyVenueFullData = useMemo(() => {
     if (!nearbyVenue) return null;
@@ -525,7 +562,7 @@ export default function MapScreen() {
   // Skeleton loading state
   if (loading && !venues.length) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={heroMode ? ['left', 'right'] : undefined}>
         <View style={styles.header}>
           <View>
             <Text style={styles.headerSubtitle}>Loading...</Text>
@@ -553,9 +590,9 @@ export default function MapScreen() {
         />
       )}
 
-      <DemoModeBanner />
-      {/* Header with neon glow */}
-      <View style={styles.header}>
+      {!heroMode && <DemoModeBanner />}
+      {/* Header (map and Insider views; the list view has the hero instead) */}
+      {!heroMode && <View style={styles.header}>
         {/* LEFT: Map / List toggle */}
         <TouchableOpacity
           style={styles.viewToggle}
@@ -614,7 +651,7 @@ export default function MapScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </View>}
 
       {/* City Picker Modal */}
       <Modal
@@ -679,13 +716,25 @@ export default function MapScreen() {
         />
       ) : showList ? (
         <ScrollView
+          ref={homeScrollRef}
           style={styles.listContainer}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF3366" />
           }
           contentContainerStyle={{ paddingBottom: 120 }}
         >
-          {/* ── HERO ZONE: one editorial block before content ── */}
+          {/* ── HERO: the city's reading as a headline ── */}
+          <HomeHero
+            cityName={cityName}
+            reading={cityReading}
+            isDemo={isDemoMode}
+            topInset={insets.top}
+            modeLabel={userMode === 'insider' ? 'Insider' : 'Scout'}
+            onCity={() => { Haptics.selectionAsync(); setShowCityPicker(true); }}
+            onMap={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowList(false); }}
+            onToggleMode={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setUserMode(userMode === 'insider' ? 'scout' : 'insider'); }}
+            onExitDemo={() => useVibeStore.getState().toggleDemoMode()}
+          />
 
           {/* Reactor shortcut — only when geofenced to a venue */}
           {isInsideVenue && activeVenueId && (
@@ -712,145 +761,132 @@ export default function MapScreen() {
           )}
 
           {/* ═══════════════════════════════════════════════════
-               ACT I — WHO YOU ARE TONIGHT
-               Orient the scout. Identity + tonight's arc.
+               EDITORIAL NIGHT HOME (src/components/home/HomeSections.tsx)
+               Hero, scenes, arc, shelves, crew, then the long tail.
           ═══════════════════════════════════════════════════ */}
 
-          {/* Tonight's Heat chip — your level, always visible */}
-          <ErrorBoundary label="Tonight's Heat Chip">
-            <ScoutHeatChip />
-          </ErrorBoundary>
+          <SceneChips selected={selectedCategory} counts={categoryCounts} onSelect={(k) => handleCategoryChange(k as VenueCategory)} />
 
-          {/* Night Arc — tonight's journey progress steps */}
           <ErrorBoundary label="Night Arc">
-            <NightArcStrip
-              hasSetMood={!!sceneMood}
-              hasRatedVenue={hasRatedThisSession || !!activeCheckin}
-              hasCheckedIn={!!activeCheckin}
-              hasCrewActive={!!((crew as any)?.member_details?.length && (crew as any).member_details.length > 1)}
-              onStepPress={(step) => {
+            <ArcRow
+              done={{
+                mood: !!sceneMood,
+                rate: hasRatedThisSession || !!activeCheckin,
+                checkin: !!activeCheckin,
+                crew: !!((homeCrew as any)?.member_details?.length > 1),
+              }}
+              streak={isDemoMode ? 7 : ((user as any)?.current_streak ?? (user as any)?.streak_days ?? 0)}
+              onStep={(step) => {
                 analytics.track(EVENT.NIGHT_ARC_STEP, { step, city: selectedCity });
                 if (step === 'mood') setShowSceneMood(true);
                 else if (step === 'rate') setShowSwipeRate(true);
-                else if (step === 'checkin') router.push(('/venue/' + (venues[0]?.id ?? '')) as any);
+                else if (step === 'checkin') router.push(('/venue/' + (aliveVenues[0]?.id ?? venues[0]?.id ?? '')) as any);
                 else if (step === 'crew') router.push('/(public)/crew');
               }}
             />
           </ErrorBoundary>
 
-          {/* Live activity ribbon. Sample items, so demo mode only: shown to
-              real users it claimed activity that never happened. */}
-          {isDemoMode && <ActivityTicker items={DEMO_ACTIVITY_FEED} />}
+          {aliveVenues.length > 0 ? (
+            <>
+              <SectionHeader title="Alive right now" action="See all" onAction={() => router.push('/(public)/trending')} />
+              <VenueShelf venues={aliveVenues} ranked hasReading={hasReading} onPress={(v) => setSpotlightVenue(v)} />
+            </>
+          ) : null}
 
-          {/* Tonight's Hero — adaptive journey card */}
-          {isNewUser ? (
-            <CityWelcomeCard
-              cityEnergy={cityEnergy}
-              cityName={cityName}
-              callName={user?.call_name}
-              isDemo={isDemoMode}
-            />
-          ) : (
-            <TonightHero
-              phase={nightPhase}
-              currentHour={isDemoMode ? DEMO_TONIGHT.currentHour : new Date().toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })}
-              cityName={cityName}
-              // Real users used to be told the city was "popping" at 70, always:
-              // both values were hardcoded. Now they come from the live city
-              // reading, and only when real scouts produced it.
-              cityEnergy={(isDemoMode
-                ? DEMO_TONIGHT.cityEnergy
-                : (cityEnergy?.energy_source === 'scouts'
-                    ? String(cityEnergy.energy_label).toLowerCase()
-                    : 'quiet')) as any}
-              cityEnergyScore={isDemoMode
-                ? DEMO_TONIGHT.cityEnergyScore
-                : (cityEnergy?.energy_source === 'scouts' ? Math.round(cityEnergy.energy_score) : undefined)}
-              matchVenue={isDemoMode ? DEMO_TONIGHT.matchVenue : undefined}
-              matchPercent={isDemoMode ? DEMO_TONIGHT.matchPercent : undefined}
-              matchArea={isDemoMode ? DEMO_TONIGHT.matchArea : undefined}
-              crewOutCount={crew ? ((crew as any).member_details?.filter((m: any) => m.checked_in).length || 0) : 0}
-              crewTotal={crew ? ((crew as any).member_details?.length || 0) : 0}
-              onSeePicksPress={() => {}}
-              onMatchVenuePress={() => {
-                if (isDemoMode && DEMO_TONIGHT.matchVenueId) {
-                  router.push(`/venue/${DEMO_TONIGHT.matchVenueId}`);
-                }
-              }}
-              venueName={activeCheckin?.venue_name}
-              vibeScore={isDemoMode ? 87 : undefined}
-              cloutEarnedTonight={isDemoMode ? 40 : undefined}
-              badgeProximityText={isDemoMode ? '2 away from Night Owl' : undefined}
-              onRateVibePress={() => {
-                if (activeCheckin) {
-                  router.push({
-                    pathname: '/venue/[id]',
-                    params: { id: activeCheckin.venue_id, openRateModal: 'true' },
-                  });
-                }
-              }}
-              venuesVisitedCount={isDemoMode ? 3 : 0}
-              totalCloutEarned={isDemoMode ? 120 : 0}
-              newBadgesCount={isDemoMode ? 1 : 0}
-              bestMomentText={isDemoMode ? 'Quilox hit 87% while you were there' : undefined}
-            />
-          )}
+          {upcomingEvents.length > 0 ? (
+            <>
+              <SectionHeader title="On this week" />
+              <VenueShelf venues={upcomingEvents} hasReading={() => false} wide onPress={(v) => router.push(`/venue/${v.id}`)} />
+            </>
+          ) : null}
 
-          {/* Top 3 Strip — tonight's hottest */}
-          {vibeMarketVenues.length > 0 && (
-            <TopThreeStrip
-              venues={vibeMarketVenues}
-              onVenuePress={(id) => router.push(`/venue/${id}`)}
-              onSeeMore={() => router.push('/(public)/trending')}
-            />
-          )}
+          {homeMatch ? (
+            <>
+              <SectionHeader title="Made for your night" />
+              <MatchCard venue={homeMatch.venue} percent={homeMatch.percent} reason={homeMatch.reason}
+                onGo={() => router.push(`/venue/${homeMatch.venue.id}`)} />
+            </>
+          ) : null}
 
+          {/* Each section shows only when it has something in it. */}
+          {SCENES.some((c) => c.key !== 'all' && (categoryCounts[c.key] ?? 0) > 0) ? (
+            <>
+              <SectionHeader title="Browse by scene" />
+              <SceneTiles counts={categoryCounts} onSelect={(k) => {
+                handleCategoryChange(k as VenueCategory);
+                homeScrollRef.current?.scrollTo({ y: listY.current, animated: true });
+              }} />
+            </>
+          ) : null}
 
-          {/* City Energy + Live Push */}
-          {cityEnergy && (
-            <CityEnergyBar
-              pulse={cityEnergy}
-              onPress={() => router.push('/(public)/trending')}
-            />
-          )}
-          <ErrorBoundary label="Live Push Feed">
-            <LivePushFeed />
-          </ErrorBoundary>
+          {/* A battle and a heat map need readings; on a quiet night they would be empty boxes. */}
+          {cityReading ? (
+            <>
+              <SectionHeader title="Venue Battle" />
+              <ErrorBoundary label="Venue Battle">
+                <VenueBattle isDemoMode={isDemoMode} />
+              </ErrorBoundary>
 
-          {/* Heat Map + Venue Battle */}
-          <ErrorBoundary label="Heat Map">
-            <HeatMapCard city={selectedCity} isDemoMode={isDemoMode} />
-          </ErrorBoundary>
-          <ErrorBoundary label="Venue Battle">
-            <VenueBattle isDemoMode={isDemoMode} />
-          </ErrorBoundary>
+              <SectionHeader title="City heat" action="Open map" onAction={() => setShowList(false)} />
+              <ErrorBoundary label="Heat Map">
+                <HeatMapCard city={selectedCity} isDemoMode={isDemoMode} />
+              </ErrorBoundary>
+            </>
+          ) : null}
 
-          {/* Missed Peaks — FOMO */}
-          <ErrorBoundary label="Missed Peaks">
-            <MissedPeaksBanner
-              isDemoMode={isDemoMode}
-              authToken={(getAuthHeaders() as any)?.Authorization?.replace('Bearer ', '')}
-              onVenuePress={(id) => router.push(`/venue/${id}`)}
-            />
-          </ErrorBoundary>
+          {homeCrew ? (
+            <>
+              <SectionHeader title="Your crew" action={(homeCrew as any).name} />
+              <CrewRow crew={homeCrew} onOpen={() => router.push('/(public)/crew')} />
+            </>
+          ) : null}
 
-          {/* WeekendCard */}
-          {isWeekendActive && !weekendDismissed && (
-            <WeekendCard
-              pulseScore={cityEnergy?.energy_score ?? 50}
-              onDismiss={() => setWeekendDismissed(true)}
-              onExplore={() => router.push('/(public)/trending')}
-            />
-          )}
+          <SectionHeader title="More tonight" />
+          <MoreTonight items={[
+            { key: 'feed', icon: 'radio-outline', title: 'Live feed', subtitle: 'What venues are pushing right now',
+              render: () => <ErrorBoundary label="Live Push Feed"><LivePushFeed /></ErrorBoundary> },
+            { key: 'heat', icon: 'flame-outline', title: 'Your heat tonight', subtitle: 'Your scout level and multiplier',
+              render: () => <ErrorBoundary label="Tonight's Heat Chip"><ScoutHeatChip /></ErrorBoundary> },
+            ...(cityEnergy ? [{ key: 'city', icon: 'pulse-outline' as const, title: 'City energy', subtitle: 'How the whole city is moving',
+              render: () => <CityEnergyBar pulse={cityEnergy} onPress={() => router.push('/(public)/trending')} /> }] : []),
+            { key: 'missed', icon: 'eye-outline', title: 'Missed peaks', subtitle: 'Rooms that peaked while you were elsewhere',
+              render: () => (
+                <ErrorBoundary label="Missed Peaks">
+                  <MissedPeaksBanner
+                    isDemoMode={isDemoMode}
+                    authToken={(getAuthHeaders() as any)?.Authorization?.replace('Bearer ', '')}
+                    onVenuePress={(id) => router.push(`/venue/${id}`)}
+                  />
+                </ErrorBoundary>
+              ) },
+            ...(isDemoMode ? [{ key: 'activity', icon: 'flash-outline' as const, title: 'Scout activity', subtitle: 'Readings coming in across the city',
+              render: () => <ActivityTicker items={DEMO_ACTIVITY_FEED} /> }] : []),
+            ...(isWeekendActive && !weekendDismissed ? [{ key: 'weekend', icon: 'calendar-outline' as const, title: 'This weekend',
+              subtitle: 'The weekend pulse',
+              render: () => (
+                <WeekendCard
+                  pulseScore={cityEnergy?.energy_score ?? 50}
+                  onDismiss={() => setWeekendDismissed(true)}
+                  onExplore={() => router.push('/(public)/trending')}
+                />
+              ) }] : []),
+            { key: 'discover', icon: 'sparkles-outline', title: 'Discover VIIBE', subtitle: 'The Reactor, the Viibe and everything you can do',
+              render: () => (
+                <ErrorBoundary label="Feature Story">
+                  <FeatureStoryStrip onUnlockPress={() => setShowVibePlus(true)} onOpenSelector={() => {}} />
+                </ErrorBoundary>
+              ) },
+          ]} />
 
-          {/* Feature Story Strip */}
-          <ErrorBoundary label="Feature Story">
-            <FeatureStoryStrip
-              onUnlockPress={() => setShowVibePlus(true)}
-              onOpenSelector={() => {/* handled inside strip */}}
-            />
-          </ErrorBoundary>
-
+          <View onLayout={(e) => { listY.current = e.nativeEvent.layout.y; }}>
+            <SectionHeader title={selectedCategory === 'all' ? 'Everywhere tonight'
+              : `${SCENES.find((c) => c.key === selectedCategory)?.label ?? 'Venues'} tonight`} />
+            {filteredVenues.length === 0 && !loading ? (
+              <Text style={{ color: '#8F889E', fontSize: 14, lineHeight: 20, paddingHorizontal: 20 }}>
+                Nothing listed in {cityName} yet. Pull down to refresh.
+              </Text>
+            ) : null}
+          </View>
 
           {/* ═══════════════════════════════════════════════════
                ACT III — MAKE YOUR MOVE
@@ -895,12 +931,6 @@ export default function MapScreen() {
             </TouchableOpacity>
           )}
 
-          {/* VENUE LIST */}
-          <VenueCategoryFilter
-            selected={selectedCategory}
-            onSelect={handleCategoryChange}
-            counts={categoryCounts}
-          />
 
           {vibePersona && selectedCategory === 'all' && (
             <View style={styles.personaChip}>
