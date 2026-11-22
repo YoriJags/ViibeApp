@@ -1,14 +1,26 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, ScrollView, Image } from 'react-native';
-import { usePlacePhoto, photoCredit } from '../services/usePlacePhoto';
+/**
+ * A venue in the home list, Editorial Night style (Direction 1).
+ *
+ * Photo on the left, the room on the right: state and score in its energy
+ * colour, then what is true about it right now. A venue with no current
+ * reading says so; it never shows "QUIET 0%", a momentum chip or an old
+ * narrative, because none of those would be backed by anything.
+ *
+ * In the demo every venue counts as read (it walks a fully read city).
+ */
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { hapticVibe } from '../utils/hapticVibe';
-import { LinearGradient } from 'expo-linear-gradient';
 import SignalDensityStrip, { SignalDensityData } from './SignalDensityStrip';
 import SignalDensitySheet from './SignalDensitySheet';
-import MomentumArrow from './MomentumArrow';
 import { ENERGY_COLORS, ENERGY_LABELS, energyStateFor } from '../theme/energy';
+import { ed, edType, edRadius } from '../theme/editorial';
+import { useVibeStore } from '../store/vibeStore';
+import { useVenueImage } from './home/HomeSections';
+import CertifiedMark, { venueIsCertified } from './CertifiedMark';
+import { photoCredit, usePlacePhoto } from '../services/usePlacePhoto';
 
 interface Venue {
   id: string;
@@ -47,377 +59,144 @@ interface VenueCardProps {
   dnaMatch?: number;
 }
 
-// Premium gradient palettes per vibe state
-// The middle stop is a deeper shade; the outer stops are the shared palette.
-const VIBE_GRADIENTS: Record<string, [string, string, string]> = {
-  peak:    [ENERGY_COLORS.peak,    '#C0183E', ENERGY_COLORS.peak],
-  lit:     [ENERGY_COLORS.lit,     '#E67300', ENERGY_COLORS.lit],
-  charged: [ENERGY_COLORS.charged, '#6A1F9E', ENERGY_COLORS.charged],
-  warming: [ENERGY_COLORS.warming, '#4A3FCC', ENERGY_COLORS.warming],
-  chill:   [ENERGY_COLORS.chill,   '#0F5CA8', ENERGY_COLORS.chill],
-  quiet:   [ENERGY_COLORS.quiet,   '#2A2E3A', ENERGY_COLORS.quiet],
-};
+// One gate vocabulary everywhere: Clear, Slow, Jammed.
+const GATE: Record<string, string> = { blocked: 'Gate jammed', slow: 'Gate slow', clear: 'Gate clear' };
 
-const getVibeState = (score: number, capacity: string): string =>
-  ENERGY_LABELS[energyStateFor(score, capacity)];
-
-const getVibeStateKey = (score: number, capacity: string): string => {
-  return energyStateFor(score, capacity);
-};
+function Chip({ icon, text, color }: { icon?: keyof typeof Ionicons.glyphMap; text: string; color?: string }) {
+  return (
+    <View style={[styles.chip, color ? { borderColor: color + '55' } : null]}>
+      {icon ? <Ionicons name={icon} size={11} color={color || ed.inkSoft} /> : null}
+      <Text style={[styles.chipText, color ? { color } : null]}>{text}</Text>
+    </View>
+  );
+}
 
 export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostBadge = true, isNearby, onRatePress, dnaMatch }) => {
-  const isPulseBoosted = venue.active_pulse_tier !== null && venue.active_pulse_tier !== undefined;
-  // Events are a field on a given night, not a place Google has photos of.
+  const isDemoMode = useVibeStore((s) => s.isDemoMode);
+  const img = useVenueImage(venue);
   const photo = usePlacePhoto(venue.id, !venue.event);
-  const maxOpacity = venue.current_vibe_score >= 80 ? 0.65 : venue.current_vibe_score >= 60 ? 0.4 : 0.18;
-  const borderOpacity = useRef(new Animated.Value(0.08)).current;
-  const scoreScale    = useRef(new Animated.Value(0.85)).current;
-  const pressDepth    = useRef(new Animated.Value(0)).current;
   const [showDensitySheet, setShowDensitySheet] = useState(false);
 
-  const onPressIn  = () => Animated.spring(pressDepth, { toValue: 1, tension: 300, friction: 10, useNativeDriver: true }).start();
-  const onPressOut = () => Animated.spring(pressDepth, { toValue: 0, tension: 200, friction: 14, useNativeDriver: true }).start();
+  const isPulseBoosted = venue.active_pulse_tier !== null && venue.active_pulse_tier !== undefined;
+  const score = venue.current_vibe_score ?? 0;
+  const hasReading = score > 0 && (isDemoMode || venue.energy_source === 'scouts' || venue.energy_source === 'demo');
+  const state = energyStateFor(score, venue.capacity_level ?? 'sparse');
+  const color = ENERGY_COLORS[state];
 
-  // Ambient border breathe — GPU thread only
-  useEffect(() => {
-    const duration = venue.current_vibe_score >= 80 ? 1400 : venue.current_vibe_score >= 60 ? 2200 : 3500;
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(borderOpacity, { toValue: maxOpacity, duration, useNativeDriver: true }),
-        Animated.timing(borderOpacity, { toValue: 0.08, duration, useNativeDriver: true }),
-      ])
-    );
-    anim.start();
-    return () => anim.stop();
-  }, [venue.current_vibe_score]);
-
-  // Score entrance pop
-  useEffect(() => {
-    Animated.spring(scoreScale, { toValue: 1, tension: 70, friction: 7, useNativeDriver: true }).start();
-  }, []);
-
-  const getVibeColor = (score: number, capacity: string) => {
-    return VIBE_GRADIENTS[getVibeStateKey(score, capacity)][0];
-  };
-
-  // One gate vocabulary everywhere: Clear, Slow, Jammed (as on "When to leave"
-  // and the organiser screen).
-  const getGateLabel = (gate: string) => {
-    if (gate === 'blocked') return 'Gate jammed';
-    if (gate === 'slow') return 'Gate slow';
-    return 'Gate clear';
-  };
-
-  const vibeColor = getVibeColor(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
-  const gradientKey = getVibeStateKey(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
-  const gradientColors = VIBE_GRADIENTS[gradientKey] ?? VIBE_GRADIENTS.quiet;
-  const vibeStateLabel = getVibeState(venue.current_vibe_score, venue.capacity_level ?? 'sparse');
-  const isLowEnergy = venue.current_vibe_score < 20;
-
-  // ── Energy decay state ───────────────────────────────────────────────────────
-  // fresh < 45 min | stale 45–90 min | expired > 90 min or no data
+  // fresh < 45 min | stale 45 to 90 min | expired > 90 min
   const minsAgo = venue.last_rated_mins_ago;
-  const decayState: 'fresh' | 'stale' | 'expired' =
-    minsAgo == null                ? 'fresh'   :  // no data yet — don't punish
-    minsAgo < 45                   ? 'fresh'   :
-    minsAgo < 90                   ? 'stale'   :
-                                     'expired';
+  const decay: 'fresh' | 'stale' | 'expired' = minsAgo == null || minsAgo < 45 ? 'fresh' : minsAgo < 90 ? 'stale' : 'expired';
+  const ago = minsAgo == null ? null : minsAgo < 60 ? `${minsAgo}m ago` : `${Math.round(minsAgo / 60)}h ago`;
 
-  const decayOpacity  = decayState === 'expired' ? 0.35 : decayState === 'stale' ? 0.6 : 1;
-  const staleLabelText =
-    decayState === 'expired'
-      ? 'No recent signal'
-      : minsAgo != null
-        ? `${minsAgo < 60 ? `${minsAgo}m` : `${Math.round(minsAgo / 60)}h`} ago`
-        : null;
-
-  const momentum: 'rising' | 'peaking' | 'fading' | 'stable' =
-    venue.vibe_velocity === 'heating_up' ? 'rising' :
-    venue.vibe_velocity === 'cooling_down' ? 'fading' :
-    venue.current_vibe_score >= 70 ? 'peaking' : 'stable';
-
-  // Glow strength drives shadow radius — high-energy cards levitate more
-  const shadowRadius = venue.current_vibe_score >= 80 ? 18 : venue.current_vibe_score >= 60 ? 10 : 4;
-  const shadowOpacity = venue.current_vibe_score >= 80 ? 0.45 : venue.current_vibe_score >= 60 ? 0.28 : 0.1;
+  // Momentum words only when there is a fresh reading behind them. "Holding
+  // high" (not "Peak now") so it never contradicts the energy state.
+  const momentum = !hasReading || decay !== 'fresh' ? null
+    : venue.vibe_velocity === 'heating_up' ? 'rising'
+    : venue.vibe_velocity === 'cooling_down' && score >= 55 ? 'fading'
+    : score >= 70 ? 'holding' : null;
 
   return (
-    <Animated.View
-      style={[
-        styles.cardOuter,
-        {
-          shadowColor: vibeColor,
-          shadowOpacity,
-          shadowRadius,
-          shadowOffset: { width: 0, height: 4 },
-          elevation: venue.current_vibe_score >= 60 ? 8 : 3,
-          transform: [
-            { perspective: 900 },
-            { rotateX: pressDepth.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-3deg'] }) },
-            { scale: pressDepth.interpolate({ inputRange: [0, 1], outputRange: [1, 0.974] }) },
-          ],
-        },
-      ]}
-    >
-      {/* Ambient gradient border — breathes with energy */}
-      <Animated.View style={[styles.gradientBorderWrap, { opacity: borderOpacity }]}>
-        <LinearGradient
-          colors={gradientColors as any}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-      </Animated.View>
-
+    <View style={styles.outer}>
       <TouchableOpacity
-        style={[styles.card, isPulseBoosted && styles.cardBoosted]}
-        onPress={() => {
-          hapticVibe(venue.energy_level);
-          onPress();
-        }}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        activeOpacity={0.72}
+        style={[styles.card, isPulseBoosted && styles.cardBoosted, hasReading && state === 'peak' && { borderColor: color + '66' }]}
+        onPress={() => { hapticVibe(venue.energy_level); onPress(); }}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={`${venue.name}, ${venue.area}. ${hasReading ? `${ENERGY_LABELS[state]} ${Math.round(score)}` : 'No reading yet'}`}
       >
-        {/* Atmospheric top gradient — subtle vibe color wash */}
-        <LinearGradient
-          colors={[vibeColor + '12', 'transparent']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.atmosphericTop}
-        />
+        <Image source={{ uri: img }} style={styles.thumb} />
 
-        {/* Gold shimmer overlay for pulse-boosted cards */}
-        {isPulseBoosted && (
-          <LinearGradient
-            colors={['rgba(212,175,55,0.12)', 'transparent', 'rgba(212,175,55,0.06)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-        )}
-
-        {/* Left energy bar — 6px thick, full-height gradient */}
-        <LinearGradient
-          colors={[vibeColor, gradientColors[1]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.accentBar}
-        />
-
-        {/* Card content */}
-        <View style={styles.content}>
-
-          {/* VIIBE CERTIFIED — premium gold stamp */}
-          {venue.viibe_certified && (
-            <View style={styles.viibeStamp}>
-              <Text style={styles.viibeStampText}>✦ VIIBE CERTIFIED</Text>
-            </View>
-          )}
-
-          {/* Top row: name + score */}
-          <View style={styles.topRow}>
-            <View style={styles.nameContainer}>
-              {photo && (
-                <Image
-                  source={{ uri: photo.url }}
-                  style={styles.thumb}
-                  accessibilityLabel={`Photo of ${venue.name}`}
-                />
-              )}
-              <Text style={styles.name} numberOfLines={1}>{venue.name}</Text>
-              {venue.is_featured && !isPulseBoosted && (
-                <Ionicons name="star" size={13} color="#D4AF37" />
-              )}
-            </View>
-
-            <Animated.View style={[styles.scoreContainer, { transform: [{ scale: scoreScale }], opacity: decayOpacity }]}>
-              <View style={styles.scoreBox}>
-                <Text style={[styles.energyLabel, { color: decayState === 'expired' ? 'rgba(255,255,255,0.25)' : vibeColor }]}>
-                  {decayState === 'expired' ? 'STALE' : vibeStateLabel}
-                  {/* Demo energy is labelled wherever it shows. Never let it pass for real. */}
-                  {venue.energy_source === 'demo' ? ' · DEMO' : ''}
-                </Text>
-                <Text style={[styles.score, { color: decayState === 'expired' ? 'rgba(255,255,255,0.25)' : vibeColor }]}>
-                  {Math.round(venue.current_vibe_score)}%
-                </Text>
-              </View>
-              {decayState === 'fresh' && <MomentumArrow momentum={momentum} size="sm" />}
-            </Animated.View>
+        <View style={styles.body}>
+          <View style={styles.titleRow}>
+            <Text style={styles.name} numberOfLines={1}>{venue.name}</Text>
+            {venueIsCertified(venue) ? <CertifiedMark size={14} /> : null}
+            {venue.is_featured && !isPulseBoosted ? <Ionicons name="star" size={12} color={ed.gold} /> : null}
           </View>
+          <Text style={styles.area} numberOfLines={1}>
+            {venue.area}{venue.music_genre ? ` · ${venue.music_genre}` : ''}
+          </Text>
 
-          {/* Area */}
-          <Text style={styles.area}>{venue.area}</Text>
-
-          {/* Context chips — horizontal scroll: one clean line, no wrapping overlap */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.chipsScroll}
-            contentContainerStyle={styles.chips}
-          >
-            {venue.is_open_now === true && (
-              <View style={[styles.chip, styles.chipOpen]}>
-                <View style={styles.openDot} />
-                <Text style={[styles.chipText, { color: '#4FC56E' }]}>Open</Text>
-              </View>
-            )}
-            {venue.is_open_now === false && venue.next_open && (
-              <View style={styles.chip}>
-                <Ionicons name="time-outline" size={11} color="#666" />
-                <Text style={styles.chipText}>{venue.next_open}</Text>
-              </View>
-            )}
-            {venue.capacity_level && venue.capacity_level !== 'sparse' && (
-              <View style={styles.chip}>
-                <Ionicons name="people" size={11} color="#666" />
-                <Text style={styles.chipText}>
-                  {venue.capacity_level === 'full' ? 'Packed' : 'Filling up'}
-                </Text>
-              </View>
-            )}
-            {venue.gate_level && venue.gate_level !== 'clear' && (
-              <View style={styles.chip}>
-                <Ionicons name="enter" size={11} color="#666" />
-                <Text style={styles.chipText}>{getGateLabel(venue.gate_level)}</Text>
-              </View>
-            )}
-            {venue.entry_fee && (
-              <View style={styles.chip}>
-                <Ionicons name="ticket-outline" size={11} color="#666" />
-                <Text style={styles.chipText}>{venue.entry_fee}</Text>
-              </View>
-            )}
-            {venue.vibe_tier === 'Elite' && (
-              <View style={[styles.chip, styles.chipElite]}>
-                <Ionicons name="diamond" size={10} color="#D4AF37" />
-                <Text style={[styles.chipText, { color: '#D4AF37' }]}>Elite</Text>
-              </View>
-            )}
-            {venue.icon_spotted && (
-              <View style={[styles.chip, styles.chipIcon]}>
-                <Text style={{ fontSize: 10 }}>
-                  {venue.icon_spotted.icon_tier === 'legend' ? '🔥' : '👑'}
-                </Text>
-                <Text style={[styles.chipText, { color: '#D4AF37' }]}>
-                  {venue.icon_spotted.icon_label || 'Icon'} spotted
-                </Text>
-              </View>
-            )}
-            {/* Decay staleness chip */}
-            {decayState !== 'fresh' && staleLabelText && (
-              <View style={[styles.chip, styles.chipStale]}>
-                <Ionicons name="time-outline" size={11} color="rgba(255,255,255,0.3)" />
-                <Text style={[styles.chipText, { color: 'rgba(255,255,255,0.3)' }]}>{staleLabelText}</Text>
-              </View>
-            )}
-            {/* Momentum urgency — only shows when the signal is worth acting on */}
-            {momentum === 'rising' && decayState === 'fresh' && (
-              <View style={[styles.chip, styles.chipRising]}>
-                <Text style={styles.chipRisingText}>⚡ RISING</Text>
-              </View>
-            )}
-            {momentum === 'fading' && venue.current_vibe_score >= 55 && (
-              <View style={[styles.chip, styles.chipFading]}>
-                <Text style={styles.chipFadingText}>📉 FADING</Text>
-              </View>
-            )}
-            {momentum === 'peaking' && (
-              <View style={[styles.chip, styles.chipPeaking]}>
-                <Text style={styles.chipPeakingText}>🔥 PEAK NOW</Text>
-              </View>
-            )}
-            {dnaMatch !== undefined && dnaMatch >= 60 && (
-              <View style={[styles.chip, styles.chipDna]}>
-                <Text style={styles.chipDnaText}>🧬 {dnaMatch}% match</Text>
-              </View>
-            )}
-          </ScrollView>
-
-          {/* Event: what it is and when, before anything else */}
-          {venue.event && (
+          {/* Event: what it is and when */}
+          {venue.event ? (
             <View style={styles.eventRow}>
               <View style={[styles.eventPill, venue.event.phase === 'live' && styles.eventPillLive]}>
-                <Text style={[styles.eventPillText, venue.event.phase === 'live' && styles.eventPillTextLive]}>
-                  {eventWhen(venue.event)}
-                </Text>
+                <Text style={[styles.eventPillText, venue.event.phase === 'live' && { color: ed.bg }]}>{eventWhen(venue.event)}</Text>
               </View>
               <Text style={styles.eventMeta} numberOfLines={1}>
                 {[titleCase(venue.event.event_type), venue.event.entry === 'ticketed' ? 'Ticketed' : 'Door entry'].filter(Boolean).join(', ')}
               </Text>
             </View>
-          )}
+          ) : null}
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={{ marginTop: 8 }}>
+            {venue.is_open_now === true ? <Chip text="Open" color={ed.success} /> : null}
+            {venue.is_open_now === false && venue.next_open ? <Chip icon="time-outline" text={venue.next_open} /> : null}
+            {hasReading && venue.capacity_level && venue.capacity_level !== 'sparse'
+              ? <Chip icon="people-outline" text={venue.capacity_level === 'full' ? 'Packed' : 'Filling up'} /> : null}
+            {hasReading && venue.gate_level && venue.gate_level !== 'clear' ? <Chip icon="enter-outline" text={GATE[venue.gate_level]} /> : null}
+            {venue.entry_fee ? <Chip icon="ticket-outline" text={venue.entry_fee} /> : null}
+            {venue.viibe_certified ? <Chip icon="ribbon-outline" text="Vibe Certified" color={ed.gold} /> : null}
+            {venue.vibe_tier === 'Elite' ? <Chip icon="diamond-outline" text="Elite" color={ed.gold} /> : null}
+            {venue.icon_spotted ? <Chip icon="star-outline" text={`${venue.icon_spotted.icon_label || 'Icon'} spotted`} color={ed.gold} /> : null}
+            {hasReading && decay !== 'fresh' && ago ? <Chip icon="time-outline" text={decay === 'expired' ? 'No recent reading' : ago} /> : null}
+            {momentum === 'rising' ? <Chip icon="trending-up" text="Rising" color={ed.success} /> : null}
+            {momentum === 'fading' ? <Chip icon="trending-down" text="Fading" color={ed.danger} /> : null}
+            {momentum === 'holding' ? <Chip icon="pulse-outline" text="Holding high" color={color} /> : null}
+            {dnaMatch !== undefined && dnaMatch >= 60 ? <Chip icon="sparkles-outline" text={`${dnaMatch}% your match`} color={ed.pink} /> : null}
+          </ScrollView>
+
+          {/* The server's one-line story, only while a reading backs it. */}
+          {hasReading && venue.venue_narrative ? (
+            <Text style={styles.narrative} numberOfLines={1}>{venue.venue_narrative}</Text>
+          ) : null}
+
+          {isPulseBoosted && showBoostBadge ? (
+            <View style={styles.pulseRow}>
+              <View style={styles.pulseBadge}>
+                <Ionicons name="flash" size={11} color={ed.gold} />
+                <Text style={styles.pulseText}>PULSE DROP · 2× CLOUT</Text>
+              </View>
+            </View>
+          ) : null}
+
+          {venue.signal_density && hasReading ? (
+            <View style={{ marginTop: 8 }}>
+              <SignalDensityStrip density={venue.signal_density} onPress={() => setShowDensitySheet(true)} />
+            </View>
+          ) : null}
 
           {/* Google requires its photos to carry the author's name. */}
-          {photo && (
-            <Text style={styles.photoCredit} numberOfLines={1}>{photoCredit(photo)}</Text>
-          )}
-
-          {/* Sports-broadcast narrative */}
-          {venue.venue_narrative && (
-            <View style={styles.narrativeRow}>
-              <View style={styles.narrativeDot} />
-              <Text style={styles.narrativeText} numberOfLines={1}>{venue.venue_narrative}</Text>
-            </View>
-          )}
-
-          {/* How much evidence sits behind the number above it */}
-          {venue.signal_density && (
-            <SignalDensityStrip
-              density={venue.signal_density}
-              onPress={() => setShowDensitySheet(true)}
-            />
-          )}
-
-          {/* Pulse Drop badge */}
-          {isPulseBoosted && showBoostBadge && (
-            <View style={styles.pulseBadgeRow}>
-              <View style={styles.pulseBadge}>
-                <Ionicons name="flash" size={11} color="#D4AF37" />
-                <Text style={styles.pulseBadgeText}>PULSE DROP</Text>
-              </View>
-              <Text style={styles.cloutBonusText}>2× Clout</Text>
-            </View>
-          )}
-
-          {isPulseBoosted && isLowEnergy && (
-            <View style={styles.lowEnergyRow}>
-              <Ionicons name="information-circle-outline" size={12} color="#555" />
-              <Text style={styles.lowEnergyText}>Low activity right now</Text>
-            </View>
-          )}
+          {photo ? <Text style={styles.credit} numberOfLines={1}>{photoCredit(photo)}</Text> : null}
         </View>
 
-        {/* Right action */}
-        {isNearby && onRatePress ? (
-          <TouchableOpacity
-            style={styles.rateChip}
-            onPress={(e) => {
-              e.stopPropagation();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              onRatePress();
-            }}
-            activeOpacity={0.75}
-          >
-            <LinearGradient
-              colors={['#FF3366', '#C0183E']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={styles.rateChipGradient}
+        <View style={styles.right}>
+          {hasReading ? (
+            <View style={[styles.scoreBox, decay === 'expired' && { opacity: 0.4 }]}>
+              <Text style={[styles.state, { color }]}>
+                {ENERGY_LABELS[state]}{venue.energy_source === 'demo' && !isDemoMode ? ' · DEMO' : ''}
+              </Text>
+              <Text style={[styles.score, { color }]}>{Math.round(score)}</Text>
+            </View>
+          ) : (
+            <View style={styles.scoreBox}>
+              <View style={styles.noReadingRing} />
+              <Text style={styles.noReading}>No reading{'\n'}yet</Text>
+            </View>
+          )}
+          {isNearby && onRatePress ? (
+            <TouchableOpacity
+              style={styles.rate}
+              onPress={(e) => { e.stopPropagation(); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); onRatePress(); }}
+              accessibilityRole="button"
+              accessibilityLabel={`Rate ${venue.name}`}
             >
-              <Ionicons name="star" size={11} color="#FFF" />
-              <Text style={styles.rateChipText}>RATE</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        ) : (
-          <Ionicons
-            name="chevron-forward"
-            size={18}
-            color={isPulseBoosted ? '#D4AF37' : '#333'}
-          />
-        )}
+              <Text style={styles.rateText}>Rate</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </TouchableOpacity>
 
-      {venue.signal_density && (
+      {venue.signal_density ? (
         <SignalDensitySheet
           visible={showDensitySheet}
           onClose={() => setShowDensitySheet(false)}
@@ -425,13 +204,12 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onPress, showBoostB
           density={venue.signal_density}
           onRatePress={() => { setShowDensitySheet(false); onRatePress?.(); }}
         />
-      )}
-    </Animated.View>
+      ) : null}
+    </View>
   );
 };
 
-
-const titleCase = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
+const titleCase = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ') : '');
 
 /** "Live now", "Doors opening", "Finished", or the start time in Lagos. */
 function eventWhen(e: { phase: string; starts_at?: string | null }): string {
@@ -450,250 +228,45 @@ function eventWhen(e: { phase: string; starts_at?: string | null }): string {
 }
 
 const styles = StyleSheet.create({
-  eventRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  eventPill: {
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  eventPillLive: { backgroundColor: '#FF5A1F' },
-  eventPillText: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.8)' },
-  eventPillTextLive: { color: '#130A2B' },
-  eventMeta: { fontSize: 12, color: 'rgba(255,255,255,0.55)', flexShrink: 1 },
-  cardOuter: {
-    marginBottom: 10,
-    borderRadius: 20,
-    marginHorizontal: 16,
-  },
-  gradientBorderWrap: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
+  outer: { marginHorizontal: 20, marginBottom: 10 },
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0E0E1A',
-    borderRadius: 19,
-    paddingRight: 14,
-    margin: 1,
-    // Clip to the radius so the square ends of the left accent bar stay
-    // inside the rounded corners.
-    overflow: 'hidden',
+    flexDirection: 'row', gap: 12, padding: 12, borderRadius: edRadius.md,
+    backgroundColor: ed.surface, borderWidth: 1, borderColor: ed.line,
   },
-  cardBoosted: {
-    backgroundColor: '#110F1A',
-  },
-  atmosphericTop: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    height: 80,
-    zIndex: 0,
-  },
-  accentBar: {
-    width: 5,
-    alignSelf: 'stretch',
-  },
-  content: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  thumb: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  photoCredit: { fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 6 },
-  nameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    flex: 1,
-    marginRight: 10,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#F0F0F8',
-    letterSpacing: 0.1,
-    flex: 1,
-  },
-  scoreContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  scoreBox: {
-    alignItems: 'flex-end',
-  },
-  energyLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  score: {
-    fontSize: 24,
-    fontWeight: '900',
-    lineHeight: 28,
-  },
-  area: {
-    fontSize: 12,
-    color: '#8A8A99',
-    marginTop: 3,
-    letterSpacing: 0.2,
-  },
-  chipsScroll: {
-    marginTop: 10,
-  },
-  chips: {
-    flexDirection: 'row',
-    gap: 6,
-    paddingRight: 16,
-  },
+  cardBoosted: { borderColor: 'rgba(255,190,59,0.45)' },
+  thumb: { width: 72, height: 72, borderRadius: 12, backgroundColor: ed.raised },
+  body: { flex: 1, minWidth: 0 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  name: { fontSize: 16, lineHeight: 20, fontWeight: '700', color: ed.ink, flexShrink: 1 },
+  area: { fontSize: 13, lineHeight: 18, color: ed.inkSoft, marginTop: 1 },
+  chips: { gap: 6 },
   chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#181825',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
-    borderWidth: 0.5,
-    borderColor: '#2A2A38',
+    flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, height: 24,
+    borderRadius: edRadius.pill, borderWidth: 1, borderColor: ed.line,
   },
-  chipOpen: {
-    backgroundColor: 'rgba(79,197,110,0.08)',
-    borderColor: 'rgba(79,197,110,0.25)',
-  },
-  chipElite: {
-    backgroundColor: 'rgba(212,175,55,0.08)',
-    borderColor: 'rgba(212,175,55,0.25)',
-  },
-  chipIcon: {
-    backgroundColor: 'rgba(212,175,55,0.07)',
-    borderColor: 'rgba(212,175,55,0.2)',
-  },
-  chipRising: { backgroundColor: '#00E67610', borderColor: '#00E67630' },
-  chipRisingText: { fontSize: 11, fontWeight: '800', color: '#00E676' },
-  chipStale: { backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)' },
-  chipFading: { backgroundColor: '#FF8C0010', borderColor: '#FF8C0030' },
-  chipFadingText: { fontSize: 11, fontWeight: '800', color: '#FF8C00' },
-  chipPeaking: { backgroundColor: '#FF336612', borderColor: '#FF336635' },
-  chipPeakingText: { fontSize: 11, fontWeight: '800', color: '#FF3366' },
-  chipDna: { backgroundColor: '#00BCD410', borderColor: '#00BCD430' },
-  chipDnaText: { fontSize: 11, fontWeight: '700', color: '#00BCD4' },
-  openDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: '#4FC56E',
-  },
-  chipText: {
-    fontSize: 11,
-    color: '#666',
-  },
-  viibeStamp: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(212,175,55,0.1)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(212,175,55,0.45)',
-    borderRadius: 5,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    marginBottom: 8,
-  },
-  viibeStampText: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#D4AF37',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-  },
-  pulseBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-    gap: 8,
-  },
+  chipText: { fontSize: 12, color: ed.inkSoft, fontWeight: '600' },
+  eventRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
+  eventPill: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: edRadius.pill, backgroundColor: ed.raised },
+  eventPillLive: { backgroundColor: ed.gold },
+  eventPillText: { fontSize: 12, fontWeight: '700', color: ed.ink },
+  eventMeta: { fontSize: 12, color: ed.inkFaint, flexShrink: 1 },
+  narrative: { fontSize: 12, color: ed.inkSoft, fontStyle: 'italic', marginTop: 8 },
+  pulseRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   pulseBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(212,175,55,0.12)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 7,
-    borderWidth: 0.5,
-    borderColor: 'rgba(212,175,55,0.35)',
-    gap: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, height: 22,
+    borderRadius: edRadius.pill, backgroundColor: ed.goldSoft,
   },
-  pulseBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#D4AF37',
-    letterSpacing: 1.2,
+  pulseText: { fontSize: 11, fontWeight: '800', letterSpacing: 1, color: ed.gold },
+  credit: { fontSize: 11, color: ed.inkFaint, marginTop: 6 },
+  right: { alignItems: 'flex-end', justifyContent: 'space-between', minWidth: 58 },
+  scoreBox: { alignItems: 'flex-end' },
+  state: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2 },
+  score: { fontSize: 30, lineHeight: 34, fontWeight: '700', letterSpacing: -0.8 },
+  noReadingRing: {
+    width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderStyle: 'dashed', borderColor: ed.inkFaint,
+    marginBottom: 4,
   },
-  cloutBonusText: {
-    fontSize: 11,
-    color: '#4FC56E',
-    fontWeight: '700',
-  },
-  narrativeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 7,
-    paddingHorizontal: 2,
-  },
-  narrativeDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#FF3366',
-    opacity: 0.8,
-  },
-  narrativeText: {
-    flex: 1,
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.5)',
-    fontWeight: '600',
-    fontStyle: 'italic',
-  },
-  lowEnergyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-    gap: 4,
-  },
-  lowEnergyText: {
-    fontSize: 11,
-    color: '#444',
-    fontStyle: 'italic',
-  },
-  rateChip: {
-    borderRadius: 10,
-    overflow: 'hidden',
-    marginLeft: 8,
-  },
-  rateChipGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-  },
-  rateChipText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#FFF',
-    letterSpacing: 1.2,
-  },
+  noReading: { fontSize: 11, lineHeight: 14, color: ed.inkFaint, textAlign: 'right', fontWeight: '600' },
+  rate: { paddingHorizontal: 12, height: 30, borderRadius: edRadius.pill, backgroundColor: ed.pink, justifyContent: 'center', marginTop: 8 },
+  rateText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
 });

@@ -276,8 +276,6 @@ export default function VenueBattle({ isDemoMode }: Props) {
         {/* Card header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Ionicons name="flash" size={13} color="#FF3366" />
-            <Text style={styles.headerLabel}>VENUE BATTLE</Text>
           </View>
           <View style={styles.headerRight}>
             <View style={styles.timerPill}>
@@ -348,12 +346,12 @@ export default function VenueBattle({ isDemoMode }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0C0C15', borderRadius: 16, borderWidth: 1,
-    borderColor: '#1C1C2C', padding: 14, marginHorizontal: 16, marginTop: 12,
+    backgroundColor: '#141218', borderRadius: 16, borderWidth: 1,
+    borderColor: 'rgba(255,245,222,0.10)', padding: 14, marginHorizontal: 20, marginTop: 0,
   },
   loadingCard: {
-    marginHorizontal: 16, marginTop: 12, padding: 20, alignItems: 'center',
-    backgroundColor: '#0C0C15', borderRadius: 16, borderWidth: 1, borderColor: '#1C1C2C',
+    marginHorizontal: 20, marginTop: 0, padding: 20, alignItems: 'center',
+    backgroundColor: '#141218', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,245,222,0.10)',
   },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -361,7 +359,7 @@ const styles = StyleSheet.create({
   headerLabel: { fontSize: 11, color: '#FF3366', fontWeight: '800', letterSpacing: 1.5 },
   timerPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#111120', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
+    backgroundColor: '#1D1A23', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
   },
   timerText: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
   expandBtn: {
@@ -383,7 +381,7 @@ const styles = StyleSheet.create({
   vsBlock: { alignItems: 'center', gap: 4 },
   vsText: { fontSize: 16, fontWeight: '900', color: '#8E8AA3' },
   totalTaps: { fontSize: 11, color: '#8A84A8', fontWeight: '600' },
-  progressTrack: { height: 4, backgroundColor: '#0E0E1C', borderRadius: 2, overflow: 'hidden', marginBottom: 6 },
+  progressTrack: { height: 4, backgroundColor: '#1D1A23', borderRadius: 2, overflow: 'hidden', marginBottom: 6 },
   progressFillA: { height: 4, borderRadius: 2 },
   shareRow: { flexDirection: 'row', justifyContent: 'space-between' },
   shareText: { fontSize: 11, fontWeight: '800' },

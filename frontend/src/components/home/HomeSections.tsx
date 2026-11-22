@@ -37,7 +37,7 @@ export const STOCK = {
   lounge: u('1514525253161-7a46d19cd819'),
   rave: u('1470225620780-dba8ba36b745'),
   festival: u('1516450360452-9312f5e86fc7'),
-  concert: u('1571266028243-d220c8b77883'),
+  concert: u('1459749411175-04bf5292ceea'),
   block_party: u('1574391884720-bbc3740c59d1'),
   bar: u('1514525253161-7a46d19cd819'),
   restaurant: u('1508997449629-303059a039c0'),

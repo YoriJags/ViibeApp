@@ -19,7 +19,7 @@ const CLUB_IMAGES = [
   'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=800&q=80',
   'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80',
   'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80',
-  'https://images.unsplash.com/photo-1571266028243-d220c8b77883?w=800&q=80',
+  'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&q=80',
   'https://images.unsplash.com/photo-1508997449629-303059a039c0?w=800&q=80',
   'https://images.unsplash.com/photo-1493676304819-0d7a8d026dcf?w=800&q=80',
 ];

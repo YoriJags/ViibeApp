@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { ENERGY_COLORS, ENERGY_LABELS, ENERGY_ORDER, energyStateFor } from '../theme/energy';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -32,32 +33,17 @@ const DEMO_AREAS: AreaHeat[] = [
   { area: 'Yaba',            venue_count: 1, avg_heat: 18, bolt_total_1h: 2,  top_venue: 'Terra Kulture' },
 ];
 
+// The shared energy ladder (src/theme/energy.ts): an area reads the same word
+// and colour here as a venue with that score does everywhere else. Peak is gold.
 function heatColor(heat: number): string {
-  if (heat >= 80) return '#FF3366';
-  if (heat >= 65) return '#FF8C00';
-  if (heat >= 50) return '#9933FF';
-  if (heat >= 35) return '#6655FF';
-  if (heat >= 20) return '#3399FF';
-  return '#2A2A4A';
+  return ENERGY_COLORS[energyStateFor(heat)];
 }
 
 function heatLabel(heat: number): string {
-  if (heat >= 80) return 'PEAK';
-  if (heat >= 65) return 'LIT';
-  if (heat >= 50) return 'CHARGED';
-  if (heat >= 35) return 'WARMING';
-  if (heat >= 20) return 'CHILL';
-  return 'QUIET';
+  return ENERGY_LABELS[energyStateFor(heat)];
 }
 
-const HEAT_LEGEND = [
-  { label: 'QUIET',   color: '#8A84A8' },
-  { label: 'CHILL',   color: '#3399FF' },
-  { label: 'WARMING', color: '#6655FF' },
-  { label: 'CHARGED', color: '#9933FF' },
-  { label: 'LIT',     color: '#FF8C00' },
-  { label: 'PEAK',    color: '#FF3366' },
-];
+const HEAT_LEGEND = ENERGY_ORDER.map((s) => ({ label: ENERGY_LABELS[s], color: ENERGY_COLORS[s] }));
 
 interface Props {
   city?: string;
@@ -126,8 +112,6 @@ export default function HeatMapCard({ city = 'lagos', isDemoMode }: Props) {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Ionicons name="map" size={13} color="#FF3366" />
-            <Text style={styles.headerLabel}>CITY HEAT MAP</Text>
           </View>
           <View style={styles.headerRight}>
             <Text style={styles.headerCity}>{city.toUpperCase()}</Text>
@@ -212,13 +196,13 @@ export default function HeatMapCard({ city = 'lagos', isDemoMode }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0C0C15', borderRadius: 16, borderWidth: 1,
-    borderColor: '#1C1C2C', padding: 14, marginHorizontal: 16, marginTop: 12,
+    backgroundColor: '#141218', borderRadius: 16, borderWidth: 1,
+    borderColor: 'rgba(255,245,222,0.10)', padding: 14, marginHorizontal: 20, marginTop: 0,
   },
   loadingCard: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    marginHorizontal: 16, marginTop: 12, padding: 14,
-    backgroundColor: '#0C0C15', borderRadius: 16, borderWidth: 1, borderColor: '#1C1C2C',
+    marginHorizontal: 20, marginTop: 0, padding: 14,
+    backgroundColor: '#141218', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,245,222,0.10)',
   },
   loadingText: { color: '#8E8AA3', fontSize: 12 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
@@ -246,7 +230,7 @@ const styles = StyleSheet.create({
   areaTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   areaName: { fontSize: 12, fontWeight: '700', color: '#CCC', flex: 1 },
   heatBadge: { fontSize: 11, fontWeight: '800', letterSpacing: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 },
-  barTrack: { height: 3, backgroundColor: '#111120', borderRadius: 2, overflow: 'hidden' },
+  barTrack: { height: 3, backgroundColor: '#1D1A23', borderRadius: 2, overflow: 'hidden' },
   barFill: { height: 3, borderRadius: 2 },
   areaMeta: { fontSize: 11, color: '#8E8AA3', fontWeight: '500' },
 });

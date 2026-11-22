@@ -30,7 +30,7 @@ const CLUB_PLACEHOLDERS = [
   'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=600&q=80',
   'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&q=80',
   'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&q=80',
-  'https://images.unsplash.com/photo-1571266028243-d220c8b77883?w=600&q=80',
+  'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=600&q=80',
   'https://images.unsplash.com/photo-1574391884720-bbc3740c59d1?w=600&q=80',
   'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&q=80',
 ];
